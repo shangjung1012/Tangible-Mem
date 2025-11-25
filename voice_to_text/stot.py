@@ -46,3 +46,5 @@ with open(OUT, "w", encoding="utf-8") as f:
 print("================================")
 print(f"語音轉文字完成！結果已存到：{os.path.abspath(OUT)}")
 print("================================")
+
+
