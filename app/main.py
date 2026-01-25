@@ -16,19 +16,28 @@ config = types.GenerateContentConfig(
     # temperature=0.2,
 )
 
-transcript_path = APP_ROOT.parent / "transcript/250227.csv"
-
-prompt = "我想做一個 Virtual Mentor 系統，模擬教授在 meeting 裡的提問方式，讓學生可以先練習怎麼回答跟準備研究進度。"
-
-response = client.models.generate_content(
+chat = client.chats.create(
     model="gemini-2.5-flash",
-    contents=[
-        types.Part.from_bytes(
-            data=transcript_path.read_bytes(),
-            mime_type="text/plain",
-        ),
-        prompt
-    ],
     config=config,
 )
-print(response.text)
+
+prompt = (
+    "我想做一個 Virtual Mentor 系統，模擬教授在 meeting 裡的提問方式，"
+    "讓學生可以先練習怎麼回答跟準備研究進度。"
+)
+
+response = chat.send_message_stream(prompt)
+for chunk in response:
+    print(chunk.text, end="")
+    
+while True:
+    print("\n\nYour turn: ", end="")
+    user_input = input()
+    if user_input.lower() in ["exit", "quit", "q"]:
+        break
+    response = chat.send_message_stream(user_input)
+    for chunk in response:
+        print(chunk.text, end="")
+
+for message in chat.get_history():
+    print(f'{message.role}: {message.parts[0].text}')
