@@ -1,8 +1,8 @@
 from pathlib import Path
 
-APP_ROOT = Path(__file__).parent.resolve()
+ROOT = Path(__file__).parent.parent.resolve()
 
-transcript_path = APP_ROOT.parent / "transcript/250227.csv"
+transcript_path = ROOT / "transcript/250227.csv"
 transcript_text = transcript_path.read_text(encoding="utf-8")
 
 SYSTEM_PROMPT="""
