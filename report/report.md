@@ -51,7 +51,7 @@ prompt (template_3):
 ```
 
 #### results:
-[chat_history_01271830.txt](./../record/chat_history_01271830.txt)
+[chat_history_01271851.txt](./../record/chat_history_01271851.txt)
 問題:
 - 回覆變很長 不確定是不是我們要的效果
 
