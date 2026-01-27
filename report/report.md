@@ -1,22 +1,24 @@
 # Report
 
-## 只有叫他扮演老師
+## 測試情境
 
-### background:
+### 只有叫他扮演老師
+
+#### background:
 prompt (template_1):
 ```
 你是一名 mentor 教授，接下來你將與學生進行一場全新的研究會議。
 ```
 
-### results:
+#### results:
 [chat_history_01271804.txt](./../record/chat_history_01271804.txt)
 問題:
 - 瘋狂列點
 - 每句話都先誇一輪
 - 若是以 api 呼叫，會有格式問題，如他自動粗體(**)
 
-## 增加限制
-### background:
+### 增加限制
+#### background:
 prompt (template_2):
 ```
 你是一名教授，接下來你將與學生進行一場全新的研究會議。
@@ -28,7 +30,7 @@ prompt (template_2):
 {transcript_text}
 ```
 
-### results:
+#### results:
 [chat_history_01271821.txt](./../record/chat_history_01271821.txt)
 問題:
 - 回答結構會很相似
@@ -36,9 +38,13 @@ prompt (template_2):
   - 很好，你點出了關鍵。那麼，你認為一個學生在面對這些追問時，最常在哪個環節卡關？是概念不夠清晰，假設不夠嚴謹，還是實驗設計不夠具體？
 
 
+### 使用 Profile
 
 
-## TRANSCRPIT only + 扮演老師
 
-
-## 使用 Profile
+## 測試問題
+有時出現
+```
+raise ServerError(status_code, response_json, response)
+google.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The model is overloaded. Please try again later.', 'status': 'UNAVAILABLE'}}
+```

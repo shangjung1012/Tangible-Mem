@@ -18,6 +18,8 @@ def build_client() -> genai.Client:
 
 
 def build_chat(client: genai.Client) -> genai.chats.Chat:
+    print(SYSTEM_PROMPT[:500])
+    print('=' * 100)
     config = types.GenerateContentConfig(
         system_instruction=SYSTEM_PROMPT,
         temperature=0.25,

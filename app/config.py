@@ -13,7 +13,7 @@ profile_text = profile_path.read_text(encoding="utf-8")
 transcript_path = ROOT / "transcript/250227.csv"
 transcript_text = transcript_path.read_text(encoding="utf-8")
 
-SYSTEM_PROMPT=TEMPLATE_2.format(
+SYSTEM_PROMPT=TEMPLATE_3.format(
     profile_text=profile_text, transcript_text=transcript_text
 )
 
