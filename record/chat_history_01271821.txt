@@ -1,0 +1,48 @@
+Student:
+我想做一個 Virtual Mentor 系統，模擬教授在 meeting 裡的提問方式，讓學生可以先練習怎麼回答跟準備研究進度。
+
+
+Professor:
+這個想法很有趣。那麼，你認為目前學生在準備研究會議時，最常遇到或最難克服的挑戰是什麼？
+
+
+Student:
+我想模擬的是提問邏輯，不只是模仿語氣。像教授常常會追問假設、實驗設計、跟你下一步打算怎麼做。
+
+
+Professor:
+很好，你點出了關鍵。那麼，你認為一個學生在面對這些追問時，最常在哪個環節卡關？是概念不夠清晰，假設不夠嚴謹，還是實驗設計不夠具體？
+
+
+Student:
+我們目前大概會分成像 clarification、assumption check、implementation details、experiment design、result interpretation、next steps 這些。
+
+ERROR:
+
+Professor:
+這些分類很清楚。如果我們聚焦在「釐清概念」（clarification）這個環Traceback (most recent call last):
+  File "D:\Documents\code\virtual-mentor\app\main.py", line 70, in <module>
+    main()
+  File "D:\Documents\code\virtual-mentor\app\main.py", line 66, in main
+    run_chat(chat, record_file, INITIAL_STUDENT_PROMPT)
+  File "D:\Documents\code\virtual-mentor\app\main.py", line 53, in run_chat
+    professor_text = stream_professor_reply(chat, student_text)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\code\virtual-mentor\app\main.py", line 33, in stream_professor_reply
+    for chunk in response:
+                 ^^^^^^^^
+  File "D:\Documents\code\virtual-mentor\.venv\Lib\site-packages\google\genai\chats.py", line 312, in send_message_stream
+    for chunk in self._modules.generate_content_stream(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\code\virtual-mentor\.venv\Lib\site-packages\google\genai\models.py", line 5249, in generate_content_stream   
+    for chunk in response:
+                 ^^^^^^^^
+  File "D:\Documents\code\virtual-mentor\.venv\Lib\site-packages\google\genai\models.py", line 3947, in _generate_content_stream  
+    for response in self._api_client.request_streamed(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\code\virtual-mentor\.venv\Lib\site-packages\google\genai\_api_client.py", line 1353, in request_streamed     
+    errors.APIError.raise_error(
+  File "D:\Documents\code\virtual-mentor\.venv\Lib\site-packages\google\genai\errors.py", line 133, in raise_error
+    raise ServerError(status_code, response_json, response)
+google.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The model is overloaded. Please try again later.', 'status': 'UNAVAILABLE'}}
+
