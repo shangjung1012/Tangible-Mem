@@ -42,7 +42,6 @@ prompt (template_2):
 #### background:
 prompt (template_3):
 ```
-TEMPLATE_3 = """
 你是一名教授，接下來你將與學生進行一場全新的研究會議，討論的主題與內容和這份逐字稿無關。
 以下是你做為教授的個人設定與風格描述，請務必遵從這些設定來進行對話互動，並回傳對話內容：
 {profile_text}
