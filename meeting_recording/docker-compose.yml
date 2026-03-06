@@ -1,0 +1,54 @@
+services:
+  whisperx:
+    image: ghcr.io/jim60105/whisperx:no_model
+    container_name: whisperx_diarize
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    entrypoint: /bin/bash
+    volumes:
+      - ./:/app
+      - whisperx_cache:/.cache
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command:
+      - -lc
+      - |
+        set -euo pipefail
+        mkdir -p /app/transcript
+
+        mapfile -d '' files < <(find /app/recording -type f \
+          \( -iname '*.m4a' -o -iname '*.mp3' -o -iname '*.wav' -o -iname '*.flac' -o -iname '*.m4b' \) \
+          -print0 | sort -z)
+
+        if [ "$${#files[@]}" -eq 0 ]; then
+          echo "No audio files found under /app/recording"
+          exit 0
+        fi
+
+        for audio in "$${files[@]}"; do
+          rel_path="$${audio#/app/recording/}"
+          out_dir="/app/transcript/$$(dirname "$${rel_path}")"
+          mkdir -p "$${out_dir}"
+          echo "Transcribing $${audio} -> $${out_dir}"
+
+          python -m whisperx \
+            --model large-v3 \
+            --language zh \
+            --diarize \
+            --max_speakers 5 \
+            --hf_token "$${HF_TOKEN}" \
+            --output_dir "$${out_dir}" \
+            --output_format txt \
+            "$${audio}"
+        done
+
+volumes:
+  whisperx_cache:
