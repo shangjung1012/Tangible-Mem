@@ -31,3 +31,12 @@ uv run app/main.py
 與 Virtual Mentor 對話，輸入 `exit`, `quit` 或 `q` 結束。
 
 對話記錄會自動儲存在 `record/` 資料夾。
+
+## Meeting Recording
+
+`meeting_recording/` 現在提供本地化逐字稿流程：
+
+- `WhisperX` 先做 speaker diarization
+- `Ollama` 再把 `SPEAKER_xx` 轉成 `老師 / 學生一 / 學生二`
+
+使用方式見 [meeting_recording/README.md](/d:/Documents/code/virtual-mentor/meeting_recording/README.md)。
