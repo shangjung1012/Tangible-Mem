@@ -47,6 +47,7 @@ services:
           audio_target=""
         fi
         audio_target="$${audio_target#recording/}"
+        audio_target="$${audio_target%/}"
         search_path="/app/recording"
 
         if [ -n "$${audio_target}" ]; then
@@ -133,33 +134,43 @@ services:
         fi
         audio_target="$${audio_target#recording/}"
         audio_target="$${audio_target#transcript/}"
+        audio_target="$${audio_target%/}"
 
         input_dir="/app/transcript"
         if [ -n "$${audio_target}" ]; then
+          input_dir="$$(mktemp -d /tmp/role-map-input-XXXXXX)"
           transcript_target="/app/transcript/$${audio_target}"
           transcript_target_lower="$$(printf '%s' "$${transcript_target}" | tr '[:upper:]' '[:lower:]')"
           case "$${transcript_target_lower}" in
             *.m4a|*.mp3|*.wav|*.flac|*.m4b)
               transcript_target="$${transcript_target%.*}.txt"
+              if [ ! -f "$${transcript_target}" ]; then
+                echo "Transcript target not found: $${transcript_target}"
+                exit 1
+              fi
+              rel_path="$${audio_target%.*}.txt"
+              rel_dir="$$(dirname "$${rel_path}")"
+              target_dir="$${input_dir}"
+              if [ "$${rel_dir}" != "." ]; then
+                target_dir="$${input_dir}/$${rel_dir}"
+              fi
+              mkdir -p "$${target_dir}"
+              ln -sf "$${transcript_target}" "$${input_dir}/$${rel_path}"
+              ;;
+            *)
+              if [ ! -d "$${transcript_target}" ]; then
+                echo "Transcript target not found: $${transcript_target}"
+                exit 1
+              fi
+              first_file="$$(find "$${transcript_target}" -maxdepth 1 -type f -name '*.txt' -print -quit)"
+              if [ -z "$${first_file}" ]; then
+                echo "No transcript files found under $${transcript_target}"
+                exit 1
+              fi
+              mkdir -p "$${input_dir}/$${audio_target}"
+              find "$${transcript_target}" -maxdepth 1 -type f -name '*.txt' -exec ln -sf {} "$${input_dir}/$${audio_target}/" \;
               ;;
           esac
-
-          if [ -d "$${transcript_target}" ]; then
-            input_dir="$${transcript_target}"
-          elif [ -f "$${transcript_target}" ]; then
-            input_dir="$$(mktemp -d /tmp/role-map-input-XXXXXX)"
-            rel_path="$${transcript_target#/app/transcript/}"
-            rel_dir="$$(dirname "$${rel_path}")"
-            target_dir="$${input_dir}"
-            if [ "$${rel_dir}" != "." ]; then
-              target_dir="$${input_dir}/$${rel_dir}"
-            fi
-            mkdir -p "$${target_dir}"
-            ln -sf "$${transcript_target}" "$${target_dir}/$$(basename "$${transcript_target}")"
-          else
-            echo "Transcript target not found: $${transcript_target}"
-            exit 1
-          fi
         fi
 
         python /app/role_map.py \
