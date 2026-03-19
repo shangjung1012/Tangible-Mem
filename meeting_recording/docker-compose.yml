@@ -27,6 +27,7 @@ services:
       - whisperx_cache:/.cache
     environment:
       HF_TOKEN: ${HF_TOKEN}
+      AUDIO_TARGET: ${AUDIO_TARGET:-}
     deploy:
       resources:
         reservations:
@@ -40,18 +41,56 @@ services:
         set -euo pipefail
         mkdir -p /app/transcript
 
-        mapfile -d '' files < <(find /app/recording -type f \
-          \( -iname '*.m4a' -o -iname '*.mp3' -o -iname '*.wav' -o -iname '*.flac' -o -iname '*.m4b' \) \
-          -print0 | sort -z)
+        audio_target="$${AUDIO_TARGET:-}"
+        audio_target="$${audio_target#./}"
+        if [ "$${audio_target}" = "recording" ]; then
+          audio_target=""
+        fi
+        audio_target="$${audio_target#recording/}"
+        search_path="/app/recording"
+
+        if [ -n "$${audio_target}" ]; then
+          search_path="/app/recording/$${audio_target}"
+        fi
+
+        if [ ! -e "$${search_path}" ]; then
+          echo "Audio target not found: $${search_path}"
+          exit 1
+        fi
+
+        if [ -f "$${search_path}" ]; then
+          case "$${search_path,,}" in
+            *.m4a|*.mp3|*.wav|*.flac|*.m4b)
+              files=("$${search_path}")
+              ;;
+            *)
+              echo "Unsupported audio file: $${search_path}"
+              exit 1
+              ;;
+          esac
+        else
+          mapfile -d '' files < <(find "$${search_path}" -type f \
+            \( -iname '*.m4a' -o -iname '*.mp3' -o -iname '*.wav' -o -iname '*.flac' -o -iname '*.m4b' \) \
+            -print0 | sort -z)
+        fi
 
         if [ "$${#files[@]}" -eq 0 ]; then
-          echo "No audio files found under /app/recording"
+          echo "No audio files found under $${search_path}"
           exit 0
         fi
 
         for audio in "$${files[@]}"; do
           rel_path="$${audio#/app/recording/}"
-          out_dir="/app/transcript/$$(dirname "$${rel_path}")"
+          if [ "$${rel_path}" = "$${audio}" ]; then
+            echo "Audio file must be under /app/recording: $${audio}"
+            exit 1
+          fi
+
+          rel_dir="$$(dirname "$${rel_path}")"
+          out_dir="/app/transcript"
+          if [ "$${rel_dir}" != "." ]; then
+            out_dir="/app/transcript/$${rel_dir}"
+          fi
           mkdir -p "$${out_dir}"
           echo "Transcribing $${audio} -> $${out_dir}"
 
@@ -78,6 +117,7 @@ services:
       OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       OLLAMA_PULL: ${OLLAMA_PULL:-1}
+      AUDIO_TARGET: ${AUDIO_TARGET:-}
     depends_on:
       - ollama
     command:
@@ -85,8 +125,45 @@ services:
       - |
         set -euo pipefail
         mkdir -p /app/transcript_role
+
+        audio_target="$${AUDIO_TARGET:-}"
+        audio_target="$${audio_target#./}"
+        if [ "$${audio_target}" = "recording" ] || [ "$${audio_target}" = "transcript" ]; then
+          audio_target=""
+        fi
+        audio_target="$${audio_target#recording/}"
+        audio_target="$${audio_target#transcript/}"
+
+        input_dir="/app/transcript"
+        if [ -n "$${audio_target}" ]; then
+          transcript_target="/app/transcript/$${audio_target}"
+          transcript_target_lower="$$(printf '%s' "$${transcript_target}" | tr '[:upper:]' '[:lower:]')"
+          case "$${transcript_target_lower}" in
+            *.m4a|*.mp3|*.wav|*.flac|*.m4b)
+              transcript_target="$${transcript_target%.*}.txt"
+              ;;
+          esac
+
+          if [ -d "$${transcript_target}" ]; then
+            input_dir="$${transcript_target}"
+          elif [ -f "$${transcript_target}" ]; then
+            input_dir="$$(mktemp -d /tmp/role-map-input-XXXXXX)"
+            rel_path="$${transcript_target#/app/transcript/}"
+            rel_dir="$$(dirname "$${rel_path}")"
+            target_dir="$${input_dir}"
+            if [ "$${rel_dir}" != "." ]; then
+              target_dir="$${input_dir}/$${rel_dir}"
+            fi
+            mkdir -p "$${target_dir}"
+            ln -sf "$${transcript_target}" "$${target_dir}/$$(basename "$${transcript_target}")"
+          else
+            echo "Transcript target not found: $${transcript_target}"
+            exit 1
+          fi
+        fi
+
         python /app/role_map.py \
-          --input-dir /app/transcript \
+          --input-dir "$${input_dir}" \
           --output-dir /app/transcript_role \
           --ollama-host "$${OLLAMA_HOST}" \
           --ollama-model "$${OLLAMA_MODEL}" \
