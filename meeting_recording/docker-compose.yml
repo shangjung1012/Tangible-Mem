@@ -28,6 +28,7 @@ services:
     environment:
       HF_TOKEN: ${HF_TOKEN}
       AUDIO_TARGET: ${AUDIO_TARGET:-}
+      WHISPER_LANGUAGE: ${WHISPER_LANGUAGE:-zh}
     deploy:
       resources:
         reservations:
@@ -42,6 +43,7 @@ services:
         mkdir -p /app/transcript
 
         audio_target="$${AUDIO_TARGET:-}"
+        whisper_language="$${WHISPER_LANGUAGE:-zh}"
         audio_target="$${audio_target#./}"
         if [ "$${audio_target}" = "recording" ]; then
           audio_target=""
@@ -97,7 +99,7 @@ services:
 
           python -m whisperx \
             --model large-v3 \
-            --language zh \
+            --language "$${whisper_language}" \
             --diarize \
             --max_speakers 5 \
             --hf_token "$${HF_TOKEN}" \
