@@ -10,5 +10,14 @@ for ($i = 1; $i -le 31; $i++) {
     $destination = Join-Path $outputDir $fileName
 
     Write-Host "Downloading $fileName"
-    Invoke-WebRequest -Uri $url -OutFile $destination
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $destination
+    }
+    catch {
+        if (Test-Path $destination) {
+            Remove-Item $destination -Force
+        }
+
+        Write-Warning "Skipping $fileName: $($_.Exception.Message)"
+    }
 }
