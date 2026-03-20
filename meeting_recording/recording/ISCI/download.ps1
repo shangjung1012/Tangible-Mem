@@ -18,6 +18,6 @@ for ($i = 1; $i -le 31; $i++) {
             Remove-Item $destination -Force
         }
 
-        Write-Warning "Skipping $fileName: $($_.Exception.Message)"
+        Write-Warning "Skipping ${fileName}: $($_.Exception.Message)"
     }
 }
