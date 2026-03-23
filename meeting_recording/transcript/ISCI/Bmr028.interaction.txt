@@ -1,0 +1,858 @@
+[SPEAKER_01]: And we're going.
+[SPEAKER_01]: So the only status item, well, first of all, we haven't decided whether we're meeting recorded data issues or recognition this week.
+[SPEAKER_01]: I think we were recognition.
+[SPEAKER_02]: What was on the list?
+[SPEAKER_02]: I mean, I sent you a couple things.
+[SPEAKER_01]: You only sent me one thing, which was demo status.
+[SPEAKER_01]: And asking which one we were on this week.
+[SPEAKER_02]: Ah, that was the second thing, right.
+Right.
+[SPEAKER_01]: So should we simply assert that this week we are recognition and next week data issues?
+[SPEAKER_01]: I think that's correct.
+[SPEAKER_01]: I think so too.
+[SPEAKER_01]: So I think what we should probably do is any quick small stuff we can do every week.
+[SPEAKER_01]: So like Morgan asked about the demo status, we can go ahead and talk about that a little bit and then alternate in more depth.
+[SPEAKER_02]: By the way, I won't be here next Thursday.
+[SPEAKER_02]: I'll be out of town.
+[SPEAKER_01]: Actually, it may not be here either, so I've got to double check the dates.
+[SPEAKER_01]: But anyway, so demo status.
+[SPEAKER_01]: First of all, I did a little thing for Liz with the transcriber tool that, first of all, it uses the forced alignments so that the words appear
+[SPEAKER_01]: in their own segments rather than in long chunks.
+[SPEAKER_01]: She said that she thought that was a much better idea for the other stuff she's working on.
+[SPEAKER_01]: And that works fine, except it's even slower to load.
+[SPEAKER_00]: It's already pretty slow to load.
+[SPEAKER_00]: Is that because the transcripts get longer?
+[SPEAKER_00]: Yeah.
+[SPEAKER_01]: And the transcriber tool is just not very good at...
+[SPEAKER_00]: But that's, you didn't have to change the software for that yet, right?
+[SPEAKER_00]: Correct.
+[SPEAKER_00]: It's just formatting the right kind of.
+[SPEAKER_01]: Yeah, it's just writing conversion tools from the format that the aligner, actually he did a SRT file for it.
+[SPEAKER_01]: And then just back into transcriber format.
+[SPEAKER_01]: Yeah, so my decision was for the first pass for this demo that Liz was talking about, I decided that I would do only enough to get it working as opposed to any coding.
+[SPEAKER_01]: And so the other thing, she wanted to display the stylized F0s, I think they're called.
+[SPEAKER_01]: Is that right?
+[SPEAKER_01]: Yeah, the linear fit.
+[SPEAKER_01]: So what I did is I just took the file with those in it, converted it so that it looks like an audio file.
+[SPEAKER_01]: And so it shows that instead of the WAV file.
+[SPEAKER_01]: And so that's working, and I think it actually looks pretty good.
+[SPEAKER_01]: I'd like someone who's more familiar with it to look at it, because when I was looking at it, we seemed to have lots of stuff going on when no one's saying anything.
+[SPEAKER_00]: That's just background speech.
+[SPEAKER_01]: Ah.
+[SPEAKER_01]: Yeah.
+[SPEAKER_02]: So do you have to pad that out so that it looks like it's an eight kilohertz sample thing?
+[SPEAKER_02]: No.
+[SPEAKER_01]: The audio file, you can specify any sampling rate.
+[SPEAKER_01]: And so I specified instead of 16,000 or 8,000, I specified 100.
+[SPEAKER_01]: And the only problem with that is that there's a bug in transcriber that if the sample rate is too low, when it tries to compute the shapefile, it fails and crashes.
+[SPEAKER_01]: But the solution to that is just set the option so it doesn't compute the shapefile, and it will work.
+[SPEAKER_01]: And the only problem with that is you can't zoom out on it.
+[SPEAKER_01]: You can zoom in, but not out.
+[SPEAKER_02]: What's a shapefile?
+[SPEAKER_01]: The shapefile is, if you think about a wave file, 16,000 samples per second is way too many to display on the screen.
+[SPEAKER_01]: So what Transcriber does is it computes another thing to display based on the waveform, and it displays it up, and it allows you to show many different resolutions.
+[SPEAKER_01]: So there's a little user interface component that lets you select the resolution.
+[SPEAKER_01]: And if you don't compute the wave file, you can't zoom out.
+[SPEAKER_01]: You can't get a larger view of it, but you can zoom in.
+[SPEAKER_01]: And that's all right, because at 100 samples, that's already pretty far out.
+[SPEAKER_01]: And so I think it looks pretty good, but I'll let Liz look at it and see what she thinks.
+[SPEAKER_04]: I got the WAV file, but I couldn't get the words yet.
+[SPEAKER_04]: But the WAV file part looks good.
+[SPEAKER_01]: Okay.
+[SPEAKER_01]: We should, if you are having problems with the words, we should figure out why.
+[SPEAKER_04]: I'll have done.
+[SPEAKER_04]: I'm probably doing something wrong.
+[SPEAKER_04]: Okay.
+[SPEAKER_04]: Sorry, this microphone is moving around.
+[SPEAKER_01]: You clip that part over your ear.
+[SPEAKER_04]: I can do that, but there's no orientation where the...
+[SPEAKER_01]: Anyway, we'll all watch Liz play with the mic.
+[SPEAKER_03]: Does it really need to go in her ear, that bud?
+[SPEAKER_03]: It doesn't have to go in her ear, right?
+[SPEAKER_01]: No, it doesn't have to, but I find that's the only way to wear it.
+[SPEAKER_01]: The bud's in the ear and the link is over it.
+[SPEAKER_01]: So anyway, I think that looks pretty good.
+[SPEAKER_01]: The only other thing we might want to do with that is be able to display more than one waveform.
+[SPEAKER_01]: And that actually shouldn't be too slow because it's much lower resolution than a full waveform.
+[SPEAKER_01]: The problem with it is just it does require coding.
+[SPEAKER_01]: And so it would be much better to get Dave Gelbart to do that than me because he's familiar with the code and is more likely to be able to get it to work quickly.
+[SPEAKER_00]: It'd be nice if we could do like a quick hack just so we can play the audio file too.
+[SPEAKER_00]: Right.
+[SPEAKER_00]: With the display.
+[SPEAKER_00]: Like even if we, I think that even if we didn't display the waveform, it might be better to rather play the waveform than display it.
+[SPEAKER_00]: I mean like if we were to choose, I don't know, if I were to choose between one or the other, I'd rather have it played than displayed.
+[SPEAKER_01]: Right.
+[SPEAKER_01]: But for the demo, maybe it doesn't matter.
+[SPEAKER_01]: I'm not sure whether you want to do the demo live anyway or just screenshots of what we have.
+[SPEAKER_01]: The problem with doing it live is it takes so long to load.
+[SPEAKER_00]: So this sluggishness of the loading is all due to the parsing of the XML?
+[SPEAKER_01]: I was talking to Dave Gelbart about that, and apparently it's not actually the parsing of the XML raw that going from the XML to an internal tree structure is pretty fast, but then it walks the tree to assemble its internal data structures, and that's slow.
+[SPEAKER_01]: It seems like you should be able to spawn that off into a background process because not everything is displayed in that tree at once, right?
+[SPEAKER_01]: No, but what it does is it actually assembles all the user interface components then and then displays all the user interface components.
+[SPEAKER_02]: I'm confused.
+[SPEAKER_02]: Is this downloading something that happens once?
+[SPEAKER_02]: Yes.
+[SPEAKER_02]: And then when you display different things, it's fine?
+[SPEAKER_02]: It wouldn't be loaded.
+[SPEAKER_01]: A new transcript.
+[SPEAKER_02]: Well, a new meeting, a transcript, right.
+[SPEAKER_02]: Or audio.
+[SPEAKER_01]: Well, actually, audio files are pretty fast, too.
+[SPEAKER_02]: For a presentation, I would be... You just have to have the thing running before you...
+[SPEAKER_01]: Right, the only problem with that is if anything goes wrong, or if you want to switch from one thing to another.
+[SPEAKER_02]: Go wrong?
+[SPEAKER_04]: I see, yeah.
+[SPEAKER_04]: Right.
+[SPEAKER_04]: I guess for the demo, you can always play, just store the pieces that you're going to display and play those as separate files if we can't actually do it.
+[SPEAKER_04]: Make shorter files.
+[SPEAKER_04]: That's true.
+[SPEAKER_04]: We could just subset it.
+[SPEAKER_04]: That's a good idea.
+[SPEAKER_01]: That's actually probably the right thing to do.
+[SPEAKER_01]: Just take 10 minutes instead of an hour and a half.
+[SPEAKER_00]: That's what I did for my truck.
+[SPEAKER_02]: Oh, you're downloading a whole meeting.
+[SPEAKER_01]: Yeah.
+[SPEAKER_02]: Oh, yeah.
+[SPEAKER_01]: Yeah, so that's actually definitely the way to do it.
+[SPEAKER_01]: That's a good idea.
+[SPEAKER_02]: And then still do it ahead of time, but then at least you're covered if there are any problems.
+[SPEAKER_02]: If there's a problem.
+[SPEAKER_01]: Right.
+[SPEAKER_01]: Yeah, I mean, even five minutes is probably enough.
+[SPEAKER_04]: Right.
+[SPEAKER_04]: So what happened to, is it possible at all to display the words in their aligned locations?
+[SPEAKER_04]: That's what I did.
+[SPEAKER_04]: Okay.
+[SPEAKER_04]: So I'm sorry I missed.
+[SPEAKER_04]: Okay, great.
+[SPEAKER_04]: But, okay.
+[SPEAKER_04]: I couldn't get the words and the waveform at the same time for some reason, and there must be some.
+[SPEAKER_04]: I'll work on it with Don and see what I'm doing wrong.
+[SPEAKER_01]: Just come by my office.
+[SPEAKER_01]: I can show you as well.
+[SPEAKER_04]: Great.
+[SPEAKER_04]: Oh, thanks a lot.
+[SPEAKER_04]: It's really great.
+[SPEAKER_01]: And for the information retrieval, Don has been working on that.
+[SPEAKER_00]: Yeah, so it's coming along.
+[SPEAKER_00]: Just hacking Dan's code and stepping through it.
+[SPEAKER_00]: But I think it's close.
+[SPEAKER_00]: It should be there pretty soon.
+[SPEAKER_00]: At least with...
+[SPEAKER_00]: you know being able to search over certain amount of meetings just like really basic stuff just asking looking for a word and looking through a bunch of different meetings and if we have time we'll also add you know like choosing which speakers you want to include and stuff but okay well i'm going to start working on this the week after next so that's the point where i'll need to look more carefully at what what you guys have
+[SPEAKER_00]: So is the end of the month still the...
+[SPEAKER_02]: Right, the Monday of the week after next is July 2nd, which is the first day I get back.
+[SPEAKER_01]: Okay.
+[SPEAKER_01]: Yeah, so I think for the stuff Liz was talking about, we have something that will work now, and Liz can look at it and see if she wants anything else.
+[SPEAKER_01]: Maybe we can work on displaying multiple or displaying one and playing back the other.
+[SPEAKER_04]: So do you think it's reasonable to display more than one before the demo?
+Yeah.
+[SPEAKER_01]: I think I'd have to ask Dave.
+[SPEAKER_01]: I did it once before, and it was just so slow to scroll that I gave up.
+[SPEAKER_01]: But the advantage is that these things are much lower sampling rate, so it might be all right.
+[SPEAKER_04]: Okay, let me know.
+[SPEAKER_01]: Morgan, when's the demo?
+[SPEAKER_02]: Well, I'm giving a talk on July 16th, so Monday in four weeks.
+[SPEAKER_00]: So if raw speed is the problem, this thing's written in Tickle, right?
+[SPEAKER_00]: I mean, John Osterhout, you know, he started his own company based on Tickle stuff, and maybe they have a native code compiler or something.
+[SPEAKER_01]: I mean, we could check.
+[SPEAKER_01]: I don't think they do.
+[SPEAKER_01]: There was actually a Java backend that apparently is actually a little faster.
+[SPEAKER_01]: It generates bytecode, but...
+[SPEAKER_02]: I was excited to hear that Java is faster than something.
+[SPEAKER_01]: Yeah.
+[SPEAKER_01]: Well, everything is faster than TickleTK.
+[SPEAKER_01]: It's a string substitution language, basically.
+[SPEAKER_01]: I should probably beep that out in case John Osterhout ever listens.
+[SPEAKER_01]: But Tickle is wonderful.
+[SPEAKER_01]: Well, it is wonderful.
+[SPEAKER_01]: It is for prototyping and user interface.
+[SPEAKER_01]: It's just really, the language is awful.
+[SPEAKER_02]: Oh.
+Beep.
+[SPEAKER_01]: but let me tell you how I really feel.
+[SPEAKER_02]: We're all entitled to our opinions here.
+[SPEAKER_02]: Yeah, I like it.
+[SPEAKER_02]: Yeah, so I think it must be three and a half weeks, because the meeting is July 16th through 18th, and my talk's the first day.
+[SPEAKER_02]: I'm flying out there the Sunday before, so...
+[SPEAKER_02]: I guess it would be desirable if a week ahead of that we basically thought we had it, which would allow a week for...
+[SPEAKER_01]: For realizing we don't.
+[SPEAKER_01]: Then the other issue related to that is data release.
+[SPEAKER_01]: If we want to show this in public, it should be released.
+[SPEAKER_01]: So I haven't gotten any other replies from the original email asking for approval.
+[SPEAKER_01]: So I sent out another set this morning.
+[SPEAKER_01]: I saw that.
+[SPEAKER_01]: And we'll see if we get any responses.
+[SPEAKER_04]: But it is, I did want to say that.
+[SPEAKER_01]: Did you notice I put it in the filter?
+[SPEAKER_04]: No, no, no.
+[SPEAKER_04]: I just figured you.
+[SPEAKER_01]: There's a link there that now says if you want to search by filter by regular expression, you can.
+[SPEAKER_04]: I put that in just for you.
+[SPEAKER_04]: Well, since you didn't answer the email.
+[SPEAKER_04]: So there was a question I had asked Adam whether it's possible to search only for your own name, your own utterances, so that you don't have to go through the whole meeting.
+[SPEAKER_04]: And I didn't hear back, so I thought, okay, it's probably too hard.
+[SPEAKER_04]: He's overloaded.
+[SPEAKER_04]: I won't say anything.
+[SPEAKER_04]: I'll just do it.
+[SPEAKER_04]: Great.
+[SPEAKER_04]: Okay.
+[SPEAKER_01]: It's actually an arbitrary regular expression.
+[SPEAKER_01]: If you search your name, you'll get all the things you said and any time anyone said your name.
+[SPEAKER_02]: That's great.
+[SPEAKER_02]: And it's case-insensitive.
+[SPEAKER_02]: Correct.
+[SPEAKER_02]: That's great.
+[SPEAKER_02]: Did you actually look through your transcripts, or you just approved them all?
+[SPEAKER_02]: Well.
+[SPEAKER_02]: I just approved all mine.
+[SPEAKER_01]: I didn't look at them.
+[SPEAKER_04]: I sort of spot-checked.
+[SPEAKER_04]: I was trying to remember.
+[SPEAKER_04]: I couldn't find the keywords for things that I thought I had said wrong, so.
+[SPEAKER_01]: It's hard to find.
+[SPEAKER_01]: That's a compliment to you.
+[SPEAKER_01]: He said, it's hard to find things you say wrong.
+[SPEAKER_01]: It's hard to find anything that you're saying.
+[SPEAKER_01]: Great.
+[SPEAKER_01]: Well, thanks.
+[SPEAKER_01]: You really do have to sort of.
+[SPEAKER_04]: It's really useful, because if you're only at part of a meeting or something.
+[SPEAKER_02]: So we have our first information retrieval example.
+[SPEAKER_02]: It's a regular expression.
+[SPEAKER_02]: Yeah, that's actually interesting.
+[SPEAKER_04]: Well, it's useful.
+[SPEAKER_01]: And it demonstrates why it doesn't work, because you really want to go across more than one meeting, and you need a better user interface for displaying the results.
+[SPEAKER_04]: But this helps a lot.
+[SPEAKER_04]: Yeah.
+[SPEAKER_02]: You want to say, find all the contentious things I said.
+[SPEAKER_01]: Yeah.
+[SPEAKER_01]: Find everything that should be bleeped.
+[SPEAKER_01]: That's right.
+[SPEAKER_01]: We do have that nice marker, is that because we all know we're being recorded, whenever anyone says anything like that, we then have a conversation about bleeping it out.
+[SPEAKER_04]: Yeah, you can search for beep or bleep.
+[SPEAKER_01]: Yep.
+[SPEAKER_04]: Yeah.
+[SPEAKER_04]: In somebody else's turn.
+you
+[SPEAKER_01]: Oh, and also we actually have a few people who have still not filled out speaker forms, specifically in the NSA ones.
+[SPEAKER_01]: And I noticed that when I tried to generate the transcripts for NSA, that there are a few with no speaker forms.
+[SPEAKER_01]: And so I have, I sent out yet another this morning, which I think makes six total emails that I've sent to these people.
+[SPEAKER_01]: And so I think we need to escalate to some other method of trying to contact them.
+[SPEAKER_02]: Um, right.
+[SPEAKER_02]: Has Yashim Sokol replied?
+[SPEAKER_02]: Nope.
+[SPEAKER_03]: Maybe talk to him first in person.
+[SPEAKER_03]: That's what I would think.
+[SPEAKER_02]: He's not around.
+[SPEAKER_02]: Oh, is that right?
+[SPEAKER_03]: I saw him on Tuesday.
+[SPEAKER_02]: Yeah, he popped in.
+[SPEAKER_02]: He's basically gone.
+[SPEAKER_02]: Dinner time, I mean.
+[SPEAKER_01]: If I could find phone numbers, that would certainly work.
+[SPEAKER_03]: Well, did you ask Lila?
+[SPEAKER_03]: Because I bet she has this information.
+[SPEAKER_01]: Yeah, that's a good idea.
+[SPEAKER_01]: I'll ask her if she can track some of them down.
+[SPEAKER_02]: And tell her your specific problem.
+[SPEAKER_02]: She'll fix.
+[SPEAKER_03]: And then there's still, Miguel is still an active member of the group.
+[SPEAKER_03]: What I mean is he's an active member and he's still here.
+[SPEAKER_02]: He's right there, yeah.
+[SPEAKER_01]: Yeah, I didn't actually see who they all were.
+[SPEAKER_01]: A couple of them were like people at IBM who were here for one of the IBM meetings and a guy from SRI who was at one of the SRI meetings.
+[SPEAKER_01]: And so those might be harder to track down.
+[SPEAKER_03]: Most of them, though, really were visitors here and Lila should have contacts with them.
+[SPEAKER_03]: Nice meetings, by the way.
+[SPEAKER_03]: Yeah.
+[SPEAKER_01]: They were people who didn't have accounts at ICSI, so they're harder to find.
+[SPEAKER_03]: Well, not the ones that... Are you sure?
+[SPEAKER_03]: I'm not sure about what... Yeah, NSA1 and NSA3?
+[SPEAKER_03]: There were other people also.
+[SPEAKER_01]: There were other people also who didn't fill out speaker forms in addition to the NSAs.
+[SPEAKER_01]: In other meetings, yeah.
+[SPEAKER_03]: Oh, I see.
+[SPEAKER_02]: Okay, fine.
+[SPEAKER_02]: Well, SRI people, easy to find.
+[SPEAKER_02]: And IBM people also just let us know.
+[SPEAKER_02]: We certainly have their email.
+[SPEAKER_03]: But I knew everybody in the NSA meetings, so I'm sure that we have a fresh information on that.
+[SPEAKER_01]: Yeah, none of the emails bounced, so I know they're going somewhere.
+[SPEAKER_01]: Good, okay.
+[SPEAKER_01]: That's all I have.
+[SPEAKER_01]: You want to talk about recognition?
+[SPEAKER_00]: Chuck, you want to talk about recognition?
+[SPEAKER_01]: I haven't done anything for a couple of days.
+[SPEAKER_04]: We're sort of in a stage where Don's going through getting some of the next meetings that Jayden has and creating a second database.
+[SPEAKER_04]: So we haven't actually run anything yet.
+[SPEAKER_04]: We need to get a critical mass for that.
+[SPEAKER_00]: However, I just got an email from Tilo saying that we are ready to run, I mean, we have segmentations.
+[SPEAKER_00]: Check the segmentations.
+[SPEAKER_00]: Yeah.
+[SPEAKER_00]: Great.
+[SPEAKER_00]: You had three different versions with different, like, pause thresholds between the segments.
+[SPEAKER_00]: Yeah.
+[SPEAKER_00]: Yeah, just move the output of the tape.
+[SPEAKER_00]: And you recommended using the one with two seconds?
+[SPEAKER_00]: What do you mean, a different pause threshold?
+[SPEAKER_00]: You can use the one with one second or whatever.
+[SPEAKER_00]: There's not much difference between the one second and the two second one.
+[SPEAKER_00]: I mean, the only advantage to using the longer threshold would be that you run less risk of missing some speech, right?
+[SPEAKER_00]: And I think, wouldn't it be better to have a little longer sequences for the recognizer, because the language model, as sometimes it happens that it cuts off within a...
+[SPEAKER_00]: Yeah, but we can be sure that there's, or we can be not totally sure, but we can be somehow sure that there is nothing, no speech between those.
+[SPEAKER_00]: What does the two seconds threshold mean?
+[SPEAKER_01]: It's the same as in the smoother for the...
+[SPEAKER_01]: IBM thing.
+[SPEAKER_01]: It combines them if the pauses.
+[SPEAKER_04]: It's no more than six words, so roughly on average.
+[SPEAKER_04]: That's pretty good.
+[SPEAKER_01]: All right, so the trade-off is you get longer utterances, but you miss fewer utterances.
+[SPEAKER_00]: Yeah, but the trunks are really, in general, are short, so I think it would be better to have more of them concatenated together in order to have better language modeling.
+[SPEAKER_00]: I think two seconds, I would maybe go with one second.
+[SPEAKER_00]: I don't want to see what the length of the solution is.
+[SPEAKER_00]: Yeah, but there's really not much difference between the one second and two seconds.
+[SPEAKER_00]: I wouldn't think that the language model would continue across two seconds.
+[SPEAKER_00]: Well, yeah, you do.
+[SPEAKER_00]: You get false recognitions.
+[SPEAKER_00]: Yeah, you're going to hurt yourself occasionally by missing the language model context, but you might hurt yourself more by having misrecognitions due to background speech or noise or whatever.
+[SPEAKER_00]: I'm not too afraid about that.
+[SPEAKER_00]: When there would be some background speech or something, there would be a chunk in another
+[SPEAKER_00]: Oh, I see.
+[SPEAKER_00]: Yeah, I think it's better.
+[SPEAKER_00]: And when there is something in between, I do not concatenate them.
+[SPEAKER_00]: The longer is better.
+[SPEAKER_00]: It's just when they're sequentially, and so I would use it.
+[SPEAKER_00]: We could try them all and see what works.
+[SPEAKER_04]: There's a lot of these cases, just like now, where people say, uh, uh, and there's about a half second pause to a second in between, and then another word.
+[SPEAKER_04]: And it's much better if we can keep those together, I think.
+[SPEAKER_01]: It's funny looking at some of the transcripts.
+[SPEAKER_01]: I was filtering by person, and in one of the early meetings, one particular person, almost the only thing they said the entire meeting was, yeah.
+[SPEAKER_01]: It was just a whole list of them.
+[SPEAKER_00]: I don't know who that was.
+[SPEAKER_00]: So we need to split the waveforms.
+[SPEAKER_00]: Or do you already have them split up?
+[SPEAKER_00]: No, you don't, right?
+[SPEAKER_00]: No.
+[SPEAKER_00]: So I guess, Don, we need your help to create a new set of split meetings.
+[SPEAKER_04]: Sure.
+[SPEAKER_04]: Maybe just fake the format that you take as input with the sync times to a new set of sync time.
+[SPEAKER_01]: Do we know about disk?
+[SPEAKER_01]: Abbott disk?
+[SPEAKER_02]: I know they're in, but I don't know.
+[SPEAKER_02]: Wasn't he asking about...
+[SPEAKER_01]: He had a problem, right?
+[SPEAKER_02]: Well, there was an issue.
+[SPEAKER_02]: He wanted to take it down, and then he dropped it.
+[SPEAKER_01]: He did, and then it didn't work.
+[SPEAKER_01]: I didn't hear anything after that.
+[SPEAKER_01]: The only reason I'm asking is you're going to need space to split them up, and so I wanted to make sure we had something.
+[SPEAKER_00]: I still have, like...
+[SPEAKER_00]: Probably six, seven, eight gig on my desk.
+[SPEAKER_01]: We're still okay for another couple days.
+[SPEAKER_04]: I have another six gig, which Jeremy, if you're not using.
+[SPEAKER_01]: So we're okay for a couple weeks then.
+[SPEAKER_02]: He probably needs us to approve another time to take things down, right?
+[SPEAKER_02]: Yeah, he hasn't said anything to me about it.
+[SPEAKER_02]: I thought he said in that mail that he would need to take it down another time.
+[SPEAKER_01]: Yeah, he just didn't say when.
+[SPEAKER_02]: Well, no, I think he wanted us to tell him.
+[SPEAKER_04]: How about during the picnic?
+[SPEAKER_01]: Yeah, I'm sure he'd love to.
+[SPEAKER_01]: Well, my feeling about that is... Well, okay, that's the point.
+[SPEAKER_01]: So it's Jane.
+[SPEAKER_01]: We have to coordinate that through.
+[SPEAKER_01]: What I was going to say is as soon as possible, and I'm willing to not work for an hour to get it done, but...
+[SPEAKER_01]: Whoa.
+[SPEAKER_02]: Sorry.
+[SPEAKER_02]: I'm willing to not work for an hour.
+[SPEAKER_01]: Because when Abbott is down, you can't work.
+[SPEAKER_01]: You're really dedicated.
+[SPEAKER_04]: No matter how you parse that one.
+[SPEAKER_01]: But I think the people it disrupts the most are the transcribers.
+[SPEAKER_03]: Well, you know, all I need to do is mail, send them a mail like two days in advance so they can schedule their time.
+[SPEAKER_03]: I did that with the last outage.
+[SPEAKER_03]: I wrote to them letting them know that this.
+[SPEAKER_02]: So early next week.
+[SPEAKER_02]: So it sounds like Arkham should almost decide when he wants to do it.
+[SPEAKER_01]: And just as long as we have a little warning.
+[SPEAKER_04]: So that means we can't save meeting data either, right?
+[SPEAKER_01]: Just not during that time when it's down.
+[SPEAKER_01]: But it should only be down for an hour.
+[SPEAKER_04]: So we can't have two meetings in a row where the first meeting is during that hour.
+[SPEAKER_01]: That's all I meant.
+Right.
+[SPEAKER_01]: Well, no, we can store them here.
+[SPEAKER_01]: We can store them here.
+[SPEAKER_01]: We just run the risk that if you have a crash, we lose the data.
+[SPEAKER_01]: They're stored on popcorn.
+[SPEAKER_03]: Oh, just, okay.
+[SPEAKER_03]: This is some popcorn or something?
+[SPEAKER_01]: Yep.
+Okay.
+[SPEAKER_02]: We store our data on popcorn.
+[SPEAKER_02]: That's really great.
+[SPEAKER_02]: Excuse me?
+[SPEAKER_02]: I was just thinking we store our data on popcorn.
+[SPEAKER_02]: How many institutes can you do that?
+[SPEAKER_02]: Okay.
+[SPEAKER_02]: Megabytes and megabytes.
+[SPEAKER_02]: Many megabytes, too.
+[SPEAKER_02]: What?
+[SPEAKER_01]: We have a kernel on popcorn, too.
+[SPEAKER_02]: So what's on your queue for recognition experiments?
+[SPEAKER_02]: Let's talk about that for a second.
+[SPEAKER_02]: What was the question?
+[SPEAKER_02]: What was on his queue for recognition experiments?
+[SPEAKER_01]: I'm rebuilding the net that we're going to use for the tandem stuff.
+[SPEAKER_01]: And so what I'm doing is putting in the stream reader into the QuickNet libraries for the SRI feature files, which is the right way to do it.
+[SPEAKER_01]: I mean, when we did our first experiments and I was
+[SPEAKER_01]: creating SRI feature files from the ICSI front end.
+[SPEAKER_01]: I just had Perl scripts, you know, and hacked a bunch of stuff together just to get it going.
+[SPEAKER_01]: But the right way to do it is to integrate it in with the ICSI tools.
+[SPEAKER_01]: And so that's what I'm doing now.
+[SPEAKER_01]: And so once I get that done, then I'll generate the P files I need.
+[SPEAKER_01]: Because we already have the feature files in the SRI format.
+[SPEAKER_01]: So what I need to do is make it so that the QuickNet stuff can read those.
+[SPEAKER_01]: And...
+[SPEAKER_00]: Is that independent or related to also being able to write out the feature file in the SRI format?
+[SPEAKER_01]: It's both.
+[SPEAKER_01]: There's an input stream and an output stream.
+[SPEAKER_00]: Oh, okay.
+[SPEAKER_00]: So then you could use...
+[SPEAKER_00]: like vCalc and just specify as an output format.
+[SPEAKER_00]: Yeah, that's the point.
+[SPEAKER_00]: Okay.
+[SPEAKER_00]: I'm just ignorant about the software architecture.
+[SPEAKER_01]: Right.
+[SPEAKER_01]: QuickNet is a very nice stream-based library.
+[SPEAKER_01]: So without too much effort, once he has the classes written, we can incorporate it into all the standard tools.
+Oh, cool.
+[SPEAKER_01]: Great.
+[SPEAKER_01]: So then it's tandem experiments.
+[SPEAKER_01]: And at some point, I'd like to get back to porting QuickNet to the multiprocessor Linux box.
+[SPEAKER_01]: I have forward passes working, but I haven't done training yet.
+[SPEAKER_00]: So speaking of Linux, so there's some
+[SPEAKER_00]: impetus at SRI to actually build support Linux as a platform.
+[SPEAKER_00]: So what that means is once we have everything running on Linux, we can also run all our jobs on your machines.
+[SPEAKER_00]: Yeah, exactly.
+[SPEAKER_00]: We don't have too many.
+[SPEAKER_02]: We just have that.
+[SPEAKER_02]: Just have a few.
+[SPEAKER_00]: I mean, if you can't use all the processors on whatever machine, .
+[SPEAKER_01]: Well, that's the nice thing about it, is that since it's coarse parallelism, you don't have to do anything special.
+[SPEAKER_01]: Right, exactly.
+[SPEAKER_01]: So that would be a fine use for that machine.
+[SPEAKER_01]: Five more processors.
+[SPEAKER_00]: Or in the future, if Linux machines become way cheaper than Solaris machines, then that wouldn't be a reason not to use Linux anymore.
+[SPEAKER_02]: Yeah, yeah.
+[SPEAKER_02]: I think it would be neat at some point in this to do a recognition pass on one of the PCM mics for these same meetings.
+[SPEAKER_02]: I mean, it's going to be terrible, but we just don't know how terrible.
+[SPEAKER_04]: It's also an interesting problem to come up with the references.
+[SPEAKER_04]: So the reference file for the relative times at which, so, well, it's an interesting question because I was thinking, well, you can force align the transcriber transcripts, and then, of course, you try to merge them in time.
+[SPEAKER_04]: But how do you score?
+[SPEAKER_01]: I think the first pass is throw out words which are overlapped.
+[SPEAKER_01]: That would be a good first pass.
+[SPEAKER_01]: Just ignore everything that hasn't been overlapped.
+[SPEAKER_02]: Because you have a set of scores about that, so maybe then that wouldn't be so bad.
+[SPEAKER_04]: But there's a whole interesting discussion because, of course, the alignments are not perfect either.
+[SPEAKER_04]: And so, in fact, we actually don't have a – I mean, it's worth trying.
+[SPEAKER_02]: That would be a whole lot better than what we do with just these, isn't it?
+[SPEAKER_02]: Right.
+[SPEAKER_02]: And again, if you rule out the overlap, you have some numbers for that, because that's yet another.
+[SPEAKER_02]: But I'm just concerned, of course, about that.
+[SPEAKER_04]: Oh, I see.
+[SPEAKER_04]: You mean when only one person is talking.
+[SPEAKER_04]: Yes.
+[SPEAKER_04]: Because you have scores for that for the other case.
+[SPEAKER_04]: Right, exactly.
+[SPEAKER_02]: Yeah, we should try.
+[SPEAKER_02]: I mean, one of the things that Dave was noticing, we were talking this morning, is that it seems like, and we don't know this in detail, but it seems like you're getting a lot from the channel adaptation, the speaker adaptation, and so forth,
+[SPEAKER_02]: So you are already in that recognizer doing something that is likely to affect the far-field microphone performance.
+[SPEAKER_02]: So it may not, I mean, it's going to be bad, but it may not be like won't decode kind of bad.
+[SPEAKER_02]: It might only be that it goes from 40% to 80% or something like that.
+[SPEAKER_04]: Do you assume you know the speaker when you do this?
+[SPEAKER_02]: I want us to assume the exact, whatever it was you assumed when you did the other, the close mic.
+[SPEAKER_04]: Well, there, there's only one person who it can be because they own that microphone.
+[SPEAKER_04]: I'm just wondering.
+[SPEAKER_04]: That becomes another problem.
+[SPEAKER_04]: But for scoring, you can do it or not do it as you choose.
+[SPEAKER_04]: Right.
+[SPEAKER_04]: But in terms of for the adaptation.
+[SPEAKER_04]: For adaptation, right.
+[SPEAKER_04]: Well, for everything.
+[SPEAKER_00]: Do you do a supervised adaptation?
+[SPEAKER_00]: all of these adaptations assume that the same person well you can use the when you're doing the scoring since you're gonna be scoring against transcript you can use
+[SPEAKER_01]: Well, you're doing that anyway.
+[SPEAKER_01]: Well, I don't like that term.
+[SPEAKER_01]: So try to cheat in the same way that you're doing with the close talk.
+[SPEAKER_02]: I don't like that term.
+[SPEAKER_02]: I have a suggestion.
+[SPEAKER_02]: Do the simplest thing first.
+[SPEAKER_02]: Yeah, right.
+[SPEAKER_02]: Because we're going to want to know that anyway.
+[SPEAKER_02]: So the simplest thing is you cheat saying... No, there's an even simpler thing than that.
+[SPEAKER_02]: It's just that you don't know.
+[SPEAKER_00]: You mean you don't do all those numbers?
+[SPEAKER_00]: Yeah.
+[SPEAKER_02]: Yeah.
+[SPEAKER_02]: Oh, you're totally unadapted.
+[SPEAKER_02]: Yeah, because you can get a number for that with the other as well, right?
+[SPEAKER_02]: You can turn those things off, right?
+[SPEAKER_00]: Yeah.
+[SPEAKER_00]: Actually, we don't have any models.
+[SPEAKER_00]: Oh, you can use a speaker.
+[SPEAKER_00]: What about gender detection?
+[SPEAKER_00]: We would have to retrain models that have none of that stuff in it.
+[SPEAKER_00]: But actually, we could.
+[SPEAKER_00]: We can just run it, assuming that it's all one speaker, basically, and see what happens.
+[SPEAKER_02]: Yeah, and then put it in correctly and see how much that helps.
+[SPEAKER_02]: I was just thinking, do the one that's easiest first, because you want to know how much that's helping you in those cases, anyhow.
+[SPEAKER_02]: Do you have gender-dependent models?
+[SPEAKER_00]: Are the models gender-dependent?
+[SPEAKER_00]: So we would have to at least do that.
+[SPEAKER_00]: No, you can run both.
+[SPEAKER_00]: And pick whichever is better.
+[SPEAKER_00]: Here's what we would usually do under these circumstances.
+[SPEAKER_00]: We would run some sort of segmentation.
+[SPEAKER_00]: And then we would do an unsupervised clustering of the segments.
+[SPEAKER_00]: the similar ones into bins that would be sort of pseudo-speakers and then we would do our standard processing on these pseudo-speakers and that turns out to work very well on broadcast news, spy and those types of tasks where you don't have the speaker segmentation given to you.
+[SPEAKER_01]: Does the clustering, do you give it sort of a target number of clusters or is it
+[SPEAKER_00]: You can either do it by target number or by some measure of the similarity.
+[SPEAKER_01]: As I'm just thinking one of the big differences with broadcast news in these meetings is we have many fewer participants.
+[SPEAKER_04]: The other thing is that you actually have direction here.
+[SPEAKER_04]: So unlike these corporate that are recorded with other microphones, like the right way to do this, I guess, you know, in the future would be, well, in general, Tilo's sitting there and this PZM is going to, you know, he's running in that location.
+[SPEAKER_04]: Well, there are different ways of thinking about it.
+[SPEAKER_01]: I mean, that would be true if you had a meeting situation with multiple mics.
+[SPEAKER_01]: But if you only had your PDA sitting in front of you.
+[SPEAKER_04]: Well, any case where the people are not all sitting at the same place and they're not moving around too much.
+[SPEAKER_01]: And you have more than one mic.
+[SPEAKER_02]: Yeah, if you don't have more than one mic, you don't have a very good handle on location.
+[SPEAKER_04]: Well, you have distance and you have... That's not enough.
+[SPEAKER_04]: I mean that Jane's, the pickup of Adam on this mic is going to be different than me in terms of energy and so forth over the whole meeting.
+[SPEAKER_01]: So just from clustering, you might be able to cluster it better because of that.
+[SPEAKER_04]: You might get some clustering from the speaker and some of it from the characteristics of the distance.
+[SPEAKER_02]: Let's say if you had a cardioid mic or something sitting someplace, then...
+[SPEAKER_02]: sitting there, then it's response to him would be.
+[SPEAKER_02]: Well, I think there are lots of.
+[SPEAKER_02]: They're both picked up in the clustering.
+[SPEAKER_00]: certain normalizations like gain control before you do the clustering to rule out those types of things.
+[SPEAKER_04]: Or to just do the clustering knowing that you're capturing both.
+[SPEAKER_04]: It's just that the kind of clustering we've done before hasn't had that.
+[SPEAKER_04]: distance factor or location factor in it in the same way and so we're not really modeling it directly if somebody does maybe we add that because I think it would be a pretty big difference when you listen you can sort of tell where people are not which side but
+[SPEAKER_01]: But humans are really good at that transfer function through the head and things like that.
+[SPEAKER_01]: So even if you only have one ear, you can still get good transfers.
+[SPEAKER_04]: So our clustering is not going to be intelligent that way.
+[SPEAKER_04]: It's just going to pick up whatever energy difference or whatever it is.
+[SPEAKER_02]: But anyway, it would be neat to have that because we've been at this for a little while and we don't have any results yet with conversational speech at a distance.
+[SPEAKER_02]: So...
+[SPEAKER_02]: we should at least get the first one.
+[SPEAKER_02]: And the other thing, this would kind of be a Hail Mary, but Dave does have this stuff that is helping on digits.
+[SPEAKER_02]: Yeah, so it would be cool to see if it helped.
+[SPEAKER_02]: You know, just throw that in.
+[SPEAKER_00]: Yeah.
+[SPEAKER_01]: That would be quick, since I think he did it in MATLAB.
+[SPEAKER_02]: Well, he can do it in something else.
+[SPEAKER_01]: Can you export C from MATLAB?
+[SPEAKER_02]: Actually, we're experimenting with Faze stuff now, and the first result he got was really great.
+[SPEAKER_02]: Didn't exactly eliminate the reverberation, but it completely got rid of the speech.
+[SPEAKER_02]: So just take the inverse and you're fine.
+[SPEAKER_02]: You think I didn't follow that?
+[SPEAKER_02]: No, I got pretty excited because it completely got rid of the speech.
+[SPEAKER_02]: So that's a speech detector.
+[SPEAKER_02]: That's great.
+[SPEAKER_02]: That's interesting.
+[SPEAKER_02]: It could be useful for lots of things.
+[SPEAKER_03]: Get rid of other stuff too, though?
+[SPEAKER_03]: What?
+[SPEAKER_01]: Get rid of other stuff besides the speech?
+[SPEAKER_01]: Well, you have to sort of check that out.
+[SPEAKER_01]: Subtract that from the original signal and you're set.
+[SPEAKER_01]: Wow, interesting.
+Yeah.
+[SPEAKER_00]: Right, then you can do, like, you can estimate the...
+[SPEAKER_01]: Noise estimate.
+[SPEAKER_01]: Signal the noise.
+[SPEAKER_01]: That's great.
+[SPEAKER_02]: Reminds me of when Hervé and I were first playing with context-dependent things for nets, and at one point we took out the speech input, so we only had priors, and our performance went up.
+[SPEAKER_02]: Wow.
+[SPEAKER_01]: I guess that's why Herve always talks about using the priors as one of the mixtures in his always combos.
+[SPEAKER_02]: Well, of course it was a bug, but it was pretty funny anyway.
+[SPEAKER_01]: So if you run your recognizer with all probabilities equal, what do you get out?
+[SPEAKER_01]: Probably garbage.
+[SPEAKER_01]: Whatever the language model for that.
+[SPEAKER_01]: Pruning probably prints everything.
+[SPEAKER_00]: That's right.
+[SPEAKER_00]: That's how it was generated.
+[SPEAKER_00]: Yeah, so we have this new speaker adaptation, sort of feature normalization, like speaker adaptation, which I wrote about in the last status report, which seems to be helping about a percent and a half on five.
+[SPEAKER_00]: So we haven't tried that yet on the meetings, but hopefully it will help there, too.
+[SPEAKER_03]: I want to ask, so you know that the data, I've upgraded it considerably.
+[SPEAKER_03]: So I've probably made, I probably corrected something like, well, it's really a substantial amount of things that I've caught, changed, added to it, including a lot of back channels.
+[SPEAKER_03]: So when you're running things, if you run it on the old, so if you run it on the new version, then the numbers will be, and you compare it to runs on the old version,
+[SPEAKER_03]: then you're going to end up with more of an improvement than would actually be the case.
+[SPEAKER_00]: We do all our experiments with the frozen version of the transcripts as of, I don't know.
+[SPEAKER_00]: As of February?
+[SPEAKER_00]: No, I don't know.
+[SPEAKER_00]: When did we grab the transcripts?
+[SPEAKER_00]: Like the HLT paper?
+[SPEAKER_00]: Sorry, for these meetings?
+[SPEAKER_00]: We're talking about which version we're using for evaluating the recognition, which version of the transcript.
+[SPEAKER_04]: Right.
+[SPEAKER_04]: They're somewhere in between January and late March or something like that.
+[SPEAKER_04]: Yeah, something around there.
+[SPEAKER_04]: As long as you have a full baseline, then you'll be able to tell.
+[SPEAKER_03]: As long as it's the same baseline, you'll be able to tell.
+[SPEAKER_03]: But I'm just saying that if you were to compare that with running that on the new data, that it would be a more optimistic outcome.
+[SPEAKER_00]: The other thing is it takes only a minute to rescore all the old outputs.
+[SPEAKER_00]: If you had new transcripts, then you could just read.
+[SPEAKER_00]: Right, because you haven't done any training.
+[SPEAKER_01]: Right, because we're not doing it for training.
+[SPEAKER_04]: Yeah, we haven't modified the recognizer at all.
+[SPEAKER_04]: Right, so it's really easy to redo it.
+[SPEAKER_04]: Actually, at some point, we should update and rescore everything with, you know, the corrected transcripts.
+[SPEAKER_04]: It would be interesting just to see how much it changes.
+[SPEAKER_01]: I bet it would change a lot.
+[SPEAKER_01]: What are the changes?
+[SPEAKER_04]: Sometimes the changes are cases where the recognizer would get it wrong anyway because it was some words that we didn't have in the vocabulary.
+[SPEAKER_04]: But it does help to get the back channels back in and things like that.
+[SPEAKER_00]: So whenever the, right now the scoring is based on segments, which is not great because for instance, so the other way to do the scoring is using a missed format called STM, so segment.
+[SPEAKER_00]: Yeah, we know that.
+[SPEAKER_00]: So I have to convert the transcripts into this format, and then the scoring program actually looks at the times.
+[SPEAKER_00]: You can have a different segmentation in your recognizer output than in your references.
+[SPEAKER_01]: So that's what we need to... Transcriber will export STM in case you care.
+[SPEAKER_00]: Well, but then there's other changes.
+[SPEAKER_00]: I mean, there's other...
+[SPEAKER_00]: We strip away a lot of the markup in the transcripts, which isn't relevant to the scoring of the speech recognition output.
+[SPEAKER_04]: But doesn't that only change the scoring if a word has moved into a different segment?
+[SPEAKER_04]: I mean, I hardly ever see that.
+[SPEAKER_04]: I think most of them are pretty good.
+[SPEAKER_00]: No, I mean if suppose, I assume you also changed some boundaries.
+[SPEAKER_00]: I did.
+[SPEAKER_00]: So if we want to use new transcripts with a different segmentation, then we can't use them in the current way we use scoring.
+[SPEAKER_00]: We have to switch.
+[SPEAKER_04]: Oh, you mean you'd need to rerun the recognition.
+[SPEAKER_00]: No, we have to.
+[SPEAKER_04]: I mean, if you rerun the recognition, then you just run it.
+[SPEAKER_04]: I see.
+[SPEAKER_04]: If you want to use the old, you can actually never, though, really infer what you would get with a different, you know, it's probably more fair to rerun that.
+[SPEAKER_04]: In other words, it's not really a scoring script problem.
+[SPEAKER_00]: No, but if you just want to see what, like, suppose you fix some typos and you want to see what effect does it have on the word error, then.
+[SPEAKER_01]: Right, but if the segments change, that won't work.
+[SPEAKER_04]: It'll sort of work, but it's not exactly what you would maybe get from recognition.
+[SPEAKER_01]: Well, I mean, what happens if you break one segment into two?
+[SPEAKER_01]: Suddenly they don't match at all, and you can't line them up anymore.
+[SPEAKER_00]: Well, that's what I'm saying.
+[SPEAKER_00]: You can line them up based on the times.
+[SPEAKER_00]: So the scoring program, if you give it an STM reference file, it will actually compare the words based on their time marks.
+[SPEAKER_00]: So therefore, you can.
+[SPEAKER_01]: Does STM do it per word or per utterance?
+[SPEAKER_00]: It's per utterance, but it allows, as long as you hypothesize the word in the right segment in the reference, it gives you credit for that.
+[SPEAKER_00]: So it does a word alignment, like you have to do for scoring, but it constrains the words to lie within the segments of the reference for you to get a credit for it.
+[SPEAKER_03]: Sounds great.
+[SPEAKER_00]: So it should be just a straightforward reformatting issue of the references.
+[SPEAKER_03]: Yeah, I mean, I was thinking the other day that this is not just conversational speech.
+[SPEAKER_03]: The fact that it has so much technological jargon in it, it makes it considerably harder to transcribe and to double check and all those things.
+[SPEAKER_03]: So I think you're going to find a substantial gain in terms of the word accuracy, so long as those words are in your vocabulary.
+[SPEAKER_04]: Well, it definitely helps with forced alignment, too, because...
+[SPEAKER_04]: When we know the true words and we're adding them to the vocabulary and training a language model and so forth for future meetings, especially the front-end meetings or meetings with a lot of jargon in them that is not represented in switchboard or call home, then it really helps.
+[SPEAKER_03]: All of our meetings have a lot of jargon in them, but we know what those words are.
+[SPEAKER_03]: I don't know how you get them into the vocabulary, but it would seem...
+[SPEAKER_03]: Now I really need to raise a question about the term cheating.
+[SPEAKER_03]: And the reason is, if I understand that, cheating is a term which is used to apply for basically what all of linguistics, corpus linguistics does and what my transcribers are doing and what I do, which is a methodology whereby you actually physically mark
+[SPEAKER_03]: All things in the data, like the transcription, like the words that are actually there.
+[SPEAKER_01]: All we mean by that is that we're giving the recognizer more information than it would have if you were running it raw over a meeting that no person has ever listened to or transcribed.
+[SPEAKER_03]: Okay.
+[SPEAKER_03]: I mean, that part is okay, but I do wonder sometimes if it might be possible to use a term that's a little bit less evaluative, like hand-marked.
+[SPEAKER_02]: Sure, but cheating is...
+[SPEAKER_04]: I guess it's been around for a long time, and because it's so strong a word, people don't take it that seriously.
+[SPEAKER_04]: It's not negatively viewed, it just really means...
+[SPEAKER_04]: It's even more than that.
+[SPEAKER_02]: I think it really gives a very strong perspective that you know that what you are doing is not an unbiased experiment.
+[SPEAKER_02]: If you don't say that, then people think, oh, they did that and they threw that, but that doesn't represent what would happen in the real world.
+[SPEAKER_02]: But if you say, we did a cheating experiment, which is really the standard way you'd say it, it says you deliberately put in a piece of information that you would not have in the real world so that you can learn something.
+[SPEAKER_02]: This is part of your process.
+[SPEAKER_02]: So it's, I don't know.
+[SPEAKER_03]: Okay.
+[SPEAKER_03]: I guess what I'm thinking is just when these are presented in an interdisciplinary context, it might be nice to add that explanation.
+[SPEAKER_03]: Because otherwise it sounds like a pejorative statement on an alternative methodology.
+[SPEAKER_03]: Because it sounds like it sort of devalues the other approach, which is to put those distinctions in.
+[SPEAKER_02]: Maybe.
+[SPEAKER_02]: I've heard this at ICSOP for years and years and years, though.
+[SPEAKER_04]: through a broader audience you could call it a diagnostic experiment actually Jane is right like in conversation analysis I've never heard people use this because they're not using an automatic system so it really they can do experiments you can do experiments but it's cheating relative to what we call a system where we can completely control this black box and it's not a very smart system it only knows what we give it
+[SPEAKER_04]: And if it knows more, then we would really give it when it runs.
+[SPEAKER_04]: We call it cheating.
+[SPEAKER_04]: But it's only used in a community that does some type of computational modeling, I think.
+[SPEAKER_04]: It's really not used in any kind of community doing experiments on human perception.
+[SPEAKER_04]: Right.
+[SPEAKER_02]: Yeah, it's machine experiments.
+[SPEAKER_02]: I mean, when the neural net,
+[SPEAKER_02]: wave hit in the mid 80s and by the late 80s there were we were viewing thousands of papers that were coming out neural nets was really hot everybody thought it would do everything and a really common error that people were making was they were just reporting their classification results on the data that they were training on and so I think it was it was it was very important for people then who were doing something diagnostic to say
+[SPEAKER_02]: Hey, I know I'm doing something that isn't kosher.
+[SPEAKER_02]: And to make it really clear that they knew it.
+[SPEAKER_02]: So that was, I think, why it became a popular term.
+[SPEAKER_03]: It just seems like, you know, if it were bootstrapping or if it were, I mean, there are other ways to maybe get the point across.
+[SPEAKER_02]: But it isn't bootstrapping.
+[SPEAKER_02]: It's really cheating.
+[SPEAKER_01]: It's using information you wouldn't normally have.
+[SPEAKER_02]: But it's cheating in a way that's, it's announcing to everybody, hey, I'm cheating by doing this.
+[SPEAKER_02]: It's all above the table.
+[SPEAKER_02]: I'm actually using this other thing.
+[SPEAKER_02]: That's the reason.
+[SPEAKER_02]: Bootstrapping would imply it was actually legitimate in some kind of way.
+[SPEAKER_01]: We're not delegitimizing the data.
+[SPEAKER_01]: We're delegitimizing the experiment.
+[SPEAKER_01]: We're not saying that the data is cheating data.
+[SPEAKER_01]: We're saying we're cheating by using this data.
+[SPEAKER_01]: Because normally you wouldn't have that data available.
+[SPEAKER_03]: It does seem to me that it carries over some baggage with it, that I can understand it in context as you described it.
+[SPEAKER_03]: But it seems to me that it does import some negative evaluation that would maybe not be good.
+[SPEAKER_03]: It has shock value.
+[SPEAKER_03]: It has shock value.
+[SPEAKER_03]: And to the wrong audience, I think that that might be the negative shock.
+[SPEAKER_04]: To the wrong audience, I agree that.
+[SPEAKER_04]: It's like a disclaimer.
+[SPEAKER_04]: to the wrong idea we should just explain what it what it means yeah we started with hand marked data or with that you know hand transcribed data or did you bring the microphone just the clip okay okay well I feel better now thank you very much it's also a humbling when somebody says that if
+[SPEAKER_04]: They get good results, but we were cheating on this feature because we took it for granted, even though we can't really assume that.
+[SPEAKER_04]: Then it's actually the opposite.
+[SPEAKER_03]: The trouble is that I understand it in that context, but it is almost resentful.
+[SPEAKER_03]: It's almost like resentful of the data, resentful of the hard work that's going into preparing the data.
+[SPEAKER_02]: No, I don't think you're saying the data is cheating.
+[SPEAKER_02]: I think you're saying, in my experiment, I cheated in this way.
+[SPEAKER_02]: I mean, another thing is what Liz was talking about, how in the switchboard tests, in all the switchboard tests we've been doing, we've been making the same standard, using the same standard way of getting the data to test on, which means that we weren't actually running it on data that had no speech.
+[SPEAKER_02]: And in a sense, that was cheating.
+[SPEAKER_02]: So it's a good wake-up call of people.
+[SPEAKER_02]: Well, we have this performance, but you have to keep in mind we're not doing the whole real task in this way, in this way, in this way.
+[SPEAKER_02]: But I'll convince you that it's still important for you to listen to what I have to say next because of this and this.
+[SPEAKER_02]: So it's just a way of putting it all out on the table.
+[SPEAKER_01]: And it's used for a lot of different types of data.
+[SPEAKER_01]: So whether you have segmentation or not, is it male or female or not?
+[SPEAKER_01]: Do you know the signal to noise?
+[SPEAKER_01]: Like that's another one I see all the time where you assume it's known and you say it's cheating because you don't actually compute it.
+[SPEAKER_02]: In the multiband experiments, in the first one, we really wanted to find out what if you knew which band was really noisy?
+[SPEAKER_02]: Right.
+[SPEAKER_02]: I mean, suppose you just know that and then even if you know that, can that help you?
+[SPEAKER_02]: I mean, what strategy can you do to do well?
+[SPEAKER_02]: without that particular band in the spectrum.
+[SPEAKER_02]: And so that was important to know as a baseline.
+[SPEAKER_02]: And then once you knew that, then you go, well, now how do I know that that's noisy?
+[SPEAKER_02]: But I should also say that there's a lot of, it's not just the word cheating, but there's lots of other things that we talk about
+[SPEAKER_02]: Which, as soon as you go outside of your narrow little group, it gets very, very confusing to people.
+[SPEAKER_02]: Oh, sure.
+[SPEAKER_03]: Terminology is always context-dependent, no question about it.
+[SPEAKER_03]: It's just that it seems like the point without the negative evaluation would be...
+[SPEAKER_03]: However, I understand your point, that it has a long tradition in this field that I didn't realize is used.
+[SPEAKER_03]: This is interesting, what Adam said about it being used also for a bunch of other...
+[SPEAKER_02]: wait i was thinking of also was this thing that that every and and and and and and and and and and and and and and and and and and and and and and
+[SPEAKER_02]: be willing to risk increasing your error rate by trying risky things.
+[SPEAKER_02]: Because there's this notion of a local minimum, that if you just have some system that's very complex and you turn some knobs to try to make it better and better, you'll never get out of this local minimum.
+[SPEAKER_02]: You have to be willing
+[SPEAKER_02]: To jump to something that's quite different, and the first time you jump to something quite different, or maybe the first 10 times or 100 times you do, it's going to be much, much worse because you've optimized the other system.
+[SPEAKER_02]: So the immediate effect is going to be to increase your error rate.
+[SPEAKER_02]: Interesting.
+[SPEAKER_02]: And so we had a couple of papers like towards increasing the error rate in speech.
+[SPEAKER_02]: And so on.
+[SPEAKER_02]: And we really did get feedback from a few people, some of whom were fairly senior, that, well, you know, we're really concerned about you misleading people into thinking they should be increasing the error rate.
+[SPEAKER_02]: And we thought, oh, come on.
+[SPEAKER_02]: Did you read the paper?
+[SPEAKER_02]: We weren't.
+[SPEAKER_02]: That's why we increased the error rate.
+[SPEAKER_04]: Actually, I think of cheating as a way to do some work where you can't address all of the computational tasks, like if we want to study speaker habits, but we can't do speaker detection, but we want to assume, let's say we know this is Jane and we know this is Chuck, even though automatically to look at the habits, we would need to also first figure that out, but we can sort of
+[SPEAKER_04]: Cheat on that factor because it's somebody else's research and then we just so it's then we want to make it What this concept right?
+[SPEAKER_01]: What would this be like if it were perfect someone else component were perv right?
+[SPEAKER_04]: But we really can't work on that problem.
+[SPEAKER_04]: We don't have time.
+[SPEAKER_04]: We're not interested or whatever and so you are you usually assume it's given because it's You want to go forward with your research and assume that you have that information so
+[SPEAKER_04]: I guess I don't ever think of it as negative, more like it's something we're not building.
+[SPEAKER_03]: The term itself is, you know.
+[SPEAKER_01]: But it's not pejorative towards the data.
+[SPEAKER_03]: And it's pejorative with respect to a certain purpose.
+[SPEAKER_03]: I understand.
+[SPEAKER_01]: It's pejorative to ourselves, right, to say I am cheating in this experiment.
+[SPEAKER_01]: It's not saying that the data is bad.
+[SPEAKER_01]: It's saying that my experiment is bad.
+[SPEAKER_02]: Anyway, it's colloquial, and it's interesting to hear that someone coming from a different direction, it sounds the way it sounds to you, but I'd never heard that before.
+[SPEAKER_03]: Okay, that's interesting.
+[SPEAKER_03]: Well, I wanted to raise the issue, and I appreciate the discussion.
+[SPEAKER_03]: I wanted to ask one other question, which is a different matter, which is with respect to this thing that you've been working on for the recording monitoring script.
+[SPEAKER_03]: So the idea, you have the script that you're working on to be sure that the microphone... All right.
+[SPEAKER_01]: I haven't gotten back to that recently.
+Okay.
+[SPEAKER_01]: I assume you're saying you want me to get back to it.
+[SPEAKER_03]: Well, I was just wondering.
+[SPEAKER_03]: Because I am finding that in double-checking, I run across one data set where the microphone was off early on, and then two other speakers, their microphones went off later.
+[SPEAKER_03]: And this is out of, like, seven speakers.
+[SPEAKER_03]: So out of seven speakers, four microphones, you know, basically, three microphones basically flaked, which makes it hard for the data to be used for all possible purposes.
+[SPEAKER_03]: Do you think the battery ran out?
+[SPEAKER_03]: That's what I think.
+[SPEAKER_03]: I think the two that flaked late, I think it was a battery.
+[SPEAKER_03]: But, you know, if the script could, you know, alert the recording person to that, I mean, I don't know if there's a way to replace the battery.
+[SPEAKER_03]: If it happens in the middle of a meeting, maybe that's hopeless anyway.
+[SPEAKER_01]: Well, you can, but you'll lose a lot of data.
+[SPEAKER_01]: But, I mean, that doesn't really help because often the recording person isn't in the room.
+[SPEAKER_03]: Oh, I see.
+[SPEAKER_01]: So what are you going to do?
+[SPEAKER_01]: I mean, the person, if you're looking up at the board and I disable the screensaver, you will see that the mic is off, but that doesn't necessarily help.
+[SPEAKER_03]: Okay, then I guess that raises the question of whether we should screen the data before they get transcribed, because although I think that the data are still useful in terms of providing content and that, I know that having three out of seven microphones out of commission during some part of the meeting restricts the usefulness of the data for other purposes.
+[SPEAKER_04]: I think that's a really good idea because for all kinds of studies, we don't really enjoy meetings where the signal's going off at times.
+[SPEAKER_04]: It just makes it hard to study any kind of parameters.
+[SPEAKER_04]: So if there's a way to check the signal quality before transcribing it and you find any problem at all, it'd be much better to go to another meeting, I think.
+[SPEAKER_03]: I actually think that Tilos, when you do the pre-segmenter and you run across troubles, he runs across some of these.
+[SPEAKER_00]: We have some part of that.
+[SPEAKER_01]: It's just hard to tell between that and just someone not talking.
+[SPEAKER_03]: Well, and the other aspect of it is that when the microphone is not well adjusted, then even if it's not a lapel mic, you can get lapel mic type behavior.
+[SPEAKER_03]: So I'm expecting, for example, with this, that you're going to end up picking up signals.
+[SPEAKER_03]: I've already written some notes here.
+[SPEAKER_03]: Yeah, I mean, it's just the microphone is intended for certain adjustments.
+[SPEAKER_01]: Well, we should be getting new equipment in, so we don't have to use the earplug anymore.
+[SPEAKER_01]: That's my ear.
+[SPEAKER_04]: I'm sure it's something wrong with my head.
+[SPEAKER_04]: Actually, is there a way, though, to use whatever you're using for background noise to check post-talk that a microphone was constantly on?
+[SPEAKER_01]: I mean, you can do sort of a check, but it will be very hard to tell the difference between that and someone not talking.
+[SPEAKER_02]: So it doesn't, when the microphone's dead, it doesn't put out zeros?
+[SPEAKER_01]: No.
+[SPEAKER_02]: Really?
+[SPEAKER_04]: But then how are you detecting during a meeting?
+[SPEAKER_01]: I use a threshold.
+[SPEAKER_01]: If it's below a particular value, it flashes yellow.
+[SPEAKER_01]: But it's not perfect.
+[SPEAKER_04]: But is it better than nothing?
+[SPEAKER_01]: Yeah, probably.
+[SPEAKER_01]: Because it would really be.
+[SPEAKER_01]: I mean, this is the reason why I haven't gotten back to it is because my first pass at it didn't really work because all the mics have different noise levels.
+[SPEAKER_01]: Right.
+[SPEAKER_01]: And so I have to do something a little more clever.
+[SPEAKER_00]: It's just the noise from the connections and the.
+[SPEAKER_00]: Yep.
+[SPEAKER_00]: Everything.
+[SPEAKER_04]: So you could run that post-hoc on an already recorded meeting in the sense that, you know, not everyone, as you just said, you won't be there.
+[SPEAKER_04]: And then if we find any problems, have the transcribers listen.
+[SPEAKER_04]: And I really think it's better not to transcribe a meeting that's going to have problems once you've spent all this effort.
+[SPEAKER_03]: The only argument for doing so would be with reference to the content maps.
+[SPEAKER_03]: But maybe then it should be done in the old original way instead of channelizing and having the... Yeah, the standard deviation of the signal gives you a good clue.
+[SPEAKER_01]: I mean, if that is too low, then you can be pretty sure that it's empty.
+[SPEAKER_00]: And sometimes you capture that when you mix it together.
+[SPEAKER_01]: Right, exactly.
+[SPEAKER_03]: And actually, an alternative to even doing that level of transcription would be to have a transcriber listen and maybe just, I don't know if a transcriber, someone who's associated with the meeting could have a summary of points handled in the meeting.
+[SPEAKER_03]: Maybe if we could pay one person who knows that subject matter to do an outline of the meeting's content.
+[SPEAKER_00]: Instead of losing this there if you could still transcribe the words based on the phone or something You could still use it for say language modeling and
+[SPEAKER_03]: I guess the trouble in my mind is that it's not a very neat corpus if you say these data are available, but these are imperfect because of the, you know, the batteries.
+[SPEAKER_04]: I'd much rather have, you know, meetings that have all the channels even if we had to skip a meeting or something just for all these other purposes.
+[SPEAKER_00]: We can't throw away that data because otherwise we'll end up with very few meetings.
+[SPEAKER_03]: Right, but to be able to get through the backlog of the good meetings, it would be nice to not have.
+[SPEAKER_01]: Do we have a, I'm sorry for interrupting, do we have an EDU meeting at 4?
+[SPEAKER_04]: You know what, their 4 o'clock canceled and they're starting at 4.20 and I'll set up at 4.15.
+[SPEAKER_01]: There's tea also.
+[SPEAKER_02]: Maybe we should do a simultaneous.
+[SPEAKER_02]: A simultaneous.
+[SPEAKER_02]: Okay.
+[SPEAKER_02]: Are you interested in getting snacks?
+[SPEAKER_02]: We never have.
+[SPEAKER_02]: Oh, it's a treat.
+[SPEAKER_04]: Plug your ears or just prepare not to laugh.
+[SPEAKER_01]: Everyone ready?
+[SPEAKER_01]: Reading simultaneous digits.
+[SPEAKER_01]: 3, 2, 1.
+[SPEAKER_01]: 1, 2, 3, 4.
+[SPEAKER_00]: 1-8-5-3-7-3-5 1-6-6-6-8-7-5-5 4-1-7-4-3-2-5
+[SPEAKER_00]: Okay, another successful babble.
