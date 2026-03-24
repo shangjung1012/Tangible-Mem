@@ -1,0 +1,1488 @@
+{
+  "memory_version": 7,
+  "last_updated_utc": "2026-03-24T12:54:04Z",
+  "last_updated_meeting_id": "Bmr008.interaction",
+  "meeting_window": [
+    {
+      "meeting_id": "Bmr008.interaction",
+      "source_file": "/Users/shangjung/Documents/code/virtual-mentor/meeting_recording/transcript/ISCI/Bmr008.interaction.txt",
+      "summary": "本次會議主要討論了數據收集表格的改進，特別是新的單一講者資訊表格和修改後的數字朗讀表格。與會者深入探討了教育程度、年齡、語言方言和地區等欄位的分類與措辭，旨在平衡資訊收集的詳細程度與填寫的便利性及非侵入性。會議還更新了 IBM 轉錄服務的進度，並討論了 Jose (SPEAKER_01) 在重疊語音偵測程式中修復錯誤後的實驗結果，提出了正規化、時間區塊分析和音高追蹤等改進建議。會議結束時，參與者進行了數字朗讀。",
+      "key_points": [
+        "Morgan (SPEAKER_04) 提出設計新的「單一講者資訊表格」，一次性收集講者背景資訊，以取代在數字朗讀表格中重複填寫。",
+        "討論了單一講者資訊表格中「教育程度」的分類，建議包含大學生、研究生、博士後、教授及其他，並考慮如何涵蓋 ICSI 訪客等非典型職位。",
+        "討論了「年齡」欄位是否應標記為「可選」，以尊重個人隱私，同時承認其研究價值。",
+        "針對母語為英語的講者，討論了英語方言種類（美國、英國、印度、其他）和地區欄位，建議美國英語可參考 TIMIT 區域分類，並考慮詢問童年居住地。",
+        "針對非母語英語講者，討論了是否應加入英語熟練度指標，並建議使用「在英語系國家居住時間」作為較客觀的替代問題。",
+        "討論了設計一個「會議特定關係與背景資訊表格」或機制，以記錄每次會議中講者之間的動態關係（如師生、領導者-被領導者）及其他上下文資訊，傾向於開放式筆記結合關鍵字標籤。",
+        "IBM 轉錄服務更新：CD-ROM 已寄出，IBM 已確認收到並指派新負責人 Mukund，但轉錄工作尚未實際開始。",
+        "Jose (SPEAKER_01) 報告已找到並修復其重疊語音偵測程式中的錯誤（C 語言 fseq 函數在處理大檔案時的問題）。",
+        "Jose (SPEAKER_01) 的重疊偵測結果顯示能量特徵有重疊，會議建議他實驗不同的正規化方法、使用較長的時間區塊（200-400 毫秒）進行分析，並整合音高追蹤和諧波分析來提高偵測準確性。",
+        "會議結束時，多位參與者進行了數字朗讀。"
+      ],
+      "open_questions": [
+        "如何最終確定單一講者資訊表格中教育程度、年齡、語言方言和地區欄位的分類與措辭，使其既能提供有用數據又不過於侵入或複雜？",
+        "如何設計和實施會議特定關係與背景資訊表格，以有效捕捉會議中的動態關係和上下文資訊，並平衡結構化數據與開放式筆記的需求？",
+        "Morgan (SPEAKER_04) 何時能跟進 IBM 轉錄服務的實際進度，並確保轉錄工作啟動？",
+        "Jose (SPEAKER_01) 應如何具體實驗不同的正規化方法（例如基於語音區段能量）來改善重疊偵測？",
+        "Jose (SPEAKER_01) 應如何將音高追蹤和諧波分析有效地整合到其重疊偵測演算法中，以利用音高不連續性和諧波混合等特徵？",
+        "Jose (SPEAKER_01) 應如何實驗使用較長的時間區塊（例如 200-400 毫秒）進行能量分析，以改善重疊偵測的穩定性？"
+      ]
+    },
+    {
+      "meeting_id": "Bmr007.interaction",
+      "source_file": "/Users/shangjung/Documents/code/virtual-mentor/meeting_recording/transcript/ISCI/Bmr007.interaction.txt",
+      "summary": "本次會議主要討論了重疊語音的初步分析結果，包括重疊分佈、講者個體差異以及重疊類型。Jane (SPEAKER_00) 報告了單次會議中重疊的數量和分佈模式，並探討了不同講者重疊的傾向。會議還討論了數據匿名化、人體實驗同意書的更新、錄音系統的技術問題（如自動語音邊界偵測的參數敏感性），以及如何透過增加不同類型會議（如兩人會議或電話會議）來擴展數據收集。參與者也進行了數字朗讀。",
+      "key_points": [
+        "Jane (SPEAKER_00) 報告了單次會議（45分鐘）中有215次重疊，分佈呈現「爆發式」，而非均勻分佈。",
+        "重疊數量最多的時段與討論「句子重音標記是否有利於資訊檢索」有關，顯示討論熱烈時重疊增加。",
+        "Jane 分析了不同講者在重疊中的角色（重疊者 vs. 被重疊者），發現存在個體差異，但強調這僅基於單次會議，無統計顯著性。",
+        "討論了重疊的類型，包括「back channels」（如Adam的「right」）、預期性回答、以及多人同時給出相同答案。",
+        "Morgan (SPEAKER_04) 提出，兩方對話（如Switchboard語料庫）中也有大量重疊，質疑會議中重疊是否顯著多於兩方對話，並建議比較。",
+        "Adam (SPEAKER_03) 正在使用近講麥克風開發語音邊界偵測工具，發現基於能量的閾值和濾波方法對參數選擇敏感，但對單一講者在整場會議中效果良好。",
+        "Adam (SPEPER_03) 嘗試整合 Javier 的聲學變化偵測器，但發現其廣泛音素分類器在近講麥克風上表現不佳，可能因訓練數據（Broadcast News）不同。",
+        "Jose (SPEAKER_05) 建議在聲學變化偵測中考慮所有幀，並使用 BIC 準則等距離度量，而非僅依賴靜音區。",
+        "討論了數據匿名化對語篇分析的影響，以及「音頻像素化」（用嗶聲替換敏感內容）作為匿名化方法，以保留時間關係。",
+        "會議再次提醒參與者簽署新版人體實驗同意書。",
+        "討論了是否應錄製更多兩人或三人會議，以研究參與人數與重疊類型/數量之間的關係。",
+        "提出在會議桌上標記座位號碼，以記錄講者空間位置。",
+        "Morgan (SPEAKER_04) 建議嘗試「蒙眼會議」實驗，以研究視覺接觸對重疊的影響。",
+        "Dan (SPEAKER_01) 總結了過去三個月的工作亮點，包括錄製更多會議、XML格式處理、數據送交IBM轉錄、HSC同意書更新、音頻像素化軟體開發、重疊初步分析等。"
+      ],
+      "open_questions": [
+        "如何改進 Adam (SPEAKER_03) 的自動語音邊界偵測工具，使其對不同講者和錄音條件更具魯棒性？",
+        "如何平衡數據匿名化（如音頻像素化）與語篇分析的需求，確保數據可用性？",
+        "是否應錄製更多兩人或三人會議，以研究參與人數對重疊行為的影響？",
+        "如何實施「蒙眼會議」實驗，以評估視覺接觸對對話重疊的影響，同時確保人體實驗委員會的批准？",
+        "如何有效收集會議議程項目，以提高會議效率？",
+        "如何將講者空間位置資訊（座位號碼）系統地整合到數據中？",
+        "如何進一步細分重疊類型（如back channels, precision timing, benevolent vs. hostile overlaps），並研究其分佈和影響？",
+        "如何比較會議中的重疊與兩方對話（如Switchboard）中的重疊，以量化會議環境的獨特貢獻？"
+      ]
+    },
+    {
+      "meeting_id": "Bmr006.interaction",
+      "source_file": "/Users/shangjung/Documents/code/virtual-mentor/meeting_recording/transcript/ISCI/Bmr006.interaction.txt",
+      "summary": "本次會議討論了錄音系統的穩定性、數據收集策略（包括講者多樣性和會議類型）、硬碟空間狀況、Jose 在自動重疊偵測方面的工作，以及數據匿名化對語篇分析的影響。參與者進行了數字朗讀，並決定將其移至會議末尾進行。會議還探討了如何招募更多樣化的參與者，以及人體實驗委員會同意書的更新問題。",
+      "key_points": [
+        "錄音系統在長時間閒置後啟動時仍會出現錯誤，但 Adam (SPEAKER_03) 尚未能追蹤到程式碼中的錯誤點。",
+        "新的程序變更：數字朗讀將在會議結束時進行，以配合時間有限的參與者。",
+        "討論數據收集策略：需要足夠的同類型會議數據用於高層次分析（如摘要），同時也需要多樣化的講者用於聲學研究。",
+        "Jane (SPEAKER_01) 建議向語言學研究生宣傳招募，以確保英語熟練度，避免隨機招募大學生可能導致的語言模型問題。",
+        "Jose (SPEAKER_00) 正在進行自動重疊偵測的基礎研究，手動標記重疊區、純語音和純靜音作為參考數據。",
+        "Jose 計劃使用等化語音（混合語音）開始研究，並探索聚類算法或神經網絡來分類語音事件。",
+        "Morgan (SPEAKER_04) 建議 Jose 從少量簡單特徵開始（如 MFCC 的 C1, C2），並可視化散點圖，以獲得更多洞察。",
+        "討論了利用 PDA 雙麥克風的定位資訊（如波束成形或交叉相關）來增強重疊偵測的可能性。",
+        "硬碟空間更新：Adam (SPEAKER_03) 正在歸檔廣播新聞的 p-files，預計釋放 10GB 空間，足夠錄製 5-6 次會議。新的硬碟機架和磁碟正在採購中。",
+        "Adam (SPEAKER_03) 需將 Aurora 和 Carmen 的靜態數據從會議錄音機硬碟移出，以整合數據並釋放空間。",
+        "人體實驗委員會 (HSC) 同意書已更改，所有參與者可能需要重新簽署。",
+        "會議深入討論了數據匿名化對語篇分析的影響，認為在轉錄稿中更改姓名會導致與音頻不符，影響語篇追蹤。",
+        "Morgan (SPEAKER_04) 建議參與者在會議前提交議程項目，由他負責組織，以提高會議效率。",
+        "Adam (SPEAKER_03) 曾與 Haas 商學院的志願者交談，將再次聯繫他們並提供免費午餐作為誘因。",
+        "提出向參與者提供會議錄音 CD-ROM（轉錄篩選後）或轉錄稿作為鼓勵參與的誘因。"
+      ],
+      "open_questions": [
+        "如何有效解決錄音系統在長時間閒置後啟動時的錯誤問題？",
+        "如何平衡數據收集策略，既能滿足高層次分析對同類型會議數據的需求，又能滿足聲學研究對多樣化講者的需求？",
+        "如何制定一套平衡隱私保護與語篇分析需求的數據匿名化策略？",
+        "如何確保所有參與者重新簽署更新的人體實驗委員會同意書？",
+        "如何將 Jose (SPEAKER_00) 在自動重疊偵測特徵方面的研究成果整合到整體轉錄和分析流程中？",
+        "如何有效利用 PDA 雙麥克風的定位資訊來增強重疊偵測？",
+        "如何實施會議議程項目提前提交的建議，並鼓勵參與者積極提供？",
+        "如何跟進 Haas 商學院志願者的招募進度？",
+        "如何評估提供會議錄音 CD-ROM 和轉錄稿作為誘因的實際效果和潛在問題？"
+      ]
+    }
+  ],
+  "action_items": [
+    {
+      "item_id": "A001",
+      "title": "整理並固定電線",
+      "detail": "將電線用膠帶固定並沿著桌子中央佈線，並考慮使用電線保護套（如「減速帶」形狀）來防止人員絆倒，同時改善美觀。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "my model is to get a piece of, yeah, that stuff that people put, you slip the wires into that's sort of shaped like that in cross-section. ... Speed bump.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新細節，考慮使用電線保護套。"
+        }
+      ]
+    },
+    {
+      "item_id": "A002",
+      "title": "採購並安裝設備櫃",
+      "detail": "購買一個帶門的設備櫃，用於存放錄音設備，以防止隨意操作和損壞。Jim (SPEAKER_04) 願意建造，但需要設計方案。",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "I mean, some sort of cabinet thing. ... Well, I can build a cabinet. ... You can start sketching it out.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新細節，Jim (SPEAKER_04) 願意建造，但需要設計方案。將 owner 更新為 SPEAKER_03 (設計)。"
+        }
+      ]
+    },
+    {
+      "item_id": "A003",
+      "title": "解決有線耳機放大器噪音問題",
+      "detail": "重新設計或購買商用放大器，以解決目前自製有線耳機放大器的噪音問題。",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_02",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "I built this thing. It's very noisy. ... I can probably rebuild it better so it doesn't have such noise.",
+      "last_updated_meeting_id": "Bmr001.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目，狀態為進行中。"
+        }
+      ]
+    },
+    {
+      "item_id": "A004",
+      "title": "採購大容量硬碟",
+      "detail": "購買一個 40-50GB 或 100GB 的硬碟，以提供足夠的數據儲存空間。會議中再次強調硬碟空間不足的問題，並確認將採購新硬碟。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "we definitely need to go buy a 40 gig, 50 gig drive space. ... my preference would be to get ourselves 100 gig of disk and just not bother. ... We are getting more space. We are getting another disk rack and four 36 gigabyte disks.",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "再次強調硬碟空間不足的問題。"
+        },
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "會議中再次確認將採購新硬碟，但需時間。"
+        }
+      ]
+    },
+    {
+      "item_id": "A005",
+      "title": "發送郵件詢問 'broadcast news' 數據使用情況",
+      "detail": "向 SpeechLocal 發送郵件，詢問是否有人仍在使用 'broadcast news' 數據，以便考慮是否可以刪除以釋放硬碟空間。已決定並執行廣播新聞數據的歸檔與刪除，以釋放空間。",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "completed",
+      "priority": "medium",
+      "evidence": "I'll send mail to SpeechLocal. I'll send mail to SpeechLocal and see if anyone's still using it. ... I'm in the midst of doing the p files from Broadcast News. ... So I'm archiving it, and then I'm going to delete the files.",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "已決定並執行廣播新聞數據的歸檔與刪除，以釋放空間。"
+        }
+      ]
+    },
+    {
+      "item_id": "A006",
+      "title": "開發麥克風通道選擇使用者介面",
+      "detail": "開發一個使用者介面，允許用戶指定錄音時啟用的麥克風通道，以避免錄製不必要的零數據。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "It still records all 16 channels. It's just most of them are all zeros. So that's on our list, too. ... It's mostly a question of user interface. How do we specify which ones are on?",
+      "last_updated_meeting_id": "Bmr001.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A007",
+      "title": "研究音頻數據的無損壓縮",
+      "detail": "研究並考慮使用無損壓縮技術（例如 Shorten）來減少音頻數據的儲存空間。",
+      "proposer": "SPEAKER_02",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "low",
+      "evidence": "Shorten, there's a speech compression program that works great on things like this.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新證據，提到 Shorten 壓縮程式。"
+        }
+      ]
+    },
+    {
+      "item_id": "A008",
+      "title": "比較內部與外部轉錄服務",
+      "detail": "使用本次會議的數據，嘗試內部轉錄（由 Jane 或語言學學生）和外部轉錄服務，以比較成本、時間和質量。IBM 已收到 CD-ROM，並指派新負責人 Mukund，但轉錄工作尚未開始。",
+      "proposer": "SPEAKER_00",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A009"
+      ],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "I've looked a little bit into commercial transcription services, and Jane has been working on doing transcription. ... They haven't received them yet, but I did get a response from them saying, yes, we're still alive, we haven't done anything yet, basically. ... So tomorrow I'll send an email and just ask if he received it.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新狀態為進行中，並提供證據。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "IBM已收到CD-ROM，並指派新負責人Mukund，但轉錄工作尚未開始。"
+        }
+      ]
+    },
+    {
+      "item_id": "A009",
+      "title": "準備單通道合併音頻文件",
+      "detail": "將本次會議的錄音數據合併為單一通道的音頻文件，以便提供給轉錄員處理。",
+      "proposer": "SPEAKER_00",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "taking the results of this meeting and putting it in some kind of decent form, probably getting some kind of single channel merged, some data or something, so that you can give a simple sound file of some sort to a transcriber to deal with it.",
+      "last_updated_meeting_id": "Bmr001.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A010",
+      "title": "對收集到的數據進行初步語音識別",
+      "detail": "對本次會議收集到的數字朗讀數據進行初步的語音識別，特別是數字識別。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A009"
+      ],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "And then do some segmenting and recognition. Initial recognition would be interesting to do. ... Yeah, just doing the digits on it.",
+      "last_updated_meeting_id": "Bmr001.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A011",
+      "title": "繼續收集更多數字朗讀數據",
+      "detail": "安排更多會議或環節，讓參與者朗讀更多數字，以增加數據量。本次會議多位參與者繼續進行了數字朗讀任務，並決定將其移至會議末尾進行。",
+      "proposer": "SPEAKER_00",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr001.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "I again, would like to do some digits. ... So this is Adam Janin on mic number one, transcript 371 390... ... we do the digit recordings at the end. ... Shall we do digits? Let's do our digits.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 1,
+          "meeting_id": "Bmr001.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新狀態為進行中，並提供證據。"
+        },
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "會議中多位參與者繼續進行數字朗讀任務。"
+        },
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "會議中多位參與者繼續進行數字朗讀任務，並決定將其移至會議末尾進行。"
+        },
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "會議中多位參與者繼續進行數字朗讀任務。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "會議中多位參與者繼續進行數字朗讀任務。"
+        }
+      ]
+    },
+    {
+      "item_id": "A012",
+      "title": "詢問 Susan Urban-Tripp 轉錄建議",
+      "detail": "詢問 Susan Urban-Tripp 關於轉錄的建議，包括成本、質量和學生資源。",
+      "proposer": "SPEAKER_00",
+      "owner": "SPEAKER_00",
+      "created_meeting_id": "Bmr002.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "I'm afraid I haven't made any progress in that front yet. I should have sent email, and I haven't.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 2,
+          "meeting_id": "Bmr002.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新證據，Jane 尚未取得進展。"
+        }
+      ]
+    },
+    {
+      "item_id": "A013",
+      "title": "下載並測試 Transcriber 軟體",
+      "detail": "Adam 將下載並測試 Transcriber 軟體，評估其是否符合轉錄需求。Jane 已在使用 Transcriber 進行轉錄，Adam 正在開發相關自動化工具。Jose (SPEAKER_01) 報告已找到並修復其重疊偵測程式中的錯誤 (fseq function in C)。",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr002.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "Jane has been working on doing transcription. ... So what we wanted to do is have Jane do basically one meeting's worth... As a pilot study. ... I've written a program to do that. ... I've worked on it for about half a day. So give me another half day, and we'll have something we can play with. ... I found the error, and I repeat the experiments here. You can find the new results.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 2,
+          "meeting_id": "Bmr002.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新狀態為進行中，並提供證據。"
+        },
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "Jane 已在使用 Transcriber 進行轉錄，Adam 正在開發相關自動化工具。"
+        },
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "Jose (SPEAKER_05) 正在進行自動重疊偵測的基礎研究，與此工具開發相關。"
+        },
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "Adam (SPEAKER_03) 報告其自動語音邊界偵測工具的進度，並討論了 Javier 的聲學變化偵測器。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "Jose (SPEAKER_01) 報告已找到並修復其重疊偵測程式中的錯誤 (fseq function in C)。"
+        }
+      ]
+    },
+    {
+      "item_id": "A014",
+      "title": "詢問 LDC 轉錄工具",
+      "detail": "Eric 將聯繫 LDC 的聯絡人，詢問他們實際使用的轉錄工具。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr002.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I could ask my contacts at the LDC what it is they actually use. Oh, good idea. Great idea. I've got contacts over there.",
+      "last_updated_meeting_id": "Bmr002.interaction",
+      "history": [
+        {
+          "version": 2,
+          "meeting_id": "Bmr002.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A015",
+      "title": "收集會議查詢範例",
+      "detail": "參與者在未來幾天內，如果對會議內容有疑問，應記錄下他們想提出的查詢類型，以作為未來資訊檢索系統的範例。",
+      "proposer": "SPEAKER_01",
+      "owner": "all",
+      "created_meeting_id": "Bmr002.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "another thing we're going to want to start collecting is queries for the meetings. So if over the next couple days you find yourself wondering what we talked about in the meeting, write down the sort of query you'd like to make.",
+      "last_updated_meeting_id": "Bmr002.interaction",
+      "history": [
+        {
+          "version": 2,
+          "meeting_id": "Bmr002.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A016",
+      "title": "評估合併音頻通道以利轉錄",
+      "detail": "評估將多個麥克風通道合併為單一或立體聲文件，以簡化轉錄員的工作，特別是針對遠場麥克風難以聽清的問題。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr002.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I have an auto-gain mixer tool that mixes all the head-mounted microphones into one signal, and that seems to work really well for the transcribers.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 2,
+          "meeting_id": "Bmr002.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "更新證據，Adam 提到已開發自動增益混音工具。"
+        }
+      ]
+    },
+    {
+      "item_id": "A017",
+      "title": "標準化桌上麥克風位置",
+      "detail": "在桌面上標記標準位置，以便永久固定桌上麥克風，確保一致的錄音設置。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I think we should put marks. We can do that. ... I think we should make little marks on the table top.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A018",
+      "title": "獲取 Santa Barbara Corpus (CSAE)",
+      "detail": "從 LDC 獲取 Santa Barbara Corpus of Spoken American English (CSAE) 的副本，以研究其錄音條件和轉錄格式，並用於語音識別模型開發。",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_02",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "I can actually arrange for it to arrive in short order if we're... Okay, why don't you go ahead and do that then? I'll do that.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A019",
+      "title": "進行轉錄效率實驗 (完美邊界偵測)",
+      "detail": "由 Adam (SPEAKER_03) 生成完美的人工語音邊界，Jane (SPEAKER_00) 僅輸入文字，以評估自動語音邊界偵測對轉錄效率的影響。",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_00, SPEAKER_03",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "So maybe we could try the following experiment. ... I could generate the segmentation, and you could do the words and time yourself on it.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A020",
+      "title": "建立專案網站",
+      "detail": "建立一個專案網站，用於整合和展示所有相關文件、轉錄規範、數據和工具，供內部和外部用戶參考。",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "Maybe we should consider also starting to build up the website around all of these things. ... Okay, well, send me links. Send me pointers, rather, and I'll put it together.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A021",
+      "title": "設計並製造麥克風連接盒",
+      "detail": "設計並製造一個可安裝在桌子邊緣下方的麥克風連接盒，包含耳機插孔和 LED 指示燈，以改善設備設置和監控。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "I'm ready to build it, which is to say a neighborhood of a week to get the circuit board done.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目，狀態為進行中。"
+        }
+      ]
+    },
+    {
+      "item_id": "A022",
+      "title": "規劃設備櫃設計",
+      "detail": "為錄音設備設計一個合適的設備櫃，考慮其形態、功能和安全性，以便 Jim (SPEAKER_04) 進行建造。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "I mean, some sort of cabinet thing. ... if you can imagine what the right form factor is. ... You can start sketching it out.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A023",
+      "title": "設置無線監控使用者介面",
+      "detail": "使用筆記型電腦和無線連接來顯示麥克風電平（view meters），作為錄音過程的監控介面。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "How about use the thing that Siri's doing, which is to say just laptop with a wireless. ... If we bought you the thing, would you mind using it with it? No, I would love to.",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A024",
+      "title": "招募學生轉錄員",
+      "detail": "招募語言學研究生或大學生進行會議錄音的轉錄工作，並由 Jane (SPEAKER_00) 負責管理。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_00",
+      "created_meeting_id": "Bmr003.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "So at any rate, Jane was looking into the possibility of getting students. Is that right? ... I hope it's Jane. Is that all right?",
+      "last_updated_meeting_id": "Bmr003.interaction",
+      "history": [
+        {
+          "version": 3,
+          "meeting_id": "Bmr003.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A025",
+      "title": "在數字朗讀表格中添加「母語」欄位",
+      "detail": "在用於數字朗讀的表格中增加一個欄位，記錄參與者的母語。此項目已被新的單一講者資訊表格提案取代，該表格將集中收集講者背景資訊。",
+      "proposer": "SPEAKER_00",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr005.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "cancelled",
+      "priority": "medium",
+      "evidence": "Do you think we should add a field to the form here for native language? ... So what I thought was it would be nice to have a single speaker form that you fill out once.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "此項目被新的單一講者資訊表格提案取代，該表格將集中收集講者背景資訊。"
+        }
+      ]
+    },
+    {
+      "item_id": "A026",
+      "title": "開發自動語音邊界偵測工具",
+      "detail": "開發一個基於能量偵測、中值濾波和運行檢測的自動語音邊界偵測程式，並將其整合到 Transcriber 使用者介面中。Adam 預計再半天即可完成初步版本。Jose (SPEAKER_05) 報告已找到並修復其重疊偵測程式中的錯誤 (fseq function in C)，並討論了正規化、時間區塊和音高追蹤等改進方向。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr005.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "I've written a program to do that. ... I've worked on it for about half a day. So give me another half day, and we'll have something we can play with. ... My idea is to work in the line of automatic segmenter. ... I found the error, and I repeat the experiments here. You can find the new results.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "新增此行動項目，狀態為進行中。"
+        },
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "Jose (SPEAKER_05) 正在進行自動重疊偵測的基礎研究，與此工具開發相關。"
+        },
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "Adam (SPEAKER_03) 報告其自動語音邊界偵測工具的進度，發現基於能量的閾值和濾波方法對參數選擇敏感，且 Javier 的廣泛音素分類器表現不佳。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "Jose (SPEAKER_01) 報告已找到並修復其重疊偵測程式中的錯誤 (fseq function in C)，並討論了正規化、時間區塊和音高追蹤等改進方向。"
+        }
+      ]
+    },
+    {
+      "item_id": "A027",
+      "title": "嘗試「區塊回音消除」技術",
+      "detail": "使用數字朗讀數據，將遠場麥克風信號與近講麥克風信號應用「區塊回音消除」技術，評估其在清理音頻方面的效果。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr005.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "And we should know how well that can do. So that's something I'd like somebody to do at some point. Just take these digits, take the far field mic signal, the close mic signal, and apply really good echo cancellation.",
+      "last_updated_meeting_id": "Bmr005.interaction",
+      "history": [
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A028",
+      "title": "聯繫廣播媒體獲取多通道錄音數據",
+      "detail": "聯繫廣播媒體（如 KPFA）的熟人，詢問他們是否願意進行多通道錄音（例如，增加一個遠場麥克風），或邀請他們到 ICSI 錄製節目。",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr005.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "it occurred to me that we might be able to get some additional data by talking to acquaintances and local broadcast media. ... can you record multichannel? ... it's even possible, since, of course, many radio shows are not live, that we could invite them to record some of their shows here.",
+      "last_updated_meeting_id": "Bmr005.interaction",
+      "history": [
+        {
+          "version": 4,
+          "meeting_id": "Bmr005.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A029",
+      "title": "聯繫 Haas 商學院志願者",
+      "detail": "Adam (SPEAKER_03) 曾與 Haas 商學院的志願者交談，需再次聯繫他們，並告知有免費午餐作為誘因。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I spoke with some people up at Haas Business School who volunteered. Should I pursue that? ... I'll send an email. Tell them about the free lunch.",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A030",
+      "title": "組織會議議程項目",
+      "detail": "Morgan (SPEAKER_04) 建議參與者在會議前提交議程項目，由他負責組織，以確保會議討論更有效率。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "if anybody could send me any agenda items that they were interested in, and I'll take the role of organizing them into the agenda.",
+      "last_updated_meeting_id": "Bmr007.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "Dan (SPEAKER_01) 提到他曾要求議程項目但未收到，顯示此項仍需推動。"
+        }
+      ]
+    },
+    {
+      "item_id": "A031",
+      "title": "重新簽署更新的人體實驗委員會同意書",
+      "detail": "由於人體實驗委員會同意書表格已更改，所有參與者可能需要重新簽署新版本。",
+      "proposer": "SPEAKER_03",
+      "owner": "all",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "the form has changed. So we may want to have everyone sign the new form.",
+      "last_updated_meeting_id": "Bmr007.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "Adam (SPEAKER_03) 再次提醒參與者簽署新版同意書。"
+        }
+      ]
+    },
+    {
+      "item_id": "A032",
+      "title": "歸檔/刪除廣播新聞 p-files 以釋放硬碟空間",
+      "detail": "Adam (SPEAKER_03) 正在歸檔並將刪除廣播新聞的 p-files，預計釋放 10GB 空間，足夠錄製 5-6 次會議。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "I'm in the midst of doing the p files from Broadcast News. ... So I'm archiving it, and then I'm going to delete the files. So that will give us 10 gigabytes of free space.",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A033",
+      "title": "將 Aurora 和 Carmen 的靜態數據移出會議錄音機硬碟",
+      "detail": "將 Aurora 和 Carmen 的靜態數據從會議錄音機硬碟移至其他備份硬碟（例如廣播新聞硬碟），以整合會議錄音數據並釋放空間。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A032"
+      ],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "we probably should move the Aurora and all that other stuff off of the meeting recorder disk. ... We should put it onto the broadcast news one. ... And that way we consolidate meeting recorder onto one disk rather than spreading them out.",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A034",
+      "title": "探索使用 PDA 雙麥克風進行重疊偵測",
+      "detail": "考慮利用 PDA 設備上的兩個麥克風提供的定位資訊（例如波束成形或交叉相關）來增強重疊語音的偵測能力。Jose (SPEAKER_01) 的重疊偵測研究進展，討論了正規化、時間區塊和音高追蹤等改進方向。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_00",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I thought it would be easier if you used the PDA because couldn't you use beamforming or something to detect speaker overlaps? ... if we made use of the fact that there are two microphones, you do have some location information. ... I found the error, and I repeat the experiments here. You can find the new results.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        },
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "Jose (SPEAKER_05) 討論了聲學變化偵測的通用方法，與重疊偵測相關。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "Jose (SPEAKER_01) 的重疊偵測研究進展，討論了正規化、時間區塊和音高追蹤等改進方向。"
+        }
+      ]
+    },
+    {
+      "item_id": "A035",
+      "title": "會議錄音 (CD-ROM) 提供給參與者 (轉錄篩選後)",
+      "detail": "作為鼓勵參與的誘因，向參與者提供其會議的音頻記錄 CD-ROM，但需在轉錄篩選階段後進行，以確保隱私和內容適當性。",
+      "proposer": "SPEAKER_04",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "burn an extra CD-ROM. So if they basically want an audio record of their... ... It's being cleared with the transcript stage. ... And they get a CD, but just not the same day.",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A036",
+      "title": "會議轉錄稿提供給參與者",
+      "detail": "作為鼓勵參與的誘因，向參與者提供其會議的轉錄稿。",
+      "proposer": "SPEAKER_03",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr006.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "What if you could tell them that you'll give them the transcripts when they come back?",
+      "last_updated_meeting_id": "Bmr006.interaction",
+      "history": [
+        {
+          "version": 5,
+          "meeting_id": "Bmr006.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A037",
+      "title": "研究參與人數與重疊行為的關係",
+      "detail": "探討會議中參與人數（例如兩人、三人會議）對重疊類型和數量分佈的影響，可能需要錄製不同人數的會議進行比較。",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr007.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "Should we really try to have some two-person meetings or some three-person meetings and record them just to beef up the statistics on that?",
+      "last_updated_meeting_id": "Bmr007.interaction",
+      "history": [
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A038",
+      "title": "實施「蒙眼會議」實驗",
+      "detail": "嘗試在部分會議中移除視覺接觸（例如使用蒙眼布或屏障），以研究視覺線索對對話重疊行為的影響。需考慮人體實驗委員會的批准。",
+      "proposer": "SPEAKER_04",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr007.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I still think we should try a meeting or two with the blindfolds, at least of this meeting that we have lots of recordings of.",
+      "last_updated_meeting_id": "Bmr007.interaction",
+      "history": [
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A039",
+      "title": "在會議桌上標記座位號碼",
+      "detail": "在會議桌上標記每個座位的號碼，以便在錄音時記錄講者的空間位置，作為數據的一部分。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr007.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I'm going to put little labels on all the chairs with the seat number. ... Put them on the table.",
+      "last_updated_meeting_id": "Bmr007.interaction",
+      "history": [
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A040",
+      "title": "改進音頻像素化軟體 (靜音 vs. 嗶聲)",
+      "detail": "討論並決定音頻像素化應使用靜音還是嗶聲來替換敏感內容，並改進軟體以支持所選方法。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_03",
+      "created_meeting_id": "Bmr007.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "low",
+      "evidence": "You can either beep or it can be silence. I couldn't decide which was the right way to do it. ... But for software, it's probably better for it to be silence.",
+      "last_updated_meeting_id": "Bmr007.interaction",
+      "history": [
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A041",
+      "title": "細分重疊類型並分析個體差異",
+      "detail": "進一步細分重疊類型（如 back channels, precision timing, benevolent vs. hostile overlaps），並分析不同講者在這些類型中的傾向和個體差異。Jose (SPEAKER_01) 的重疊偵測研究進展，討論了正規化、時間區塊和音高追蹤等改進方向。",
+      "proposer": "SPEAKER_00",
+      "owner": "SPEAKER_00",
+      "created_meeting_id": "Bmr007.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "this discussion caused me to want to subdivide these further. I'm going to take a look at the back channels, how much we have, and I hope to have that next time. ... I found the error, and I repeat the experiments here. You can find the new results.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 6,
+          "meeting_id": "Bmr007.interaction",
+          "change": "新增此行動項目，並已開始進行。"
+        },
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "Jose (SPEAKER_01) 的重疊偵測研究進展，討論了正規化、時間區塊和音高追蹤等改進方向。"
+        }
+      ]
+    },
+    {
+      "item_id": "A042",
+      "title": "設計並實施單一講者資訊表格",
+      "detail": "設計一個新的表格，用於一次性收集講者的個人背景資訊，包括姓名、性別、電子郵件、教育程度（大學生、研究生、博士後、教授、其他）、年齡（可選）、英語方言種類、地區（可能基於 TIMIT 區域或童年居住地），以及其他語言影響。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "So what I thought was it would be nice to have a single speaker form that you fill out once. ... I have a first pass of it and I spoke with Jane a bit about how to specify what language and education and that sort of stuff.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A043",
+      "title": "調整單一講者資訊表格的教育程度類別",
+      "detail": "將教育程度類別從「大學生、研究生、博士後、教授、其他」調整為更具包容性的選項，例如將「博士後」改為「博士後研究員」或「博士後」與「教授」之間增加「博士後研究員」等，以更好地涵蓋 ICSI 訪客和非教授職位的博士學位持有者。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [
+        "A042"
+      ],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "How about post-PhD researcher or something? ... So as I said, undergrad, grad, post-PhD, professor, other?",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A044",
+      "title": "調整單一講者資訊表格的年齡欄位",
+      "detail": "討論並決定年齡欄位是否應標記為「可選」，或提供「約略年齡」選項，以平衡數據收集需求與個人隱私敏感性。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [
+        "A042"
+      ],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "And then I put optional, with a big optional in parentheses, age. ... I think people in speech are going to want to... They can always lie. But I would rather them leave it blank than lie.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A045",
+      "title": "調整單一講者資訊表格的語言與地區欄位",
+      "detail": "針對母語為英語的講者，細化英語方言種類（美國、英國、印度、其他），並考慮使用 TIMIT 區域分類作為美國英語的選項。同時，討論如何客觀地詢問「童年時期居住地」或「家庭中使用的語言」等，以獲取更精確的語言背景資訊。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議中段",
+      "dependencies": [
+        "A042"
+      ],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "So for the native English speaker, it asks for a variety of English with three circle boxes, American, British, Indian, and other for write-in. ... If you wanted to give regions for American English, you could copy what they did in Temet.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A046",
+      "title": "考慮在單一講者資訊表格中加入英語熟練度指標",
+      "detail": "針對非母語英語講者，討論是否應加入英語熟練度指標，並考慮使用「在英語系國家居住時間」等客觀且非威脅性的問題來替代主觀的自我評估。",
+      "proposer": "SPEAKER_03",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A042"
+      ],
+      "status": "open",
+      "priority": "low",
+      "evidence": "What about proficiency in English? ... how long have you been in an English speaking country?",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A047",
+      "title": "設計並實施會議特定關係與背景資訊表格",
+      "detail": "設計一個表格或機制，用於記錄每次會議中講者之間的動態關係（例如師生、領導者-被領導者、夫妻等）以及其他與會議內容或互動相關的背景資訊，並考慮其結構（例如成對關係、關鍵字標籤或開放式筆記）。",
+      "proposer": "SPEAKER_02",
+      "owner": "unknown",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "I was thinking about, and it probably wouldn't be on the digits form, but it's something that, some form about the individual meeting. ... I think pairwise relationships are pretty easy. Source, destination, relation.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A048",
+      "title": "跟進 IBM 轉錄服務進度",
+      "detail": "Morgan (SPEAKER_04) 將發送電子郵件給 IBM 的新負責人 Mukund，確認 CD-ROM 是否已收到，並催促轉錄工作的啟動。",
+      "proposer": "SPEAKER_04",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "They haven't received them yet, but I did get a response from them saying, yes, we're still alive, we haven't done anything yet, basically. ... So tomorrow I'll send an email and just ask if he received it.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A049",
+      "title": "實驗重疊偵測的正規化方法",
+      "detail": "Jose (SPEAKER_01) 應實驗不同的正規化方法（例如基於整體能量、語音區段能量）來處理音頻數據，以改善重疊語音偵測的準確性。",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A026"
+      ],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "So the question is, would some kind of normalization help? ... I test different normalization.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A050",
+      "title": "實驗重疊偵測的時間區塊分析",
+      "detail": "Jose (SPEAKER_01) 應嘗試使用較長的時間區塊（例如 200-400 毫秒）進行能量分析，而非單一幀，以捕捉更穩定的語音特徵，改善重疊偵測。",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A026"
+      ],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "So I mean, what if you took one second chunks or something like that, or maybe not even a second, maybe a quarter second or something, so that you would typically have two or three basically syllable kind of points.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    },
+    {
+      "item_id": "A051",
+      "title": "將音高追蹤和諧波分析整合到重疊偵測",
+      "detail": "Jose (SPEAKER_01) 應將音高追蹤器和諧波分析整合到其重疊偵測演算法中，以利用音高不連續性和諧波混合等特徵來區分重疊語音。",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "Bmr008.interaction",
+      "created_time_hint": "會議後段",
+      "dependencies": [
+        "A026"
+      ],
+      "status": "in_progress",
+      "priority": "high",
+      "evidence": "So you really may need to go to something that looks at, in some sense, harmonicity or relationship to or fit to pitch tracks on either side of it, for instance.",
+      "last_updated_meeting_id": "Bmr008.interaction",
+      "history": [
+        {
+          "version": 7,
+          "meeting_id": "Bmr008.interaction",
+          "change": "新增此行動項目。"
+        }
+      ]
+    }
+  ],
+  "method_changes": [
+    {
+      "change_id": "M001",
+      "topic": "轉錄規範：重音標記",
+      "before": "轉錄中不包含重音標記。",
+      "after": "轉錄中包含主要重音標記 (primary stress marks)。",
+      "reason": "Jane (SPEAKER_00) 認為在詞級轉錄時加入重音標記很容易，且有助於資訊檢索。",
+      "status": "active",
+      "meeting_id": "Bmr003.interaction",
+      "evidence": "Jane is doing primary stress, stress marks as well."
+    },
+    {
+      "change_id": "M002",
+      "topic": "轉錄規範：無發言者區段標記",
+      "before": "無發言者區段可能未明確標記或被視為其他發言的一部分。",
+      "after": "明確標記無發言者區段 (例如使用 `?:`)，以避免其被錯誤地歸類到其他發言中。",
+      "reason": "確保轉錄的準確性，避免將沉默或背景音誤認為發言的一部分。",
+      "status": "active",
+      "meeting_id": "Bmr003.interaction",
+      "evidence": "We should probably mark areas that have no speakers as no speaker. Yeah, that's a good idea. So question mark colon is fine for that."
+    },
+    {
+      "change_id": "M003",
+      "topic": "Jose 的聲學事件轉錄策略",
+      "before": "Jose 標記所有聲學事件 (overlapping speech, breath, expression, tug, clap, silence)。",
+      "after": "Jose 僅標記講者重疊事件。",
+      "reason": "提高轉錄效率，將重點放在核心研究目標（講者重疊）。",
+      "status": "active",
+      "meeting_id": "Bmr005.interaction",
+      "evidence": "how would it affect your time if you only marked speaker overlaps? ... Oh, yeah, sure. ... Then I think it's a good idea."
+    },
+    {
+      "change_id": "M004",
+      "topic": "數字朗讀錄音程序",
+      "before": "數字朗讀可在會議任何時間進行。",
+      "after": "數字朗讀將在會議結束時進行。",
+      "reason": "為了配合時間有限的參與者，減少對會議核心討論的干擾。",
+      "status": "active",
+      "meeting_id": "Bmr006.interaction",
+      "evidence": "So the new procedural changes Scott suggested, which I think is a good idea, is that we do the digit recordings at the end."
+    },
+    {
+      "change_id": "M005",
+      "topic": "數據收集：講者背景資訊表格化",
+      "before": "講者背景資訊（如語言、教育程度）分散在數字朗讀表格中，或未系統收集。",
+      "after": "引入單一講者資訊表格，一次性收集講者個人背景資訊，並與數字朗讀表格分離。",
+      "reason": "提高數據收集效率，避免重複填寫，並集中管理講者個人資訊。",
+      "status": "active",
+      "meeting_id": "Bmr008.interaction",
+      "evidence": "So what I thought was it would be nice to have a single speaker form that you fill out once. And then on the digits form you just have to put your name down and you can look it up from the speaker form."
+    }
+  ],
+  "experiment_todos": [
+    {
+      "todo_id": "E001",
+      "description": "製作更多虛擬 PDA 設備，用於多 PDA 錄音實驗。",
+      "status": "open",
+      "owner": "SPEAKER_02",
+      "related_action_item_ids": [],
+      "meeting_id": "Bmr001.interaction",
+      "evidence": "We could make several more of these, and then we could have actual recordings with three PDAs."
+    },
+    {
+      "todo_id": "E002",
+      "description": "招募女性發言者參與錄音，以確保數據集的多樣性。",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "Bmr001.interaction",
+      "evidence": "And also, he's got at least one woman. That's great. Oh, that's a good point. We have a little problem. ... Maybe we should have the reading group here and force Jane to come."
+    },
+    {
+      "todo_id": "E003",
+      "description": "評估在轉錄中加入重音標記",
+      "status": "completed",
+      "owner": "SPEAKER_00",
+      "related_action_item_ids": [],
+      "meeting_id": "Bmr003.interaction",
+      "evidence": "Jane is doing primary stress, stress marks as well."
+    },
+    {
+      "todo_id": "E004",
+      "description": "評估一份人體實驗同意書在實際操作中應涵蓋多少次會議，並更新同意書表格。會議中再次討論同意書更新，並確認表格已更改。",
+      "status": "open",
+      "owner": "SPEAKER_02",
+      "related_action_item_ids": [
+        "A031"
+      ],
+      "meeting_id": "Bmr007.interaction",
+      "evidence": "once a person has signed it once, then that's valid for a certain number of meetings. She wanted me to actually estimate how many meetings and put that on the consent form. ... the form has changed. So we may want to have everyone sign the new form."
+    },
+    {
+      "todo_id": "E005",
+      "description": "Jose (SPEAKER_05) 正在研究用於自動重疊偵測的判別參數，包括分類重疊語音、純語音和純靜音，並從等化語音（混合語音）開始。",
+      "status": "in_progress",
+      "owner": "SPEAKER_05",
+      "related_action_item_ids": [
+        "A026",
+        "A049",
+        "A050",
+        "A051"
+      ],
+      "meeting_id": "Bmr008.interaction",
+      "evidence": "My idea is to work in the line of automatic segmenter. ... I will pretend to do with the equalized speech. ... I think it's better to use the Acoustic Chain Detector, basically an AIX or BIKE criterion, to consider all the frames, in my opinion. ... I found the error, and I repeat the experiments here. You can find the new results."
+    },
+    {
+      "todo_id": "E006",
+      "description": "探討不同的數據匿名化方法（例如，在轉錄稿中更改姓名，對音頻進行消音處理），以平衡隱私問題與語篇分析的實用性。",
+      "status": "open",
+      "owner": "all",
+      "related_action_item_ids": [
+        "A031",
+        "A040"
+      ],
+      "meeting_id": "Bmr007.interaction",
+      "evidence": "I think the anonymization, if you want to proceed with that now, I just think that that's a discussion which also really deserves more than just a minute. ... The idea we're running with is putting the beep over it."
+    },
+    {
+      "todo_id": "E007",
+      "description": "比較會議與兩方對話的重疊行為",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [
+        "A037"
+      ],
+      "meeting_id": "Bmr007.interaction",
+      "evidence": "find out how many more we have than two-party. Because in two-party conversations, like switchboard, there's an awful lot, too."
+    },
+    {
+      "todo_id": "E008",
+      "description": "研究視覺接觸對對話重疊的影響",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [
+        "A038"
+      ],
+      "meeting_id": "Bmr007.interaction",
+      "evidence": "I still think we should try a meeting or two with the blindfolds, at least of this meeting that we have lots of recordings of."
+    }
+  ],
+  "next_meeting_focus": [
+    "跟進單一講者資訊表格 (A042) 的設計與實施，特別是教育程度 (A043)、年齡 (A044)、語言與地區 (A045) 欄位的細節。",
+    "討論是否在單一講者資訊表格中加入英語熟練度指標 (A046)。",
+    "討論會議特定關係與背景資訊表格 (A047) 的設計與實施。",
+    "跟進 IBM 轉錄服務進度 (A048)。",
+    "討論 Jose (SPEAKER_01) 在重疊偵測方面的新實驗方向，包括正規化 (A049)、時間區塊分析 (A050) 和音高追蹤/諧波分析 (A051)。",
+    "跟進 Jane (SPEAKER_00) 在細分重疊類型 (A041) 上的進度，特別是 back channels 的分析。",
+    "討論 Adam (SPEAKER_03) 的自動語音邊界偵測工具 (A026) 的改進方向，特別是參數魯棒性問題。",
+    "討論並決定是否錄製更多兩人/三人會議 (A037) 以及如何實施「蒙眼會議」實驗 (A038)，以研究參與人數和視覺接觸對重疊的影響。",
+    "確認人體實驗委員會同意書 (A031, E004) 的簽署進度。",
+    "討論數據匿名化策略 (E006, A040) 的具體實施方案，包括靜音與嗶聲的選擇。",
+    "跟進會議議程項目組織 (A030) 的推動情況。",
+    "討論如何將講者空間位置資訊 (A039) 系統地整合到數據中。"
+  ]
+}
