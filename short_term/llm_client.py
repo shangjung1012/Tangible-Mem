@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from google import genai
 
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
+
+MAX_GENERATION_ATTEMPTS = 3
 
 
 def build_prompt(
@@ -46,7 +50,15 @@ Transcript:
 """.strip()
 
 
-def extract_json(raw_text: str) -> dict[str, Any]:
+def extract_json(raw_text: str, parsed: Any | None = None) -> dict[str, Any]:
+    if isinstance(parsed, dict):
+        return parsed
+
+    if hasattr(parsed, "model_dump"):
+        dumped = parsed.model_dump()
+        if isinstance(dumped, dict):
+            return dumped
+
     text = (raw_text or "").strip()
     if not text:
         raise RuntimeError("Gemini returned an empty response.")
@@ -72,6 +84,19 @@ def extract_json(raw_text: str) -> dict[str, Any]:
     return data
 
 
+def save_failed_response(
+    meeting_id: str,
+    attempt: int,
+    raw_text: str,
+) -> Path:
+    debug_dir = Path(__file__).resolve().parent / "debug_raw"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = debug_dir / f"{timestamp}_{meeting_id}_attempt{attempt}.txt"
+    path.write_text(raw_text or "", encoding="utf-8")
+    return path
+
+
 def generate_updated_memory(
     model_name: str,
     api_key: str,
@@ -82,14 +107,33 @@ def generate_updated_memory(
 ) -> dict[str, Any]:
     client = genai.Client(api_key=api_key)
     prompt = build_prompt(transcript, current_memory, meeting_id, source_file)
-    config = {
-        "temperature": 0.15,
-        "response_mime_type": "application/json",
-        "response_json_schema": RESPONSE_JSON_SCHEMA,
-    }
-    response = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config=config,
-    )
-    return extract_json(response.text or "")
+    last_error: Exception | None = None
+    last_debug_path: Path | None = None
+
+    for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
+        temperature = 0.15 if attempt == 1 else 0.0
+        config = {
+            "temperature": temperature,
+            "response_mime_type": "application/json",
+            "response_json_schema": RESPONSE_JSON_SCHEMA,
+        }
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=config,
+        )
+
+        try:
+            return extract_json(response.text or "", parsed=getattr(response, "parsed", None))
+        except RuntimeError as exc:
+            last_error = exc
+            last_debug_path = save_failed_response(
+                meeting_id=meeting_id,
+                attempt=attempt,
+                raw_text=response.text or "",
+            )
+
+    debug_hint = f" Raw response saved to: {last_debug_path}" if last_debug_path else ""
+    raise RuntimeError(
+        f"Failed to parse Gemini JSON output after {MAX_GENERATION_ATTEMPTS} attempts.{debug_hint}"
+    ) from last_error
