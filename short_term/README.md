@@ -100,4 +100,12 @@ uv run short_term/retrieve_qa.py \
   --no-llm
 ```
 
+`--show-context` 會在最終回答前，先印出這次檢索到的 memory chunks，方便你檢查：
+
+- 抓到了哪些 chunk
+- 每個 chunk 的 `chunk_id` / 類型 / 內容
+- retrieval score，以及 lexical / semantic 分數
+
+這個參數很適合拿來 debug 檢索效果，或比較不同 `--retrieval-mode` 的差異。
+
 embedding 會快取在 `short_term/.embedding_cache.json`，避免每次都重算 chunk embeddings。
