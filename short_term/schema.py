@@ -13,6 +13,7 @@ DEFAULT_MEMORY: dict[str, Any] = {
     "memory_version": 0,
     "last_updated_utc": "",
     "last_updated_meeting_id": "",
+    "meeting_history_ids": [],
     "meeting_window": [],
     "action_items": [],
     "method_changes": [],
@@ -24,6 +25,9 @@ SCHEMA_DESCRIPTION = {
     "memory_version": "int, every update must +1",
     "last_updated_utc": "ISO8601 UTC string",
     "last_updated_meeting_id": "string",
+    "meeting_history_ids": [
+        "string, system-managed ordered meeting ids from oldest to newest"
+    ],
     "meeting_window": [
         {
             "meeting_id": "string",
@@ -97,6 +101,11 @@ RESPONSE_JSON_SCHEMA = {
             "type": "string",
             "description": "Meeting ID that triggered this update.",
         },
+        "meeting_history_ids": {
+            "type": "array",
+            "description": "System-managed ordered meeting IDs from oldest to newest. The application maintains this field locally.",
+            "items": {"type": "string"},
+        },
         "meeting_window": {
             "type": "array",
             "description": "Recent meetings window, max 3 meetings.",
@@ -121,7 +130,7 @@ RESPONSE_JSON_SCHEMA = {
         },
         "action_items": {
             "type": "array",
-            "description": "Action items and TODOs from recent meetings.",
+            "description": "Action items and TODOs scoped to the recent three-meeting window.",
             "items": {
                 "type": "object",
                 "properties": {

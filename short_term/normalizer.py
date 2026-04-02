@@ -42,14 +42,44 @@ def normalize_str_list(value: Any) -> list[str]:
     return cleaned
 
 
+def dedupe_keep_last(items: list[str]) -> list[str]:
+    deduped: list[str] = []
+    for item in items:
+        if item in deduped:
+            deduped = [x for x in deduped if x != item]
+        deduped.append(item)
+    return deduped
+
+
+def normalize_meeting_history_ids(
+    previous_memory: dict[str, Any],
+    meeting_id: str,
+) -> list[str]:
+    history_ids = normalize_str_list(previous_memory.get("meeting_history_ids"))
+    if not history_ids:
+        previous_window = previous_memory.get("meeting_window")
+        if isinstance(previous_window, list):
+            for row in previous_window:
+                if not isinstance(row, dict):
+                    continue
+                mid = normalize_str(row.get("meeting_id"))
+                if mid:
+                    history_ids.append(mid)
+
+    history_ids.append(meeting_id)
+    return dedupe_keep_last(history_ids)
+
+
 def normalize_meeting_window(
-    raw_window: Any, meeting_id: str, source_file: str
+    raw_window: Any,
+    meeting_id: str,
+    source_file: str,
+    recent_meeting_ids: list[str],
 ) -> list[dict[str, Any]]:
     if not isinstance(raw_window, list):
         raw_window = []
 
-    ordered: list[dict[str, Any]] = []
-    seen: set[str] = set()
+    item_map: dict[str, dict[str, Any]] = {}
     for row in raw_window:
         if not isinstance(row, dict):
             continue
@@ -63,23 +93,19 @@ def normalize_meeting_window(
             "key_points": normalize_str_list(row.get("key_points")),
             "open_questions": normalize_str_list(row.get("open_questions")),
         }
-        if mid in seen:
-            ordered = [x for x in ordered if x["meeting_id"] != mid]
-        seen.add(mid)
-        ordered.append(item)
+        item_map[mid] = item
 
-    if meeting_id not in seen:
-        ordered.append(
-            {
-                "meeting_id": meeting_id,
-                "source_file": source_file,
-                "summary": "Summary pending from transcript extraction.",
-                "key_points": [],
-                "open_questions": [],
-            }
-        )
+    if meeting_id not in item_map:
+        item_map[meeting_id] = {
+            "meeting_id": meeting_id,
+            "source_file": source_file,
+            "summary": "Summary pending from transcript extraction.",
+            "key_points": [],
+            "open_questions": [],
+        }
 
-    return ordered[-3:]
+    normalized_recent_ids = dedupe_keep_last(recent_meeting_ids)
+    return [item_map[mid] for mid in normalized_recent_ids if mid in item_map]
 
 
 def normalize_action_items(raw_items: Any, meeting_id: str) -> list[dict[str, Any]]:
@@ -149,6 +175,34 @@ def normalize_action_items(raw_items: Any, meeting_id: str) -> list[dict[str, An
         )
 
     return normalized
+
+
+def filter_recent_action_items(
+    items: list[dict[str, Any]],
+    recent_meeting_ids: list[str],
+) -> list[dict[str, Any]]:
+    recent_set = set(recent_meeting_ids)
+    filtered: list[dict[str, Any]] = []
+    for item in items:
+        created_meeting_id = normalize_str(item.get("created_meeting_id"))
+        last_updated_meeting_id = normalize_str(item.get("last_updated_meeting_id"))
+        history_rows = item.get("history")
+        history_meeting_ids: list[str] = []
+        if isinstance(history_rows, list):
+            for row in history_rows:
+                if not isinstance(row, dict):
+                    continue
+                history_mid = normalize_str(row.get("meeting_id"))
+                if history_mid:
+                    history_meeting_ids.append(history_mid)
+
+        if (
+            created_meeting_id in recent_set
+            or last_updated_meeting_id in recent_set
+            or any(mid in recent_set for mid in history_meeting_ids)
+        ):
+            filtered.append(item)
+    return filtered
 
 
 def normalize_method_changes(raw_items: Any, meeting_id: str) -> list[dict[str, Any]]:
@@ -234,14 +288,26 @@ def normalize_memory(
     if version <= previous_version:
         version = previous_version + 1
 
+    meeting_history_ids = normalize_meeting_history_ids(previous_memory, meeting_id)
+    recent_meeting_ids = meeting_history_ids[-3:]
+
     previous_meeting_window = normalize_meeting_window(
-        previous_memory.get("meeting_window"), meeting_id, source_file
+        previous_memory.get("meeting_window"),
+        meeting_id,
+        source_file,
+        recent_meeting_ids,
     )
     updated_meeting_window = normalize_meeting_window(
-        merged.get("meeting_window"), meeting_id, source_file
+        merged.get("meeting_window"),
+        meeting_id,
+        source_file,
+        recent_meeting_ids,
     )
     meeting_window = normalize_meeting_window(
-        previous_meeting_window + updated_meeting_window, meeting_id, source_file
+        previous_meeting_window + updated_meeting_window,
+        meeting_id,
+        source_file,
+        recent_meeting_ids,
     )
 
     previous_action_items = normalize_action_items(
@@ -277,8 +343,12 @@ def normalize_memory(
     merged["memory_version"] = version
     merged["last_updated_utc"] = utc_now_iso()
     merged["last_updated_meeting_id"] = meeting_id
+    merged["meeting_history_ids"] = meeting_history_ids
     merged["meeting_window"] = meeting_window
-    merged["action_items"] = list(action_item_map.values())
+    merged["action_items"] = filter_recent_action_items(
+        list(action_item_map.values()),
+        recent_meeting_ids,
+    )
     merged["method_changes"] = list(method_change_map.values())
     merged["experiment_todos"] = list(experiment_todo_map.values())
 

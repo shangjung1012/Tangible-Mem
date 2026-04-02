@@ -9,8 +9,9 @@
 - `memory_version`
 - `last_updated_utc`
 - `last_updated_meeting_id`
+- `meeting_history_ids`（從舊到新的完整會議 id 序列，由本地維護）
 - `meeting_window`（只保留最近 3 次）
-- `action_items`（含 proposer、created_time_hint、dependencies、status、history）
+- `action_items`（只保留最近 3 次會議範圍內建立或更新過的項目，含 proposer、created_time_hint、dependencies、status、history）
 - `method_changes`
 - `experiment_todos`
 - `next_meeting_focus`
@@ -28,8 +29,9 @@
 1. 讀取 `current_memory.json`
 2. 讀取單一會議逐字稿（例如 `meeting_recording/transcript/49.txt`）
 3. 呼叫 Gemini 回傳同 schema 的更新記憶
-4. 正規化欄位與狀態
-5. 覆寫 `current_memory.json`，並存一份 snapshot 到 `short_term/snapshots/`
+4. 本地維護 `meeting_history_ids`，再依最後三個 meeting id 裁切 `meeting_window`
+5. 正規化欄位與狀態
+6. 覆寫 `current_memory.json`，並存一份 snapshot 到 `short_term/snapshots/`
 
 ## 使用方式
 
