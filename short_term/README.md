@@ -36,7 +36,7 @@
 ## 使用方式
 
 ```bash
-uv run short_term/update_memory.py --transcript ./ICSI_original_transcripts/transcripts/Bmr001.mrt```
+uv run short_term/update_memory.py --transcript ./ICSI_original_transcripts/transcripts/Bmr001.mrt
 ```
 
 可選參數：
