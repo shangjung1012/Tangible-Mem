@@ -42,10 +42,10 @@ uv run short_term/update_memory.py --transcript ./ICSI_original_transcripts/tran
 可選參數：
 
 ```bash
-uv run short_term/update_memory.py ^
-  --transcript meeting_recording/transcript/49.txt ^
-  --memory short_term/current_memory.json ^
-  --snapshot-dir short_term/snapshots ^
+uv run short_term/update_memory.py \
+  --transcript meeting_recording/transcript/49.txt \
+  --memory short_term/current_memory.json \
+  --snapshot-dir short_term/snapshots \
   --model gemini-2.5-flash
 ```
 

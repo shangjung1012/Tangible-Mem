@@ -19,6 +19,10 @@ uv sync
 建立 `.env` 檔案並填入你的 API Key：
 ```
 GEMINI_API_KEY=your_api_key_here
+# optional: 預設生成模型（bridge / summarize / planner / gate）
+GEMINI_MODEL=gemini-2.5-flash
+# optional: 長期記憶 semantic retrieval 使用的 embedding 模型
+GEMINI_EMBED_MODEL=models/gemini-embedding-001
 ```
 
 ## 使用方式
@@ -32,11 +36,17 @@ uv run app/main.py
 
 對話記錄會自動儲存在 `record/` 資料夾。
 
-## Meeting Recording
+## 子模組說明
+
+- 短期記憶：[`short_term/README.md`](short_term/README.md)
+- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)
+- 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
+
+## Meeting Recording（摘要）
 
 `meeting_recording/` 現在提供本地化逐字稿流程：
 
 - `WhisperX` 先做 speaker diarization
 - `Ollama` 再把 `SPEAKER_xx` 轉成 `老師 / 學生一 / 學生二`
 
-使用方式見 [meeting_recording/README.md](/d:/Documents/code/virtual-mentor/meeting_recording/README.md)。
+使用方式見 [`meeting_recording/README.md`](meeting_recording/README.md)。

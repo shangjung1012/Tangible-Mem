@@ -24,7 +24,7 @@ OLLAMA_PULL=1
 
 ## 執行
 
-在 [meeting_recording/docker-compose.yml](/d:/Documents/code/virtual-mentor/meeting_recording/docker-compose.yml) 所在目錄執行：
+在 [`meeting_recording/docker-compose.yml`](docker-compose.yml) 所在目錄執行：
 
 ```powershell
 docker compose run --rm whisperx
@@ -34,7 +34,7 @@ docker compose up --abort-on-container-exit role_map
 第一行只做 WhisperX 轉錄。
 第二行才做 Ollama 角色映射。
 
-或直接執行 [run.ps1](/d:/Documents/code/virtual-mentor/meeting_recording/run.ps1)。
+或直接執行 [`run.ps1`](run.ps1)。
 
 ## 輸出
 

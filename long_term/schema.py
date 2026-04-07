@@ -3,8 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 DEFAULT_MODEL_NAME = "gemini-2.5-flash"
+EMBED_MODEL_NAME = "models/text-embedding-004"
 
-MEMORY_OBJ_TYPES = {"decision", "todo", "method_change", "result"}
+MEMORY_OBJ_TYPES = {
+    "decision",       # 會議中做出的決策或結論
+    "todo",           # 被指派或提及的待辦事項
+    "method_change",  # 方法論、演算法、流程的變更（因果鏈核心）
+    "result",         # 實驗結果、發現、觀察報告
+    "open_question",  # 尚未解決的研究問題
+    "argument",       # 決策背後的論點與推理
+}
 
 # ---------------------------------------------------------------------------
 # Default empty tree
@@ -21,6 +29,15 @@ DEFAULT_TREE: dict[str, Any] = {
         "child_phase_ids": [],
     },
     "phases": [],
+    # meeting node schema (reference):
+    # {
+    #   "meeting_id": str,
+    #   "timestamp": str,     # buildtime (system write time)
+    #   "meeting_date": str,  # real meeting date for recency scoring
+    #   "source_file": str,
+    #   "phase_id": str,
+    #   "memory_objects": list[dict],
+    # }
     "meetings": [],
 }
 
@@ -41,7 +58,9 @@ BRIDGE_RESPONSE_SCHEMA: dict[str, Any] = {
                         "enum": sorted(MEMORY_OBJ_TYPES),
                         "description": (
                             "decision=決議, todo=待辦, "
-                            "method_change=方法變更, result=實驗結果或發現"
+                            "method_change=方法變更, result=實驗結果或發現, "
+                            "open_question=尚未解決的研究問題, "
+                            "argument=決策背後的論點與推理"
                         ),
                     },
                     "content": {

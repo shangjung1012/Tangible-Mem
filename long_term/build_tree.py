@@ -14,6 +14,7 @@ import argparse
 import re
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "long_term"))
@@ -53,6 +54,21 @@ def mrt_to_text(mrt_path: Path) -> str:
         if text:
             lines.append(f"[{speaker} @ {start_time}s]: {text}")
     return "\n".join(lines)
+
+
+def infer_meeting_date(mrt_path: Path) -> str:
+    """Best-effort extract YYYY-MM-DD from file stem; fallback to empty."""
+    stem = mrt_path.stem
+    match = re.search(r"(20\d{2})[-_]?(\d{2})[-_]?(\d{2})", stem)
+    if not match:
+        return ""
+
+    date_str = f"{match.group(1)}-{match.group(2)}-{match.group(3)}"
+    try:
+        datetime.fromisoformat(date_str)
+    except ValueError:
+        return ""
+    return date_str
 
 
 # ===================================================================
@@ -204,8 +220,14 @@ def main() -> None:
             )
             raw_objects = llm_output.get("memory_objects", [])
             memory_objects = normalize_memory_objects(raw_objects, meeting_id)
+            meeting_date = infer_meeting_date(mrt_path)
             insert_meeting_into_tree(
-                tree, meeting_id, str(mrt_path), utc_now_iso(), memory_objects
+                tree=tree,
+                meeting_id=meeting_id,
+                source_file=str(mrt_path),
+                timestamp=utc_now_iso(),
+                memory_objects=memory_objects,
+                meeting_date=meeting_date,
             )
             total_objects += len(memory_objects)
             print(f"✓ {len(memory_objects)} objects")
