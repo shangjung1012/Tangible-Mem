@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-SHORT_TERM_MEMORY_PATH = ROOT / "short_term" / "current_memory.json"
 LONG_TERM_TREE_PATH = ROOT / "long_term" / "tree.json"
 LONG_TERM_DIR = ROOT / "long_term"
 
@@ -31,20 +30,37 @@ def retrieve_memory_context(
     model_name: str,
     max_context_chars: int = 4000,
 ) -> str:
-    tree = load_json_object(LONG_TERM_TREE_PATH)
-    short_term_memory = load_json_object(SHORT_TERM_MEMORY_PATH)
+    return retrieve_long_term_context(
+        query=query,
+        api_key=api_key,
+        model_name=model_name,
+        max_context_chars=max_context_chars,
+    )
 
-    if not tree and not short_term_memory:
-        return "（無相關記憶）"
+
+def retrieve_long_term_context(
+    query: str,
+    api_key: str,
+    model_name: str,
+    max_context_chars: int = 4000,
+) -> str:
+    tree = load_json_object(LONG_TERM_TREE_PATH)
+    if not tree:
+        return "（無長期記憶）"
 
     plan = plan_recall(query=query, api_key=api_key, model_name=model_name)
+    long_targets = [t for t in plan.get("search_targets", []) if t.startswith("long_term_")]
+    if not long_targets:
+        long_targets = ["long_term_l1", "long_term_l2", "long_term_l3"]
+    plan["search_targets"] = long_targets
+
     result = recall(
         query=query,
         plan=plan,
         tree=tree,
         api_key=api_key,
         model_name=model_name,
-        short_term_memory=short_term_memory,
+        short_term_memory=None,
     )
     context = format_recall_for_prompt(result)
     if len(context) > max_context_chars:

@@ -1,15 +1,9 @@
-from pathlib import Path
 from dotenv import load_dotenv
 from system_prompt import *
 import os
 
 load_dotenv(override=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-ROOT = Path(__file__).parent.parent.resolve()
-profile_path = ROOT / "app" / "profile.md"
-profile_text = profile_path.read_text(encoding="utf-8")
-
-SYSTEM_PROMPT = TEMPLATE_MEETING_QA.format(
-    profile_text=profile_text
-)
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+MAX_RECALL_CONTEXT_CHARS = int(os.getenv("MAX_RECALL_CONTEXT_CHARS", "4000"))
+SYSTEM_PROMPT = TEMPLATE_MEETING_QA.strip()

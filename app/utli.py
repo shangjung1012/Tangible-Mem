@@ -1,4 +1,6 @@
-from config import ROOT
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def record(role: str, text: str, file: str):
