@@ -4,118 +4,32 @@
     "start": "Bmr023",
     "end": "Bmr026"
   },
-  "summary": "本階段主要聚焦於DARPA會議演示的準備工作，包括轉錄數據的處理、資訊檢索系統的開發與整合，以及語音辨識前端的優化。在轉錄方面，團隊實施了新的音訊標記方法（提示音-數字-提示音）以提高IBM轉錄的準確性和對齊效率，並採用並行策略加速轉錄進度，目標是為DARPA演示準備20小時的轉錄數據。資訊檢索系統方面，THISL工具的命令列版本已成功運作，並決定採用Tcl-TK THISL GUI作為演示界面，但其移植到UNIX和Windows系統面臨挑戰。語音辨識方面，PLP前端處理器性能已與MFCC相當，VTLN效果顯著，並決定將語音辨識從手動分割轉向自動分割。此外，團隊也處理了檔案和目錄重組計畫，並為參與者提供轉錄稿編輯和敏感內容刪除的機制。然而，前端開發進度緩慢，且磁碟空間不足等問題仍待解決。",
-  "key_decisions": [
-    "決定將會議語音辨識從手動分割轉向使用自動分割，因為Thilo的分割器表現良好，這將提高實驗的真實性。",
-    "DARPA演示的目標是完成20小時的轉錄數據處理和發布。",
-    "決定採用並行轉錄策略，同時進行內部轉錄和將部分數據發送給IBM處理，以提高效率。",
-    "決定採用Dan開發的Tcl-TK THISL GUI作為DARPA演示的用戶界面，因其外觀和易於移植到Windows。",
-    "為了處理SmartKom數據轉錄，可以接受其他工作稍微延遲。",
-    "將向參與者發送包含逐字稿和音頻的網頁連結，讓他們可以建議編輯並刪除敏感內容。",
-    "為了避免手動處理，決定讓IBM轉錄包含口說數字的內容。"
-  ],
-  "method_evolution": [
+  "summary": "本階段主要聚焦於DARPA演示的準備，優化轉錄流程與音訊標記，並確立資訊檢索系統介面。同時處理了相關工具的移植與安裝。",
+  "changes": [
     {
-      "method": "錄音設定",
-      "change": "麥克風增益從預設值調高。",
-      "reason": "改善錄音效果。",
-      "meeting_id": "Bmr023"
+      "status": "adopted",
+      "method": "語音分割從手動轉為自動化"
     },
     {
-      "method": "數字錄音策略",
-      "change": "討論是讓所有人同時說（unison）還是分開錄製相同數字串。",
-      "reason": "分開錄製有利於正規化，同時錄製速度較快，最終決定取決於時間。",
-      "meeting_id": "Bmr023"
+      "status": "adopted",
+      "method": "轉錄音訊標記改用「提示音-數字-提示音」格式"
     },
     {
-      "method": "語音分割標記方式",
-      "change": "從單一提示音改為「提示音-數字-提示音」的格式。",
-      "reason": "轉錄員反饋，幫助轉錄員定位；解決上次轉錄中過多提示音的問題。",
-      "meeting_id": "Bmr023"
+      "status": "adopted",
+      "method": "轉錄工作採分批平行處理模式"
     },
     {
-      "method": "檔案和目錄重組",
-      "change": "延遲到下一次零級備份之前進行。",
-      "reason": "避免大量新增檔案的問題。",
-      "meeting_id": "Bmr024"
+      "status": "adopted",
+      "method": "DARPA演示採用Tcl-TK THISL GUI"
     },
     {
-      "method": "命名慣例文件",
-      "change": "相關網頁已更新並與U_W團隊分享。",
-      "reason": "保持資訊最新並共享。",
-      "meeting_id": "Bmr024"
-    },
-    {
-      "method": "音訊標記方法 (IBM轉錄)",
-      "change": "在每個提示音之間加入口說數字（例如「嗶一嗶」）。",
-      "reason": "改善IBM轉錄的追蹤和準確性。",
-      "meeting_id": "Bmr024"
-    },
-    {
-      "method": "轉錄員指示",
-      "change": "考慮指示轉錄員，若聽到數字串，只需標記為「[digit]」而非逐字轉錄數字內容。",
-      "reason": "簡化轉錄工作。",
-      "meeting_id": "Bmr024"
-    },
-    {
-      "method": "轉錄工作流程",
-      "change": "採用分批（每批五個檔案）的平行處理方式。",
-      "reason": "提高效率。",
-      "meeting_id": "Bmr024"
-    },
-    {
-      "method": "THISL GUI前端",
-      "change": "需要將THISL GUI前端移植到UNIX系統，並修改以適應會議數據，使其能識別不同講者並處理單一大型音頻文件。",
-      "reason": "使其能用於會議數據演示。",
-      "meeting_id": "Bmr025"
-    },
-    {
-      "method": "轉錄狀態追蹤",
-      "change": "維護一個網頁，顯示所有已收集會議的轉錄狀態。",
-      "reason": "方便團隊追蹤進度。",
-      "meeting_id": "Bmr026"
-    },
-    {
-      "method": "參與者音頻存取",
-      "change": "參與者將需要存取未壓縮的音頻版本。",
-      "reason": "隨機存取解壓縮速度慢。",
-      "meeting_id": "Bmr026"
-    },
-    {
-      "method": "Transcriber安裝",
-      "change": "需取得不再受支援的Snack 1.6.x版本，必須直接聯繫作者才能取得。",
-      "reason": "Transcriber僅與該版本兼容。",
-      "meeting_id": "Bmr026"
-    },
-    {
-      "method": "Transcriber補丁應用",
-      "change": "無法將補丁應用於打包的Snack或新版Snack。",
-      "reason": "打包版本無法修改，新版Snack原始碼結構完全不同。",
-      "meeting_id": "Bmr026"
-    },
-    {
-      "method": "Transcriber Windows安裝流程",
-      "change": "確立了Tcl -> Snack -> Transcriber -> 補丁的安裝順序。",
-      "reason": "確保Transcriber在Windows上正確運行。",
-      "meeting_id": "Bmr026"
+      "status": "evolved",
+      "method": "THISL GUI前端持續進行移植與修改"
     }
   ],
-  "unresolved_issues": [
-    "需在七月中旬的DARPA會議前，完成轉錄器介面和問答系統的模擬展示準備工作，時間只剩一個月。",
-    "Adam因病缺席，導致會議議程未準備。需要整理會議資訊。",
-    "建議再次檢查音訊，確認提示音沒有被切斷的問題。",
-    "Brian需要再次聯繫Brian，確認他是否收到會議訊息。",
-    "me011將從\"transcripts\"目錄複製未校正的轉錄數據，以檢查數據格式並確保資訊檢索系統正常運作，並承諾在校正完成後刪除副本。",
-    "未來將為THISL GUI添加更多功能，例如按講者和會議查詢。",
-    "建議聯繫Dan，詢問他是否已為THISL工具實施Autoconf，若尚未實施，則鼓勵他進行，以簡化未來移植工作。",
-    "詢問 Jane 是否能讓她的轉錄員協助轉錄 SmartKom 的初步數據。",
-    "將轉錄狀態網頁的連結發送給團隊列表。",
-    "將個人目錄中的轉錄資料狀態更新到網頁上。",
-    "前端開發進度緩慢，因為缺乏 Tcl-Tk 程式設計師，Don 和我將會接手處理。",
-    "應該將我們的修改貢獻回 Transcriber 的作者（已貢獻但尚未發布）。",
-    "將把 Transcriber 的 NT 版本放到 Meeting Recorder 網頁上。",
-    "建議 Transcriber 介面增加一個視窗，用於顯示與波形時間同步的任意數值函數（例如音高向量）。",
-    "未備份的磁碟空間即將用盡。"
+  "open_to_next": [
+    "DARPA演示的轉錄器介面與問答系統模擬展示準備",
+    "THISL GUI前端開發進度緩慢，缺乏Tcl-Tk程式設計師"
   ],
   "child_meeting_ids": [
     "Bmr023",
