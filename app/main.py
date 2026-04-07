@@ -4,13 +4,25 @@ from google import genai
 from google.genai import types
 
 from config import SYSTEM_PROMPT, GEMINI_API_KEY
+from memory_context import retrieve_memory_context
 from utli import record
 
 MODEL_NAME = "gemini-2.5-flash"
+MAX_RECALL_CONTEXT_CHARS = 4000
 INITIAL_STUDENT_PROMPT = (
     "我想做一個 Virtual Mentor 系統，模擬教授在 meeting 裡的提問方式，"
     "讓學生可以先練習怎麼回答跟準備研究進度。"
 )
+
+
+def build_turn_prompt(student_text: str, memory_context: str) -> str:
+    return f"""
+以下是本輪可參考的記憶檢索結果（可能相關，若不適用可忽略）：
+{memory_context}
+
+學生本輪輸入：
+{student_text}
+""".strip()
 
 
 def build_client() -> genai.Client:
@@ -52,7 +64,19 @@ def run_chat(chat: genai.chats.Chat, record_file: str, initial_prompt: str) -> N
     record("Student", student_text, record_file)
 
     while True:
-        professor_text = stream_professor_reply(chat, student_text)
+        try:
+            memory_context = retrieve_memory_context(
+                query=student_text,
+                api_key=GEMINI_API_KEY,
+                model_name=MODEL_NAME,
+                max_context_chars=MAX_RECALL_CONTEXT_CHARS,
+            )
+            turn_prompt = build_turn_prompt(student_text, memory_context)
+        except Exception as exc:
+            print(f"[Recall warning] {exc}")
+            turn_prompt = student_text
+
+        professor_text = stream_professor_reply(chat, turn_prompt)
         record("Professor", professor_text, record_file)
 
         student_text = get_student_input()
