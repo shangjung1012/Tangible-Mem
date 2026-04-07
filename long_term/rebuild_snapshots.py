@@ -33,8 +33,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 from io_utils import load_env, load_tree, save_json
 from schema import DEFAULT_TREE
 from summarize import summarize_phase, update_project_profile
@@ -173,6 +171,7 @@ def main() -> None:
             print(f"[{step:2d}/{total}] {meeting_id}  (skipped — both snapshots exist)")
             # Still need to load existing phase into running_tree for L3 continuity
             existing_phase = json.loads((l2_snap_dir / l2_snap_name).read_text())
+            existing_profile = json.loads((l3_snap_dir / l3_snap_name).read_text())
             phases = running_tree.get("phases", [])
             phases_by_id = {p["phase_id"]: i for i, p in enumerate(phases)}
             if phase_id in phases_by_id:
@@ -180,6 +179,7 @@ def main() -> None:
             else:
                 phases.append(existing_phase)
             running_tree["phases"] = phases
+            running_tree["project_profile"] = existing_profile
             continue
 
         print(
@@ -224,8 +224,11 @@ def main() -> None:
         except Exception as exc:
             print(f"✗ L3 ERROR: {exc}")
 
+    save_json(tree_path, running_tree)
+
     print("\n" + "=" * 60)
     print("Done!")
+    print(f"  Final tree → {tree_path}")
     print(f"  L2 snapshots ({total}) → {l2_snap_dir}/")
     print(f"  L3 snapshots ({total}) → {l3_snap_dir}/")
     print("=" * 60)

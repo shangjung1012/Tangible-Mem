@@ -366,7 +366,6 @@ def _recency_score(
 
 ### 4-2 保留不動的部分
 - `_keyword_score()`：保留
-- `trace_method_changes()`：保留（causal chain 追蹤，不依賴 embedding）
 - `get_l3_profile()`：保留
 - `_extract_json()`：保留（gate 仍需要）
 - `recall_gate()` 函式邏輯：保留，但 `_build_gate_prompt()` 更新（見 4-6）
@@ -959,7 +958,6 @@ uv run long_term/test_long_term.py
 | `_keyword_score()` | **保留**（short_term 仍用，long_term 不再呼叫） |
 | `search_l1()` | **刪除**，替換為 `search_l1_semantic()` |
 | `search_l2()` | **刪除**（L2 改由 parent chain 提供） |
-| `trace_method_changes()` | **保留**（causal chain 追蹤） |
 | `get_l3_profile()` | **保留** |
 | `_build_gate_prompt()` | **更新**（加入 date / phase_id / importance / score） |
 | `recall_gate()` | **保留邏輯**，觸發條件不變 |

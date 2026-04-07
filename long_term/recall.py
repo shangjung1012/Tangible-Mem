@@ -172,55 +172,6 @@ def search_l1_semantic(
     results.sort(key=lambda x: -x["score"])
     return results[:top_k]
 
-
-# ===================================================================
-# Trace method-change causal chain
-# ===================================================================
-
-def trace_method_changes(
-    tree: dict[str, Any],
-    keywords: list[str],
-) -> list[dict[str, Any]]:
-    """Return method_change objects matching keywords, sorted by time."""
-    results: list[dict[str, Any]] = []
-
-    for meeting in tree.get("meetings", []):
-        meeting_id = meeting.get("meeting_id", "")
-        timestamp = meeting.get("timestamp", "")
-        for obj in meeting.get("memory_objects", []):
-            if obj.get("type") != "method_change":
-                continue
-            raw_topics = obj.get("related_topics", [])
-            topics = [str(t) for t in raw_topics] if isinstance(raw_topics, list) else []
-            text = " ".join(
-                [
-                    str(obj.get("content", "") or ""),
-                    str(obj.get("evidence", "") or ""),
-                    " ".join(topics),
-                ]
-            )
-            score = _keyword_score(text, keywords)
-            if score <= 0:
-                continue
-            results.append(
-                {
-                    "source": "long_term_l1",
-                    "meeting_id": meeting_id,
-                    "timestamp": timestamp,
-                    "obj_id": obj.get("obj_id", ""),
-                    "type": obj.get("type", ""),
-                    "content": obj.get("content", ""),
-                    "importance": obj.get("importance", 0),
-                    "evidence": obj.get("evidence", ""),
-                    "related_topics": topics,
-                    "score": score,
-                }
-            )
-
-    results.sort(key=lambda x: (x.get("meeting_id", ""), x.get("timestamp", "")))
-    return results
-
-
 # ===================================================================
 # L2/L3 retrieval via parent-chain expansion
 # ===================================================================
@@ -236,7 +187,7 @@ def _get_l2_for_meeting(tree: dict[str, Any], meeting_id: str) -> dict[str, Any]
 def get_l3_profile(tree: dict[str, Any]) -> dict[str, Any] | None:
     """Return the L3 project profile if it contains meaningful data."""
     profile = tree.get("project_profile", {})
-    if not profile.get("methodology") and not profile.get("method_timeline"):
+    if not profile.get("core_goal") and not profile.get("established_methods"):
         return None
     return {"source": "long_term_l3", **profile}
 
@@ -542,14 +493,18 @@ def format_recall_for_prompt(recall_result: dict[str, Any]) -> str:
     profile = recall_result.get("project_profile")
     if profile:
         parts.append("=== 研究計畫輪廓 (L3) ===")
-        methodology = profile.get("methodology")
-        if methodology:
-            parts.append(f"方法論：{methodology}")
-        for entry in profile.get("method_timeline", []):
-            parts.append(
-                f"  [{entry.get('period', '?')}] {entry.get('method', '')} "
-                f"→ {entry.get('status', '')}（{entry.get('reason', '')}）"
-            )
+        if profile.get("core_goal"):
+            parts.append(f"目標：{profile['core_goal']}")
+        if profile.get("current_phase"):
+            parts.append(f"目前階段：{profile['current_phase']}")
+        if profile.get("established_methods"):
+            parts.append("確立做法：")
+            for method in profile["established_methods"]:
+                parts.append(f"  · {method}")
+        if profile.get("long_term_open_questions"):
+            parts.append("長期懸案：")
+            for question in profile["long_term_open_questions"]:
+                parts.append(f"  ? {question}")
 
     # --- L2 phases ---
     l2_results = recall_result.get("long_term_l2", [])
@@ -560,16 +515,17 @@ def format_recall_for_prompt(recall_result: dict[str, Any]) -> str:
             tr = phase.get("time_range", {})
             time_str = f"{tr.get('start', '?')} ~ {tr.get('end', '?')}"
             parts.append(f"\n[Phase {phase_id} | {time_str}]")
-
-            summary = phase.get("summary", "")
-            if summary:
-                parts.append(summary)
-
-            key_decisions = phase.get("key_decisions", [])
-            if key_decisions:
-                parts.append("  關鍵決策：")
-                for kd in key_decisions:
-                    parts.append(f"    · {kd}")
+            if phase.get("summary"):
+                parts.append(f"  {phase['summary']}")
+            for change in phase.get("changes", []):
+                status_label = {
+                    "adopted": "✓確立",
+                    "abandoned": "✗棄用",
+                    "evolved": "→演進",
+                }.get(change.get("status", ""), change.get("status", "?"))
+                parts.append(f"  [{status_label}] {change.get('method', '')}")
+            for issue in phase.get("open_to_next", []):
+                parts.append(f"  [懸案] {issue}")
 
     # --- L1 memory objects ---
     l1_results = recall_result.get(

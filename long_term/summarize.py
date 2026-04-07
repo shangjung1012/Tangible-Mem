@@ -63,21 +63,22 @@ def _build_phase_summary_prompt(
                 f"  [{obj['type']}] (importance={obj['importance']}) "
                 f"{obj['content']}\n"
             )
-            if obj.get("evidence"):
-                meetings_text += f"    evidence: {obj['evidence']}\n"
 
     return f"""
 你是「長期記憶彙整器」。
 任務：將多個會議的 L1 記憶物件彙整成一個階段性摘要（L2 Phase Summary）。
 
-規則：
-1) 回傳 JSON only，不要有任何額外文字。
-2) summary 請綜合描述本階段的整體進展。
-3) key_decisions 列出本階段做出的重要決策。
-4) method_evolution 必須嚴格按時間順序排列方法變更，保留因果關係。
-   每筆需包含 method、change、reason、meeting_id。
-5) unresolved_issues 列出本階段尚未解決的問題。
-6) 文字請使用繁體中文。
+★ 核心原則：每一層只回答自己層次的問題，不要抄寫下層的細節。
+
+欄位規則：
+1) summary：本階段的主軸是什麼？1-2 句，60 字以內。只寫大方向，不要列舉。
+2) changes：本階段「淨」的方法變化，最多 5 條。
+   - 只寫這段期間確立或棄用的重要做法，不要把每個小調整都列出來
+   - 每條 method 限 30 字以內，不要含 reason（reason 留在 L1）
+   - status 只有三種：adopted（確立）/ abandoned（棄用）/ evolved（持續演進）
+3) open_to_next：本階段結束時仍懸而未決的真正懸案，最多 2 條，每條 40 字以內。
+   - 不要把所有 todo 都列入，只保留真正影響下一步進展的問題
+4) 回傳 JSON only，文字使用繁體中文。
 
 階段 ID：{phase_id}
 
@@ -129,9 +130,8 @@ def summarize_phase(
         "phase_id": phase_id,
         "time_range": {"start": time_start, "end": time_end},
         "summary": result.get("summary", ""),
-        "key_decisions": result.get("key_decisions", []),
-        "method_evolution": result.get("method_evolution", []),
-        "unresolved_issues": result.get("unresolved_issues", []),
+        "changes": result.get("changes", []),
+        "open_to_next": result.get("open_to_next", []),
         "child_meeting_ids": child_meeting_ids,
     }
 
@@ -184,35 +184,42 @@ def _build_profile_update_prompt(
             f"({tr.get('start', '?')} ~ {tr.get('end', '?')}) ---\n"
         )
         phases_text += f"  Summary: {p.get('summary', '')}\n"
-        decisions = p.get("key_decisions", [])
-        if decisions:
-            phases_text += f"  Key Decisions: {'; '.join(decisions)}\n"
-        for evo in p.get("method_evolution", []):
-            phases_text += (
-                f"  Method: {evo.get('method', '')} | "
-                f"Change: {evo.get('change', '')} | "
-                f"Reason: {evo.get('reason', '')}\n"
-            )
+        for ch in p.get("changes", []):
+            phases_text += f"  [{ch.get('status', '?')}] {ch.get('method', '')}\n"
+        for issue in p.get("open_to_next", []):
+            phases_text += f"  [open] {issue}\n"
 
-    current_profile_text = json.dumps(current_profile, ensure_ascii=False, indent=2)
+    slim_profile = {
+        "core_goal": current_profile.get("core_goal", ""),
+        "current_phase": current_profile.get("current_phase", ""),
+        "established_methods": current_profile.get("established_methods", []),
+        "long_term_open_questions": current_profile.get(
+            "long_term_open_questions", []
+        ),
+    }
+    current_profile_text = json.dumps(slim_profile, ensure_ascii=False, indent=2)
 
     return f"""
 你是「研究計畫輪廓更新器」。
 任務：根據所有階段摘要（L2）更新研究計畫的長期輪廓（L3 Project Profile）。
 
-規則：
-1) 回傳 JSON only，不要有任何額外文字。
-2) methodology 描述目前確立的研究方法論。
-3) core_values 列出研究計畫的核心原則。
-4) method_timeline 必須嚴格按時間順序，記錄方法論的完整演進史。
-   - status: adopted（採用）、abandoned（放棄）、evolved（演進）
-5) 必須保留歷史，不要遺漏過去的方法變更。
-6) 文字請使用繁體中文。
+★ 核心原則：L3 回答的是「整個專案的全局」，不是彙整 L2 的細節。
 
-目前的 Project Profile：
+欄位規則：
+1) core_goal：整個專案的核心目標，1-2 句，60 字以內。不要描述方法細節。
+2) current_phase：目前整個研究所處的大階段，1 句，30 字以內。
+3) established_methods：目前跨越多個 phase 都沒有變動的穩定核心做法，最多 5 條，每條 35 字以內。
+   - 只列已確立且仍在使用的做法，不要列已棄用的
+   - 不要把某一個 phase 的單次決策列進來
+4) long_term_open_questions：從多個 phase 看下來至今仍懸而未決的長期問題，最多 3 條，每條 40 字以內。
+   - 只保留真正橫跨多個階段、影響整個研究方向的問題
+   - 不要列近期的 todo 或已解決的問題
+5) 回傳 JSON only，文字使用繁體中文。
+
+目前的 Project Profile（供更新參考）：
 {current_profile_text}
 
-所有階段摘要：
+所有階段摘要（按時間順序）：
 {phases_text}
 """.strip()
 
@@ -259,9 +266,10 @@ def update_project_profile(
             "start": min(all_starts) if all_starts else "",
             "end": max(all_ends) if all_ends else "",
         },
-        "methodology": result.get("methodology", ""),
-        "core_values": result.get("core_values", []),
-        "method_timeline": result.get("method_timeline", []),
+        "core_goal": result.get("core_goal", ""),
+        "current_phase": result.get("current_phase", ""),
+        "established_methods": result.get("established_methods", []),
+        "long_term_open_questions": result.get("long_term_open_questions", []),
         "child_phase_ids": sorted(p["phase_id"] for p in phases),
     }
 
@@ -356,7 +364,10 @@ def main() -> None:
         snap = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_profile.json"
         save_json(snapshot_dir / snap, tree)
         print(f"Project profile updated: {profile['project_id']}")
-        print(f"Method timeline entries: {len(profile['method_timeline'])}")
+        print(f"Established methods: {len(profile.get('established_methods', []))}")
+        print(
+            f"Open questions: {len(profile.get('long_term_open_questions', []))}"
+        )
 
 
 if __name__ == "__main__":
