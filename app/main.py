@@ -10,8 +10,8 @@ from utli import record
 MODEL_NAME = "gemini-2.5-flash"
 MAX_RECALL_CONTEXT_CHARS = 4000
 INITIAL_STUDENT_PROMPT = (
-    "我想做一個 Virtual Mentor 系統，模擬教授在 meeting 裡的提問方式，"
-    "讓學生可以先練習怎麼回答跟準備研究進度。"
+    "針對「it's- I'm not worrying about it I mean, because we do have digits training data that we have from」"
+    "，這件事目前是已決策、待驗證，還是尚未定案？"
 )
 
 

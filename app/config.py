@@ -10,6 +10,6 @@ ROOT = Path(__file__).parent.parent.resolve()
 profile_path = ROOT / "app" / "profile.md"
 profile_text = profile_path.read_text(encoding="utf-8")
 
-SYSTEM_PROMPT = TEMPLATE_PROFILE_ONLY.format(
+SYSTEM_PROMPT = TEMPLATE_MEETING_QA.format(
     profile_text=profile_text
 )
