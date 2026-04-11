@@ -39,18 +39,20 @@ L3: Project Profile（研究計畫輪廓）
 | 欄位 | 型態 | 說明 |
 |---|---|---|
 | `obj_id` | `str` | 唯一 ID，格式 `L1-{meeting_id}-{seq:03d}` |
-| `type` | `enum` | `decision` \| `todo` \| `method_change` \| `result` |
+| `type` | `enum` | `decision` \| `todo` \| `method_change` \| `result` \| `open_question` \| `argument` |
 | `content` | `str` | 記憶內容（繁體中文）|
 | `importance` | `float` | 重要性 0.0～1.0 |
 | `evidence` | `str` | 從逐字稿引用的支持句 |
 | `related_topics` | `list[str]` | 主題關鍵字，用於因果鏈追蹤 |
 | `related_obj_ids` | `list[str]` | 預留：與其他 Memory Object 的關聯 |
 
-**四種 type 含義：**
+**六種 type 含義：**
 - `decision`：會議中做出的決策或結論（影響後續研究方向）
 - `todo`：被指派的待辦事項
 - `method_change`：方法論、演算法、流程的變更（因果鏈的最重要元素）
 - `result`：實驗結果、發現、觀察報告
+- `open_question`：尚未解決、需要後續追蹤的研究問題
+- `argument`：決策背後的論點、推理與取捨
 
 **importance 評分標準：**
 - 0.8～1.0：影響整個研究方向的重大決策
@@ -64,13 +66,17 @@ L3: Project Profile（研究計畫輪廓）
 
 | 欄位 | 說明 |
 |---|---|
-| `phase_id` | 如 `P-2026-03` |
+| `phase_id` | 如 `P-007` |
 | `time_range` | `{start, end}` 日期字串 |
-| `summary` | 本階段整體進展描述 |
-| `key_decisions` | 本階段關鍵決策列表 |
-| `method_evolution` | **嚴格按時間順序**的方法演進記錄，每筆含 `method`、`change`、`reason`、`meeting_id` |
-| `unresolved_issues` | 本階段尚未解決的問題 |
-| `child_meeting_ids` | 本階段包含的 meeting ID 列表 |
+| `summary` | 本階段主軸，1-2 句、60 字內 |
+| `changes` | 本期淨方法變化，最多 5 條；每條含 `status` 與 `method` |
+| `open_to_next` | 留給下一階段的真正懸案，最多 2 條 |
+| `child_meeting_ids` | 本階段包含的 meeting ID 列表（內部索引用，不進 prompt） |
+
+`changes[].status` 只會是：
+- `adopted`：本期確立
+- `abandoned`：本期棄用
+- `evolved`：持續演進中
 
 ### L3：Project Profile（計畫層）
 
@@ -80,10 +86,11 @@ L3: Project Profile（研究計畫輪廓）
 |---|---|
 | `project_id` | 研究計畫識別碼 |
 | `time_range` | 整個計畫的起訖時間 |
-| `methodology` | 目前確立的研究方法論 |
-| `core_values` | 研究核心原則列表 |
-| `method_timeline` | 方法論完整演進時間軸，每筆含 `period`、`method`、`status`（`adopted`/`abandoned`/`evolved`）、`reason` |
-| `child_phase_ids` | 所有 Phase ID 列表 |
+| `core_goal` | 專案核心目標，1-2 句、60 字內 |
+| `current_phase` | 目前所處的大階段，1 句、30 字內 |
+| `established_methods` | 跨多個 phase 都穩定成立的核心做法，最多 5 條 |
+| `long_term_open_questions` | 橫跨多個 phase 的長期懸案，最多 3 條 |
+| `child_phase_ids` | 所有 Phase ID 列表（內部索引用，不進 prompt） |
 
 ---
 
@@ -100,7 +107,7 @@ L3: Project Profile（研究計畫輪廓）
       "meeting_id": "Bmr001",
       "timestamp": "2026-04-06T13:08:17Z",
       "source_file": "/path/to/Bmr001.mrt",
-      "phase_id": "P-2026-01",         // 歸屬哪個 Phase（run summarize 後填入）
+      "phase_id": "P-001",             // 歸屬哪個 Phase（run summarize 後填入）
       "memory_objects": [
         {
           "obj_id": "L1-Bmr001-001",
@@ -142,7 +149,7 @@ long_term/
 
 ### `schema.py`
 純常數模組，定義：
-- `MEMORY_OBJ_TYPES`：`{"decision", "todo", "method_change", "result"}`
+- `MEMORY_OBJ_TYPES`：`{"decision", "todo", "method_change", "result", "open_question", "argument"}`
 - `DEFAULT_TREE`：空樹的初始結構
 - `BRIDGE_RESPONSE_SCHEMA`：Bridge LLM 的 JSON Schema（Gemini Structured Output 格式）
 - `PHASE_SUMMARY_SCHEMA`：Phase 摘要 LLM 的 JSON Schema
@@ -221,10 +228,10 @@ uv run build_tree.py --no-auto-summarize
 
 快照命名規則：
 - `snapshots/L2/P-001__Bmr001.json` — Phase 1，只含第 1 場
-- `snapshots/L2/P-001__Bmr004.json` — Phase 1，含第 1~4 場（完整）
-- `snapshots/L2/P-002__Bmr005.json` — Phase 2，只含第 5 場
+- `snapshots/L2/P-001__Bmr005.json` — Phase 1，含第 1~4 場（完整）
+- `snapshots/L2/P-002__Bmr006.json` — Phase 2，只含第 5 場
 - `snapshots/L3/Bmr001.json` — 看過 1 場後的 project profile
-- `snapshots/L3/Bmr029.json` — 看過全部 29 場後的 project profile
+- `snapshots/L3/Bmr031.json` — 看過全部 29 場後的 project profile
 
 CLI 使用：
 ```bash
@@ -243,25 +250,25 @@ uv run rebuild_snapshots.py --phase-size 6
 
 `phase` 子命令（L1 → L2）：
 1. 從 `tree.json` 撈出指定 meeting 的所有 L1 記憶物件
-2. 展開成純文字清單（含 type、importance、content、evidence）
+2. 展開成純文字清單（含 type、importance、content）
 3. 呼叫 Gemini，要求輸出 `PHASE_SUMMARY_SCHEMA` 格式的摘要
-4. `method_evolution` 嚴格按 meeting_id（即時間）排序，保留因果關係
+4. 產生 `summary`、`changes`、`open_to_next`
 5. 更新 `tree.json` 中的 `phases` 陣列，並將相關 meeting 的 `phase_id` 填入
 
 `profile` 子命令（L2 → L3）：
 1. 讀取所有 L2 phases
 2. 呼叫 Gemini，要求輸出 `PROFILE_UPDATE_SCHEMA` 格式的計畫輪廓
-3. `method_timeline` 是完整演進史（不可刪除歷史）
+3. 產生 `core_goal`、`current_phase`、`established_methods`、`long_term_open_questions`
 4. 自動計算整個計畫的時間區間（min start / max end）
 
 CLI 使用：
 ```bash
 # 建立 L2 Phase 摘要
 uv run long_term/summarize.py phase \
-  --phase-id P-2026-03 \
-  --time-start 2026-03-01 \
-  --time-end 2026-03-31 \
-  --meetings Bmr005 Bmr006 Bmr007
+  --phase-id P-007 \
+  --time-start Bmr027 \
+  --time-end Bmr030 \
+  --meetings Bmr027 Bmr028 Bmr029 Bmr030
 
 # 更新 L3 計畫輪廓
 uv run long_term/summarize.py profile
@@ -293,16 +300,17 @@ uv run long_term/summarize.py profile
 
 | 函式 | 說明 |
 |---|---|
-| `search_l1()` | 對所有 L1 記憶物件做 keyword scoring，可過濾 type 和 min_importance |
-| `trace_method_changes()` | 專門追蹤 `method_change` 類型，嚴格按 meeting_id 時間排序（因果鏈） |
-| `search_l2()` | 對 L2 phase 摘要做 keyword scoring |
+| `search_l1_semantic()` | 對所有 L1 記憶物件做 semantic + recency + importance 檢索 |
 | `get_l3_profile()` | 直接回傳 L3 project profile（若有資料） |
+| `expand_parent_chain()` | 由 L1 命中結果向上補齊所屬 L2 與 singleton L3 |
 | `recall_gate()` | 當 candidates > 3 時，呼叫 LLM 過濾雜訊，只保留真正相關的 |
 | `recall()` | 主編排器，依 plan 調用上述函式，組合最終結果 |
 | `format_recall_for_prompt()` | 將 recall 結果格式化成可注入 system prompt 的文字 |
 
-**Keyword Matching 機制：**
-目前使用 `_keyword_score()`，計算 keywords 清單中有多少比例出現在目標文字內（大小寫不敏感）。命中率越高分數越高。
+**目前的檢索策略：**
+- 長期記憶 L1：使用 embedding 做 semantic retrieval，再混合 recency 與 importance 分數
+- 長期記憶 L2 / L3：由 L1 命中結果往上展開 parent chain
+- 短期記憶：仍使用 `_keyword_score()` 做簡單 keyword matching
 
 ---
 
@@ -329,7 +337,7 @@ uv run long_term/summarize.py profile
 [summarize.py phase]（每月 / 每個 Sprint 執行一次）
   1. 讀取指定 meeting 的 L1 記憶物件
   2. 呼叫 Gemini phase summary prompt
-  3. 產生 summary、key_decisions、method_evolution（時間順序）、unresolved_issues
+  3. 產生 summary、changes、open_to_next
   4. 寫入 tree.json 的 phases 陣列
   5. 將相關 meeting 的 phase_id 填入
        │
@@ -339,7 +347,7 @@ uv run long_term/summarize.py profile
        ▼
 [summarize.py profile]（定期執行）
   1. 從所有 L2 phases 提煉
-  2. 產生完整方法論時間軸 + core_values
+  2. 產生 core_goal、current_phase、established_methods、long_term_open_questions
   3. 寫入 tree.json 的 project_profile
        │
        ▼
@@ -385,12 +393,10 @@ recall_planner → complex
 keywords: ["對數能量", "能量分析", "放棄"]
 
 search_l1(obj_types=["method_change"]) →
-  [Bmr009] 建議調整時間窗大小，從固定 200ms 改為變動窗
-  [Bmr009] 決定從直接能量而非對數能量開始分析
-
-trace_method_changes() →
-  按 meeting_id 排序（時間順序）：
-    Bmr009 → Bmr010 → ... （完整演進鏈）
+  semantic + recency + importance 排序後的候選：
+    [Bmr009] 建議調整時間窗大小，從固定 200ms 改為變動窗
+    [Bmr009] 決定從直接能量而非對數能量開始分析
+    [Bmr010] 補充直接能量方案的後續觀察
 
 recall_gate() →
   只保留真正與「對數能量 → 直接能量」這條路徑相關的物件
@@ -419,7 +425,7 @@ format_recall_for_prompt() →
 
 ## 七、擴充方向（目前尚未實作）
 
-1. **Embedding-based Semantic Search**：目前 `_keyword_score()` 是字串包含比對，詞彙不完全吻合時會漏掉。改用 embedding 向量（如 `text-embedding-004`）可大幅提升召回率。
+1. **時間範圍提示落地**：`plan_recall()` 已能產生 `time_range_hint`，但 `recall()` 目前尚未真正用它做篩選或加權。
 
 2. **跨會議因果連結 `related_obj_ids`**：目前欄位預留但未填，未來 bridge 可在同主題 memory object 之間建立顯式關聯邊，讓圖搜尋成為可能。
 

@@ -11,12 +11,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 import time
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent / "long_term"))
 
 from copy import deepcopy
 
@@ -29,30 +26,7 @@ from bridge import (
 from io_utils import load_env, load_tree, save_json, utc_now_iso
 from schema import DEFAULT_TREE
 from summarize import summarize_phase, update_project_profile
-
-
-# ===================================================================
-# MRT → plain text  (reuse from test_long_term.py)
-# ===================================================================
-
-_SEGMENT_RE = re.compile(
-    r'<Segment\s+StartTime="([^"]+)"\s+EndTime="[^"]+"\s+Participant="([^"]+)">'
-    r"(.*?)</Segment>",
-    re.DOTALL,
-)
-_TAG_RE = re.compile(r"<[^>]+>")
-
-
-def mrt_to_text(mrt_path: Path) -> str:
-    raw = mrt_path.read_text(encoding="iso-8859-1")
-    lines: list[str] = []
-    for match in _SEGMENT_RE.finditer(raw):
-        start_time, speaker, body = match.group(1), match.group(2), match.group(3)
-        text = _TAG_RE.sub("", body).strip()
-        text = re.sub(r"\s+", " ", text)
-        if text:
-            lines.append(f"[{speaker} @ {start_time}s]: {text}")
-    return "\n".join(lines)
+from transcript_utils import infer_meeting_date, mrt_to_text
 
 
 # ===================================================================
@@ -204,8 +178,14 @@ def main() -> None:
             )
             raw_objects = llm_output.get("memory_objects", [])
             memory_objects = normalize_memory_objects(raw_objects, meeting_id)
+            meeting_date = infer_meeting_date(mrt_path)
             insert_meeting_into_tree(
-                tree, meeting_id, str(mrt_path), utc_now_iso(), memory_objects
+                tree=tree,
+                meeting_id=meeting_id,
+                source_file=str(mrt_path),
+                timestamp=utc_now_iso(),
+                memory_objects=memory_objects,
+                meeting_date=meeting_date,
             )
             total_objects += len(memory_objects)
             print(f"✓ {len(memory_objects)} objects")

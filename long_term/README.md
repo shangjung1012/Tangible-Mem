@@ -1,117 +1,155 @@
 # Long-term Memory（時間記憶樹）
 
-長期記憶模組，以「時間軸與演進」為主軸，基於 TiMem 的時間記憶樹 (Temporal Memory Tree) 設計。
+`long_term/` 是 Virtual Mentor 的跨會議記憶模組。它會把單場會議整理成 L1 記憶，再逐步彙整成 L2 phase 與 L3 project profile，供 recall 在回答問題時補上長期背景。
 
-## 三層結構
+## 先看這裡
 
-| 層級 | 名稱 | 說明 |
-|------|------|------|
-| **L1** | Meeting Level | 每次會議擷取多個記憶物件 (`decision` / `todo` / `method_change` / `result`) |
-| **L2** | Phase / Monthly Level | 月度或衝刺期的彙整摘要，由 L1 匯聚而來 |
-| **L3** | Project Profile | 研究計畫的長期輪廓，記錄最終確立的方法論與核心價值觀 |
+- 指令入口：`uv run long_term/cli.py --help`
+- 主資料：`long_term/tree.json`
+- 歷史快照：`long_term/snapshots/`
+- 系統設計：`long_term/ARCHITECTURE.md`
 
-時間包含約束 (Temporal Containment)：高層節點的時間區間必須完全涵蓋子節點。
-
-## 檔案結構
-
-| 檔案 | 用途 |
-|------|------|
-| `schema.py` | 記憶樹 schema、Gemini Structured Output JSON Schema |
-| `io_utils.py` | 環境變數、JSON 讀寫 |
-| `bridge.py` | **CLI** — 從逐字稿擷取 L1 記憶物件 |
-| `summarize.py` | **CLI** — L1→L2 階段摘要、L2→L3 計畫輪廓 |
-| `recall_planner.py` | **Library** — 查詢複雜度分類與路由 |
-| `recall.py` | **Library** — 時間軸記憶檢索 + 過濾閘門 (Recall Gate) |
-| `tree.json` | 主記憶樹資料 |
-| `snapshots/` | 版本化快照 |
-
-## 使用方式
-
-### 1. Bridge：擷取 L1 記憶物件
-
-從一份會議逐字稿擷取 memory objects 並寫入 `tree.json`：
+最常用的幾個指令：
 
 ```bash
-uv run long_term/bridge.py --transcript ./ICSI_original_transcripts/transcripts/Bmr001.mrt
+uv run long_term/cli.py bridge --transcript ICSI_original_transcripts/transcripts/Bmr001.mrt
+uv run long_term/cli.py build-tree --resume --phase-size 4
+uv run long_term/cli.py rebuild-snapshots --dry-run
+uv run long_term/cli.py smoke-todo
 ```
 
-可選參數：
+## 記憶層級
+
+| 層級 | 內容 | 產生方式 |
+| --- | --- | --- |
+| `L1` | 單場會議的 `decision` / `todo` / `method_change` / `result` / `open_question` / `argument` | `bridge` |
+| `L2` | 一個 phase 的 `summary` / `changes` / `open_to_next` | `summarize phase` |
+| `L3` | 專案整體的 `core_goal` / `current_phase` / `established_methods` / `long_term_open_questions` | `summarize profile` |
+
+Recall 目前走 semantic retrieval：先用 embedding 對 L1 做搜尋，再把 `semantic + recency + importance` 合成分數，必要時經過 Recall Gate，最後沿 parent chain 補回對應的 L2 / L3。
+
+## 資料夾怎麼看
+
+| 路徑 | 用途 |
+| --- | --- |
+| `cli.py` | long-term 專用 CLI 入口 |
+| `bridge.py` | 從單場逐字稿擷取 L1 記憶 |
+| `summarize.py` | `L1 -> L2` 與 `L2 -> L3` 的彙整 |
+| `recall.py` / `recall_planner.py` | recall 規劃、檢索、格式化 prompt |
+| `build_tree.py` / `rebuild_snapshots.py` | 批次建樹與重建 snapshots |
+| `scripts/` | smoke test / 評估腳本 |
+| `tree.json` | 長期記憶主資料 |
+| `snapshots/` | L2 / L3 snapshots 與評估輸出 |
+| `docs/` | 設計稿與重構筆記 |
+| `archive/` | 舊備份與 redesign preview，平常可忽略 |
+
+## 環境變數
+
+在專案根目錄的 `.env` 至少放：
+
+```env
+GEMINI_API_KEY=your_api_key
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_EMBED_MODEL=models/gemini-embedding-001
+```
+
+`test` 指令另外會讀這些變數：
+
+- `LONG_TERM_TEST_MODE=all|bridge|recall`
+- `LONG_TERM_TEST_RESUME=1`
+- `LONG_TERM_TEST_MEETINGS="Bmr001,Bmr002"`
+- `LONG_TERM_TEST_LIMIT=1`
+- `LONG_TERM_BRIDGE_MAX_RETRIES=8`
+- `LONG_TERM_BRIDGE_INTERVAL_S=1`
+- `LONG_TERM_STOP_ON_ERROR=1`
+- `LONG_TERM_REPORT_PATH=long_term/bridge_report.json`
+
+## 常用流程
+
+### 1. 單場 Bridge
 
 ```bash
-uv run long_term/bridge.py \
-  --transcript ./ICSI_original_transcripts/transcripts/Bmr001.mrt \
+uv run long_term/cli.py bridge \
+  --transcript ICSI_original_transcripts/transcripts/Bmr001.mrt
+```
+
+常見補充參數：
+
+```bash
+uv run long_term/cli.py bridge \
+  --transcript ICSI_original_transcripts/transcripts/Bmr001.mrt \
   --tree long_term/tree.json \
   --snapshot-dir long_term/snapshots \
   --model gemini-2.5-flash \
-  --timestamp 2000-06-14T17:00:00Z
+  --timestamp 2000-06-14T17:00:00Z \
+  --meeting-date 2000-06-14
 ```
 
-`--dry-run` 只列印結果不寫檔。
-
-### 2. Summarize：建立 L2 階段摘要
-
-將指定的 L1 會議匯聚成一個階段性摘要：
+### 2. 手動建立 L2 / L3
 
 ```bash
-uv run long_term/summarize.py phase \
-  --phase-id P-2026-03 \
-  --time-start 2026-03-01 \
-  --time-end 2026-03-31 \
-  --meetings Bmr005 Bmr006 Bmr007
+uv run long_term/cli.py summarize phase \
+  --phase-id P-007 \
+  --time-start Bmr027 \
+  --time-end Bmr030 \
+  --meetings Bmr027 Bmr028 Bmr029 Bmr030
 ```
-
-### 3. Summarize：更新 L3 計畫輪廓
-
-根據所有 L2 摘要更新研究計畫的長期輪廓：
 
 ```bash
-uv run long_term/summarize.py profile
+uv run long_term/cli.py summarize profile
 ```
 
-### 4. Recall：檢索記憶（程式庫呼叫）
+### 3. 批次建立整棵樹
 
-```python
-from pathlib import Path
-from long_term.recall_planner import plan_recall
-from long_term.recall import recall, format_recall_for_prompt
-from long_term.io_utils import load_tree, load_env
-
-api_key = load_env()
-tree = load_tree(Path("long_term/tree.json"))
-
-plan = plan_recall("我們為什麼放棄使用 A 演算法？", api_key)
-result = recall("我們為什麼放棄使用 A 演算法？", plan, tree, api_key)
-context = format_recall_for_prompt(result)
+```bash
+uv run long_term/cli.py build-tree --resume --phase-size 4
 ```
 
-## 更新流程
+補充：
 
-```
-會議結束
-  │
-  ▼
-bridge.py ──► L1 memory objects 寫入 tree.json
-  │
-  ▼ （每月 / 每個 Sprint）
-summarize.py phase ──► L2 階段摘要
-  │
-  ▼ （定期）
-summarize.py profile ──► L3 計畫輪廓
-  │
-  ▼ （對話時）
-recall_planner ──► 判斷複雜度
-  │
-  ├─ simple  ──► 短期記憶 (BM25)
-  └─ complex ──► 長期時間軸 + Recall Gate ──► 注入 prompt
+- `--dry-run` 只看會處理哪些會議
+- `--no-auto-summarize` 只建 L1，不自動補 L2 / L3
+- `--meetings Bmr001:Bmr005 Bmr009` 可只跑指定範圍
+- `build_tree.py` 目前內部 bridge model 固定是 `gemini-2.5-flash`
+
+### 4. 用既有 `tree.json` 重建 snapshots
+
+```bash
+uv run long_term/cli.py rebuild-snapshots --dry-run
+uv run long_term/cli.py rebuild-snapshots --phase-size 4
 ```
 
-## 檢索機制：複雜度感知的智慧分流 (Complexity-Aware Recall)
+這個流程不會重打 L1 bridge，只會根據現有 `tree.json` 重跑 L2 / L3。
 
-| 問題類型 | 路由 | 範例 |
-|----------|------|------|
-| 簡單/執行型 | `short_term` | 「上次會議決定怎麼處理缺失值？」 |
-| 複雜/演進型 | `long_term_l1` + `l2` + `l3` → Recall Gate | 「我們這半年模型架構的演進史為何？」 |
+### 5. 驗證與評估
 
-### 因果關係保留
+端對端測試：
 
-如果演算法改了 3 次（產生 3 個 `method_change`），它們會被嚴格按照時間先後排列在時間軸上。`recall.trace_method_changes()` 可沿時間軸調出完整的方法變更證據鏈。
+```bash
+export LONG_TERM_TEST_MODE=all
+export LONG_TERM_TEST_RESUME=1
+export LONG_TERM_REPORT_PATH=long_term/bridge_report.json
+UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py test
+```
+
+只檢查 todo recall：
+
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py smoke-todo
+```
+
+評估 prompt injection：
+
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py eval-injection \
+  --question "錄音增益問題的處理過程是什麼？" \
+  --show-only
+```
+
+## 需要更細節時
+
+- 系統設計與資料流：`long_term/ARCHITECTURE.md`
+- retrieve redesign 筆記：`long_term/docs/RETRIEVE_IMPLEMENTATION_PLAN.md`
+- L2 / L3 redesign 筆記：`long_term/docs/L2_L3_REDESIGN_PLAN.md`
+
+如果只是要開始跑 long-term，優先記住 `uv run long_term/cli.py --help` 就夠了。

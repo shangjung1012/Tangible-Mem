@@ -1,0 +1,1081 @@
+{
+  "tree_version": 9,
+  "last_updated_utc": "2026-04-07T18:48:41Z",
+  "project_profile": {
+    "project_id": "virtual-mentor",
+    "time_range": {
+      "start": "Bmr023",
+      "end": "Bmr031"
+    },
+    "methodology": "目前確立的研究方法論涵蓋多方面，主要聚焦於語音辨識系統的效能提升與轉錄流程的優化。在語音處理前端，透過持續調整麥克風增益以優化錄音品質，並應用聲道長度正規化(VTLN)技術，將SRI系統計算的扭曲因子應用於ICSI前端並進行倒數調整，以顯著改善辨識表現。特徵提取方面，PLP特徵的表現已與MFCC相當甚至更佳。會議辨識方法已從手動分割轉為自動語音分割，以提升效率與準確性。此外，已導入無監督的說話者適應性訓練以進一步提升辨識性能。在轉錄流程方面，為提升效率與準確性，導入了多項輔助方法：初期在每個語句開頭加入「提示音-數字-提示音」序列，後續演進為在提示音之間加入口說數字以利追蹤；同時，建議轉錄員對口說數字串僅標記為「[digit]」以簡化工作。為加速轉錄進度，已增聘轉錄員並將工作流程改為平行處理，將音檔分為每組五小時的「套件」進行處理。此外，為聚焦於會議實質內容，會議轉錄將從有人明確說「O_K」表示會議正式開始時算起，不包含冗長的前言。",
+    "core_values": [
+      "技術卓越",
+      "效能優化",
+      "使用者導向",
+      "持續改進"
+    ],
+    "method_timeline": [
+      {
+        "period": "Bmr023",
+        "method": "錄音品質優化 (麥克風增益調整)",
+        "status": "evolved",
+        "reason": "持續調高麥克風增益以改善錄音品質"
+      },
+      {
+        "period": "Bmr023",
+        "method": "聲道長度正規化 (VTLN) 實施細節",
+        "status": "evolved",
+        "reason": "將SRI系統計算的扭曲因子應用於ICSI前端，並進行倒數調整，以顯著改善辨識表現"
+      },
+      {
+        "period": "Bmr023",
+        "method": "會議辨識方法",
+        "status": "evolved",
+        "reason": "從手動分割轉為自動語音分割，以提升效率與準確性"
+      },
+      {
+        "period": "Bmr023",
+        "method": "轉錄輔助方法 (提示音序列)",
+        "status": "evolved",
+        "reason": "引入「提示音-數字-提示音」序列，協助轉錄員追蹤進度，避免迷失"
+      },
+      {
+        "period": "Bmr024",
+        "method": "轉錄輔助提示音格式優化",
+        "status": "evolved",
+        "reason": "將提示音格式從「提示音-數字-提示音」改為每個提示音之間加入口說數字，預計能幫助轉錄員更容易追蹤檔案進度並減少轉錄錯誤"
+      },
+      {
+        "period": "Bmr024",
+        "method": "口說數字串轉錄規範",
+        "status": "adopted",
+        "reason": "建議轉錄員僅標記為「[digit]」，簡化轉錄工作，實際數字內容可於後續階段提取"
+      },
+      {
+        "period": "Bmr024",
+        "method": "轉錄人力資源擴增",
+        "status": "evolved",
+        "reason": "已增聘兩名轉錄員，並計劃再增聘兩名，以持續提升轉錄效率和產能"
+      },
+      {
+        "period": "Bmr024",
+        "method": "轉錄工作流程平行化",
+        "status": "adopted",
+        "reason": "將音檔分為套件進行平行處理，以提高轉錄效率"
+      },
+      {
+        "period": "Bmr025",
+        "method": "錄音品質優化 (麥克風增益調整)",
+        "status": "evolved",
+        "reason": "因麥克風離說話者嘴巴太遠，再次調整麥克風增益以改善錄音品質"
+      },
+      {
+        "period": "Bmr025",
+        "method": "會議轉錄起始點規範",
+        "status": "adopted",
+        "reason": "聚焦於會議實質內容，轉錄將從有人明確說「O_K」表示會議正式開始時算起"
+      },
+      {
+        "period": "Bmr025",
+        "method": "無監督說話者適應性訓練",
+        "status": "adopted",
+        "reason": "提升辨識性能"
+      }
+    ],
+    "child_phase_ids": [
+      "P-001"
+    ]
+  },
+  "phases": [
+    {
+      "phase_id": "P-001",
+      "time_range": {
+        "start": "Bmr023",
+        "end": "Bmr031"
+      },
+      "summary": "本階段主要圍繞DARPA演示準備、IBM轉錄流程改進與進度追蹤、以及語音辨識技術的演進展開。在DARPA演示方面，已設定完成20小時轉錄數據的目標，並釐清了演示項目。IBM轉錄方面，引入了「提示音-數字-提示音」的新輔助方法，並增聘轉錄員、優化工作流程以加速進度，目前轉錄進度已接近50%。技術方面，聲道長度正規化(VTLN)效果顯著，且會議辨識將改用自動語音分割。同時，也開始討論模型訓練所需的數據量及數據集劃分策略。麥克風增益在多個會議中進行了調整以優化錄音品質。",
+      "key_decisions": [
+        "會議辨識將改為使用自動語音分割進行，而非過去的手動分割。",
+        "會議初期優先討論ARPA演示和IBM轉錄狀態。",
+        "關於語音分割、辨識、SmartKom數據整合和Absinthe多處理器系統的討論將延後，待Andreas到場後進行。",
+        "DARPA演示的近期目標是完成20小時轉錄數據的處理與發布。",
+        "由於多位成員將出差（歐洲及校內會議），會議重點將彈性調整，而非固定於技術或錄音轉錄。",
+        "Chuck 將代表參與 NIST 舉辦的會議，該會議旨在匯集各站點負責會議相關工作的人員。"
+      ],
+      "method_evolution": [
+        {
+          "method": "Recording",
+          "change": "麥克風增益被調高",
+          "reason": "改善錄音品質",
+          "meeting_id": "Bmr023"
+        },
+        {
+          "method": "VTLN",
+          "change": "將SRI系統的聲道長度正規化(VTLN)扭曲因子應用於ICSI前端，並因系統差異進行了倒數調整",
+          "reason": "提升辨識性能",
+          "meeting_id": "Bmr023"
+        },
+        {
+          "method": "Transcription Aid",
+          "change": "為協助IBM轉錄員，實施新的轉錄輔助方法：在每個語句開頭加入「提示音-數字-提示音」序列。Adam 編寫了腳本並錄製了數字。",
+          "reason": "協助IBM轉錄員避免迷失",
+          "meeting_id": "Bmr023"
+        },
+        {
+          "method": "Transcription Aid",
+          "change": "為IBM轉錄引入了新的提示音格式，每個提示音之間加入一個口說數字，例如「嗶一嗶」後接短語。",
+          "reason": "預計能幫助轉錄員更容易追蹤檔案進度，並減少轉錄錯誤",
+          "meeting_id": "Bmr024"
+        },
+        {
+          "method": "Transcription Guidelines",
+          "change": "建議IBM轉錄員在聽到口說數字串時，只需標記為「[digit]」，而無需轉錄實際的數字內容。",
+          "reason": "實際的數字內容可以在之後的階段再進行提取",
+          "meeting_id": "Bmr024"
+        },
+        {
+          "method": "Transcription Workforce",
+          "change": "已增聘兩名轉錄員，並計劃再增聘兩名。",
+          "reason": "提升轉錄效率",
+          "meeting_id": "Bmr024"
+        },
+        {
+          "method": "Transcription Workflow",
+          "change": "轉錄工作流程已改為平行處理，將音檔分為每組五小時的「套件」進行處理。",
+          "reason": "提升轉錄效率",
+          "meeting_id": "Bmr024"
+        },
+        {
+          "method": "Transcription Start Point",
+          "change": "會議轉錄將從有人明確說「O_K」表示會議正式開始時算起，不包含冗長的前言。",
+          "reason": "聚焦於會議實質內容",
+          "meeting_id": "Bmr031"
+        },
+        {
+          "method": "Recording",
+          "change": "調整麥克風增益",
+          "reason": "麥克風離說話者嘴巴太遠，影響錄音品質",
+          "meeting_id": "Bmr031"
+        },
+        {
+          "method": "Speaker Adaptation",
+          "change": "目前正在進行的是無監督的說話者適應性訓練。",
+          "reason": "提升辨識性能",
+          "meeting_id": "Bmr031"
+        },
+        {
+          "method": "Speaker Adaptation Strategy",
+          "change": "建議可以建立一個測試集，先進行有監督的適應性訓練，然後再從聲道或環境適應的基礎上開始說話者適應。",
+          "reason": "提升辨識性能",
+          "meeting_id": "Bmr031"
+        }
+      ],
+      "unresolved_issues": [
+        "DARPA 會議的演示項目是什麼？已知有轉錄器介面，但似乎還有第二個項目（可能是問答系統的模擬）。",
+        "在數字錄音時，應該讓所有人在同一時間說出數字（unison），還是讓每個人在不同時間說出相同的數字串，以便進行比較或正規化？",
+        "需要釐清 DARPA 會議的演示項目，並指派人員負責。",
+        "需要考慮重新訓練或調整背景噪音模型以適應當前環境，以配合自動語音分割的導入。",
+        "需要將一份包含 Thilo 分割結果和 Adam 處理過的「分塊文件」的會議樣本發送給 IBM 的 Brian，以測試新的「提示音-數字-提示音」轉錄輔助方法。",
+        "觀察到在使用SND-play播放時，有時提示音會聽起來像被切成兩段，這可能只是播放軟體的異常。需要再次聆聽音檔，確認提示音被切斷的問題是否確實存在於原始檔案中。",
+        "需要再次聯繫IBM的Brian，確認他是否收到會議訊息。",
+        "語音分割後存在未被分類的語音片段，建議人工檢查並最終確認。",
+        "需要多少轉錄數據才能開始進行模型訓練？",
+        "如何在此語料庫上進行測試集和訓練集的劃分，因為很難獲得說話者不重疊的數據集。",
+        "如果進行訓練，需要仔細考慮如何劃分數據集。",
+        "誰有興趣處理數字語料庫的轉錄和強制對齊？",
+        "需要收集大量數字語料庫並進行強制對齊。",
+        "需要與 Dave Gelbart 討論他是否有興趣處理數字語料庫，但需等待他完成資格考。",
+        "發言人目前沒有時間進行過多工作，但若有人有空，他樂意教導如何進行適應性訓練。"
+      ],
+      "child_meeting_ids": [
+        "Bmr023",
+        "Bmr024",
+        "Bmr031"
+      ]
+    }
+  ],
+  "meetings": [
+    {
+      "meeting_id": "Bmr023",
+      "timestamp": "2026-04-07T18:45:23Z",
+      "meeting_date": "",
+      "source_file": "/Users/yiihsinn/Documents/專題/virtual-mentor/ICSI_original_transcripts/transcripts/Bmr023.mrt",
+      "phase_id": "P-001",
+      "memory_objects": [
+        {
+          "obj_id": "L1-Bmr023-001",
+          "type": "method_change",
+          "content": "麥克風增益被調高，以改善錄音品質。",
+          "importance": 0.5,
+          "evidence": "Maybe it should be a little higher. ... O_K, that - that seems better? Yeah? O_K, good.",
+          "related_topics": [
+            "麥克風",
+            "增益",
+            "錄音品質"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-002",
+          "type": "open_question",
+          "content": "DARPA 會議的演示項目是什麼？已知有轉錄器介面，但似乎還有第二個項目（可能是問答系統的模擬）。",
+          "importance": 0.6,
+          "evidence": "I know that we were gonna do something with the transcriber interface is one thing, but I thought there was a second thing. ... we were gonna do a mock-up, like, question answering or something, I thought, that was totally separate from the interface.",
+          "related_topics": [
+            "DARPA會議",
+            "演示",
+            "轉錄器介面",
+            "問答系統"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-003",
+          "type": "todo",
+          "content": "需要釐清 DARPA 會議的演示項目，並指派人員負責，因為距離會議只剩大約一個月。",
+          "importance": 0.7,
+          "evidence": "you have to sort out that out and get somebody going on it cuz we're - got a - got a month left basically.",
+          "related_topics": [
+            "DARPA會議",
+            "演示",
+            "任務指派",
+            "截止日期"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-004",
+          "type": "open_question",
+          "content": "在數字錄音時，應該讓所有人在同一時間說出數字（unison），還是讓每個人在不同時間說出相同的數字串，以便進行比較或正規化？",
+          "importance": 0.5,
+          "evidence": "which do we want more, the - the - the comparison, uh, of everybody saying them at the same time or the comparison of people saying the same digits at different times that - ?",
+          "related_topics": [
+            "數字錄音",
+            "數據採集",
+            "語音辨識",
+            "正規化"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-005",
+          "type": "argument",
+          "content": "將數字分開錄音並使用相同的數字串可用於正規化，但同步錄音會更快。然而，同步錄音可能因發音差異（如 'zero' 和 'O'）而無法完全相同。",
+          "importance": 0.5,
+          "evidence": "have them separately and have the same exact strings. I mean, we could use them for normalizing or something, but it of course goes more quickly doing them in unison. ... they won't be identical as somebody is saying zero in some - sometimes, you know, saying O_, and so, it's not i- not identical.",
+          "related_topics": [
+            "數字錄音",
+            "數據採集",
+            "正規化",
+            "語音辨識"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-006",
+          "type": "todo",
+          "content": "待辦：整理會議資訊。",
+          "importance": 0.4,
+          "evidence": "just getting uh, meeting information organized.",
+          "related_topics": [
+            "會議資訊管理",
+            "行政管理"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-007",
+          "type": "result",
+          "content": "SRI 辨識器實驗中，PLP (Perceptual Linear Prediction) 的表現已與 MFCC (Mel-frequency cepstrum) 相當，甚至更好。",
+          "importance": 0.7,
+          "evidence": "the P_L_P now is getting basically the same as the M_F_C_C. Right? ... Actually it looks like it's getting better.",
+          "related_topics": [
+            "SRI辨識器",
+            "PLP",
+            "MFCC",
+            "語音辨識",
+            "實驗結果"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-008",
+          "type": "result",
+          "content": "聲道長度正規化 (VTLN) 效果顯著，透過將 SRI 系統計算的扭曲因子應用於 ICSI 前端，並進行倒數調整，表現非常出色。",
+          "importance": 0.8,
+          "evidence": "vocal tract length normalization is working beautifully, actually, w- using the warp factors that we computed for the S_R_I system and just applying them to the ICSI front-end. ... Just had to take the reciprocal of the number because they have different meanings in the two systems.",
+          "related_topics": [
+            "聲道長度正規化",
+            "VTLN",
+            "SRI系統",
+            "ICSI前端",
+            "語音辨識",
+            "參數調整"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-009",
+          "type": "method_change",
+          "content": "將 SRI 系統的聲道長度正規化 (VTLN) 扭曲因子應用於 ICSI 前端，並因系統差異進行了倒數調整。",
+          "importance": 0.7,
+          "evidence": "using the warp factors that we computed for the S_R_I system and just applying them to the ICSI front-end. ... Just had to take the reciprocal of the number because they have different meanings in the two systems.",
+          "related_topics": [
+            "聲道長度正規化",
+            "VTLN",
+            "SRI系統",
+            "ICSI前端",
+            "語音辨識",
+            "參數調整"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-010",
+          "type": "decision",
+          "content": "會議辨識將改為使用自動語音分割進行，而非過去的手動分割。",
+          "importance": 0.9,
+          "evidence": "we would really like to, uh, move, uh, to, uh, doing the recognition on automatic segmentations.",
+          "related_topics": [
+            "會議辨識",
+            "自動語音分割",
+            "手動語音分割",
+            "語音辨識",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-011",
+          "type": "argument",
+          "content": "過去的實驗使用手動分割是「作弊」行為。Thilo 的分割器表現良好，且高召回率（即使精確度低）有利於訓練噪音模型。未經限制地在整個波形上運行辨識會導致大量插入錯誤，因此需要某種形式的預分割。",
+          "importance": 0.7,
+          "evidence": "in all our previous experiments, we had the - uh, you know, we were essentially cheating by having the, um, you know, the h- the hand-segmentations as the basis of the recognition. ... now with Thilo's segmenter working so well ... we do need some kind of pre-segmentation.",
+          "related_topics": [
+            "自動語音分割",
+            "手動語音分割",
+            "語音辨識",
+            "噪音模型",
+            "Thilo的分割器"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-012",
+          "type": "todo",
+          "content": "待辦：考慮重新訓練或調整背景噪音模型以適應當前環境，以配合自動語音分割的導入。",
+          "importance": 0.6,
+          "evidence": "We should - we should consider doing some extra things, like, um, you know, retraining or adapting the - the models for background noise to the - to this environment, for instance.",
+          "related_topics": [
+            "噪音模型",
+            "環境適應",
+            "語音辨識",
+            "自動語音分割"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-013",
+          "type": "method_change",
+          "content": "為協助 IBM 轉錄員，實施新的轉錄輔助方法：在每個語句開頭加入「提示音-數字-提示音」序列。Adam 編寫了腳本並錄製了數字。",
+          "importance": 0.7,
+          "evidence": "the transcriber thought that the easiest thing for them would be if there was a beep and then the nu- a number, a digit, and then a beep, uh, at the beginning of each one and that would help keep them from getting lost. ... Adam wrote a little script to generate those style, uh, beeps and so we're - ... I came up here and just recorded the numbers one through ten.",
+          "related_topics": [
+            "IBM",
+            "轉錄",
+            "語音分割",
+            "提示音",
+            "數字錄音",
+            "轉錄效率"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-014",
+          "type": "open_question",
+          "content": "是否應該使用字母（A, B, C）而非數字作為「提示音-數字-提示音」序列中的標識，以避免與實際語音中的數字混淆？轉錄員認為由於模板的存在，這不是問題。",
+          "importance": 0.4,
+          "evidence": "It will be funny when you're really reading digits, and then there are the chunks with - with your digits in? ... Uh, maybe we should have you record A_, B_, C_ for those or something. ... the transcriber said it wouldn't be a problem cuz they can actually make a template, uh, that has beep, number, beep.",
+          "related_topics": [
+            "轉錄",
+            "數字",
+            "字母",
+            "提示音",
+            "混淆"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-015",
+          "type": "todo",
+          "content": "待辦：將一份包含 Thilo 分割結果和 Adam 處理過的「分塊文件」的會議樣本發送給 IBM 的 Brian，以測試新的「提示音-數字-提示音」轉錄輔助方法。",
+          "importance": 0.6,
+          "evidence": "We're gonna send them one more sample meeting, uh, and Thilo has run his segmentation. Adam's gonna generate the chunked file. And then, um, I'll give it to Brian and they can try that out.",
+          "related_topics": [
+            "IBM",
+            "轉錄",
+            "語音分割",
+            "提示音",
+            "測試",
+            "Adam",
+            "Thilo"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr023-016",
+          "type": "result",
+          "content": "上次 IBM 轉錄的交付時間大約是幾週。",
+          "importance": 0.4,
+          "evidence": "The last one seemed like it took a couple of weeks.",
+          "related_topics": [
+            "IBM",
+            "轉錄",
+            "交付時間"
+          ],
+          "related_obj_ids": []
+        }
+      ]
+    },
+    {
+      "meeting_id": "Bmr024",
+      "timestamp": "2026-04-07T18:46:07Z",
+      "meeting_date": "",
+      "source_file": "/Users/yiihsinn/Documents/專題/virtual-mentor/ICSI_original_transcripts/transcripts/Bmr024.mrt",
+      "phase_id": "P-001",
+      "memory_objects": [
+        {
+          "obj_id": "L1-Bmr024-001",
+          "type": "decision",
+          "content": "會議初期優先討論ARPA演示和IBM轉錄狀態，因為Liz和Andreas會遲到。",
+          "importance": 0.6,
+          "evidence": "we can try to figure out what we can do most effectively without them here. So - ... certainly the segmentation and recognition we wanna maybe focus on when An- Andreas is here since that was particularly his thing.",
+          "related_topics": [
+            "會議資訊管理",
+            "DARPA會議",
+            "IBM",
+            "轉錄"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-002",
+          "type": "decision",
+          "content": "關於語音分割、辨識、SmartKom數據整合和Absinthe多處理器系統的討論將延後，待Andreas到場後進行。",
+          "importance": 0.6,
+          "evidence": "certainly the segmentation and recognition we wanna maybe focus on when An- Andreas is here... And also the SmartKom thing... Absinthe, I think also he has sort of been involved in a lot of those things.",
+          "related_topics": [
+            "語音分割",
+            "語音辨識",
+            "SmartKom",
+            "Absinthe",
+            "會議資訊管理"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-003",
+          "type": "argument",
+          "content": "檔案和目錄的重組應在下一次零級備份前進行，以避免產生大量新增檔案的問題。",
+          "importance": 0.5,
+          "evidence": "a crucial part of that is the idea of - of not wanting to do it until right before the next level zero back-up so that there won't be huge number of -",
+          "related_topics": [
+            "行政管理",
+            "檔案管理",
+            "數據備份"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-004",
+          "type": "result",
+          "content": "Dave表示，如果需要進行檔案重組，他可以隨時執行零級備份。",
+          "importance": 0.5,
+          "evidence": "Dave basically said that if we wanna do it, just tell him and he'll do a d- level zero then.",
+          "related_topics": [
+            "行政管理",
+            "檔案管理",
+            "數據備份"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-005",
+          "type": "method_change",
+          "content": "為IBM轉錄引入了新的提示音格式，每個提示音之間加入一個口說數字，例如「嗶一嗶」後接短語。",
+          "importance": 0.7,
+          "evidence": "we did another version of the beeps, where we separated each beeps with a spoken digit... it just goes \"beep one beep\" and then the phrase, and then \"beep two beep\" and then the phrase.",
+          "related_topics": [
+            "IBM",
+            "轉錄",
+            "提示音",
+            "數字錄音",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-006",
+          "type": "argument",
+          "content": "新的提示音與數字結合的格式預計能幫助轉錄員更容易追蹤檔案進度，並減少轉錄錯誤。",
+          "importance": 0.6,
+          "evidence": "that seems pretty good. Um, I think they'll have a b- easier time keeping track of where they are in the file. ... they are much less likely to d- have errors.",
+          "related_topics": [
+            "IBM",
+            "轉錄",
+            "提示音",
+            "轉錄效率"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-007",
+          "type": "result",
+          "content": "先前IBM的轉錄版本存在錯誤，包括錯誤地加入或遺漏提示音。",
+          "importance": 0.5,
+          "evidence": "the problem wi- last time is that there were errors in the transcripts where they put beeps where there weren't any, or - and they put in extraneous beeps.",
+          "related_topics": [
+            "IBM",
+            "轉錄",
+            "提示音",
+            "轉錄效率"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-008",
+          "type": "open_question",
+          "content": "觀察到在使用SND-play播放時，有時提示音會聽起來像被切成兩段，這可能只是播放軟體的異常。",
+          "importance": 0.4,
+          "evidence": "every once in a while, uh, like a beep sounds like it's cut into two beeps... I - I dunno if that's an, uh, artifact of playback - bu- uh, I don't think it's probably in the original file.",
+          "related_topics": [
+            "錄音品質",
+            "提示音",
+            "播放軟體"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-009",
+          "type": "todo",
+          "content": "需要再次聆聽音檔，確認提示音被切斷的問題是否確實存在於原始檔案中。",
+          "importance": 0.5,
+          "evidence": "Well, maybe we better listen to it again, make sure",
+          "related_topics": [
+            "錄音品質",
+            "提示音",
+            "測試"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-010",
+          "type": "argument",
+          "content": "轉錄Chuck口說的數字是必要的，因為若要將其移除，則需要手動聆聽音檔，這會增加工作量。",
+          "importance": 0.5,
+          "evidence": "are we having them do digits? Yes. Because, uh, we don't - We - we didn't cut those out... In order to cut them out we'd have to listen to it. And we wanted to avoid doing that, so we - they are transcribing the digits.",
+          "related_topics": [
+            "轉錄",
+            "數字",
+            "轉錄效率",
+            "手動語音分割"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-011",
+          "type": "method_change",
+          "content": "建議IBM轉錄員在聽到口說數字串時，只需標記為「[digit]」，而無需轉錄實際的數字內容。",
+          "importance": 0.7,
+          "evidence": "we could tell them, if you hear someone reading a digits string just say \"bracket digit bracket\" and don't bother actually computing the di- writing down the digits.",
+          "related_topics": [
+            "轉錄",
+            "數字",
+            "轉錄效率",
+            "IBM"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-012",
+          "type": "argument",
+          "content": "僅標記「[digit]」是更好的做法，因為實際的數字內容可以在之後的階段再進行提取。",
+          "importance": 0.5,
+          "evidence": "That'd be great. That'd be what I'm having the transcribers here do, cuz it can be extracted later.",
+          "related_topics": [
+            "轉錄",
+            "數字",
+            "轉錄效率"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-013",
+          "type": "todo",
+          "content": "需要再次聯繫IBM的Brian，確認他是否收到會議訊息。",
+          "importance": 0.4,
+          "evidence": "I sent bresset - sent Brian a message about the meeting and I haven't heard back yet... I should probably ping him just to make sure that he got it.",
+          "related_topics": [
+            "IBM",
+            "行政管理",
+            "會議資訊管理"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-014",
+          "type": "method_change",
+          "content": "已增聘兩名轉錄員，並計劃再增聘兩名。",
+          "importance": 0.7,
+          "evidence": "I - I hire - I've hired two extra people already, expect to hire two more.",
+          "related_topics": [
+            "轉錄",
+            "行政管理",
+            "人力資源"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-015",
+          "type": "method_change",
+          "content": "轉錄工作流程已改為平行處理，將音檔分為每組五小時的「套件」進行處理。",
+          "importance": 0.7,
+          "evidence": "I've prepared, um, uh, a set of five which I'm - which I'm calling set two... I sort of thought if I do it in sets - groups of five, then I can have, like, sort of a - a parallel processing through - through the -",
+          "related_topics": [
+            "轉錄",
+            "實驗方法",
+            "轉錄效率"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr024-016",
+          "type": "decision",
+          "content": "DARPA演示的近期目標是完成20小時轉錄數據的處理與發布。",
+          "importance": 0.9,
+          "evidence": "we have a g- a goal now, for the - for the, um, the, uh, DARPA demo, of twenty hours. So, I'm gonna go up to twenty hours, be sure that everything gets processed, and released",
+          "related_topics": [
+            "DARPA會議",
+            "轉錄",
+            "截止日期",
+            "交付時間"
+          ],
+          "related_obj_ids": []
+        }
+      ]
+    },
+    {
+      "meeting_id": "Bmr031",
+      "timestamp": "2026-04-07T18:47:48Z",
+      "meeting_date": "",
+      "source_file": "/Users/yiihsinn/Documents/專題/virtual-mentor/ICSI_original_transcripts/transcripts/Bmr031.mrt",
+      "phase_id": "P-001",
+      "memory_objects": [
+        {
+          "obj_id": "L1-Bmr031-001",
+          "type": "result",
+          "content": "觀察到語音分割後存在未被分類的語音片段。",
+          "importance": 0.5,
+          "evidence": "See, there're some stretches that weren't even in one or the other, so -",
+          "related_topics": [
+            "語音分割",
+            "實驗結果",
+            "轉錄效率"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-002",
+          "type": "argument",
+          "content": "建議人工檢查並最終確認未分類的語音片段，以解決分割問題。",
+          "importance": 0.5,
+          "evidence": "Well, a h- a person would - would check it over and then give a final -",
+          "related_topics": [
+            "手動語音分割",
+            "轉錄效率",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-003",
+          "type": "method_change",
+          "content": "會議轉錄將從有人明確說「O_K」表示會議正式開始時算起，不包含冗長的前言。",
+          "importance": 0.6,
+          "evidence": "the transcription doesn't start until someone actually says \"O_K.\" So, we're starting right now.",
+          "related_topics": [
+            "轉錄",
+            "轉錄效率",
+            "檔案管理",
+            "會議資訊管理"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-004",
+          "type": "argument",
+          "content": "會議討論的重點在技術（特別是辨識）與錄音及轉錄之間搖擺不定。",
+          "importance": 0.5,
+          "evidence": "we had had this discussion of, uh, flipping back and forth between an emphasis on - on the technology, particularly recognition, versus, uh, the recordings and transcriptions and so on.",
+          "related_topics": [
+            "語音辨識",
+            "錄音品質",
+            "轉錄",
+            "實驗方法",
+            "會議資訊管理"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-005",
+          "type": "decision",
+          "content": "由於多位成員將出差（歐洲及校內會議），會議重點將彈性調整，而非固定於技術或錄音轉錄。",
+          "importance": 0.6,
+          "evidence": "I was asking, if we could, to uh, kind of make it just whatever is happening rather than one or the other because, uh, next weekend - next week I'll be at a meeting on campus and after that I'll be Europe for, uh, several meetings' worth.",
+          "related_topics": [
+            "行政管理",
+            "會議資訊管理",
+            "交付時間",
+            "人力資源"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-006",
+          "type": "todo",
+          "content": "待辦：討論轉錄進度以制定後續計畫。",
+          "importance": 0.5,
+          "evidence": "our normal transcription status, just so that we can make some - some plans.",
+          "related_topics": [
+            "轉錄",
+            "任務指派",
+            "行政管理",
+            "截止日期"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-007",
+          "type": "result",
+          "content": "在 Brian 休假前，已將四場會議交給轉錄員進行轉錄。",
+          "importance": 0.6,
+          "evidence": "before he left we gave him, uh, another set of meetings to give to the transcribers. And - How many? Four?",
+          "related_topics": [
+            "轉錄",
+            "任務指派",
+            "IBM"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-008",
+          "type": "method_change",
+          "content": "調整麥克風增益，因為麥克風離說話者嘴巴太遠，影響錄音品質。",
+          "importance": 0.5,
+          "evidence": "Let me raise the gain on that a little bit since it's so far from your mouth.",
+          "related_topics": [
+            "麥克風",
+            "錄音品質",
+            "增益"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-009",
+          "type": "result",
+          "content": "狀態頁面上有一個圓餅圖，顯示已轉錄的數據量，目前尚未達到總數據量的一半。",
+          "importance": 0.7,
+          "evidence": "He has a nice pie chart on the, uh, s- the current status page, which shows the amount of transc- amount of data that had been transcribed... at this point it's not quite half.",
+          "related_topics": [
+            "轉錄",
+            "數據採集",
+            "會議資訊管理",
+            "實驗結果"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-010",
+          "type": "result",
+          "content": "轉錄員在發言人休假期間完成了數場會議的轉錄，使總轉錄進度接近50%。",
+          "importance": 0.7,
+          "evidence": "the transcribers finished, um, uh, several meetings while I was gone... not quite fifty percent but really getting close.",
+          "related_topics": [
+            "轉錄",
+            "數據採集",
+            "實驗結果"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-011",
+          "type": "open_question",
+          "content": "需要多少轉錄數據才能開始進行模型訓練？",
+          "importance": 0.6,
+          "evidence": "How much do we need transcribed before it's worth doing some trainings?",
+          "related_topics": [
+            "轉錄",
+            "實驗方法",
+            "語音辨識",
+            "數據採集"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-012",
+          "type": "argument",
+          "content": "認為目前可能已有足夠的數據進行訓練，因為 Macrophone 數據量不大但有幫助。",
+          "importance": 0.5,
+          "evidence": "it seems like probably we have enough now. Right? Because, like - like Macrophone wasn't that much data. Right? And it helped.",
+          "related_topics": [
+            "數據採集",
+            "實驗方法",
+            "語音辨識"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-013",
+          "type": "argument",
+          "content": "已將數據用於數字訓練，但該數據是朗讀語音，與會議語音不同。",
+          "importance": 0.4,
+          "evidence": "we already use it for digit training. But - but that was read speech.",
+          "related_topics": [
+            "數字",
+            "語音辨識",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-014",
+          "type": "result",
+          "content": "已對數字進行了有監督的適應性訓練。",
+          "importance": 0.6,
+          "evidence": "we did do some training on digits - uh, rather adaptation on digits - digits. I mean, supervised adaptation.",
+          "related_topics": [
+            "數字",
+            "語音辨識",
+            "實驗方法",
+            "參數調整"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-015",
+          "type": "argument",
+          "content": "建議嘗試約20小時的數據進行訓練，但不應包含非母語語音，因為其轉換效果不佳。",
+          "importance": 0.6,
+          "evidence": "Maybe like twenty hours. We could try, but - Maybe not counting the non-native speech, cuz if - That - that just doesn't translate very well.",
+          "related_topics": [
+            "數據採集",
+            "實驗方法",
+            "語音辨識",
+            "噪音模型"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-016",
+          "type": "argument",
+          "content": "適應性訓練可以使用相對少量的數據來提升性能。",
+          "importance": 0.5,
+          "evidence": "with adaptation you can use fairly small amount of data to improve your performance.",
+          "related_topics": [
+            "參數調整",
+            "語音辨識",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-017",
+          "type": "todo",
+          "content": "待辦：發言人目前沒有時間進行過多工作，但若有人有空，他樂意教導如何進行適應性訓練。",
+          "importance": 0.6,
+          "evidence": "I don't have to time to - to do too much these days except what I'm already doing. So - um, but if there's some - someone has some free time, I'm - I'll be happy to show them how it works and you can play with it.",
+          "related_topics": [
+            "任務指派",
+            "人力資源",
+            "參數調整",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-018",
+          "type": "method_change",
+          "content": "目前正在進行的是無監督的說話者適應性訓練，而非有監督的。",
+          "importance": 0.7,
+          "evidence": "No, supervised adaptation. So, we're doing s- unsupervised speaker adaptation.",
+          "related_topics": [
+            "參數調整",
+            "語音辨識",
+            "實驗方法"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-019",
+          "type": "method_change",
+          "content": "建議可以建立一個測試集，先進行有監督的適應性訓練，然後再從聲道或環境適應的基礎上開始說話者適應。",
+          "importance": 0.7,
+          "evidence": "you could build a test set which you sort of take your models and ada- do supervised adaptation. And then you start with the speaker adaptation from sort of channel-adapted or room-adapted or whatever.",
+          "related_topics": [
+            "實驗方法",
+            "參數調整",
+            "語音辨識",
+            "環境適應",
+            "測試"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-020",
+          "type": "open_question",
+          "content": "如何在此語料庫上進行測試集和訓練集的劃分，因為很難獲得說話者不重疊的數據集。",
+          "importance": 0.7,
+          "evidence": "how would you imagine doing a test set on this corpus? A test set, training set division? ... it would be hard to get speaker disjoint sets.",
+          "related_topics": [
+            "實驗方法",
+            "數據採集",
+            "語音辨識",
+            "測試"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-021",
+          "type": "argument",
+          "content": "針對此類應用，測試集和訓練集不需完全分離說話者，因為實際應用中會重複測試相同說話者。",
+          "importance": 0.6,
+          "evidence": "if you're using this over and over again, you're gonna be testing on the same - the same speakers. ... it's not a terrible thing to assume that you don't - that you don't have disjoint sets, for this particular kind of application.",
+          "related_topics": [
+            "實驗方法",
+            "語音辨識",
+            "測試"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-022",
+          "type": "argument",
+          "content": "這種情況類似於廣播新聞，其中播報員會重複出現，只要意識到這一點，就不是問題。",
+          "importance": 0.5,
+          "evidence": "It's - it's sort of like in, um, Broadcast News because you have those people who re-occur over and over. ... As long as you're aware that you're doing that, that's - I don't see that as a problem.",
+          "related_topics": [
+            "實驗方法",
+            "語音辨識",
+            "測試"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-023",
+          "type": "argument",
+          "content": "如果語言模型僅在同一會議數據上訓練和測試，性能會比跨會議訓練測試更好。",
+          "importance": 0.6,
+          "evidence": "if you're training your language model on this meeting only and testing on this meeting only, you're gonna do a lot better than if you start crossing them.",
+          "related_topics": [
+            "語音辨識",
+            "實驗方法",
+            "語言模型"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-024",
+          "type": "argument",
+          "content": "語言模型中的大多數詞彙是功能詞和語氣詞，這些詞具有很強的說話者依賴性，轉錄員甚至可以從這些詞判斷說話者。",
+          "importance": 0.5,
+          "evidence": "the majority of the words in the language model are actually - They're actually these, like, function words and \"Yeah!\" and s- stuff like that. And there there's a lot of speaker dependence there. Even the transcribers will say they know who the speaker is after a while just from their backchannels",
+          "related_topics": [
+            "語音辨識",
+            "語言模型",
+            "轉錄"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-025",
+          "type": "todo",
+          "content": "待辦：如果進行訓練，需要仔細考慮如何劃分數據集。",
+          "importance": 0.6,
+          "evidence": "if we're gonna do that we should give some thought to how we wanna divide it up.",
+          "related_topics": [
+            "實驗方法",
+            "數據採集",
+            "語音辨識"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-026",
+          "type": "open_question",
+          "content": "誰有興趣處理數字語料庫的轉錄和強制對齊？",
+          "importance": 0.6,
+          "evidence": "We now have a lot of digits but most of them aren't transcribed. ... someone who's interested in that to start looking at it.",
+          "related_topics": [
+            "數字",
+            "轉錄",
+            "數據採集",
+            "任務指派"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-027",
+          "type": "todo",
+          "content": "待辦：收集大量數字語料庫並進行強制對齊。",
+          "importance": 0.7,
+          "evidence": "if we wanted to do a forced alignment on them, we could start collecting ourselves up a fairly large digit corpus.",
+          "related_topics": [
+            "數字",
+            "轉錄",
+            "數據採集"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-028",
+          "type": "todo",
+          "content": "待辦：與 Dave Gelbart 討論他是否有興趣處理數字語料庫，但需等待他完成資格考。",
+          "importance": 0.6,
+          "evidence": "So who's working on digits currently? Uh, Dave Gelbart. O_K, maybe I'll talk to him and see if he's interested. Not right away. He's got prelims",
+          "related_topics": [
+            "數字",
+            "任務指派",
+            "人力資源"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-029",
+          "type": "decision",
+          "content": "Chuck 將代表參與 NIST 舉辦的會議，該會議旨在匯集各站點負責會議相關工作的人員。",
+          "importance": 0.7,
+          "evidence": "Chuck is gonna be going to a meeting at NIST, ... they want to gather together sort of one person from each site who is involved in the meeting stuff",
+          "related_topics": [
+            "會議資訊管理",
+            "行政管理",
+            "DARPA會議"
+          ],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-Bmr031-030",
+          "type": "result",
+          "content": "NIST 計劃進行大量會議錄音。",
+          "importance": 0.6,
+          "evidence": "they're going to be doing a bunch of meeting recordings there.",
+          "related_topics": [
+            "錄音品質",
+            "數據採集",
+            "DARPA會議"
+          ],
+          "related_obj_ids": []
+        }
+      ]
+    }
+  ]
+}

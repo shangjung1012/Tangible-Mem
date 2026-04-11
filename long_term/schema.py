@@ -3,8 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 DEFAULT_MODEL_NAME = "gemini-2.5-flash"
+EMBED_MODEL_NAME = "models/text-embedding-004"
 
-MEMORY_OBJ_TYPES = {"decision", "todo", "method_change", "result"}
+MEMORY_OBJ_TYPES = {
+    "decision",       # 會議中做出的決策或結論
+    "todo",           # 被指派或提及的待辦事項
+    "method_change",  # 方法論、演算法、流程的變更（因果鏈核心）
+    "result",         # 實驗結果、發現、觀察報告
+    "open_question",  # 尚未解決的研究問題
+    "argument",       # 決策背後的論點與推理
+}
 
 # ---------------------------------------------------------------------------
 # Default empty tree
@@ -15,12 +23,22 @@ DEFAULT_TREE: dict[str, Any] = {
     "project_profile": {
         "project_id": "",
         "time_range": {"start": "", "end": ""},
-        "methodology": "",
-        "core_values": [],
-        "method_timeline": [],
+        "core_goal": "",
+        "current_phase": "",
+        "established_methods": [],
+        "long_term_open_questions": [],
         "child_phase_ids": [],
     },
     "phases": [],
+    # meeting node schema (reference):
+    # {
+    #   "meeting_id": str,
+    #   "timestamp": str,     # buildtime (system write time)
+    #   "meeting_date": str,  # real meeting date for recency scoring
+    #   "source_file": str,
+    #   "phase_id": str,
+    #   "memory_objects": list[dict],
+    # }
     "meetings": [],
 }
 
@@ -41,7 +59,9 @@ BRIDGE_RESPONSE_SCHEMA: dict[str, Any] = {
                         "enum": sorted(MEMORY_OBJ_TYPES),
                         "description": (
                             "decision=決議, todo=待辦, "
-                            "method_change=方法變更, result=實驗結果或發現"
+                            "method_change=方法變更, result=實驗結果或發現, "
+                            "open_question=尚未解決的研究問題, "
+                            "argument=決策背後的論點與推理"
                         ),
                     },
                     "content": {
@@ -79,35 +99,47 @@ PHASE_SUMMARY_SCHEMA: dict[str, Any] = {
     "properties": {
         "summary": {
             "type": "string",
-            "description": "本階段的整體摘要（繁體中文）。",
+            "description": (
+                "本階段的主軸描述，限 1-2 句，60 字以內（繁體中文）。"
+                "只寫這段期間發生了什麼主要事情，不要列舉細節。"
+            ),
         },
-        "key_decisions": {
+        "changes": {
             "type": "array",
-            "items": {"type": "string"},
-            "description": "本階段的關鍵決策列表。",
-        },
-        "method_evolution": {
-            "type": "array",
-            "description": "本階段的方法演進記錄，嚴格按時間順序排列。",
+            "description": (
+                "本階段的淨方法變化，最多 5 條。"
+                "只寫跨越整個 phase 後的淨結果，不要每個小調整都列出。"
+                "每條 method 限 30 字以內。"
+            ),
             "items": {
                 "type": "object",
                 "properties": {
-                    "method": {"type": "string"},
-                    "change": {"type": "string", "description": "變更內容描述"},
-                    "reason": {"type": "string", "description": "變更原因"},
-                    "meeting_id": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": ["adopted", "abandoned", "evolved"],
+                        "description": "adopted=本期確立, abandoned=本期棄用, evolved=持續演進中",
+                    },
+                    "method": {
+                        "type": "string",
+                        "description": "方法變化的一句話描述，30 字以內，不含 reason。",
+                    },
                 },
-                "required": ["method", "change", "reason", "meeting_id"],
+                "required": ["status", "method"],
                 "additionalProperties": False,
             },
+            "maxItems": 5,
         },
-        "unresolved_issues": {
+        "open_to_next": {
             "type": "array",
+            "description": (
+                "本階段結束時仍懸而未決、需要下一階段處理的問題，最多 2 條，每條 40 字以內。"
+                "不要把所有 todo 都列入，只保留真正影響下一步進展的懸案。"
+            ),
             "items": {"type": "string"},
-            "description": "本階段尚未解決的問題。",
+            "maxItems": 2,
         },
     },
-    "required": ["summary", "key_decisions", "method_evolution", "unresolved_issues"],
+    "required": ["summary", "changes", "open_to_next"],
     "additionalProperties": False,
 }
 
@@ -117,35 +149,46 @@ PHASE_SUMMARY_SCHEMA: dict[str, Any] = {
 PROFILE_UPDATE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "methodology": {
+        "core_goal": {
             "type": "string",
-            "description": "目前確立的研究方法論概述。",
+            "description": (
+                "整個專案的核心目標，1-2 句，60 字以內（繁體中文）。"
+                "回答「這個專案在做什麼、最終目的是什麼」，不要描述方法細節。"
+            ),
         },
-        "core_values": {
+        "current_phase": {
+            "type": "string",
+            "description": (
+                "目前整個研究所處的大階段，1 句，30 字以內。"
+                "例如：「錄音系統穩定化與轉錄流程建立」。"
+            ),
+        },
+        "established_methods": {
             "type": "array",
+            "description": (
+                "目前已確立並持續使用的核心做法，最多 5 條，每條 35 字以內。"
+                "只列跨越多個 phase 都沒有變動的穩定做法，不要列每個 phase 的微調。"
+                "已棄用的方法不要列入。"
+            ),
             "items": {"type": "string"},
-            "description": "研究計畫的核心價值觀與原則。",
+            "maxItems": 5,
         },
-        "method_timeline": {
+        "long_term_open_questions": {
             "type": "array",
-            "description": "方法論的完整時間軸演進，從最早到最新。",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "period": {"type": "string"},
-                    "method": {"type": "string"},
-                    "status": {
-                        "type": "string",
-                        "enum": ["adopted", "abandoned", "evolved"],
-                    },
-                    "reason": {"type": "string"},
-                },
-                "required": ["period", "method", "status", "reason"],
-                "additionalProperties": False,
-            },
+            "description": (
+                "從多個 phase 看下來，至今仍懸而未決的長期問題，最多 3 條，每條 40 字以內。"
+                "只保留真正橫跨多個階段、影響整個研究方向的問題，不要列近期的 todo。"
+            ),
+            "items": {"type": "string"},
+            "maxItems": 3,
         },
     },
-    "required": ["methodology", "core_values", "method_timeline"],
+    "required": [
+        "core_goal",
+        "current_phase",
+        "established_methods",
+        "long_term_open_questions",
+    ],
     "additionalProperties": False,
 }
 
