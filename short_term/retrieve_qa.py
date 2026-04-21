@@ -12,8 +12,9 @@ from typing import Any
 
 from google import genai
 
-from io_utils import load_env, load_memory
+from io_utils import load_env
 from schema import DEFAULT_MODEL_NAME
+from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
 DEFAULT_EMBEDDING_MODEL_NAME = "gemini-embedding-001"
 
@@ -37,12 +38,22 @@ class ScoredChunk:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Ask questions against short-term current_memory.json."
+        description="Ask questions against short-term memory (SQLite by default)."
+    )
+    parser.add_argument(
+        "--db",
+        default=str(DEFAULT_DB_PATH),
+        help="Path to short-term memory SQLite DB.",
     )
     parser.add_argument(
         "--memory",
         default="short_term/current_memory.json",
-        help="Path to short-term memory JSON.",
+        help="Legacy JSON fallback path used when DB is empty.",
+    )
+    parser.add_argument(
+        "--no-bootstrap-json",
+        action="store_true",
+        help="Do not import fallback JSON into DB when DB is empty.",
     )
     parser.add_argument(
         "--question",
@@ -686,8 +697,13 @@ def interactive_loop(
 
 def main() -> None:
     args = parse_args()
+    db_path = Path(args.db).resolve()
     memory_path = Path(args.memory).resolve()
-    memory = load_memory(memory_path)
+    memory, _ = load_memory_with_fallback(
+        db_path=db_path,
+        json_path=memory_path,
+        bootstrap_from_json=not args.no_bootstrap_json,
+    )
     chunks = build_chunks(memory)
     embedding_cache_path = Path(args.embedding_cache).resolve()
 

@@ -11,10 +11,16 @@ from typing import Any
 
 from google import genai
 
+try:
+    from .sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
+except ImportError:  # pragma: no cover - script execution fallback
+    from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
+
 
 DEFAULT_EMBEDDING_MODEL_NAME = "gemini-embedding-001"
 ROOT = Path(__file__).resolve().parents[1]
 SHORT_TERM_MEMORY_PATH = ROOT / "short_term" / "current_memory.json"
+SHORT_TERM_DB_PATH = DEFAULT_DB_PATH
 DEFAULT_EMBEDDING_CACHE_PATH = ROOT / "short_term" / ".embedding_cache.json"
 
 
@@ -43,6 +49,18 @@ def load_json_object(path: Path) -> dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return data if isinstance(data, dict) else {}
+
+
+def load_short_term_memory() -> dict[str, Any]:
+    try:
+        memory, _ = load_memory_with_fallback(
+            db_path=SHORT_TERM_DB_PATH,
+            json_path=SHORT_TERM_MEMORY_PATH,
+            bootstrap_from_json=True,
+        )
+        return memory
+    except Exception:
+        return load_json_object(SHORT_TERM_MEMORY_PATH)
 
 
 def normalize_text(text: str) -> str:
@@ -529,7 +547,7 @@ def retrieve_short_term_context(
     if retrieval_mode not in {"lexical", "semantic", "hybrid"}:
         retrieval_mode = "hybrid"
 
-    memory = load_json_object(SHORT_TERM_MEMORY_PATH)
+    memory = load_short_term_memory()
     if not memory:
         return "（無短期記憶）"
 
@@ -551,4 +569,3 @@ def retrieve_short_term_context(
     if len(context) > max_context_chars:
         return context[:max_context_chars] + "\n...(truncated)"
     return context if context else "（無短期記憶）"
-

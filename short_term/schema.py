@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-DEFAULT_MODEL_NAME = "gemini-2.5-flash"
+DEFAULT_MODEL_NAME = "gemini-2.5-pro"
 
 ACTION_ITEM_STATUS = {"open", "in_progress", "completed", "cancelled"}
 METHOD_CHANGE_STATUS = {"active", "reverted", "superseded"}
