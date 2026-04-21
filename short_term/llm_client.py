@@ -13,10 +13,24 @@ from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
 MAX_GENERATION_ATTEMPTS = 3
-MAX_TOOL_ROUNDS = 6
+MAX_TOOL_ROUNDS = 12
 MAX_API_RETRIES = 5
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
+DEFAULT_TOOL_PAGE_SIZE = 10
+MAX_PATCH_SECTIONS_PER_WRITE = 2
+HEAVY_READ_REQUIRED_SECTIONS = {
+    "action_items",
+    "method_changes",
+    "experiment_todos",
+}
+WRITABLE_MEMORY_SECTIONS = [
+    "meeting_window",
+    "action_items",
+    "method_changes",
+    "experiment_todos",
+    "next_meeting_focus",
+]
 
 
 def build_tool_call_prompt(
@@ -29,10 +43,12 @@ def build_tool_call_prompt(
 你必須使用工具完成更新，而不是直接在文字回覆最終 JSON。
 
 任務流程（必須遵守）：
-1) 先呼叫 `read_short_term_memory` 取得目前記憶。
-2) 根據逐字稿整理更新內容。
-3) 呼叫一次 `write_short_term_memory`，把更新內容放進 `updated_memory`。
-4) `write_short_term_memory` 之後只做簡短確認，不要再呼叫任何工具。
+1) 先呼叫 `read_short_term_memory(section="overview")` 取得目前記憶總覽。
+2) 根據 overview 判斷需要哪些區塊，再用 `read_short_term_memory` 分批讀取相關 section。
+3) 只讀你真的需要的部分；不要一開始就把完整記憶全部讀回來。
+4) 當你已經確認一小批更新時，就立刻呼叫 `write_short_term_memory` 寫入該批 patch。
+5) 你可以多次呼叫 `write_short_term_memory`，每次只寫「新增或變動的部分」，不要把整份 memory 原封不動回寫。
+6) 完成必要更新後，只做簡短確認，不要輸出最終 JSON。
 
 更新規則：
 - 盡量保留既有 item_id / change_id / todo_id，不要無故改號。
@@ -42,6 +58,22 @@ def build_tool_call_prompt(
 - 若無法確定 owner / proposer，填 unknown。
 - 文字欄位請優先繁體中文。
 - 系統會在本地維護 meeting_history_ids，並裁切 meeting_window 成最近三次；你只要提供合理更新即可。
+- `write_short_term_memory` 可以接受 partial patch；省略的欄位代表保持原狀。
+- 若 action items / method changes / experiment todos 很多，請使用 `offset` + `limit` 分頁讀取。
+- 只有在非常確定 memory 很小、或真的無法分批完成時，才可使用 `section="full"`。
+- 在寫入 `action_items` / `method_changes` / `experiment_todos` 之前，必須先讀過對應 section，否則寫入會被拒絕。
+- 每次寫入最多只更新少數 top-level sections；如果有很多變更，請拆成多次 write。
+- 如果工具回傳 no-op 或 prerequisite read error，代表你需要先多讀一點，再提交更小的 patch。
+- 不要重複提交沒有實際變化的 patch。
+
+建議策略：
+- 第一步永遠先讀 `overview`。
+- 如果要找既有 action item / method change / experiment todo，先分頁讀該 section，而不是直接讀 full。
+- 若會議中同時有多個更新，請按主題或項目分批寫入，例如先寫 meeting summary，再寫 action items，再寫 method changes。
+- 每次寫入只帶必要欄位，例如：
+  - 只更新 meeting summary：傳 `meeting_window`
+  - 只更新部分 action items：傳 `action_items`
+  - 只更新 next_meeting_focus：傳 `next_meeting_focus`
 
 Schema 說明（欄位參考）：
 {json.dumps(SCHEMA_DESCRIPTION, ensure_ascii=False, indent=2)}
@@ -207,6 +239,121 @@ def _generate_structured_update(
     return extract_json(response.text or "", parsed=getattr(response, "parsed", None))
 
 
+def _slice_memory_section(
+    memory: dict[str, Any],
+    section: str,
+    offset: int,
+    limit: int,
+) -> dict[str, Any]:
+    normalized_section = str(section or "overview").strip().lower()
+    safe_offset = max(int(offset or 0), 0)
+    safe_limit = max(int(limit or DEFAULT_TOOL_PAGE_SIZE), 1)
+
+    if normalized_section == "full":
+        return {
+            "section": "full",
+            "memory": memory,
+            "summary": {
+                "memory_version": int(memory.get("memory_version", 0) or 0),
+                "meeting_history_count": len(memory.get("meeting_history_ids", [])),
+                "meeting_window_count": len(memory.get("meeting_window", [])),
+                "action_items_count": len(memory.get("action_items", [])),
+                "method_changes_count": len(memory.get("method_changes", [])),
+                "experiment_todos_count": len(memory.get("experiment_todos", [])),
+                "next_meeting_focus_count": len(memory.get("next_meeting_focus", [])),
+            },
+        }
+
+    if normalized_section == "overview":
+        return {
+            "section": "overview",
+            "summary": {
+                "memory_version": int(memory.get("memory_version", 0) or 0),
+                "last_updated_meeting_id": str(memory.get("last_updated_meeting_id", "")),
+                "meeting_history_ids": list(memory.get("meeting_history_ids", [])),
+                "meeting_window_ids": [
+                    row.get("meeting_id", "")
+                    for row in memory.get("meeting_window", [])
+                    if isinstance(row, dict)
+                ],
+                "meeting_history_count": len(memory.get("meeting_history_ids", [])),
+                "meeting_window_count": len(memory.get("meeting_window", [])),
+                "action_items_count": len(memory.get("action_items", [])),
+                "method_changes_count": len(memory.get("method_changes", [])),
+                "experiment_todos_count": len(memory.get("experiment_todos", [])),
+                "next_meeting_focus_count": len(memory.get("next_meeting_focus", [])),
+            },
+            "recommended_sections": [
+                "meeting_window",
+                "action_items",
+                "method_changes",
+                "experiment_todos",
+                "next_meeting_focus",
+            ],
+        }
+
+    section_map: dict[str, list[Any]] = {
+        "meeting_window": list(memory.get("meeting_window", [])),
+        "action_items": list(memory.get("action_items", [])),
+        "method_changes": list(memory.get("method_changes", [])),
+        "experiment_todos": list(memory.get("experiment_todos", [])),
+        "next_meeting_focus": list(memory.get("next_meeting_focus", [])),
+    }
+    rows = section_map.get(normalized_section)
+    if rows is None:
+        return {
+            "section": normalized_section,
+            "ok": False,
+            "error": (
+                "Unknown section. Use one of: overview, full, meeting_window, "
+                "action_items, method_changes, experiment_todos, next_meeting_focus."
+            ),
+        }
+
+    page = rows[safe_offset : safe_offset + safe_limit]
+    return {
+        "section": normalized_section,
+        "items": page,
+        "offset": safe_offset,
+        "limit": safe_limit,
+        "returned_count": len(page),
+        "total_count": len(rows),
+        "has_more": safe_offset + len(page) < len(rows),
+    }
+
+
+def _extract_patch_sections(updated_memory: dict[str, Any]) -> list[str]:
+    patch_sections: list[str] = []
+    for key in WRITABLE_MEMORY_SECTIONS:
+        if key in updated_memory:
+            patch_sections.append(key)
+    return patch_sections
+
+
+def _content_snapshot(memory: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "meeting_history_ids": list(memory.get("meeting_history_ids", [])),
+        "meeting_window": list(memory.get("meeting_window", [])),
+        "action_items": list(memory.get("action_items", [])),
+        "method_changes": list(memory.get("method_changes", [])),
+        "experiment_todos": list(memory.get("experiment_todos", [])),
+        "next_meeting_focus": list(memory.get("next_meeting_focus", [])),
+    }
+
+
+def _summarize_patch_counts(updated_memory: dict[str, Any]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for section in _extract_patch_sections(updated_memory):
+        value = updated_memory.get(section)
+        if isinstance(value, list):
+            counts[section] = len(value)
+        elif value is None:
+            counts[section] = 0
+        else:
+            counts[section] = 1
+    return counts
+
+
 def generate_updated_memory(
     model_name: str,
     api_key: str,
@@ -238,25 +385,36 @@ def generate_updated_memory(
         state: dict[str, Any] = {
             "base_memory": current_memory,
             "latest_memory": current_memory,
-            "write_done": False,
+            "target_memory_version": int(current_memory.get("memory_version", 0) or 0) + 1,
+            "write_count": 0,
             "written_memory": None,
+            "read_sections": set(),
         }
 
-        def read_short_term_memory() -> dict[str, Any]:
-            """Read current short-term memory snapshot from SQLite-backed storage."""
+        def read_short_term_memory(
+            section: str = "overview",
+            offset: int = 0,
+            limit: int = DEFAULT_TOOL_PAGE_SIZE,
+        ) -> dict[str, Any]:
+            """Read short-term memory from SQLite-backed storage in small sections.
+
+            Args:
+                section: One of overview, full, meeting_window, action_items,
+                    method_changes, experiment_todos, next_meeting_focus.
+                    Default is overview.
+                offset: Starting offset for paginated sections.
+                limit: Maximum number of rows to return for paginated sections.
+            """
+            normalized_section = str(section or "overview").strip().lower()
             memory = on_memory_read() if on_memory_read is not None else state["latest_memory"]
             state["latest_memory"] = memory
-            return {
-                "memory": memory,
-                "summary": {
-                    "memory_version": int(memory.get("memory_version", 0) or 0),
-                    "meeting_history_count": len(memory.get("meeting_history_ids", [])),
-                    "meeting_window_count": len(memory.get("meeting_window", [])),
-                    "action_items_count": len(memory.get("action_items", [])),
-                    "method_changes_count": len(memory.get("method_changes", [])),
-                    "experiment_todos_count": len(memory.get("experiment_todos", [])),
-                },
-            }
+            state["read_sections"].add(normalized_section)
+            return _slice_memory_section(
+                memory=memory,
+                section=normalized_section,
+                offset=offset,
+                limit=limit,
+            )
 
         def write_short_term_memory(
             updated_memory: dict[str, Any],
@@ -266,27 +424,72 @@ def generate_updated_memory(
             Persist one memory update patch.
 
             Args:
-                updated_memory: Partial or full memory object following the short-term schema.
+                updated_memory: Partial memory patch following the short-term schema.
+                    Only include fields that actually changed.
                 note: Optional explanation for this write.
             """
-            if state["write_done"]:
-                return {
-                    "ok": False,
-                    "error": "write_short_term_memory can only be called once per update run.",
-                }
-
             if not isinstance(updated_memory, dict):
                 return {
                     "ok": False,
                     "error": "updated_memory must be a JSON object.",
                 }
 
+            patch_sections = _extract_patch_sections(updated_memory)
+            patch_counts = _summarize_patch_counts(updated_memory)
+            log(
+                "tool write_short_term_memory requested "
+                f"patch_sections={patch_sections} "
+                f"patch_counts={patch_counts}"
+            )
+            if not patch_sections:
+                return {
+                    "ok": False,
+                    "error": (
+                        "No writable memory sections provided. "
+                        "Include one of: meeting_window, action_items, "
+                        "method_changes, experiment_todos, next_meeting_focus."
+                    ),
+                }
+
+            if len(patch_sections) > MAX_PATCH_SECTIONS_PER_WRITE:
+                return {
+                    "ok": False,
+                    "error": (
+                        "Too many top-level sections in one write. "
+                        f"Max allowed is {MAX_PATCH_SECTIONS_PER_WRITE}; got {patch_sections}."
+                    ),
+                }
+
+            missing_reads = [
+                section
+                for section in patch_sections
+                if section in HEAVY_READ_REQUIRED_SECTIONS
+                and section not in state["read_sections"]
+            ]
+            if missing_reads:
+                return {
+                    "ok": False,
+                    "error": (
+                        "Missing prerequisite read for sections: "
+                        f"{missing_reads}. Read those sections first before writing."
+                    ),
+                }
+
             normalized = normalize_memory(
                 updated_memory=updated_memory,
-                previous_memory=state["base_memory"],
+                previous_memory=state["latest_memory"],
                 meeting_id=meeting_id,
                 source_file=source_file,
             )
+            normalized["memory_version"] = state["target_memory_version"]
+            if _content_snapshot(normalized) == _content_snapshot(state["latest_memory"]):
+                return {
+                    "ok": False,
+                    "error": (
+                        "No-op write detected. Read more context or submit a smaller patch "
+                        "that changes memory content."
+                    ),
+                }
             log(
                 "tool write_short_term_memory normalized "
                 f"memory_version={normalized['memory_version']} "
@@ -301,11 +504,12 @@ def generate_updated_memory(
             persisted_memory = on_memory_read() if on_memory_read is not None else normalized
             state["latest_memory"] = persisted_memory
             state["written_memory"] = persisted_memory
-            state["write_done"] = True
+            state["write_count"] = int(state.get("write_count", 0) or 0) + 1
 
             return {
                 "ok": True,
                 "note": note,
+                "write_count": state["write_count"],
                 "memory_version": persisted_memory["memory_version"],
                 "last_updated_meeting_id": persisted_memory["last_updated_meeting_id"],
                 "meeting_window_ids": [
@@ -348,7 +552,8 @@ def generate_updated_memory(
                 args = function_call.args or {}
                 log(
                     f"round {round_index}: invoking tool={tool_name} "
-                    f"args_keys={sorted(args.keys())}"
+                    f"args_keys={sorted(args.keys())} "
+                    f"args={json.dumps(args, ensure_ascii=False, sort_keys=True)}"
                 )
                 signature = f"{tool_name}:{json.dumps(args, ensure_ascii=False, sort_keys=True)}"
                 if signature not in seen_calls:
@@ -356,7 +561,13 @@ def generate_updated_memory(
                 seen_calls.add(signature)
 
                 if tool_name == "read_short_term_memory":
-                    tool_result = read_short_term_memory()
+                    try:
+                        tool_result = read_short_term_memory(**args)
+                    except TypeError as exc:
+                        tool_result = {
+                            "ok": False,
+                            "error": f"Invalid tool args for read_short_term_memory: {exc}",
+                        }
                 elif tool_name == "write_short_term_memory":
                     try:
                         tool_result = write_short_term_memory(**args)
