@@ -12,6 +12,7 @@ from sqlite_store import (
     DEFAULT_DB_PATH,
     append_snapshot,
     export_db_snapshot,
+    load_memory_from_sqlite,
     load_memory_with_fallback,
     save_memory_to_sqlite,
 )
@@ -108,12 +109,12 @@ def main() -> None:
     log("loading GEMINI_API_KEY from .env")
     api_key = load_env()
 
+    def on_memory_read() -> dict[str, object]:
+        return load_memory_from_sqlite(db_path)
+
     def on_memory_write(memory: dict[str, object]) -> None:
         log(f"writing sqlite db: {db_path}")
         save_memory_to_sqlite(db_path, memory)
-        if args.mirror_json:
-            log(f"writing mirror json: {memory_json_path}")
-            save_json(memory_json_path, memory)
 
     log(f"starting Gemini update (model={args.model}, meeting_id={meeting_id})")
     updated_memory = generate_updated_memory(
@@ -123,6 +124,7 @@ def main() -> None:
         current_memory=current_memory,
         meeting_id=meeting_id,
         source_file=source_file,
+        on_memory_read=None if args.dry_run else on_memory_read,
         on_memory_write=None if args.dry_run else on_memory_write,
         verbose=not args.quiet,
     )
@@ -133,18 +135,25 @@ def main() -> None:
         print_json_safe(updated_memory)
         return
 
+    log("reloading persisted memory from sqlite")
+    persisted_memory = load_memory_from_sqlite(db_path)
+
     log("append DB snapshot")
     snapshot_id = append_snapshot(
         db_path=db_path,
         meeting_id=meeting_id,
-        memory=updated_memory,
+        memory=persisted_memory,
     )
+
+    if args.mirror_json:
+        log(f"writing mirror json from sqlite: {memory_json_path}")
+        save_json(memory_json_path, persisted_memory)
 
     snapshot_tag = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_meeting_{meeting_id}"
     if snapshot_dir is not None:
         snapshot_name = f"{snapshot_tag}.json"
         snapshot_path = snapshot_dir / snapshot_name
-        save_json(snapshot_path, updated_memory)
+        save_json(snapshot_path, persisted_memory)
         print(f"JSON snapshot saved: {snapshot_path}")
 
     if db_snapshot_dir is not None:
@@ -155,10 +164,11 @@ def main() -> None:
     print(f"Updated memory DB: {db_path}")
     print(f"Loaded initial memory from: {memory_source}")
     print(f"DB snapshot_id={snapshot_id}")
-    print(f"memory_version={updated_memory['memory_version']}")
+    print(f"memory_version={persisted_memory['memory_version']}")
     print(
         "meeting_window="
-        f"{len(updated_memory['meeting_window'])} action_items={len(updated_memory['action_items'])}"
+        f"{len(persisted_memory['meeting_window'])} "
+        f"action_items={len(persisted_memory['action_items'])}"
     )
 
 

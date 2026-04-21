@@ -31,10 +31,10 @@
 
 1. 讀取 SQLite 目前記憶（若 DB 為空，會從 `current_memory.json` bootstrap 一次）
 2. 讀取單一會議逐字稿（例如 `meeting_recording/transcript/49.txt`）
-3. 呼叫 Gemini，透過 tool calling 先讀記憶、再寫入更新
-4. 寫入工具會套用本地 normalizer，維持既有邏輯（含最近 3 次會議裁切）
-5. 寫入 SQLite，並在 DB 內記錄 snapshot
-6. 每次更新都會在 `short_term/snapshots/` 產生 JSON snapshot，並在 `short_term/db_snapshots/` 產生 SQLite DB snapshot（另可選擇輸出 JSON mirror）
+3. 呼叫 Gemini，透過 tool calling 先讀 SQLite 中的記憶、再寫入更新
+4. 寫入工具會套用本地 normalizer，維持既有邏輯（含最近 3 次會議裁切），並直接落到 SQLite
+5. 更新完成後，系統會重新從 SQLite 載入最新記憶，並在 DB 內記錄 snapshot
+6. 每次更新都會從 SQLite 匯出 `short_term/snapshots/` 的 JSON snapshot，並在 `short_term/db_snapshots/` 產生 SQLite DB snapshot（另可選擇輸出 JSON mirror）
 
 ## 使用方式
 

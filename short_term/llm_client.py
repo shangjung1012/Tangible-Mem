@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 
 from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
 MAX_GENERATION_ATTEMPTS = 3
 MAX_TOOL_ROUNDS = 6
+MAX_API_RETRIES = 5
+API_RETRY_BASE_DELAY_SECONDS = 2.0
+API_RETRY_MAX_DELAY_SECONDS = 20.0
 
 
 def build_tool_call_prompt(
@@ -138,6 +142,40 @@ def save_failed_response(
     return path
 
 
+def _is_retryable_genai_error(exc: Exception) -> bool:
+    if isinstance(exc, errors.ServerError):
+        return True
+
+    message = str(exc).upper()
+    return "503" in message or "UNAVAILABLE" in message
+
+
+def _call_with_retry(
+    func: Callable[[], Any],
+    *,
+    log: Callable[[str], None],
+    operation_name: str,
+    max_retries: int = MAX_API_RETRIES,
+) -> Any:
+    for attempt in range(1, max_retries + 1):
+        try:
+            return func()
+        except Exception as exc:  # noqa: BLE001
+            if not _is_retryable_genai_error(exc) or attempt >= max_retries:
+                raise
+
+            delay_seconds = min(
+                API_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1)),
+                API_RETRY_MAX_DELAY_SECONDS,
+            )
+            log(
+                f"{operation_name} failed with retryable error "
+                f"(attempt {attempt}/{max_retries}): {exc}. "
+                f"sleep {delay_seconds:.1f}s before retry"
+            )
+            time.sleep(delay_seconds)
+
+
 def _generate_structured_update(
     client: genai.Client,
     model_name: str,
@@ -145,6 +183,7 @@ def _generate_structured_update(
     current_memory: dict[str, Any],
     meeting_id: str,
     source_file: str,
+    log: Callable[[str], None],
 ) -> dict[str, Any]:
     prompt = build_structured_prompt(
         transcript=transcript,
@@ -152,14 +191,18 @@ def _generate_structured_update(
         meeting_id=meeting_id,
         source_file=source_file,
     )
-    response = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config={
-            "temperature": 0.0,
-            "response_mime_type": "application/json",
-            "response_json_schema": RESPONSE_JSON_SCHEMA,
-        },
+    response = _call_with_retry(
+        lambda: client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config={
+                "temperature": 0.0,
+                "response_mime_type": "application/json",
+                "response_json_schema": RESPONSE_JSON_SCHEMA,
+            },
+        ),
+        log=log,
+        operation_name="structured generate_content",
     )
     return extract_json(response.text or "", parsed=getattr(response, "parsed", None))
 
@@ -171,6 +214,7 @@ def generate_updated_memory(
     current_memory: dict[str, Any],
     meeting_id: str,
     source_file: str,
+    on_memory_read: Callable[[], dict[str, Any]] | None = None,
     on_memory_write: Callable[[dict[str, Any]], None] | None = None,
     verbose: bool = True,
 ) -> dict[str, Any]:
@@ -200,7 +244,8 @@ def generate_updated_memory(
 
         def read_short_term_memory() -> dict[str, Any]:
             """Read current short-term memory snapshot from SQLite-backed storage."""
-            memory = state["latest_memory"]
+            memory = on_memory_read() if on_memory_read is not None else state["latest_memory"]
+            state["latest_memory"] = memory
             return {
                 "memory": memory,
                 "summary": {
@@ -253,19 +298,21 @@ def generate_updated_memory(
                 log("tool write_short_term_memory persisting to storage")
                 on_memory_write(normalized)
 
-            state["latest_memory"] = normalized
-            state["written_memory"] = normalized
+            persisted_memory = on_memory_read() if on_memory_read is not None else normalized
+            state["latest_memory"] = persisted_memory
+            state["written_memory"] = persisted_memory
             state["write_done"] = True
 
             return {
                 "ok": True,
                 "note": note,
-                "memory_version": normalized["memory_version"],
-                "last_updated_meeting_id": normalized["last_updated_meeting_id"],
+                "memory_version": persisted_memory["memory_version"],
+                "last_updated_meeting_id": persisted_memory["last_updated_meeting_id"],
                 "meeting_window_ids": [
-                    row.get("meeting_id", "") for row in normalized.get("meeting_window", [])
+                    row.get("meeting_id", "")
+                    for row in persisted_memory.get("meeting_window", [])
                 ],
-                "action_items_count": len(normalized.get("action_items", [])),
+                "action_items_count": len(persisted_memory.get("action_items", [])),
             }
 
         config = types.GenerateContentConfig(
@@ -280,7 +327,11 @@ def generate_updated_memory(
 
         chat = client.chats.create(model=model_name, config=config)
         log("sending initial prompt to Gemini")
-        response = chat.send_message(prompt)
+        response = _call_with_retry(
+            lambda: chat.send_message(prompt),
+            log=log,
+            operation_name="tool-calling send_message initial",
+        )
 
         seen_calls: set[str] = set()
         for round_index in range(1, MAX_TOOL_ROUNDS + 1):
@@ -328,7 +379,11 @@ def generate_updated_memory(
                 log(f"round {round_index}: repeated tool signatures only, stop tool loop")
                 break
             log(f"round {round_index}: sending tool responses back to Gemini")
-            response = chat.send_message(parts)
+            response = _call_with_retry(
+                lambda: chat.send_message(parts),
+                log=log,
+                operation_name=f"tool-calling send_message round {round_index}",
+            )
 
         written_memory = state.get("written_memory")
         if isinstance(written_memory, dict):
@@ -358,6 +413,7 @@ def generate_updated_memory(
                 current_memory=current_memory,
                 meeting_id=meeting_id,
                 source_file=source_file,
+                log=log,
             )
             normalized = normalize_memory(
                 updated_memory=structured_update,
@@ -368,6 +424,9 @@ def generate_updated_memory(
             if on_memory_write is not None:
                 log("structured fallback persisting to storage")
                 on_memory_write(normalized)
+                normalized = (
+                    on_memory_read() if on_memory_read is not None else normalized
+                )
             log(
                 "structured fallback succeeded "
                 f"memory_version={normalized['memory_version']}"
