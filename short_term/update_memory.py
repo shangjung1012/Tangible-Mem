@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import os
-from datetime import datetime
 from pathlib import Path
 
 from io_utils import load_env, print_json_safe, save_json
@@ -149,7 +148,7 @@ def main() -> None:
         log(f"writing mirror json from sqlite: {memory_json_path}")
         save_json(memory_json_path, persisted_memory)
 
-    snapshot_tag = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_meeting_{meeting_id}"
+    snapshot_tag = meeting_id
     if snapshot_dir is not None:
         snapshot_name = f"{snapshot_tag}.json"
         snapshot_path = snapshot_dir / snapshot_name
