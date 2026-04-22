@@ -22,10 +22,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from google import genai
-
 from embedder import EmbedCache
-from io_utils import load_env, load_tree
+from gemini_clients import create_gemini_client
+from io_utils import load_api_keys, load_tree
 from recall import format_recall_for_prompt, recall
 from recall_planner import plan_recall
 
@@ -45,7 +44,7 @@ def _is_retryable_error(exc: Exception) -> bool:
 
 
 def _generate_with_retry(
-    client: genai.Client,
+    client: Any,
     model_name: str,
     system_prompt: str,
     user_query: str,
@@ -106,17 +105,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    api_key = load_env()
+    api_keys = load_api_keys()
     model_name = args.model.strip() or "gemini-2.5-flash"
     tree = load_tree(Path(args.tree))
 
-    plan = plan_recall(args.question, api_key, model_name=model_name)
+    plan = plan_recall(args.question, api_keys, model_name=model_name)
     cache = EmbedCache()
     recall_result = recall(
         query=args.question,
         plan=plan,
         tree=tree,
-        api_key=api_key,
+        api_key=api_keys,
         model_name=model_name,
         embed_cache=cache,
     )
@@ -149,7 +148,7 @@ def main() -> None:
     if args.show_only:
         return
 
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_keys)
     ans_no_injection = _generate_with_retry(
         client=client,
         model_name=model_name,

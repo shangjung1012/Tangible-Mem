@@ -33,7 +33,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
-from io_utils import load_env, load_tree, save_json
+from io_utils import load_api_keys, load_tree, save_json
 from schema import DEFAULT_TREE
 from summarize import summarize_phase, update_project_profile
 
@@ -144,7 +144,7 @@ def main() -> None:
             )
         return
 
-    api_key = load_env()
+    api_key = load_api_keys()
 
     # running_tree accumulates phases across steps so L3 sees all prior phases
     running_tree = deepcopy(DEFAULT_TREE)

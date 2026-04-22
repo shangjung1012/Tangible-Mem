@@ -10,9 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from google import genai
-
-from io_utils import load_env, load_tree, print_json_safe, save_json, utc_now_iso
+from gemini_clients import create_gemini_client
+from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
 from schema import (
     DEFAULT_MODEL_NAME,
     PHASE_SUMMARY_SCHEMA,
@@ -89,7 +88,7 @@ def _build_phase_summary_prompt(
 
 def summarize_phase(
     model_name: str,
-    api_key: str,
+    api_key: str | list[str],
     tree: dict[str, Any],
     phase_id: str,
     time_start: str,
@@ -97,7 +96,7 @@ def summarize_phase(
     meeting_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Create or update an L2 phase summary from L1 meetings."""
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_key)
 
     all_meetings: list[dict[str, Any]] = tree.get("meetings", [])
 
@@ -226,12 +225,12 @@ def _build_profile_update_prompt(
 
 def update_project_profile(
     model_name: str,
-    api_key: str,
+    api_key: str | list[str],
     tree: dict[str, Any],
     project_id: str = "virtual-mentor",
 ) -> dict[str, Any]:
     """Update the L3 project profile from all L2 phases."""
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_key)
 
     phases = tree.get("phases", [])
     if not phases:
@@ -329,12 +328,12 @@ def main() -> None:
     tree_path = Path(args.tree).resolve()
     snapshot_dir = Path(args.snapshot_dir).resolve()
     tree = load_tree(tree_path)
-    api_key = load_env()
+    api_keys = load_api_keys()
 
     if args.command == "phase":
         phase_node = summarize_phase(
             model_name=args.model,
-            api_key=api_key,
+            api_key=api_keys,
             tree=tree,
             phase_id=args.phase_id,
             time_start=args.time_start,
@@ -353,7 +352,7 @@ def main() -> None:
     elif args.command == "profile":
         profile = update_project_profile(
             model_name=args.model,
-            api_key=api_key,
+            api_key=api_keys,
             tree=tree,
             project_id=args.project_id,
         )

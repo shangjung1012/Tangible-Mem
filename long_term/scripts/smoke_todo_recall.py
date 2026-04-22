@@ -10,13 +10,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from embedder import EmbedCache
-from io_utils import load_env, load_tree
+from io_utils import load_api_keys, load_tree
 from recall import recall
 from recall_planner import plan_recall
 
 
 def main() -> None:
-    api_key = load_env()
+    api_key = load_api_keys()
     tree = load_tree(Path("long_term/tree.json"))
 
     if not tree.get("meetings"):

@@ -30,10 +30,6 @@ COMMANDS: dict[str, CommandSpec] = {
         module_path="rebuild_snapshots",
         description="用既有 tree.json 重建 L2 / L3 snapshots。",
     ),
-    "test": CommandSpec(
-        module_path="test_long_term",
-        description="執行 long-term 的 bridge + recall 端對端測試。",
-    ),
     "smoke-todo": CommandSpec(
         module_path="scripts.smoke_todo_recall",
         description="快速檢查 todo recall filter 是否正常。",

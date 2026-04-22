@@ -9,8 +9,7 @@ import re
 import time
 from typing import Any
 
-from google import genai
-
+from gemini_clients import create_gemini_client
 from schema import DEFAULT_MODEL_NAME, RECALL_PLAN_SCHEMA
 
 TODO_KEYWORDS = {
@@ -157,7 +156,7 @@ def _apply_todo_type_filter(plan: dict[str, Any], query: str) -> dict[str, Any]:
 
 def plan_recall(
     query: str,
-    api_key: str,
+    api_key: str | list[str],
     model_name: str = DEFAULT_MODEL_NAME,
     context_hint: str = "",
     max_retries: int = 6,
@@ -172,7 +171,7 @@ def plan_recall(
         time_range_hint – str
         type_filter     – optional list[str], e.g. ["todo"]
     """
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_key)
     prompt = _build_planner_prompt(query, context_hint)
     config = {
         "temperature": 0.1,

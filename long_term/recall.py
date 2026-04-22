@@ -9,9 +9,9 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from google import genai
-
 from embedder import EmbedCache, cosine_similarity, embed_text
+from gemini_clients import create_gemini_client
+from importance import normalize_importance_score
 from schema import DEFAULT_MODEL_NAME, EMBED_MODEL_NAME, RECALL_GATE_SCHEMA
 
 FALLBACK_SCORE_THRESHOLD = 0.80
@@ -37,7 +37,7 @@ def _keyword_score(text: str, keywords: list[str]) -> float:
 
 def _importance_score(importance: float) -> float:
     """Map importance (0.0-1.0) to [0.0, 1.0] with clamping."""
-    return max(0.0, min(1.0, float(importance)))
+    return normalize_importance_score(importance, fallback=0.0)
 
 
 def _recency_score(
@@ -95,7 +95,7 @@ def _combined_score(
 def search_l1_semantic(
     tree: dict[str, Any],
     query_emb: list[float],
-    api_key: str,
+    api_key: str | list[str],
     cache: EmbedCache,
     obj_types: list[str] | None = None,
     min_importance: float = 0.0,
@@ -313,7 +313,7 @@ def _is_retryable_error(exc: Exception) -> bool:
 def recall_gate(
     query: str,
     candidates: list[dict[str, Any]],
-    api_key: str,
+    api_key: str | list[str],
     model_name: str = DEFAULT_MODEL_NAME,
     max_retries: int = 5,
 ) -> list[dict[str, Any]]:
@@ -321,7 +321,7 @@ def recall_gate(
     if len(candidates) <= 3:
         return candidates
 
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_key)
     prompt = _build_gate_prompt(query, candidates)
     config = {
         "temperature": 0.1,
@@ -382,7 +382,7 @@ def recall(
     query: str,
     plan: dict[str, Any],
     tree: dict[str, Any],
-    api_key: str,
+    api_key: str | list[str],
     model_name: str = DEFAULT_MODEL_NAME,
     short_term_memory: dict[str, Any] | None = None,
     query_date: datetime | None = None,

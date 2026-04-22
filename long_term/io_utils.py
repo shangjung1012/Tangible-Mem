@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -11,6 +12,8 @@ from typing import Any
 from dotenv import load_dotenv
 
 from schema import DEFAULT_TREE
+
+API_KEY_SPLIT_RE = re.compile(r"[\s,;]+")
 
 
 def utc_now_iso() -> str:
@@ -22,14 +25,48 @@ def utc_now_iso() -> str:
     )
 
 
-def load_env() -> str:
+def parse_gemini_api_keys_from_env(env: dict[str, str] | None = None) -> list[str]:
+    """Return configured Gemini API keys in call order, preserving compatibility."""
+    source = env if env is not None else os.environ
+
+    def _dedupe(values: list[str]) -> list[str]:
+        output: list[str] = []
+        for key in values:
+            key = key.strip()
+            if key and key not in output:
+                output.append(key)
+        return output
+
+    multi_keys = _dedupe(API_KEY_SPLIT_RE.split(source.get("GEMINI_API_KEYS", "")))
+    if multi_keys:
+        return multi_keys
+
+    numbered_keys = _dedupe(
+        [source.get(f"GEMINI_API_KEY_{i}", "") for i in range(1, 10)]
+    )
+    if numbered_keys:
+        return numbered_keys
+
+    single_key = source.get("GEMINI_API_KEY", "").strip()
+    return [single_key] if single_key else []
+
+
+def load_api_keys() -> list[str]:
     root_env = Path(__file__).resolve().parents[1] / ".env"
     load_dotenv(root_env, override=True)
     load_dotenv(override=True)
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is missing. Please set it in .env.")
-    return api_key
+    api_keys = parse_gemini_api_keys_from_env()
+    if not api_keys:
+        raise RuntimeError(
+            "Gemini API key is missing. Set GEMINI_API_KEY, GEMINI_API_KEYS, "
+            "or GEMINI_API_KEY_1/2/3 in .env."
+        )
+    return api_keys
+
+
+def load_env() -> str:
+    """Backward-compatible helper for callers that only need one API key."""
+    return load_api_keys()[0]
 
 
 def load_tree(path: Path) -> dict[str, Any]:

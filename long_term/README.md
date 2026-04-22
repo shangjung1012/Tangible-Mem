@@ -49,24 +49,18 @@ Recall 目前走 semantic retrieval：先用 embedding 對 L1 做搜尋，再把
 
 ```env
 GEMINI_API_KEY=your_api_key
+# optional: 要輪流使用多把 key 時，改用這行
+GEMINI_API_KEYS=key_1,key_2,key_3
+# optional: 也可改用 GEMINI_API_KEY_1 / 2 / 3 寫法
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_EMBED_MODEL=models/gemini-embedding-001
 ```
 
-`test` 指令另外會讀這些變數：
-
-- `LONG_TERM_TEST_MODE=all|bridge|recall`
-- `LONG_TERM_TEST_RESUME=1`
-- `LONG_TERM_TEST_MEETINGS="Bmr001,Bmr002"`
-- `LONG_TERM_TEST_LIMIT=1`
-- `LONG_TERM_BRIDGE_MAX_RETRIES=8`
-- `LONG_TERM_BRIDGE_INTERVAL_S=1`
-- `LONG_TERM_STOP_ON_ERROR=1`
-- `LONG_TERM_REPORT_PATH=long_term/bridge_report.json`
-
 ## 常用流程
 
 ### 1. 單場 Bridge
+
+預設是既有 full-transcript 模式：一次把整份逐字稿送給 Gemini，輸出 L1 記憶物件後寫回 `tree.json`。
 
 ```bash
 uv run long_term/cli.py bridge \
@@ -84,6 +78,24 @@ uv run long_term/cli.py bridge \
   --timestamp 2000-06-14T17:00:00Z \
   --meeting-date 2000-06-14
 ```
+
+也可以改用 incremental Gemini function-calling 模式。這個模式會先把逐字稿切成 SQLite 工作表中的逐行資料，讓 Gemini 透過 `read_transcript` 逐段讀取、更新 issue table、建立 raw L1 candidates，最後仍回到既有 normalizer 與 `tree.json` 輸出流程。
+
+```bash
+uv run long_term/cli.py bridge \
+  --transcript meeting_recording/transcript/grace/16.txt \
+  --mode incremental \
+  --incremental-db long_term/incremental_bridge.db \
+  --chunk-size 40
+```
+
+補充：
+
+- `--mode full` 是預設值，保留原本 full-transcript bridge 行為。
+- `--mode incremental` 需要 `.env` 中的 `GEMINI_API_KEY`；如果有 `GEMINI_API_KEYS=key_1,key_2,key_3`，每次 Gemini model call 會自動輪替使用，預設模型同樣是 `gemini-2.5-flash`。
+- incremental 會把進度印到 stderr，例如目前 round、掃到第幾行、issues / raw L1 數量；`--max-tool-rounds 0` 代表依逐字稿長度自動估算上限。
+- `--incremental-db` 是工作日誌，不是 canonical long-term store；正式輸出仍是 `long_term/tree.json` 和 snapshots。
+- `importance` 會經過共用校準：L1 物件依 evidence / related topics / 高影響語意微調；incremental issues 會先用 `issue_key` / 相似 title-summary 合併同一議題，再用 `episode_count`（隔 3 行以上才算再次出現）設定最低合理分數，避免連續幾行 evidence 灌高重要性。
 
 ### 2. 手動建立 L2 / L3
 
@@ -123,16 +135,13 @@ uv run long_term/cli.py rebuild-snapshots --phase-size 4
 
 ### 5. 驗證與評估
 
-端對端測試：
+本地單元測試，不打 API：
 
 ```bash
-export LONG_TERM_TEST_MODE=all
-export LONG_TERM_TEST_RESUME=1
-export LONG_TERM_REPORT_PATH=long_term/bridge_report.json
-UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py test
+uv run python -m unittest discover -s tests
 ```
 
-只檢查 todo recall：
+打 API 的 smoke check：
 
 ```bash
 UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py smoke-todo

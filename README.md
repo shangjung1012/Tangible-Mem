@@ -19,6 +19,8 @@ uv sync
 建立 `.env` 檔案並填入你的 API Key：
 ```
 GEMINI_API_KEY=your_api_key_here
+# optional: 要輪流使用多把 Gemini key 時，改用這行
+GEMINI_API_KEYS=key_1,key_2,key_3
 # optional: 預設生成模型（bridge / summarize / planner / gate）
 GEMINI_MODEL=gemini-2.5-flash
 # optional: 長期記憶 semantic retrieval 使用的 embedding 模型
@@ -39,7 +41,7 @@ uv run app/main.py
 ## 子模組說明
 
 - 短期記憶：[`short_term/README.md`](short_term/README.md)
-- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`
+- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；L1 bridge 支援預設 full-transcript 模式與 optional incremental Gemini function-calling 模式
 - 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
 
 ## Meeting Recording（摘要）

@@ -23,7 +23,7 @@ from bridge import (
     insert_meeting_into_tree,
     normalize_memory_objects,
 )
-from io_utils import load_env, load_tree, save_json, utc_now_iso
+from io_utils import load_api_keys, load_tree, save_json, utc_now_iso
 from schema import DEFAULT_TREE
 from summarize import summarize_phase, update_project_profile
 from transcript_utils import infer_meeting_date, mrt_to_text
@@ -150,7 +150,7 @@ def main() -> None:
             print(f"  {f.stem}: {len(text)} chars")
         return
 
-    api_key = load_env()
+    api_key = load_api_keys()
     total_objects = 0
     failed: list[str] = []
 

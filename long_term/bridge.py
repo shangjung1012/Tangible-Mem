@@ -12,12 +12,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from google import genai
-
-from io_utils import load_env, load_tree, print_json_safe, save_json, utc_now_iso
+from gemini_clients import create_gemini_client
+from importance import (
+    IMPORTANCE_SCALE,
+    MIN_IMPORTANCE_THRESHOLD,
+    calibrate_l1_importance,
+)
+from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
 from schema import BRIDGE_RESPONSE_SCHEMA, DEFAULT_MODEL_NAME, MEMORY_OBJ_TYPES
 
-MIN_IMPORTANCE_THRESHOLD = 0.35
 TODO_PREFIXES = ("需要", "待辦", "應", "計劃", "必須")
 
 
@@ -46,11 +49,8 @@ decision / todo / method_change / result / open_question / argument。
    - result：實驗結果、發現、觀察報告
    - open_question：尚未解決的研究問題
    - argument：決策背後的論點與推理
-4) importance 評分標準：
-   - 0.8~1.0：影響整個研究方向的重大決策或方法變更
-   - 0.5~0.7：重要的待辦或中等重要的技術決策
-   - 0.3~0.4：一般性的討論結論
-   - 0.1~0.2：瑣碎的行政事項
+4) importance 評分標準（0.0~1.0，請對齊這個尺度）：
+{IMPORTANCE_SCALE}
 4.1) Importance calibration guidelines（請盡量對齊）：
    - decision / method_change 影響多人或跨會議者：0.7~0.9
    - decision / method_change 僅影響單一會議：0.5~0.7
@@ -105,7 +105,7 @@ def extract_json(raw_text: str) -> dict[str, Any]:
 
 def call_gemini_bridge(
     model_name: str,
-    api_key: str,
+    api_key: str | list[str],
     transcript: str,
     meeting_id: str,
     existing_topics: list[str],
@@ -129,7 +129,7 @@ def call_gemini_bridge(
         )
         return any(token in msg for token in retry_tokens)
 
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_key)
     prompt = build_bridge_prompt(transcript, meeting_id, existing_topics)
     config = {
         "temperature": 0.15,
@@ -187,15 +187,6 @@ def normalize_memory_objects(
         if obj_type not in MEMORY_OBJ_TYPES:
             obj_type = "decision"
 
-        importance = obj.get("importance", 0.5)
-        try:
-            importance = float(importance)
-        except (TypeError, ValueError):
-            importance = 0.5
-        importance = max(0.0, min(1.0, round(importance, 2)))
-        if importance < MIN_IMPORTANCE_THRESHOLD:
-            continue
-
         content = str(obj.get("content", "")).strip()
         if not content:
             continue
@@ -211,6 +202,16 @@ def normalize_memory_objects(
                 t_str = str(t).strip()
                 if t_str:
                     related_topics.append(t_str)
+
+        importance = calibrate_l1_importance(
+            obj_type,
+            obj.get("importance", 0.5),
+            content=content,
+            evidence=evidence,
+            related_topics=related_topics,
+        )
+        if importance < MIN_IMPORTANCE_THRESHOLD:
+            continue
 
         normalized.append(
             {
@@ -299,6 +300,32 @@ def parse_args() -> argparse.Namespace:
         help=f"Gemini model name (default: {DEFAULT_MODEL_NAME}).",
     )
     parser.add_argument(
+        "--mode",
+        choices=["full", "incremental"],
+        default="full",
+        help="Extraction mode: full keeps the existing full-transcript bridge; incremental uses Gemini function calling.",
+    )
+    parser.add_argument(
+        "--incremental-db",
+        default="long_term/incremental_bridge.db",
+        help="SQLite working DB for --mode incremental.",
+    )
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=40,
+        help="Approximate transcript lines per forward_scan read in --mode incremental.",
+    )
+    parser.add_argument(
+        "--max-tool-rounds",
+        type=int,
+        default=0,
+        help=(
+            "Maximum Gemini tool-calling rounds in --mode incremental. "
+            "Use 0 for an automatic transcript-size-based limit."
+        ),
+    )
+    parser.add_argument(
         "--timestamp",
         default="",
         help="Meeting timestamp (ISO 8601). Auto-generated if empty.",
@@ -332,18 +359,35 @@ def main() -> None:
     meeting_date = args.meeting_date
 
     tree = load_tree(tree_path)
-    api_key = load_env()
+    api_keys = load_api_keys()
     existing_topics = collect_existing_topics(tree)
 
-    llm_output = call_gemini_bridge(
-        model_name=args.model,
-        api_key=api_key,
-        transcript=transcript,
-        meeting_id=meeting_id,
-        existing_topics=existing_topics,
-    )
+    if args.mode == "incremental":
+        # New mode plugs into the existing pipeline here: Gemini tool-calling
+        # produces raw L1 candidates, then the current normalizer/tree writer run.
+        from gemini_incremental_extractor import extract_incremental_l1_objects
 
-    raw_objects = llm_output.get("memory_objects", [])
+        incremental_result = extract_incremental_l1_objects(
+            model_name=args.model,
+            api_key=api_keys,
+            transcript=transcript,
+            transcript_id=meeting_id,
+            db_path=Path(args.incremental_db).resolve(),
+            existing_topics=existing_topics,
+            chunk_size=args.chunk_size,
+            max_tool_rounds=args.max_tool_rounds,
+        )
+        raw_objects = incremental_result.raw_objects
+    else:
+        llm_output = call_gemini_bridge(
+            model_name=args.model,
+            api_key=api_keys,
+            transcript=transcript,
+            meeting_id=meeting_id,
+            existing_topics=existing_topics,
+        )
+        raw_objects = llm_output.get("memory_objects", [])
+
     memory_objects = normalize_memory_objects(raw_objects, meeting_id)
 
     insert_meeting_into_tree(
@@ -365,7 +409,13 @@ def main() -> None:
     )
     save_json(snapshot_dir / snapshot_name, tree)
 
-    print(f"Bridge: inserted {len(memory_objects)} memory objects for {meeting_id}")
+    if args.mode == "incremental":
+        print(
+            f"Incremental bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
+        )
+        print(f"Incremental DB: {Path(args.incremental_db).resolve()}")
+    else:
+        print(f"Bridge: inserted {len(memory_objects)} memory objects for {meeting_id}")
     print(f"Tree version: {tree['tree_version']}")
     print(f"Tree saved: {tree_path}")
 

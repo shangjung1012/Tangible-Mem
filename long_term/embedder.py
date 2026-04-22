@@ -10,8 +10,7 @@ import random
 import time
 from pathlib import Path
 
-from google import genai
-
+from gemini_clients import create_gemini_client
 from schema import EMBED_MODEL_NAME
 
 DEFAULT_CACHE_PATH = Path(__file__).parent / ".embedding_cache.json"
@@ -98,7 +97,7 @@ class EmbedCache:
 
 def embed_text(
     text: str,
-    api_key: str,
+    api_key: str | list[str],
     cache: EmbedCache,
     model: str = EMBED_MODEL_NAME,
     max_retries: int = 6,
@@ -113,7 +112,7 @@ def embed_text(
         if normalized and normalized not in model_candidates:
             model_candidates.append(normalized)
 
-    client = genai.Client(api_key=api_key)
+    client = create_gemini_client(api_key)
     last_exc: Exception | None = None
 
     for candidate_model in model_candidates:

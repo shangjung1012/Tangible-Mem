@@ -141,6 +141,8 @@ long_term/
 ├── summarize.py           Summarize — L1→L2 / L2→L3（CLI）
 ├── recall_planner.py      Recall Planner — 查詢複雜度分類（Library）
 ├── recall.py              Recall — 記憶樹搜尋 + Recall Gate（Library）
+├── incremental_store.py   Incremental bridge 的 SQLite 工作日誌
+├── gemini_incremental_extractor.py  Incremental Gemini tool-calling orchestrator
 ├── tree.json              主記憶樹資料（唯一持久化儲存）
 └── snapshots/             版本化快照目錄
     ├── L2/                每場 meeting 加入後的 phase 快照
@@ -159,7 +161,8 @@ long_term/
 
 ### `io_utils.py`
 提供：
-- `load_env()` — 從 `.env` 讀取 `GEMINI_API_KEY`，找不到就拋例外
+- `load_api_keys()` — 從 `.env` 讀取 `GEMINI_API_KEY` / `GEMINI_API_KEYS` / `GEMINI_API_KEY_1...9`
+- `load_env()` — 向後相容：回傳第一把 Gemini API key
 - `load_tree(path)` — 讀取 `tree.json`，檔案不存在時回傳空樹
 - `save_json(path, data)` — 序列化寫入（自動建立父目錄）
 - `utc_now_iso()` — 回傳 UTC 時間字串（如 `2026-04-06T13:20:50Z`）
