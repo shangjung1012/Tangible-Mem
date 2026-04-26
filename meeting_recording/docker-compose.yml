@@ -29,6 +29,7 @@ services:
       HF_TOKEN: ${HF_TOKEN}
       AUDIO_TARGET: ${AUDIO_TARGET:-}
       WHISPER_LANGUAGE: ${WHISPER_LANGUAGE:-zh}
+      WHISPER_BATCH_SIZE: ${WHISPER_BATCH_SIZE:-4}
     deploy:
       resources:
         reservations:
@@ -105,6 +106,7 @@ services:
             --hf_token "$${HF_TOKEN}" \
             --output_dir "$${out_dir}" \
             --output_format txt \
+            --batch_size "$${WHISPER_BATCH_SIZE:-4}" \
             "$${audio}"
         done
 
