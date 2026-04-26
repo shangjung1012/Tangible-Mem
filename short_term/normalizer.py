@@ -108,6 +108,81 @@ def normalize_meeting_window(
     return [item_map[mid] for mid in normalized_recent_ids if mid in item_map]
 
 
+def _raw_rows(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [row for row in value if isinstance(row, dict)]
+
+
+def _merge_patch_row(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
+    merged = deepcopy(base)
+    for key, value in patch.items():
+        merged[key] = value
+    return merged
+
+
+def _changed_fields(
+    before: dict[str, Any],
+    after: dict[str, Any],
+    ignored_keys: set[str] | None = None,
+) -> list[str]:
+    ignored = ignored_keys or set()
+    keys = (set(before) | set(after)) - ignored
+    return sorted(key for key in keys if before.get(key) != after.get(key))
+
+
+def _next_history_version(history: Any) -> int:
+    if not isinstance(history, list):
+        return 1
+    max_version = 0
+    for row in history:
+        if not isinstance(row, dict):
+            continue
+        try:
+            max_version = max(max_version, int(row.get("version", 0) or 0))
+        except (TypeError, ValueError):
+            continue
+    return max_version + 1
+
+
+def _append_action_history(
+    item: dict[str, Any],
+    meeting_id: str,
+    changed_fields: list[str],
+) -> dict[str, Any]:
+    updated = deepcopy(item)
+    history = updated.get("history")
+    if not isinstance(history, list):
+        history = []
+    else:
+        history = [row for row in history if isinstance(row, dict)]
+
+    fields_text = ", ".join(changed_fields) if changed_fields else "content"
+    history.append(
+        {
+            "version": _next_history_version(history),
+            "meeting_id": meeting_id,
+            "change": f"updated fields: {fields_text}",
+        }
+    )
+    updated["history"] = history
+    return updated
+
+
+def _normalize_one_action_item(row: dict[str, Any], meeting_id: str) -> dict[str, Any]:
+    return normalize_action_items([row], meeting_id)[0]
+
+
+def _normalize_one_method_change(row: dict[str, Any], meeting_id: str) -> dict[str, Any]:
+    return normalize_method_changes([row], meeting_id)[0]
+
+
+def _normalize_one_experiment_todo(
+    row: dict[str, Any], meeting_id: str
+) -> dict[str, Any]:
+    return normalize_experiment_todos([row], meeting_id)[0]
+
+
 def normalize_action_items(raw_items: Any, meeting_id: str) -> list[dict[str, Any]]:
     if not isinstance(raw_items, list):
         raw_items = []
@@ -273,6 +348,150 @@ def normalize_experiment_todos(raw_items: Any, meeting_id: str) -> list[dict[str
     return normalized
 
 
+def merge_meeting_window_patch(
+    previous_window: Any,
+    updated_window: Any,
+    meeting_id: str,
+    source_file: str,
+    recent_meeting_ids: list[str],
+) -> list[dict[str, Any]]:
+    previous_rows = normalize_meeting_window(
+        previous_window,
+        meeting_id,
+        source_file,
+        recent_meeting_ids,
+    )
+    row_map = {row["meeting_id"]: row for row in previous_rows}
+
+    for patch in _raw_rows(updated_window):
+        mid = normalize_str(patch.get("meeting_id"))
+        if not mid:
+            continue
+        base = row_map.get(mid, {"meeting_id": mid})
+        row_map[mid] = normalize_meeting_window(
+            [_merge_patch_row(base, patch)],
+            meeting_id,
+            source_file,
+            [mid],
+        )[0]
+
+    if meeting_id not in row_map:
+        row_map[meeting_id] = normalize_meeting_window(
+            [],
+            meeting_id,
+            source_file,
+            [meeting_id],
+        )[0]
+
+    normalized_recent_ids = dedupe_keep_last(recent_meeting_ids)
+    return [row_map[mid] for mid in normalized_recent_ids if mid in row_map]
+
+
+def merge_action_item_patch(
+    previous_items: Any,
+    updated_items: Any,
+    meeting_id: str,
+) -> list[dict[str, Any]]:
+    normalized_previous = normalize_action_items(previous_items, meeting_id)
+    item_map = {item["item_id"]: item for item in normalized_previous}
+    used_ids = set(item_map)
+
+    for patch in _raw_rows(updated_items):
+        raw_id = normalize_str(patch.get("item_id"))
+        is_existing = raw_id in item_map
+        item_id = raw_id
+        if not item_id or (item_id in used_ids and not is_existing):
+            item_id = next_seq_id("A", used_ids)
+        used_ids.add(item_id)
+
+        patch_with_id = dict(patch)
+        patch_with_id["item_id"] = item_id
+
+        if is_existing:
+            before = item_map[item_id]
+            merged_row = _merge_patch_row(before, patch_with_id)
+            normalized = _normalize_one_action_item(merged_row, meeting_id)
+            changed = _changed_fields(
+                before,
+                normalized,
+                ignored_keys={"history", "last_updated_meeting_id"},
+            )
+            if changed and "last_updated_meeting_id" not in patch:
+                normalized["last_updated_meeting_id"] = meeting_id
+            if changed and "history" not in patch:
+                normalized = _append_action_history(normalized, meeting_id, changed)
+            item_map[item_id] = normalized
+            continue
+
+        item_map[item_id] = _normalize_one_action_item(patch_with_id, meeting_id)
+
+    return list(item_map.values())
+
+
+def merge_method_change_patch(
+    previous_items: Any,
+    updated_items: Any,
+    meeting_id: str,
+) -> list[dict[str, Any]]:
+    normalized_previous = normalize_method_changes(previous_items, meeting_id)
+    item_map = {item["change_id"]: item for item in normalized_previous}
+    used_ids = set(item_map)
+
+    for patch in _raw_rows(updated_items):
+        raw_id = normalize_str(patch.get("change_id"))
+        is_existing = raw_id in item_map
+        change_id = raw_id
+        if not change_id or (change_id in used_ids and not is_existing):
+            change_id = next_seq_id("M", used_ids)
+        used_ids.add(change_id)
+
+        patch_with_id = dict(patch)
+        patch_with_id["change_id"] = change_id
+        if is_existing:
+            patch_with_id = _merge_patch_row(item_map[change_id], patch_with_id)
+        item_map[change_id] = _normalize_one_method_change(patch_with_id, meeting_id)
+
+    return list(item_map.values())
+
+
+def merge_experiment_todo_patch(
+    previous_items: Any,
+    updated_items: Any,
+    meeting_id: str,
+) -> list[dict[str, Any]]:
+    normalized_previous = normalize_experiment_todos(previous_items, meeting_id)
+    item_map = {item["todo_id"]: item for item in normalized_previous}
+    used_ids = set(item_map)
+
+    for patch in _raw_rows(updated_items):
+        raw_id = normalize_str(patch.get("todo_id"))
+        is_existing = raw_id in item_map
+        todo_id = raw_id
+        if not todo_id or (todo_id in used_ids and not is_existing):
+            todo_id = next_seq_id("E", used_ids)
+        used_ids.add(todo_id)
+
+        patch_with_id = dict(patch)
+        patch_with_id["todo_id"] = todo_id
+        if is_existing:
+            before = item_map[todo_id]
+            merged_row = _merge_patch_row(before, patch_with_id)
+            normalized = _normalize_one_experiment_todo(merged_row, meeting_id)
+            changed = _changed_fields(
+                before,
+                normalized,
+                ignored_keys={"meeting_id"},
+            )
+            if changed and "meeting_id" not in patch:
+                normalized["meeting_id"] = meeting_id
+            item_map[todo_id] = normalized
+            continue
+
+        item_map[todo_id] = _normalize_one_experiment_todo(patch_with_id, meeting_id)
+
+    return list(item_map.values())
+
+
 def normalize_memory(
     updated_memory: dict[str, Any],
     previous_memory: dict[str, Any],
@@ -291,54 +510,29 @@ def normalize_memory(
     meeting_history_ids = normalize_meeting_history_ids(previous_memory, meeting_id)
     recent_meeting_ids = meeting_history_ids[-3:]
 
-    previous_meeting_window = normalize_meeting_window(
+    meeting_window = merge_meeting_window_patch(
         previous_memory.get("meeting_window"),
-        meeting_id,
-        source_file,
-        recent_meeting_ids,
-    )
-    updated_meeting_window = normalize_meeting_window(
-        merged.get("meeting_window"),
-        meeting_id,
-        source_file,
-        recent_meeting_ids,
-    )
-    meeting_window = normalize_meeting_window(
-        previous_meeting_window + updated_meeting_window,
+        updated_memory.get("meeting_window"),
         meeting_id,
         source_file,
         recent_meeting_ids,
     )
 
-    previous_action_items = normalize_action_items(
-        previous_memory.get("action_items"), meeting_id
+    action_items = merge_action_item_patch(
+        previous_memory.get("action_items"),
+        updated_memory.get("action_items"),
+        meeting_id,
     )
-    updated_action_items = normalize_action_items(merged.get("action_items"), meeting_id)
-    action_item_map = {item["item_id"]: item for item in previous_action_items}
-    for item in updated_action_items:
-        action_item_map[item["item_id"]] = item
-
-    previous_method_changes = normalize_method_changes(
-        previous_memory.get("method_changes"), meeting_id
+    method_changes = merge_method_change_patch(
+        previous_memory.get("method_changes"),
+        updated_memory.get("method_changes"),
+        meeting_id,
     )
-    updated_method_changes = normalize_method_changes(
-        merged.get("method_changes"), meeting_id
+    experiment_todos = merge_experiment_todo_patch(
+        previous_memory.get("experiment_todos"),
+        updated_memory.get("experiment_todos"),
+        meeting_id,
     )
-    method_change_map = {item["change_id"]: item for item in previous_method_changes}
-    for item in updated_method_changes:
-        method_change_map[item["change_id"]] = item
-
-    previous_experiment_todos = normalize_experiment_todos(
-        previous_memory.get("experiment_todos"), meeting_id
-    )
-    updated_experiment_todos = normalize_experiment_todos(
-        merged.get("experiment_todos"), meeting_id
-    )
-    experiment_todo_map = {
-        item["todo_id"]: item for item in previous_experiment_todos
-    }
-    for item in updated_experiment_todos:
-        experiment_todo_map[item["todo_id"]] = item
 
     merged["memory_version"] = version
     merged["last_updated_utc"] = utc_now_iso()
@@ -346,11 +540,11 @@ def normalize_memory(
     merged["meeting_history_ids"] = meeting_history_ids
     merged["meeting_window"] = meeting_window
     merged["action_items"] = filter_recent_action_items(
-        list(action_item_map.values()),
+        action_items,
         recent_meeting_ids,
     )
-    merged["method_changes"] = list(method_change_map.values())
-    merged["experiment_todos"] = list(experiment_todo_map.values())
+    merged["method_changes"] = method_changes
+    merged["experiment_todos"] = experiment_todos
 
     next_focus = normalize_str_list(merged.get("next_meeting_focus"))
     if not next_focus:

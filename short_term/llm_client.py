@@ -18,6 +18,7 @@ MAX_API_RETRIES = 5
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
 DEFAULT_TOOL_PAGE_SIZE = 10
+MAX_OVERVIEW_INDEX_ITEMS = 80
 MAX_PATCH_SECTIONS_PER_WRITE = 2
 HEAVY_READ_REQUIRED_SECTIONS = {
     "action_items",
@@ -60,15 +61,18 @@ def build_tool_call_prompt(
 - 系統會在本地維護 meeting_history_ids，並裁切 meeting_window 成最近三次；你只要提供合理更新即可。
 - `write_short_term_memory` 可以接受 partial patch；省略的欄位代表保持原狀。
 - 若 action items / method changes / experiment todos 很多，請使用 `offset` + `limit` 分頁讀取。
+- overview 會提供 compact `action_item_index`；新增 action item 前，必須先用這個 index 檢查是否其實是在延續現有 item。
 - 只有在非常確定 memory 很小、或真的無法分批完成時，才可使用 `section="full"`。
 - 在寫入 `action_items` / `method_changes` / `experiment_todos` 之前，必須先讀過對應 section，否則寫入會被拒絕。
+- 如果要新增沒有 `item_id` 的 action item，且現有 action items 超過一頁，請先讀完整 action_items 分頁，避免把現有任務誤判成新任務。
 - 每次寫入最多只更新少數 top-level sections；如果有很多變更，請拆成多次 write。
 - 如果工具回傳 no-op 或 prerequisite read error，代表你需要先多讀一點，再提交更小的 patch。
 - 不要重複提交沒有實際變化的 patch。
 
 建議策略：
 - 第一步永遠先讀 `overview`。
-- 如果要找既有 action item / method change / experiment todo，先分頁讀該 section，而不是直接讀 full。
+- 先用 overview 的 `action_item_index` 找候選既有 action item；若語意相關，更新既有 `item_id`。
+- 如果要找既有 action item / method change / experiment todo 的完整內容，再分頁讀該 section，而不是直接讀 full。
 - 若會議中同時有多個更新，請按主題或項目分批寫入，例如先寫 meeting summary，再寫 action items，再寫 method changes。
 - 每次寫入只帶必要欄位，例如：
   - 只更新 meeting summary：傳 `meeting_window`
@@ -239,6 +243,43 @@ def _generate_structured_update(
     return extract_json(response.text or "", parsed=getattr(response, "parsed", None))
 
 
+def _short_text(value: Any, max_chars: int = 120) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3].rstrip() + "..."
+
+
+def _compact_action_item_index(memory: dict[str, Any]) -> list[dict[str, str]]:
+    index: list[dict[str, str]] = []
+    for row in memory.get("action_items", []):
+        if not isinstance(row, dict):
+            continue
+        item_id = str(row.get("item_id", "")).strip()
+        if not item_id:
+            continue
+        history = row.get("history", [])
+        history_count = len(history) if isinstance(history, list) else 0
+        index.append(
+            {
+                "item_id": item_id,
+                "title": _short_text(row.get("title"), 90),
+                "detail_hint": _short_text(row.get("detail"), 140),
+                "status": str(row.get("status", "")).strip(),
+                "priority": str(row.get("priority", "")).strip(),
+                "owner": _short_text(row.get("owner"), 60),
+                "created_meeting_id": str(row.get("created_meeting_id", "")).strip(),
+                "last_updated_meeting_id": str(
+                    row.get("last_updated_meeting_id", "")
+                ).strip(),
+                "history_count": str(history_count),
+            }
+        )
+        if len(index) >= MAX_OVERVIEW_INDEX_ITEMS:
+            break
+    return index
+
+
 def _slice_memory_section(
     memory: dict[str, Any],
     section: str,
@@ -265,6 +306,8 @@ def _slice_memory_section(
         }
 
     if normalized_section == "overview":
+        action_items = list(memory.get("action_items", []))
+        action_item_index = _compact_action_item_index(memory)
         return {
             "section": "overview",
             "summary": {
@@ -278,11 +321,13 @@ def _slice_memory_section(
                 ],
                 "meeting_history_count": len(memory.get("meeting_history_ids", [])),
                 "meeting_window_count": len(memory.get("meeting_window", [])),
-                "action_items_count": len(memory.get("action_items", [])),
+                "action_items_count": len(action_items),
                 "method_changes_count": len(memory.get("method_changes", [])),
                 "experiment_todos_count": len(memory.get("experiment_todos", [])),
                 "next_meeting_focus_count": len(memory.get("next_meeting_focus", [])),
             },
+            "action_item_index": action_item_index,
+            "action_item_index_truncated": len(action_item_index) < len(action_items),
             "recommended_sections": [
                 "meeting_window",
                 "action_items",
@@ -354,6 +399,77 @@ def _summarize_patch_counts(updated_memory: dict[str, Any]) -> dict[str, int]:
     return counts
 
 
+def _record_memory_read(
+    state: dict[str, Any],
+    section: str,
+    result: dict[str, Any],
+) -> None:
+    if section == "full":
+        state["read_sections"].update(WRITABLE_MEMORY_SECTIONS)
+        state["read_sections"].add("overview")
+        state["fully_read_sections"].update(WRITABLE_MEMORY_SECTIONS)
+        return
+
+    if section not in WRITABLE_MEMORY_SECTIONS:
+        return
+
+    try:
+        offset = int(result.get("offset", 0) or 0)
+        returned_count = int(result.get("returned_count", 0) or 0)
+        total_count = int(result.get("total_count", 0) or 0)
+    except (TypeError, ValueError):
+        return
+
+    state["read_totals"][section] = total_count
+    ranges = state["read_ranges"].setdefault(section, [])
+    ranges.append((offset, offset + returned_count))
+    if _ranges_cover_total(ranges, total_count):
+        state["fully_read_sections"].add(section)
+
+
+def _ranges_cover_total(ranges: list[tuple[int, int]], total_count: int) -> bool:
+    if total_count <= 0:
+        return True
+
+    merged = sorted((max(start, 0), max(end, 0)) for start, end in ranges)
+    covered_until = 0
+    for start, end in merged:
+        if end <= covered_until:
+            continue
+        if start > covered_until:
+            return False
+        covered_until = end
+        if covered_until >= total_count:
+            return True
+    return covered_until >= total_count
+
+
+def _section_fully_read(state: dict[str, Any], section: str) -> bool:
+    return section in state.get("fully_read_sections", set())
+
+
+def _patch_adds_unknown_action_item(
+    updated_memory: dict[str, Any],
+    current_memory: dict[str, Any],
+) -> bool:
+    rows = updated_memory.get("action_items")
+    if not isinstance(rows, list):
+        return False
+
+    existing_ids = {
+        str(row.get("item_id", "")).strip()
+        for row in current_memory.get("action_items", [])
+        if isinstance(row, dict)
+    }
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        item_id = str(row.get("item_id", "")).strip()
+        if not item_id or item_id not in existing_ids:
+            return True
+    return False
+
+
 def generate_updated_memory(
     model_name: str,
     api_key: str,
@@ -389,6 +505,9 @@ def generate_updated_memory(
             "write_count": 0,
             "written_memory": None,
             "read_sections": set(),
+            "read_ranges": {},
+            "read_totals": {},
+            "fully_read_sections": set(),
         }
 
         def read_short_term_memory(
@@ -409,12 +528,14 @@ def generate_updated_memory(
             memory = on_memory_read() if on_memory_read is not None else state["latest_memory"]
             state["latest_memory"] = memory
             state["read_sections"].add(normalized_section)
-            return _slice_memory_section(
+            result = _slice_memory_section(
                 memory=memory,
                 section=normalized_section,
                 offset=offset,
                 limit=limit,
             )
+            _record_memory_read(state, normalized_section, result)
+            return result
 
         def write_short_term_memory(
             updated_memory: dict[str, Any],
@@ -474,6 +595,29 @@ def generate_updated_memory(
                         f"{missing_reads}. Read those sections first before writing."
                     ),
                 }
+
+            if "action_items" in patch_sections and _patch_adds_unknown_action_item(
+                updated_memory,
+                state["latest_memory"],
+            ):
+                current_action_count = len(
+                    state["latest_memory"].get("action_items", [])
+                )
+                if (
+                    current_action_count > DEFAULT_TOOL_PAGE_SIZE
+                    and not _section_fully_read(state, "action_items")
+                ):
+                    return {
+                        "ok": False,
+                        "error": (
+                            "Before adding a new/unknown action item when many action "
+                            "items already exist, read the complete action_items section "
+                            "with pagination so you can compare against existing IDs. "
+                            f"Current count={current_action_count}; use offsets "
+                            f"0, {DEFAULT_TOOL_PAGE_SIZE}, {DEFAULT_TOOL_PAGE_SIZE * 2}, "
+                            "and continue until has_more=false."
+                        ),
+                    }
 
             normalized = normalize_memory(
                 updated_memory=updated_memory,
