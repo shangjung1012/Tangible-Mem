@@ -13,10 +13,15 @@ from typing import Any
 from google import genai
 
 from genai_client import create_genai_client, describe_genai_config, load_genai_config
+from genai_retry import call_with_retry
 from schema import DEFAULT_MODEL_NAME
 from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
 DEFAULT_EMBEDDING_MODEL_NAME = "gemini-embedding-001"
+
+
+def log_retry(message: str) -> None:
+    print(f"[genai_retry] {message}", flush=True)
 
 
 @dataclass(slots=True)
@@ -405,12 +410,16 @@ def embed_texts(
 ) -> list[list[float]]:
     if not texts:
         return []
-    response = client.models.embed_content(
-        model=model_name,
-        contents=texts,
-        config={
-            "task_type": task_type,
-        },
+    response = call_with_retry(
+        lambda: client.models.embed_content(
+            model=model_name,
+            contents=texts,
+            config={
+                "task_type": task_type,
+            },
+        ),
+        log=log_retry,
+        operation_name=f"embed_content {task_type}",
     )
     vectors = extract_embedding_values(response)
     if len(vectors) != len(texts):
@@ -600,10 +609,14 @@ def answer_question(
     chunks: list[ScoredChunk],
 ) -> str:
     prompt = build_answer_prompt(question, chunks)
-    response = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config={"temperature": 0.15},
+    response = call_with_retry(
+        lambda: client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config={"temperature": 0.15},
+        ),
+        log=log_retry,
+        operation_name="qa generate_content",
     )
     return (response.text or "").strip()
 

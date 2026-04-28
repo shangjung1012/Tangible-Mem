@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
 from google import genai
-from google.genai import errors, types
+from google.genai import types
 
 from genai_client import (
     GenAIConfig,
@@ -15,14 +14,13 @@ from genai_client import (
     describe_genai_config,
     load_genai_config,
 )
+from genai_retry import call_with_retry as _call_with_retry
+from genai_retry import _is_retryable_genai_error
 from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
-MAX_GENERATION_ATTEMPTS = 3
+MAX_GENERATION_ATTEMPTS = 5
 MAX_TOOL_ROUNDS: int | None = None
-MAX_API_RETRIES = 15
-API_RETRY_BASE_DELAY_SECONDS = 2.0
-API_RETRY_MAX_DELAY_SECONDS = 20.0
 DEFAULT_TOOL_PAGE_SIZE = 10
 MAX_OVERVIEW_INDEX_ITEMS = 80
 MAX_PATCH_SECTIONS_PER_WRITE = 2
@@ -199,40 +197,6 @@ def save_failed_response(
     path = debug_dir / f"{timestamp}_{meeting_id}_attempt{attempt}{suffix_str}.txt"
     path.write_text(raw_text or "", encoding="utf-8")
     return path
-
-
-def _is_retryable_genai_error(exc: Exception) -> bool:
-    if isinstance(exc, errors.ServerError):
-        return True
-
-    message = str(exc).upper()
-    return "503" in message or "UNAVAILABLE" in message
-
-
-def _call_with_retry(
-    func: Callable[[], Any],
-    *,
-    log: Callable[[str], None],
-    operation_name: str,
-    max_retries: int = MAX_API_RETRIES,
-) -> Any:
-    for attempt in range(1, max_retries + 1):
-        try:
-            return func()
-        except Exception as exc:  # noqa: BLE001
-            if not _is_retryable_genai_error(exc) or attempt >= max_retries:
-                raise
-
-            delay_seconds = min(
-                API_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1)),
-                API_RETRY_MAX_DELAY_SECONDS,
-            )
-            log(
-                f"{operation_name} failed with retryable error "
-                f"(attempt {attempt}/{max_retries}): {exc}. "
-                f"sleep {delay_seconds:.1f}s before retry"
-            )
-            time.sleep(delay_seconds)
 
 
 def _generate_structured_update(

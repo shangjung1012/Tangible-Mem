@@ -11,6 +11,7 @@ for module_name in ("schema", "normalizer", "llm_client"):
     sys.modules.pop(module_name, None)
 
 from llm_client import (  # noqa: E402
+    _is_retryable_genai_error,
     _patch_adds_unknown_action_item,
     _record_memory_read,
     _record_transcript_lines_read,
@@ -19,6 +20,7 @@ from llm_client import (  # noqa: E402
     _transcript_fully_read,
     build_tool_call_prompt,
 )
+from google.genai import errors  # noqa: E402
 
 
 def _memory_with_action_items(count: int) -> dict[str, object]:
@@ -153,6 +155,26 @@ class ShortTermLlmClientTests(unittest.TestCase):
         from llm_client import MAX_TOOL_ROUNDS  # noqa: PLC0415
 
         self.assertIsNone(MAX_TOOL_ROUNDS)
+
+    def test_generation_attempts_constant_defaults_to_five(self) -> None:
+        from llm_client import MAX_GENERATION_ATTEMPTS  # noqa: PLC0415
+
+        self.assertEqual(MAX_GENERATION_ATTEMPTS, 5)
+
+    def test_resource_exhausted_429_is_retryable(self) -> None:
+        exc = errors.ClientError(
+            429,
+            {
+                "error": {
+                    "code": 429,
+                    "message": "Resource has been exhausted (e.g. check quota).",
+                    "status": "RESOURCE_EXHAUSTED",
+                }
+            },
+            None,
+        )
+
+        self.assertTrue(_is_retryable_genai_error(exc))
 
 
 if __name__ == "__main__":

@@ -13,9 +13,11 @@ from google import genai
 
 try:
     from .genai_client import create_genai_client, load_genai_config
+    from .genai_retry import call_with_retry
     from .sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 except ImportError:  # pragma: no cover - script execution fallback
     from genai_client import create_genai_client, load_genai_config
+    from genai_retry import call_with_retry
     from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
 
@@ -371,10 +373,13 @@ def embed_texts(
 ) -> list[list[float]]:
     if not texts:
         return []
-    response = client.models.embed_content(
-        model=model_name,
-        contents=texts,
-        config={"task_type": task_type},
+    response = call_with_retry(
+        lambda: client.models.embed_content(
+            model=model_name,
+            contents=texts,
+            config={"task_type": task_type},
+        ),
+        operation_name=f"short-term-context embed_content {task_type}",
     )
     vectors = extract_embedding_values(response)
     if len(vectors) != len(texts):
