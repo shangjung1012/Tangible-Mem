@@ -10,6 +10,8 @@ from typing import Any
 
 
 MIN_IMPORTANCE_THRESHOLD = 0.35
+LINKED_ISSUE_IMPORTANCE_BONUS_THRESHOLD = 0.70
+MAX_LINKED_ISSUE_IMPORTANCE_BONUS = 0.08
 
 IMPORTANCE_SCALE = """
 0.90-1.00: project-level or cross-meeting decisions/method changes that steer the work.
@@ -68,6 +70,46 @@ _LOW_VALUE_MARKERS = (
     "chitchat",
 )
 
+_SOCIAL_LOW_VALUE_MARKERS = (
+    "提拉米蘇",
+    "燒烤",
+    "品嚐",
+    "聚餐",
+    "週末活動",
+    "barbecue",
+    "bbq",
+    "tasting",
+    "dessert",
+    "party",
+    "social event",
+    "weekend activity",
+)
+
+_LOGISTICS_LOW_VALUE_MARKERS = (
+    "錄音操作",
+    "錄音說明",
+    "錄音指示",
+    "耳機舒適度",
+    "更舒適的耳機",
+    "電池開關",
+    "關閉麥克風",
+    "meeting moved",
+    "recording instructions",
+    "headset comfort",
+    "turn off the microphones",
+    "turn off microphones",
+    "remote control",
+    "battery switch",
+)
+
+_GENERIC_ISSUE_MARKERS = (
+    "會議議程",
+    "週三會議議程",
+    "weekly meeting agenda",
+    "meeting agenda",
+    "agenda for the meeting",
+)
+
 
 def normalize_importance_score(value: Any, fallback: float = 0.5) -> float:
     try:
@@ -80,6 +122,35 @@ def normalize_importance_score(value: Any, fallback: float = 0.5) -> float:
 def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
     lowered = text.lower()
     return any(marker.lower() in lowered for marker in markers)
+
+
+def is_social_low_value_text(text: str) -> bool:
+    return _contains_any(text, _SOCIAL_LOW_VALUE_MARKERS)
+
+
+def is_logistics_low_value_text(text: str) -> bool:
+    return _contains_any(text, _LOGISTICS_LOW_VALUE_MARKERS)
+
+
+def is_low_value_text(text: str) -> bool:
+    return (
+        _contains_any(text, _LOW_VALUE_MARKERS)
+        or is_social_low_value_text(text)
+        or is_logistics_low_value_text(text)
+    )
+
+
+def is_generic_issue_text(title: str, summary: str = "") -> bool:
+    title_text = str(title or "").strip()
+    combined = f"{title_text}\n{summary}".strip()
+    title_lower = title_text.lower()
+    if _contains_any(combined, _GENERIC_ISSUE_MARKERS):
+        return True
+    if "agenda" in title_lower:
+        return True
+    if "議程" in title_text and ("會議" in title_text or "週三" in title_text):
+        return True
+    return False
 
 
 def calibrate_l1_importance(
@@ -124,10 +195,20 @@ def calibrate_issue_importance(
     *,
     episode_count: int = 0,
     status: str = "open",
+    title: str = "",
+    summary: str = "",
 ) -> float:
     """Combine model judgment with an evidence floor from issue recurrence."""
     score = normalize_importance_score(model_importance)
     score = max(score, episode_count_floor(episode_count))
+    text = f"{title}\n{summary}".strip()
+
+    if is_generic_issue_text(title, summary):
+        score = min(score, 0.60)
+    if is_social_low_value_text(text):
+        score = min(score, 0.50)
+    if is_logistics_low_value_text(text):
+        score = min(score, 0.55)
 
     clean_status = str(status or "").lower()
     if clean_status == "unclear":
@@ -136,3 +217,27 @@ def calibrate_issue_importance(
         score = max(score - 0.05, MIN_IMPORTANCE_THRESHOLD)
 
     return normalize_importance_score(score)
+
+
+def linked_issue_importance_bonus(issue_importance: Any) -> float:
+    """Small bounded L1 bonus for objects linked to recurring high-importance issues."""
+    score = normalize_importance_score(issue_importance, fallback=0.0)
+    if score < LINKED_ISSUE_IMPORTANCE_BONUS_THRESHOLD:
+        return 0.0
+
+    span = 1.0 - LINKED_ISSUE_IMPORTANCE_BONUS_THRESHOLD
+    scaled = (score - LINKED_ISSUE_IMPORTANCE_BONUS_THRESHOLD) / span
+    return normalize_importance_score(
+        min(MAX_LINKED_ISSUE_IMPORTANCE_BONUS, scaled * MAX_LINKED_ISSUE_IMPORTANCE_BONUS),
+        fallback=0.0,
+    )
+
+
+def apply_linked_issue_importance_bonus(
+    object_importance: Any,
+    issue_importance: Any,
+) -> float:
+    """Propagate issue recurrence into a linked raw L1 score without replacing it."""
+    base = normalize_importance_score(object_importance)
+    bonus = linked_issue_importance_bonus(issue_importance)
+    return normalize_importance_score(base + bonus)

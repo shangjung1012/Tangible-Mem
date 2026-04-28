@@ -10,12 +10,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from embedder import EmbedCache, cosine_similarity, embed_text
 from importance import calibrate_issue_importance
+from schema import EMBED_MODEL_NAME
 
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent / "incremental_bridge.db"
-ISSUE_EPISODE_GAP_LINES = 3
+ISSUE_EPISODE_GAP_LINES = 15
 ISSUE_MATCH_THRESHOLD = 0.45
+ISSUE_LEXICAL_FAST_MATCH_THRESHOLD = 0.72
+ISSUE_EMBED_MATCH_THRESHOLD = 0.84
+ISSUE_EMBED_MAX_CANDIDATES = 6
 READ_PURPOSES = {
     "forward_scan",
     "lookback",
@@ -62,6 +67,48 @@ _ISSUE_STOPWORDS = {
     "需要",
     "目前",
 }
+_ISSUE_POSITIVE_DIRECTION_MARKERS = (
+    "keep",
+    "use",
+    "using",
+    "continue",
+    "continued",
+    "adopt",
+    "adopted",
+    "retain",
+    "stays",
+    "stay with",
+    "沿用",
+    "繼續",
+    "使用",
+    "採用",
+    "保留",
+    "維持",
+)
+_ISSUE_NEGATIVE_DIRECTION_MARKERS = (
+    "drop",
+    "stop",
+    "stopped",
+    "abandon",
+    "abandoned",
+    "reject",
+    "rejected",
+    "remove",
+    "removed",
+    "replace",
+    "replaced",
+    "avoid",
+    "dont use",
+    "do not use",
+    "不用",
+    "放棄",
+    "停用",
+    "拒絕",
+    "取消",
+    "移除",
+    "改用",
+    "替換",
+)
 
 
 def utc_now_iso() -> str:
@@ -341,6 +388,10 @@ def derive_issue_key(title: str, summary: str = "") -> str:
     return normalize_issue_key(combined)
 
 
+def _issue_matching_text(title: str, summary: str) -> str:
+    return f"{str(title or '').strip()}\n{str(summary or '').strip()}".strip()
+
+
 def _jaccard(left: set[str], right: set[str]) -> float:
     if not left or not right:
         return 0.0
@@ -364,6 +415,57 @@ def _issue_similarity(
     )
 
 
+def _issue_direction_polarity(text: str) -> str:
+    lowered = str(text or "").lower()
+    has_positive = any(marker in lowered for marker in _ISSUE_POSITIVE_DIRECTION_MARKERS)
+    has_negative = any(marker in lowered for marker in _ISSUE_NEGATIVE_DIRECTION_MARKERS)
+    if has_positive and not has_negative:
+        return "positive"
+    if has_negative and not has_positive:
+        return "negative"
+    return ""
+
+
+def _has_direction_conflict(
+    *,
+    title: str,
+    summary: str,
+    existing_title: str,
+    existing_summary: str,
+) -> bool:
+    left = _issue_direction_polarity(_issue_matching_text(title, summary))
+    right = _issue_direction_polarity(_issue_matching_text(existing_title, existing_summary))
+    return bool(left and right and left != right)
+
+
+def _semantic_issue_similarity(
+    *,
+    title: str,
+    summary: str,
+    existing_title: str,
+    existing_summary: str,
+    api_key: str | list[str],
+    embed_cache: EmbedCache,
+    embed_model: str = EMBED_MODEL_NAME,
+) -> float:
+    try:
+        left = embed_text(
+            _issue_matching_text(title, summary),
+            api_key,
+            embed_cache,
+            model=embed_model,
+        )
+        right = embed_text(
+            _issue_matching_text(existing_title, existing_summary),
+            api_key,
+            embed_cache,
+            model=embed_model,
+        )
+    except Exception:
+        return 0.0
+    return float(cosine_similarity(left, right))
+
+
 def _find_matching_issue(
     conn: sqlite3.Connection,
     transcript_id: str,
@@ -372,12 +474,27 @@ def _find_matching_issue(
     issue_key: str,
     title: str,
     summary: str,
+    api_key: str | list[str] | None = None,
+    embed_cache: EmbedCache | None = None,
 ) -> sqlite3.Row | None:
     clean_issue_id = issue_id.strip()
     if clean_issue_id:
         row = conn.execute(
             "SELECT * FROM issues WHERE issue_id = ? AND transcript_id = ?",
             (clean_issue_id, transcript_id),
+        ).fetchone()
+        if row:
+            return row
+        normalized_ref_key = normalize_issue_key(clean_issue_id)
+        row = conn.execute(
+            """
+            SELECT *
+            FROM issues
+            WHERE transcript_id = ? AND issue_key = ?
+            ORDER BY updated_at_utc DESC
+            LIMIT 1
+            """,
+            (transcript_id, normalized_ref_key),
         ).fetchone()
         if row:
             return row
@@ -406,21 +523,93 @@ def _find_matching_issue(
         """,
         (transcript_id,),
     ).fetchall()
+    lexical_candidates: list[tuple[float, sqlite3.Row]] = []
     best_row: sqlite3.Row | None = None
     best_score = 0.0
     for row in rows:
+        existing_title = str(row["title"] or "")
+        existing_summary = str(row["summary"] or "")
+        if _has_direction_conflict(
+            title=title,
+            summary=summary,
+            existing_title=existing_title,
+            existing_summary=existing_summary,
+        ):
+            continue
         score = _issue_similarity(
             title=title,
             summary=summary,
-            existing_title=str(row["title"] or ""),
-            existing_summary=str(row["summary"] or ""),
+            existing_title=existing_title,
+            existing_summary=existing_summary,
         )
+        lexical_candidates.append((score, row))
         if score > best_score:
             best_score = score
             best_row = row
+    if best_score >= ISSUE_LEXICAL_FAST_MATCH_THRESHOLD:
+        return best_row
+    if api_key and embed_cache and lexical_candidates:
+        semantic_best_row: sqlite3.Row | None = None
+        semantic_best_score = 0.0
+        for lexical_score, row in sorted(
+            lexical_candidates,
+            key=lambda item: (
+                -float(item[0]),
+                str(item[1]["updated_at_utc"] or ""),
+            ),
+        )[:ISSUE_EMBED_MAX_CANDIDATES]:
+            semantic_score = _semantic_issue_similarity(
+                title=title,
+                summary=summary,
+                existing_title=str(row["title"] or ""),
+                existing_summary=str(row["summary"] or ""),
+                api_key=api_key,
+                embed_cache=embed_cache,
+            )
+            combined_score = max(float(lexical_score), float(semantic_score))
+            if combined_score > semantic_best_score:
+                semantic_best_score = combined_score
+                semantic_best_row = row
+        if semantic_best_score >= ISSUE_EMBED_MATCH_THRESHOLD:
+            return semantic_best_row
     if best_score >= ISSUE_MATCH_THRESHOLD:
         return best_row
     return None
+
+
+def resolve_issue_reference(
+    db_path: Path,
+    transcript_id: str,
+    *,
+    issue_ref: str = "",
+    issue_key: str = "",
+    api_key: str | list[str] | None = None,
+    embed_cache: EmbedCache | None = None,
+) -> dict[str, str]:
+    """Resolve issue_id / issue_key references to the canonical stored issue_id."""
+    ensure_schema(db_path)
+    clean_ref = str(issue_ref or "").strip()
+    clean_key = str(issue_key or "").strip()
+    with _connect(db_path) as conn:
+        row = _find_matching_issue(
+            conn,
+            transcript_id,
+            issue_id=clean_ref,
+            issue_key=clean_key,
+            title=clean_ref or clean_key,
+            summary="",
+            api_key=api_key,
+            embed_cache=embed_cache,
+        )
+    if row is None:
+        return {
+            "issue_id": clean_ref,
+            "issue_key": normalize_issue_key(clean_key) if clean_key else "",
+        }
+    return {
+        "issue_id": str(row["issue_id"] or ""),
+        "issue_key": str(row["issue_key"] or ""),
+    }
 
 
 def count_issue_episodes(line_ids: list[int], gap_lines: int = ISSUE_EPISODE_GAP_LINES) -> int:
@@ -458,6 +647,8 @@ def upsert_issue(
     status: str = "open",
     importance: float = 0.5,
     summary: str = "",
+    api_key: str | list[str] | None = None,
+    embed_cache: EmbedCache | None = None,
 ) -> dict[str, Any]:
     ensure_schema(db_path)
     clean_title = str(title).strip()
@@ -480,6 +671,8 @@ def upsert_issue(
             issue_key=clean_issue_key,
             title=clean_title,
             summary=clean_summary,
+            api_key=api_key,
+            embed_cache=embed_cache,
         )
         clean_issue_id = (
             str(existing["issue_id"])
@@ -493,6 +686,8 @@ def upsert_issue(
             score,
             episode_count=episode_count,
             status=status,
+            title=clean_title,
+            summary=clean_summary,
         )
         conn.execute(
             """
@@ -565,7 +760,7 @@ def record_issue_mention(
             (issue_id, transcript_id, int(line_id), purpose, str(note).strip()),
         )
         issue_row = conn.execute(
-            "SELECT importance, status FROM issues WHERE issue_id = ?",
+            "SELECT importance, status, title, summary FROM issues WHERE issue_id = ?",
             (issue_id,),
         ).fetchone()
         if issue_row:
@@ -574,6 +769,8 @@ def record_issue_mention(
                 issue_row["importance"],
                 episode_count=episode_count,
                 status=str(issue_row["status"] or "open"),
+                title=str(issue_row["title"] or ""),
+                summary=str(issue_row["summary"] or ""),
             )
             conn.execute(
                 """
@@ -615,7 +812,7 @@ def load_issues(db_path: Path, transcript_id: str) -> list[dict[str, Any]]:
                 i.importance,
                 i.summary,
                 i.updated_at_utc
-            ORDER BY i.updated_at_utc ASC, i.issue_id ASC
+            ORDER BY i.updated_at_utc DESC, i.issue_id ASC
             """,
             (transcript_id,),
         ).fetchall()
@@ -654,6 +851,7 @@ def save_l1_object(
     row: dict[str, Any],
     *,
     issue_id: str = "",
+    issue_key: str = "",
     obj_id: str = "",
 ) -> str:
     ensure_schema(db_path)
@@ -665,6 +863,12 @@ def save_l1_object(
         clean_obj_id = f"RAW-{transcript_id}-{digest}"
 
     payload = dict(row)
+    resolved_issue = resolve_issue_reference(
+        db_path,
+        transcript_id,
+        issue_ref=issue_id,
+        issue_key=issue_key,
+    )
     with _connect(db_path) as conn:
         conn.execute(
             """
@@ -675,7 +879,7 @@ def save_l1_object(
             (
                 clean_obj_id,
                 transcript_id,
-                str(issue_id).strip(),
+                resolved_issue["issue_id"],
                 json.dumps(payload, ensure_ascii=False),
                 utc_now_iso(),
             ),
@@ -684,12 +888,17 @@ def save_l1_object(
     return clean_obj_id
 
 
-def load_l1_objects(db_path: Path, transcript_id: str) -> list[dict[str, Any]]:
+def load_l1_objects(
+    db_path: Path,
+    transcript_id: str,
+    *,
+    include_issue_metadata: bool = False,
+) -> list[dict[str, Any]]:
     ensure_schema(db_path)
     with _connect(db_path) as conn:
         rows = conn.execute(
             """
-            SELECT row_json
+            SELECT obj_id, issue_id, row_json
             FROM l1_objects
             WHERE transcript_id = ?
             ORDER BY created_at_utc ASC, obj_id ASC
@@ -704,5 +913,8 @@ def load_l1_objects(db_path: Path, transcript_id: str) -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             continue
         if isinstance(parsed, dict):
+            if include_issue_metadata:
+                parsed["_raw_obj_id"] = str(row["obj_id"] or "")
+                parsed["_issue_id"] = str(row["issue_id"] or "")
             objects.append(parsed)
     return objects

@@ -79,7 +79,7 @@ uv run long_term/cli.py bridge \
   --meeting-date 2000-06-14
 ```
 
-也可以改用 incremental Gemini function-calling 模式。這個模式會先把逐字稿切成 SQLite 工作表中的逐行資料，讓 Gemini 透過 `read_transcript` 逐段讀取、更新 issue table、建立 raw L1 candidates，最後仍回到既有 normalizer 與 `tree.json` 輸出流程。
+也可以改用 incremental Gemini function-calling 模式。這個模式會先把逐字稿切成 SQLite 工作表中的逐行資料，讓 Gemini 透過 `read_transcript` 逐段讀取、更新 issue table、建立 raw L1 candidates；接著在寫入正式 L1 前先做一層輕量 candidate review，最後仍回到既有 normalizer 與 `tree.json` 輸出流程。
 
 ```bash
 uv run long_term/cli.py bridge \
@@ -93,9 +93,11 @@ uv run long_term/cli.py bridge \
 
 - `--mode full` 是預設值，保留原本 full-transcript bridge 行為。
 - `--mode incremental` 需要 `.env` 中的 `GEMINI_API_KEY`；如果有 `GEMINI_API_KEYS=key_1,key_2,key_3`，每次 Gemini model call 會自動輪替使用，預設模型同樣是 `gemini-2.5-flash`。
-- incremental 會把進度印到 stderr，例如目前 round、掃到第幾行、issues / raw L1 數量；`--max-tool-rounds 0` 代表依逐字稿長度自動估算上限。
+- incremental 會把進度印到 stderr，例如目前 round、掃到第幾行、issues / raw L1 數量；`--max-tool-rounds 0` 代表依逐字稿長度自動估算上限。長會議會定期從 SQLite 工作狀態重建 Gemini context，避免 input token 歷史持續膨脹。
 - `--incremental-db` 是工作日誌，不是 canonical long-term store；正式輸出仍是 `long_term/tree.json` 和 snapshots。
-- `importance` 會經過共用校準：L1 物件依 evidence / related topics / 高影響語意微調；incremental issues 會先用 `issue_key` / 相似 title-summary 合併同一議題，再用 `episode_count`（隔 3 行以上才算再次出現）設定最低合理分數，避免連續幾行 evidence 灌高重要性。
+- incremental 的 raw L1 candidate 不是直接進 `tree.json`：會先做一層 deterministic review，包含近似重複候選合併、同 issue checklist fragment 合併、缺少 evidence 的 speculative object 降權或丟棄、以及 linked issue 語意對齊的小幅加減分。這一層只作用在 incremental working objects，不改 final L1 schema。
+- `update_issue` 會優先記錄 `forward_scan` 的代表性 evidence 行，而不是把長段落的每一行都塞進 `issue_mentions`；`create_l1_object` 會優先使用 `update_issue` 回傳的 exact `issue_id`，若模型只傳 `issue_key` 也會在儲存時解析成 canonical issue。
+- `importance` 會經過共用校準：L1 物件依 evidence / related topics / 高影響語意微調；incremental issues 會先用 `issue_key` / 相似 title-summary 合併同一議題，再用 `episode_count`（相隔超過 15 行才算再次出現）設定最低合理分數，避免連續幾行 evidence 灌高重要性。若 raw L1 object 連到高 importance issue，會在進入 normalizer 前得到最多 `+0.08` 的小幅 bonus；final `tree.json` 的 L1 schema 不變。
 
 ### 2. 手動建立 L2 / L3
 

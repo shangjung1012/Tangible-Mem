@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import re
 import sys
 import time
 from dataclasses import dataclass
@@ -12,7 +13,8 @@ from typing import Any
 from google import genai
 from google.genai import types
 
-from gemini_clients import create_gemini_client
+from embedder import EmbedCache
+from gemini_clients import create_gemini_client, normalize_api_keys
 from incremental_store import (
     READ_PURPOSES,
     get_max_line_id,
@@ -20,6 +22,7 @@ from incremental_store import (
     load_l1_objects,
     read_transcript_span,
     record_issue_mention,
+    resolve_issue_reference,
     save_l1_object,
     seed_transcript_lines,
     upsert_issue,
@@ -27,8 +30,22 @@ from incremental_store import (
 from importance import IMPORTANCE_SCALE
 from schema import MEMORY_OBJ_TYPES
 
-AUTO_TOOL_ROUND_BUFFER = 20
-AUTO_TOOL_ROUND_MULTIPLIER = 4
+AUTO_TOOL_ROUND_BUFFER = 40
+AUTO_TOOL_ROUND_MULTIPLIER = 8
+KNOWN_ISSUES_PROMPT_LIMIT = 16
+MAX_ISSUE_EVIDENCE_LINES_PER_UPDATE = 8
+CONTEXT_RESET_INTERVAL_ROUNDS = 18
+MAX_CONTENT_ITEMS_BEFORE_RESET = 36
+SINGLE_KEY_MIN_REQUEST_INTERVAL_S = 12.5
+SINGLE_KEY_MAX_RETRIES = 6
+_RETRY_DELAY_RE = re.compile(r"retry in ([0-9]+(?:\.[0-9]+)?)s", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class ReadSpanRecord:
+    purpose: str
+    start_line: int
+    end_line: int
 
 
 @dataclass(frozen=True)
@@ -121,6 +138,102 @@ def _safe_int_list(value: Any) -> list[int]:
         return []
 
 
+def _sanitize_issue_id_ref(value: Any) -> str:
+    clean = str(value or "").strip()
+    if not clean:
+        return ""
+    upper = clean.upper()
+    if upper.startswith("RAW-") or upper.startswith("L1-"):
+        return ""
+    return clean
+
+
+def _normalize_line_ids(line_ids: list[int], max_line: int) -> list[int]:
+    output = sorted(
+        {
+            line_id
+            for line_id in line_ids
+            if 1 <= int(line_id) <= max(1, int(max_line or 0))
+        }
+    )
+    return output
+
+
+def _compact_issue_line_ids(
+    line_ids: list[int],
+    *,
+    max_points: int = MAX_ISSUE_EVIDENCE_LINES_PER_UPDATE,
+) -> list[int]:
+    if len(line_ids) <= max_points:
+        return line_ids
+    if max_points <= 1:
+        return [line_ids[0]]
+
+    selected = {line_ids[0], line_ids[-1]}
+    slots = max_points - len(selected)
+    if slots > 0:
+        span = len(line_ids) - 1
+        for index in range(1, slots + 1):
+            position = round((index / (slots + 1)) * span)
+            selected.add(line_ids[position])
+    return sorted(selected)
+
+
+def _select_recent_span(
+    recent_reads: list[ReadSpanRecord],
+    *,
+    preferred_purpose: str = "",
+) -> ReadSpanRecord | None:
+    for span in reversed(recent_reads):
+        if not preferred_purpose or span.purpose == preferred_purpose:
+            return span
+    return recent_reads[-1] if recent_reads else None
+
+
+def _bound_line_ids_to_recent_span(
+    line_ids: list[int],
+    *,
+    recent_reads: list[ReadSpanRecord],
+    explicit_purpose: str,
+) -> list[int]:
+    if not line_ids:
+        return []
+    preferred_purpose = explicit_purpose if explicit_purpose in READ_PURPOSES else ""
+    span = _select_recent_span(recent_reads, preferred_purpose=preferred_purpose)
+    if span is None:
+        return sorted({int(line_id) for line_id in line_ids})
+    bounded = [
+        min(span.end_line, max(span.start_line, int(line_id)))
+        for line_id in line_ids
+    ]
+    return sorted(set(bounded))
+
+
+def _infer_issue_purpose(
+    *,
+    explicit_purpose: str,
+    line_ids: list[int],
+    recent_reads: list[ReadSpanRecord],
+) -> str:
+    if explicit_purpose in READ_PURPOSES and explicit_purpose != "candidate_refine":
+        return explicit_purpose
+    if not line_ids:
+        return explicit_purpose if explicit_purpose in READ_PURPOSES else "forward_scan"
+
+    best_span: ReadSpanRecord | None = None
+    best_overlap = -1
+    for span in reversed(recent_reads):
+        overlap = sum(1 for line_id in line_ids if span.start_line <= line_id <= span.end_line)
+        if overlap > best_overlap:
+            best_overlap = overlap
+            best_span = span
+    if best_span is not None and best_overlap > 0:
+        return best_span.purpose
+    if explicit_purpose in READ_PURPOSES:
+        return explicit_purpose
+    return "forward_scan"
+
+
 def _tool_declarations() -> types.Tool:
     read_transcript = types.FunctionDeclaration(
         name="read_transcript",
@@ -147,7 +260,8 @@ def _tool_declarations() -> types.Tool:
         description=(
             "Create or update the working issue table after reading transcript evidence. "
             "Reuse issue_id or issue_key when the same issue returns later. "
-            "Importance will be calibrated against separated mention episodes."
+            "Importance will be calibrated against separated mention episodes. "
+            "Use 1-8 concrete evidence line_ids, not every line in a long span."
         ),
         parameters_json_schema={
             "type": "object",
@@ -183,12 +297,21 @@ def _tool_declarations() -> types.Tool:
         description=(
             "Create one raw L1 memory object candidate using the existing long_term schema. "
             "Only create durable decisions, todos, method changes, results, open questions, or arguments. "
-            "Use the shared 0.0-1.0 importance scale."
+            "Use the shared 0.0-1.0 importance scale. Prefer one higher-level durable object over many checklist fragments. "
+            "Include the exact issue_id returned by update_issue when this object belongs to a known recurring issue. "
+            "If you only know issue_key, pass it in issue_key."
         ),
         parameters_json_schema={
             "type": "object",
             "properties": {
-                "issue_id": {"type": "string"},
+                "issue_id": {
+                    "type": "string",
+                    "description": "Known issue_id from update_issue when this object belongs to that issue.",
+                },
+                "issue_key": {
+                    "type": "string",
+                    "description": "Fallback stable issue_key when issue_id is not available.",
+                },
                 "type": {
                     "type": "string",
                     "enum": sorted(MEMORY_OBJ_TYPES),
@@ -214,8 +337,15 @@ def _build_system_instruction(
     transcript_id: str,
     existing_topics: list[str],
     chunk_size: int,
+    request_constrained: bool = False,
 ) -> str:
     topics = ", ".join(existing_topics) if existing_topics else "(none)"
+    request_constrained_rules = ""
+    if request_constrained:
+        request_constrained_rules = """
+13. You are in request-constrained single-key mode. Minimize generate_content turns and avoid one-call responses when more actions from the same span are already clear.
+14. For a typical forward_scan span, prefer to batch all necessary update_issue and create_l1_object calls, then request the next forward_scan span in the same response.
+""".rstrip()
     return f"""
 You are the incremental long-term memory bridge for transcript {transcript_id}.
 
@@ -232,32 +362,52 @@ Rules:
 4. If the last line is incomplete or an event is unfolding, read nearby next lines with purpose="lookahead".
 5. After reading evidence, update_issue before creating L1 objects.
 6. Create L1 objects only for durable memory worth preserving in long-term memory.
-7. Use Traditional Chinese for content when possible; evidence may quote the source language.
-8. Continue until forward_scan has reached the final transcript line reported by read_transcript.
+7. Do not explode one issue into many checklist fragments. Merge sub-items into one higher-level durable memory object whenever they belong to the same decision, method change, or result.
+8. Use concise Traditional Chinese for issue titles, issue summaries, and L1 content. Evidence may quote the source language.
+9. For update_issue, cite only a few concrete evidence lines (usually 1-4, at most 8).
+10. When create_l1_object is linked to an existing issue, prefer the exact issue_id returned by update_issue over issue_key.
+11. Batch related update_issue and create_l1_object calls for the same read_transcript span in one response whenever possible.
+12. Continue until forward_scan has reached the final transcript line reported by read_transcript.
+{request_constrained_rules}
 
 Known related topics: {topics}
 """.strip()
 
 
-def _build_initial_prompt(transcript_id: str, max_line: int, chunk_size: int) -> str:
+def _build_initial_prompt(
+    transcript_id: str,
+    max_line: int,
+    chunk_size: int,
+    *,
+    request_constrained: bool = False,
+) -> str:
     start, end = next_forward_span(0, max_line, chunk_size)
-    return (
+    prompt = (
         f"Transcript {transcript_id} has {max_line} stored lines. "
         f"Begin by calling read_transcript(start_line={start}, end_line={end}, "
         'purpose="forward_scan"). Continue until the final line is processed.'
     )
+    if request_constrained:
+        prompt += (
+            " Use as few model turns as possible: after reading a span, batch the "
+            "needed issue updates and L1 creations together, then request the next "
+            "forward_scan span in the same response when the local context is clear."
+        )
+    return prompt
 
 
 def _build_config(
     transcript_id: str,
     existing_topics: list[str],
     chunk_size: int,
+    request_constrained: bool = False,
 ) -> types.GenerateContentConfig:
     return types.GenerateContentConfig(
         system_instruction=_build_system_instruction(
             transcript_id=transcript_id,
             existing_topics=existing_topics,
             chunk_size=chunk_size,
+            request_constrained=request_constrained,
         ),
         temperature=0.15,
         tools=[_tool_declarations()],
@@ -266,6 +416,14 @@ def _build_config(
             function_calling_config=types.FunctionCallingConfig(mode="AUTO")
         ),
     )
+
+
+def _min_request_interval_for_key_count(key_count: int) -> float:
+    return SINGLE_KEY_MIN_REQUEST_INTERVAL_S if key_count <= 1 else 0.0
+
+
+def _max_retry_attempts_for_key_count(key_count: int) -> int:
+    return SINGLE_KEY_MAX_RETRIES if key_count <= 1 else 4
 
 
 def _is_retryable_error(exc: Exception) -> bool:
@@ -288,6 +446,37 @@ def _is_retryable_error(exc: Exception) -> bool:
     )
 
 
+def _extract_retry_delay_seconds(exc: Exception) -> float | None:
+    message = str(exc)
+    match = _RETRY_DELAY_RE.search(message)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            return None
+    return None
+
+
+def _wait_for_request_slot(
+    request_state: dict[str, float],
+    *,
+    min_request_interval_s: float,
+    progress: bool,
+) -> None:
+    if min_request_interval_s <= 0:
+        return
+    last_started = float(request_state.get("last_request_started_at", 0.0))
+    now = time.monotonic()
+    wait_s = min_request_interval_s - (now - last_started)
+    if wait_s > 0:
+        _progress_log(
+            progress,
+            f"[incremental] pacing single-key Gemini requests, sleeping {wait_s:.1f}s.",
+        )
+        time.sleep(wait_s)
+    request_state["last_request_started_at"] = time.monotonic()
+
+
 def _generate_with_retry(
     client: Any,
     *,
@@ -295,9 +484,18 @@ def _generate_with_retry(
     contents: list[types.Content],
     config: types.GenerateContentConfig,
     max_retries: int = 4,
+    min_request_interval_s: float = 0.0,
+    request_state: dict[str, float] | None = None,
+    progress: bool = False,
 ) -> types.GenerateContentResponse:
     for attempt in range(1, max_retries + 1):
         try:
+            if request_state is not None:
+                _wait_for_request_slot(
+                    request_state,
+                    min_request_interval_s=min_request_interval_s,
+                    progress=progress,
+                )
             return client.models.generate_content(
                 model=model_name,
                 contents=contents,
@@ -306,7 +504,13 @@ def _generate_with_retry(
         except Exception as exc:
             if attempt >= max_retries or not _is_retryable_error(exc):
                 raise
-            wait_s = min(30.0, 1.5 * (2 ** (attempt - 1))) + random.uniform(0, 1.0)
+            retry_delay = _extract_retry_delay_seconds(exc) or 0.0
+            wait_s = max(
+                retry_delay,
+                min(30.0, 1.5 * (2 ** (attempt - 1))) + random.uniform(0, 1.0),
+            )
+            if min_request_interval_s > 0:
+                wait_s = max(wait_s, min_request_interval_s)
             print(
                 f"  API busy ({type(exc).__name__}), "
                 f"retry {attempt}/{max_retries} in {wait_s:.1f}s..."
@@ -343,9 +547,19 @@ def _tool_progress_summary(
         start_line = span.get("start_line", "?")
         end_line = span.get("end_line", "?")
         moved = current_forward_line - previous_forward_line
+        correction = payload.get("correction", {})
+        correction_note = ""
+        if correction:
+            correction_note = (
+                f" enforced_from={correction.get('requested_start_line', '?')}"
+                f"-{correction.get('requested_end_line', '?')}"
+            )
         if moved > 0:
-            return f"read_transcript {purpose} lines {start_line}-{end_line} (+{moved})"
-        return f"read_transcript {purpose} lines {start_line}-{end_line}"
+            return (
+                f"read_transcript {purpose} lines {start_line}-{end_line} "
+                f"(+{moved}){correction_note}"
+            )
+        return f"read_transcript {purpose} lines {start_line}-{end_line}{correction_note}"
 
     if name == "update_issue":
         output = payload.get("output", {})
@@ -355,7 +569,8 @@ def _tool_progress_summary(
             "update_issue "
             f"{issue.get('issue_id', '?')} "
             f"episodes={issue.get('episode_count', 0)} "
-            f"mentions+={len(mention_ids)}"
+            f"mentions+={len(mention_ids)} "
+            f"purpose={issue.get('last_purpose', '?')}"
         )
 
     if name == "create_l1_object":
@@ -416,6 +631,9 @@ def _execute_tool_call(
     max_line: int,
     max_forward_line: int,
     chunk_size: int,
+    recent_reads: list[ReadSpanRecord],
+    api_key: str | list[str] | None = None,
+    embed_cache: EmbedCache | None = None,
 ) -> tuple[dict[str, Any], int]:
     name = function_call.name or ""
     args = function_call.args or {}
@@ -426,18 +644,33 @@ def _execute_tool_call(
             if purpose not in READ_PURPOSES:
                 purpose = "forward_scan"
 
-            start_line = _safe_int(args.get("start_line"), max_forward_line + 1)
-            end_line = _safe_int(args.get("end_line"), start_line + chunk_size - 1)
+            requested_start_line = _safe_int(args.get("start_line"), max_forward_line + 1)
+            requested_end_line = _safe_int(
+                args.get("end_line"),
+                requested_start_line + chunk_size - 1,
+            )
+            start_line = requested_start_line
+            end_line = requested_end_line
+            correction: dict[str, int] = {}
 
             if purpose == "forward_scan":
                 expected_start, expected_end = next_forward_span(
                     max_forward_line, max_line, chunk_size
                 )
-                if start_line > expected_start:
-                    start_line = expected_start
-                    end_line = expected_end
-                elif end_line < start_line:
-                    end_line = min(max_line, start_line + chunk_size - 1)
+                start_line = expected_start
+                end_line = expected_end
+                if (
+                    requested_start_line != expected_start
+                    or requested_end_line != expected_end
+                ):
+                    correction = {
+                        "requested_start_line": requested_start_line,
+                        "requested_end_line": requested_end_line,
+                        "enforced_start_line": start_line,
+                        "enforced_end_line": end_line,
+                    }
+            elif end_line < start_line:
+                end_line = min(max_line, start_line + chunk_size - 1)
 
             span = read_transcript_span(
                 db_path=db_path,
@@ -446,6 +679,14 @@ def _execute_tool_call(
                 end_line=end_line,
                 purpose=purpose,
             )
+            recent_reads.append(
+                ReadSpanRecord(
+                    purpose=purpose,
+                    start_line=int(span["start_line"]),
+                    end_line=int(span["end_line"]),
+                )
+            )
+            del recent_reads[:-8]
             new_progress = update_forward_progress(
                 max_forward_line,
                 purpose=purpose,
@@ -459,26 +700,42 @@ def _execute_tool_call(
                         "max_forward_line": new_progress,
                         "max_line": max_line,
                     },
+                    "correction": correction,
                 },
                 new_progress,
             )
 
         if name == "update_issue":
-            purpose = str(args.get("purpose") or "candidate_refine")
-            if purpose not in READ_PURPOSES:
-                purpose = "candidate_refine"
+            explicit_purpose = str(args.get("purpose") or "")
+            line_ids = _compact_issue_line_ids(
+                _bound_line_ids_to_recent_span(
+                    _normalize_line_ids(
+                        _safe_int_list(args.get("line_ids", [])),
+                        max_line,
+                    ),
+                    recent_reads=recent_reads,
+                    explicit_purpose=explicit_purpose,
+                )
+            )
+            purpose = _infer_issue_purpose(
+                explicit_purpose=explicit_purpose,
+                line_ids=line_ids,
+                recent_reads=recent_reads,
+            )
             issue = upsert_issue(
                 db_path=db_path,
                 transcript_id=transcript_id,
-                issue_id=str(args.get("issue_id") or ""),
+                issue_id=_sanitize_issue_id_ref(args.get("issue_id")),
                 issue_key=str(args.get("issue_key") or ""),
                 title=str(args.get("title") or ""),
                 status=str(args.get("status") or "open"),
                 importance=_safe_float(args.get("importance"), 0.5),
                 summary=str(args.get("summary") or ""),
+                api_key=api_key,
+                embed_cache=embed_cache,
             )
             mention_ids: list[int] = []
-            for line_id in _safe_int_list(args.get("line_ids", [])):
+            for line_id in line_ids:
                 mention_ids.append(
                     record_issue_mention(
                         db_path=db_path,
@@ -489,11 +746,38 @@ def _execute_tool_call(
                         note=str(args.get("note") or ""),
                     )
                 )
-            return {"output": {"issue": issue, "mention_ids": mention_ids}}, max_forward_line
+            refreshed_issue = next(
+                (
+                    item
+                    for item in load_issues(db_path, transcript_id)
+                    if item.get("issue_id") == issue["issue_id"]
+                ),
+                issue,
+            )
+            refreshed_issue = dict(refreshed_issue)
+            refreshed_issue["last_purpose"] = purpose
+            return {
+                "output": {
+                    "issue": refreshed_issue,
+                    "mention_ids": mention_ids,
+                    "bounded_line_ids": line_ids,
+                }
+            }, max_forward_line
 
         if name == "create_l1_object":
+            obj_type = str(args.get("type") or "decision").lower()
+            if obj_type not in MEMORY_OBJ_TYPES:
+                obj_type = "decision"
+            resolved_issue = resolve_issue_reference(
+                db_path,
+                transcript_id,
+                issue_ref=_sanitize_issue_id_ref(args.get("issue_id")),
+                issue_key=str(args.get("issue_key") or ""),
+                api_key=api_key,
+                embed_cache=embed_cache,
+            )
             raw_object = {
-                "type": str(args.get("type") or "decision"),
+                "type": obj_type,
                 "content": str(args.get("content") or "").strip(),
                 "importance": _safe_float(args.get("importance"), 0.5),
                 "evidence": str(args.get("evidence") or "").strip(),
@@ -502,21 +786,40 @@ def _execute_tool_call(
             obj_id = save_l1_object(
                 db_path=db_path,
                 transcript_id=transcript_id,
-                issue_id=str(args.get("issue_id") or ""),
+                issue_id=resolved_issue["issue_id"],
+                issue_key=resolved_issue["issue_key"],
                 row=raw_object,
             )
-            return {"output": {"obj_id": obj_id, "object": raw_object}}, max_forward_line
+            return {
+                "output": {
+                    "obj_id": obj_id,
+                    "object": raw_object,
+                    "issue_id": resolved_issue["issue_id"],
+                }
+            }, max_forward_line
 
         return {"error": f"Unknown tool: {name}"}, max_forward_line
     except Exception as exc:
         return {"error": str(exc)}, max_forward_line
 
 
+def _select_known_issues(issues: list[dict[str, Any]], limit: int = KNOWN_ISSUES_PROMPT_LIMIT) -> list[dict[str, Any]]:
+    return sorted(
+        issues,
+        key=lambda issue: (
+            -int(issue.get("episode_count", 0) or 0),
+            -float(issue.get("importance", 0.0) or 0.0),
+            -int(issue.get("mention_count", 0) or 0),
+            str(issue.get("updated_at_utc") or ""),
+        ),
+    )[:limit]
+
+
 def _format_known_issues(issues: list[dict[str, Any]]) -> str:
     if not issues:
         return "(none)"
     lines: list[str] = []
-    for issue in issues[:12]:
+    for issue in _select_known_issues(issues):
         summary = str(issue.get("summary") or "")
         if len(summary) > 140:
             summary = summary[:140] + "..."
@@ -536,15 +839,52 @@ def _continue_prompt(
     max_line: int,
     chunk_size: int,
     known_issues: list[dict[str, Any]],
+    *,
+    request_constrained: bool = False,
 ) -> str:
     start, end = next_forward_span(max_forward_line, max_line, chunk_size)
-    return (
+    prompt = (
         "Continue the top-down scan. "
         f"The next unread forward_scan span should start at line {start} "
         f"and may end around line {end}. Do not stop until line {max_line} is processed.\n\n"
+        "Batch related issue updates and L1 object creations from the same span instead of issuing one tiny tool call at a time.\n\n"
         "Known issues in this transcript. Reuse issue_id/issue_key if the new span returns to the same issue:\n"
         f"{_format_known_issues(known_issues)}"
     )
+    if request_constrained:
+        prompt += (
+            "\n\nRequest-constrained single-key mode: prefer about one to two model turns "
+            "per forward_scan span. Avoid separate one-call turns when the same span already "
+            "supports multiple issue updates, object creations, or the next forward_scan."
+        )
+    return prompt
+
+
+def _reset_contents(
+    *,
+    transcript_id: str,
+    max_forward_line: int,
+    max_line: int,
+    chunk_size: int,
+    known_issues: list[dict[str, Any]],
+    request_constrained: bool = False,
+) -> list[types.Content]:
+    return [
+        types.Content(
+            role="user",
+            parts=[
+                types.Part(
+                    text=(
+                        f"Resume incremental extraction for transcript {transcript_id}. "
+                        f"forward_scan has already processed through line {max_forward_line} of {max_line}.\n\n"
+                        f"{_continue_prompt(max_forward_line, max_line, chunk_size, known_issues, request_constrained=request_constrained)}\n\n"
+                        "Persisted issues and raw L1 candidates already exist in the SQLite working store. "
+                        "Do not recreate near-duplicate objects; refine or extend only when the new span adds durable information."
+                    )
+                )
+            ],
+        )
+    ]
 
 
 def extract_incremental_l1_objects(
@@ -591,131 +931,188 @@ def extract_incremental_l1_objects(
     )
 
     client = client or create_gemini_client(api_key)
+    key_count = len(normalize_api_keys(api_key))
+    request_constrained = key_count <= 1
+    min_request_interval_s = _min_request_interval_for_key_count(key_count)
+    max_retries = _max_retry_attempts_for_key_count(key_count)
+    if min_request_interval_s > 0:
+        _progress_log(
+            progress,
+            (
+                f"[incremental] single-key pacing enabled: "
+                f"min_request_interval={min_request_interval_s:.1f}s"
+            ),
+        )
     config = _build_config(
         transcript_id=transcript_id,
         existing_topics=existing_topics,
         chunk_size=chunk_size,
+        request_constrained=request_constrained,
     )
     contents: list[types.Content] = [
         types.Content(
             role="user",
             parts=[
-                types.Part(text=_build_initial_prompt(transcript_id, max_line, chunk_size))
+                types.Part(
+                    text=_build_initial_prompt(
+                        transcript_id,
+                        max_line,
+                        chunk_size,
+                        request_constrained=request_constrained,
+                    )
+                )
             ],
         )
     ]
 
     max_forward_line = 0
-    for round_index in range(1, max_tool_rounds + 1):
-        _progress_log(
-            progress,
-            (
-                f"[incremental] round {round_index}/{max_tool_rounds}: "
-                f"requesting Gemini, progress={max_forward_line}/{max_line} "
-                f"({_progress_percent(max_forward_line, max_line):.1f}%)"
-            ),
-        )
-        response = _generate_with_retry(
-            client,
-            model_name=model_name,
-            contents=contents,
-            config=config,
-        )
-        function_calls = _extract_function_calls(response)
-        model_content = _model_content(response)
-
-        if function_calls:
-            if model_content is not None:
-                contents.append(model_content)
-            response_parts: list[types.Part] = []
-            summaries: list[str] = []
-            for function_call in function_calls:
-                previous_forward_line = max_forward_line
-                payload, max_forward_line = _execute_tool_call(
-                    db_path=db_path,
-                    transcript_id=transcript_id,
-                    function_call=function_call,
-                    max_line=max_line,
-                    max_forward_line=max_forward_line,
-                    chunk_size=chunk_size,
-                )
-                summaries.append(
-                    _tool_progress_summary(
-                        function_call,
-                        payload,
-                        previous_forward_line,
-                        max_forward_line,
-                    )
-                )
-                response_parts.append(
-                    build_function_response_part(function_call, payload)
-                )
-            contents.append(types.Content(role="user", parts=response_parts))
+    recent_reads: list[ReadSpanRecord] = []
+    request_state: dict[str, float] = {}
+    issue_embed_cache = EmbedCache()
+    try:
+        for round_index in range(1, max_tool_rounds + 1):
             _progress_log(
                 progress,
                 (
                     f"[incremental] round {round_index}/{max_tool_rounds}: "
-                    f"{'; '.join(summaries)}; "
-                    f"progress={max_forward_line}/{max_line} "
-                    f"({_progress_percent(max_forward_line, max_line):.1f}%), "
-                    f"issues={len(load_issues(db_path, transcript_id))}, "
-                    f"raw_l1={len(load_l1_objects(db_path, transcript_id))}"
+                    f"requesting Gemini, progress={max_forward_line}/{max_line} "
+                    f"({_progress_percent(max_forward_line, max_line):.1f}%)"
                 ),
             )
-            continue
+            response = _generate_with_retry(
+                client,
+                model_name=model_name,
+                contents=contents,
+                config=config,
+                max_retries=max_retries,
+                min_request_interval_s=min_request_interval_s,
+                request_state=request_state,
+                progress=progress,
+            )
+            function_calls = _extract_function_calls(response)
+            model_content = _model_content(response)
 
-        if should_stop(max_forward_line, max_line):
+            if function_calls:
+                if model_content is not None:
+                    contents.append(model_content)
+                response_parts: list[types.Part] = []
+                summaries: list[str] = []
+                for function_call in function_calls:
+                    previous_forward_line = max_forward_line
+                    payload, max_forward_line = _execute_tool_call(
+                        db_path=db_path,
+                        transcript_id=transcript_id,
+                        function_call=function_call,
+                        max_line=max_line,
+                        max_forward_line=max_forward_line,
+                        chunk_size=chunk_size,
+                        recent_reads=recent_reads,
+                        api_key=api_key,
+                        embed_cache=issue_embed_cache,
+                    )
+                    summaries.append(
+                        _tool_progress_summary(
+                            function_call,
+                            payload,
+                            previous_forward_line,
+                            max_forward_line,
+                        )
+                    )
+                    response_parts.append(
+                        build_function_response_part(function_call, payload)
+                    )
+                contents.append(types.Content(role="user", parts=response_parts))
+                _progress_log(
+                    progress,
+                    (
+                        f"[incremental] round {round_index}/{max_tool_rounds}: "
+                        f"{'; '.join(summaries)}; "
+                        f"progress={max_forward_line}/{max_line} "
+                        f"({_progress_percent(max_forward_line, max_line):.1f}%), "
+                        f"issues={len(load_issues(db_path, transcript_id))}, "
+                        f"raw_l1={len(load_l1_objects(db_path, transcript_id))}"
+                    ),
+                )
+                if (
+                    round_index % CONTEXT_RESET_INTERVAL_ROUNDS == 0
+                    or len(contents) >= MAX_CONTENT_ITEMS_BEFORE_RESET
+                ):
+                    known_issues = load_issues(db_path, transcript_id)
+                    contents = _reset_contents(
+                        transcript_id=transcript_id,
+                        max_forward_line=max_forward_line,
+                        max_line=max_line,
+                        chunk_size=chunk_size,
+                        known_issues=known_issues,
+                        request_constrained=request_constrained,
+                    )
+                    _progress_log(
+                        progress,
+                        (
+                            f"[incremental] round {round_index}/{max_tool_rounds}: "
+                            "compacted Gemini context from persisted DB state."
+                        ),
+                    )
+                continue
+
+            if should_stop(max_forward_line, max_line):
+                _progress_log(
+                    progress,
+                    (
+                        f"[incremental] completed scan at line "
+                        f"{max_forward_line}/{max_line}."
+                    ),
+                )
+                break
+
+            if model_content is not None:
+                contents.append(model_content)
+            next_start, next_end = next_forward_span(max_forward_line, max_line, chunk_size)
             _progress_log(
                 progress,
                 (
-                    f"[incremental] completed scan at line "
-                    f"{max_forward_line}/{max_line}."
+                    f"[incremental] round {round_index}/{max_tool_rounds}: "
+                    "Gemini returned no tool call; nudging next forward_scan "
+                    f"lines {next_start}-{next_end}."
                 ),
             )
-            break
-
-        if model_content is not None:
-            contents.append(model_content)
-        next_start, next_end = next_forward_span(max_forward_line, max_line, chunk_size)
-        _progress_log(
-            progress,
-            (
-                f"[incremental] round {round_index}/{max_tool_rounds}: "
-                "Gemini returned no tool call; nudging next forward_scan "
-                f"lines {next_start}-{next_end}."
-            ),
-        )
-        contents.append(
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part(
-                        text=_continue_prompt(
-                            max_forward_line,
-                            max_line,
-                            chunk_size,
-                            load_issues(db_path, transcript_id),
+            contents.append(
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part(
+                            text=_continue_prompt(
+                                max_forward_line,
+                                max_line,
+                                chunk_size,
+                                load_issues(db_path, transcript_id),
+                            )
                         )
-                    )
-                ],
+                    ],
+                )
             )
-        )
-    else:
-        if not should_stop(max_forward_line, max_line):
+        else:
+            if not should_stop(max_forward_line, max_line):
+                raise RuntimeError(
+                    "Incremental extraction stopped before the final transcript line "
+                    f"({max_forward_line}/{max_line}) after {max_tool_rounds} tool rounds. "
+                    "Re-run with a larger --chunk-size or --max-tool-rounds."
+                )
+    finally:
+        issue_embed_cache.save()
+
+    if not should_stop(max_forward_line, max_line):
             raise RuntimeError(
                 "Incremental extraction stopped before the final transcript line "
                 f"({max_forward_line}/{max_line}) after {max_tool_rounds} tool rounds. "
                 "Re-run with a larger --chunk-size or --max-tool-rounds."
             )
 
-    if not should_stop(max_forward_line, max_line):
-        raise RuntimeError(
-            "Incremental extraction stopped before the final transcript line "
-            f"({max_forward_line}/{max_line}) after {max_tool_rounds} tool rounds. "
-            "Re-run with a larger --chunk-size or --max-tool-rounds."
-        )
-
-    raw_objects = load_l1_objects(db_path, transcript_id)
+    raw_objects = load_l1_objects(
+        db_path,
+        transcript_id,
+        include_issue_metadata=True,
+    )
     issues = load_issues(db_path, transcript_id)
     _progress_log(
         progress,

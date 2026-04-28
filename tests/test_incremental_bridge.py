@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from google.genai import types
 
@@ -11,8 +12,23 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
 
-from bridge import normalize_memory_objects  # noqa: E402
+from bridge import (  # noqa: E402
+    apply_incremental_final_importance_caps,
+    normalize_memory_objects,
+    propagate_issue_importance_to_raw_objects,
+    review_incremental_candidates,
+)
 from gemini_incremental_extractor import (  # noqa: E402
+    ReadSpanRecord,
+    _build_initial_prompt,
+    _bound_line_ids_to_recent_span,
+    _compact_issue_line_ids,
+    _execute_tool_call,
+    _extract_retry_delay_seconds,
+    _infer_issue_purpose,
+    _max_retry_attempts_for_key_count,
+    _min_request_interval_for_key_count,
+    _sanitize_issue_id_ref,
     auto_max_tool_rounds,
     build_function_response_part,
     next_forward_span,
@@ -20,6 +36,7 @@ from gemini_incremental_extractor import (  # noqa: E402
     should_stop,
     update_forward_progress,
 )
+from importance import calibrate_issue_importance  # noqa: E402
 from incremental_store import (  # noqa: E402
     count_issue_episodes,
     get_max_line_id,
@@ -28,6 +45,7 @@ from incremental_store import (  # noqa: E402
     load_l1_objects,
     read_transcript_span,
     record_issue_mention,
+    resolve_issue_reference,
     save_l1_object,
     seed_transcript_lines,
     upsert_issue,
@@ -161,6 +179,26 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(first["issue_id"], second["issue_id"])
         self.assertEqual(len(issues), 1)
 
+    def test_issue_reference_resolves_issue_key_to_canonical_issue_id(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Transcription specification development",
+            issue_key="transcription_specification_development",
+            status="open",
+            importance=0.7,
+            summary="Need one durable transcription specification.",
+        )
+
+        resolved = resolve_issue_reference(
+            self.db_path,
+            self.transcript_id,
+            issue_ref="transcription_specification_development",
+        )
+
+        self.assertEqual(resolved["issue_id"], issue["issue_id"])
+        self.assertEqual(resolved["issue_key"], "transcription_specification_development")
+
     def test_issue_identity_keeps_different_issues_separate(self) -> None:
         upsert_issue(
             self.db_path,
@@ -182,9 +220,57 @@ class IncrementalBridgeTests(unittest.TestCase):
 
         self.assertEqual(len(issues), 2)
 
+    def test_issue_identity_does_not_merge_opposite_direction(self) -> None:
+        first = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="繼續使用方案 A",
+            status="open",
+            importance=0.6,
+            summary="團隊決定沿用方案 A 作為目前做法。",
+        )
+        second = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="放棄方案 A",
+            status="open",
+            importance=0.6,
+            summary="團隊決定停用方案 A，改採其他方向。",
+        )
+        issues = load_issues(self.db_path, self.transcript_id)
+
+        self.assertNotEqual(first["issue_id"], second["issue_id"])
+        self.assertEqual(len(issues), 2)
+
+    def test_issue_identity_can_use_semantic_similarity_for_ambiguous_match(self) -> None:
+        first = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="錄音雜訊問題",
+            status="open",
+            importance=0.5,
+            summary="錄音時出現穩定的麥克風噪音。",
+        )
+        with patch("incremental_store._semantic_issue_similarity", return_value=0.91):
+            second = upsert_issue(
+                self.db_path,
+                self.transcript_id,
+                title="麥克風噪聲影響錄音品質",
+                status="open",
+                importance=0.5,
+                summary="同一個持續性的錄音噪音問題仍未解決。",
+                api_key="test-key",
+                embed_cache=object(),
+            )
+
+        issues = load_issues(self.db_path, self.transcript_id)
+        self.assertEqual(first["issue_id"], second["issue_id"])
+        self.assertEqual(len(issues), 1)
+
     def test_episode_count_groups_nearby_mentions(self) -> None:
         self.assertEqual(count_issue_episodes([10, 11, 12, 13]), 1)
-        self.assertEqual(count_issue_episodes([10, 11, 20, 21, 40]), 3)
+        self.assertEqual(count_issue_episodes([10, 11, 20, 21, 40]), 2)
+        self.assertEqual(count_issue_episodes([10, 11, 30, 31, 60]), 3)
 
     def test_consecutive_issue_mentions_do_not_raise_importance_as_recurrence(self) -> None:
         issue = upsert_issue(
@@ -221,7 +307,7 @@ class IncrementalBridgeTests(unittest.TestCase):
             summary="Temporal retrieval keeps coming up.",
         )
 
-        for line_id in [10, 11, 20, 21, 40]:
+        for line_id in [10, 11, 30, 31, 60]:
             record_issue_mention(
                 self.db_path,
                 self.transcript_id,
@@ -235,6 +321,44 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(issues[0]["mention_count"], 5)
         self.assertEqual(issues[0]["episode_count"], 3)
         self.assertEqual(issues[0]["importance"], 0.76)
+
+    def test_generic_agenda_issue_importance_is_capped(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="週三會議議程",
+            status="open",
+            importance=0.9,
+            summary="週三會議的固定議程與流程安排。",
+        )
+        for line_id in [10, 30, 50, 70]:
+            record_issue_mention(
+                self.db_path,
+                self.transcript_id,
+                issue["issue_id"],
+                line_id=line_id,
+                purpose="forward_scan",
+            )
+
+        issues = load_issues(self.db_path, self.transcript_id)
+
+        self.assertEqual(issues[0]["episode_count"], 4)
+        self.assertEqual(issues[0]["importance"], 0.6)
+
+    def test_social_issue_importance_is_capped(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="提拉米蘇品嚐比賽與燒烤活動",
+            status="open",
+            importance=0.9,
+            summary="週末將舉辦提拉米蘇盲測與燒烤活動。",
+        )
+
+        issues = load_issues(self.db_path, self.transcript_id)
+
+        self.assertEqual(issue["issue_id"], issues[0]["issue_id"])
+        self.assertEqual(issues[0]["importance"], 0.5)
 
     def test_l1_object_creation_reuses_existing_normalizer(self) -> None:
         raw_object = {
@@ -254,6 +378,303 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(normalized[0]["type"], "todo")
         self.assertTrue(normalized[0]["content"].startswith("待辦："))
         self.assertEqual(normalized[0]["related_topics"], ["transcription", "experiment"])
+
+    def test_save_l1_object_resolves_issue_key_reference(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Transcription specification development",
+            issue_key="transcription_specification_development",
+            status="open",
+            importance=0.7,
+            summary="Need one durable transcription specification.",
+        )
+        raw_object = {
+            "type": "method_change",
+            "content": "建立一份整體轉錄規格。",
+            "importance": 0.72,
+            "evidence": "We need a transcription specification.",
+            "related_topics": ["transcription"],
+        }
+
+        save_l1_object(
+            self.db_path,
+            self.transcript_id,
+            raw_object,
+            issue_id="transcription_specification_development",
+        )
+        loaded = load_l1_objects(
+            self.db_path,
+            self.transcript_id,
+            include_issue_metadata=True,
+        )
+
+        self.assertEqual(loaded[0]["_issue_id"], issue["issue_id"])
+
+    def test_linked_high_importance_issue_boosts_raw_l1_before_normalization(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Recurring temporal retrieval problem",
+            status="open",
+            importance=0.5,
+            summary="Temporal retrieval returns outdated context.",
+        )
+        for line_id in [10, 30, 50, 70]:
+            record_issue_mention(
+                self.db_path,
+                self.transcript_id,
+                issue["issue_id"],
+                line_id=line_id,
+                purpose="forward_scan",
+            )
+
+        raw_object = {
+            "type": "decision",
+            "content": "Add temporal anchors to retrieval.",
+            "importance": 0.5,
+            "evidence": "Retrieval needs meeting dates.",
+            "related_topics": ["retrieval"],
+        }
+        save_l1_object(
+            self.db_path,
+            self.transcript_id,
+            raw_object,
+            issue_id=issue["issue_id"],
+        )
+
+        default_loaded = load_l1_objects(self.db_path, self.transcript_id)
+        loaded_with_link = load_l1_objects(
+            self.db_path,
+            self.transcript_id,
+            include_issue_metadata=True,
+        )
+        issues = load_issues(self.db_path, self.transcript_id)
+        adjusted = propagate_issue_importance_to_raw_objects(loaded_with_link, issues)
+        normalized = normalize_memory_objects(adjusted, self.transcript_id)
+
+        self.assertNotIn("_issue_id", default_loaded[0])
+        self.assertEqual(loaded_with_link[0]["_issue_id"], issue["issue_id"])
+        self.assertEqual(issues[0]["episode_count"], 4)
+        self.assertEqual(issues[0]["importance"], 0.85)
+        self.assertEqual(adjusted[0]["importance"], 0.54)
+        self.assertGreaterEqual(normalized[0]["importance"], 0.56)
+        self.assertNotIn("_issue_id", normalized[0])
+
+    def test_candidate_review_dedupes_near_identical_objects(self) -> None:
+        raw_objects = [
+            {
+                "type": "decision",
+                "content": "Add meeting dates to retrieval memory.",
+                "importance": 0.55,
+                "evidence": "We agreed to add meeting dates to retrieval memory.",
+                "related_topics": ["retrieval"],
+            },
+            {
+                "type": "decision",
+                "content": "Add meeting dates to retrieval memory.",
+                "importance": 0.62,
+                "evidence": "We agreed to add meeting dates to retrieval memory for stale-context fixes.",
+                "related_topics": ["temporal"],
+            },
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(stats["input"], 2)
+        self.assertEqual(stats["kept"], 1)
+        self.assertEqual(stats["dropped_duplicate"], 1)
+        self.assertEqual(stats["dropped_weak"], 0)
+        self.assertEqual(len(reviewed), 1)
+        self.assertEqual(reviewed[0]["importance"], 0.62)
+        self.assertEqual(reviewed[0]["related_topics"], ["temporal", "retrieval"])
+        self.assertIn("stale-context", reviewed[0]["evidence"])
+        self.assertIn("_candidate_review", reviewed[0])
+
+    def test_candidate_review_drops_weak_unlinked_speculative_object(self) -> None:
+        raw_objects = [
+            {
+                "type": "argument",
+                "content": "Maybe this concern is not important.",
+                "importance": 0.5,
+                "evidence": "",
+                "related_topics": [],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(reviewed, [])
+        self.assertEqual(stats["input"], 1)
+        self.assertEqual(stats["kept"], 0)
+        self.assertEqual(stats["dropped_duplicate"], 0)
+        self.assertEqual(stats["dropped_weak"], 1)
+
+    def test_candidate_review_rewards_issue_aligned_object(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Temporal retrieval returns outdated context",
+            status="open",
+            importance=0.5,
+            summary="Meeting dates are missing from retrieval context.",
+        )
+        raw_objects = [
+            {
+                "type": "decision",
+                "content": "Add meeting dates to retrieval context.",
+                "importance": 0.5,
+                "evidence": "Retrieval returns outdated context without dates.",
+                "related_topics": ["retrieval"],
+                "_issue_id": issue["issue_id"],
+            }
+        ]
+
+        issues = load_issues(self.db_path, self.transcript_id)
+        reviewed, stats = review_incremental_candidates(raw_objects, issues)
+
+        self.assertEqual(stats["kept"], 1)
+        self.assertGreater(reviewed[0]["_candidate_review"]["issue_overlap"], 0.12)
+        self.assertIn("issue_aligned:+0.03", reviewed[0]["_candidate_review"]["adjustments"])
+        self.assertEqual(reviewed[0]["importance"], 0.53)
+
+    def test_candidate_review_merges_same_issue_checklist_fragments(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Transcription specification development",
+            issue_key="transcription_specification_development",
+            status="open",
+            importance=0.8,
+            summary="Need one durable transcription specification.",
+        )
+        raw_objects = [
+            {
+                "type": "method_change",
+                "content": "需要建立一份完整的轉錄規格，從 NIST spec 出發整理 speaker、channel、metadata 欄位。",
+                "importance": 0.88,
+                "evidence": "We need a transcription specification.",
+                "related_topics": ["transcription"],
+                "_issue_id": issue["issue_id"],
+            },
+            {
+                "type": "method_change",
+                "content": "轉錄規格需要包含：audio file name, audio file path, audio file format, audio file size, audio file duration, sample rate, bit depth, channel mapping, speaker, participant, microphone, transmission, notes, comments。",
+                "importance": 0.9,
+                "evidence": "The transcription specification needs to include audio metadata.",
+                "related_topics": ["metadata"],
+                "_issue_id": issue["issue_id"],
+            },
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, load_issues(self.db_path, self.transcript_id))
+
+        self.assertEqual(stats["kept"], 1)
+        self.assertEqual(stats["dropped_duplicate"], 1)
+        self.assertIn("merged_same_issue:+0.00", reviewed[0]["_candidate_review"]["adjustments"])
+        self.assertIn("建立一份完整的轉錄規格", reviewed[0]["content"])
+
+    def test_candidate_review_caps_speculative_importance(self) -> None:
+        raw_objects = [
+            {
+                "type": "open_question",
+                "content": "是否需要額外磁碟空間仍然是未解問題。",
+                "importance": 0.99,
+                "evidence": "Do we have enough disk space?",
+                "related_topics": ["storage"],
+            }
+        ]
+
+        reviewed, _ = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(reviewed[0]["importance"], 0.85)
+        self.assertIn("type_cap:0.85", reviewed[0]["_candidate_review"]["adjustments"])
+
+    def test_candidate_review_drops_low_value_social_result(self) -> None:
+        raw_objects = [
+            {
+                "type": "result",
+                "content": "週末將舉辦提拉米蘇品嚐比賽並搭配燒烤活動。",
+                "importance": 0.62,
+                "evidence": "There will be a tiramisu tasting and barbecue this weekend.",
+                "related_topics": ["social"],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(reviewed, [])
+        self.assertEqual(stats["dropped_weak"], 1)
+
+    def test_candidate_review_drops_low_value_logistics_result(self) -> None:
+        raw_objects = [
+            {
+                "type": "result",
+                "content": "已訂購更舒適的耳機，離開時記得關閉麥克風。",
+                "importance": 0.58,
+                "evidence": "They already ordered more comfortable headsets and reminded everyone to turn off the microphones.",
+                "related_topics": ["setup"],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(reviewed, [])
+        self.assertEqual(stats["dropped_weak"], 1)
+
+    def test_issue_line_compaction_and_purpose_inference(self) -> None:
+        compacted = _compact_issue_line_ids(list(range(10, 40)))
+        self.assertLessEqual(len(compacted), 8)
+        self.assertEqual(compacted[0], 10)
+        self.assertEqual(compacted[-1], 39)
+
+        purpose = _infer_issue_purpose(
+            explicit_purpose="",
+            line_ids=[105, 110],
+            recent_reads=[
+                ReadSpanRecord(purpose="forward_scan", start_line=101, end_line=120),
+                ReadSpanRecord(purpose="lookback", start_line=80, end_line=100),
+            ],
+        )
+        self.assertEqual(purpose, "forward_scan")
+
+    def test_line_ids_are_bounded_to_recent_span(self) -> None:
+        bounded = _bound_line_ids_to_recent_span(
+            [105, 130, 999],
+            recent_reads=[
+                ReadSpanRecord(purpose="lookback", start_line=80, end_line=100),
+                ReadSpanRecord(purpose="forward_scan", start_line=101, end_line=120),
+            ],
+            explicit_purpose="forward_scan",
+        )
+        self.assertEqual(bounded, [105, 120])
+
+    def test_sanitize_issue_id_ref_rejects_raw_object_ids(self) -> None:
+        self.assertEqual(_sanitize_issue_id_ref("RAW-Unit001-abc123"), "")
+        self.assertEqual(_sanitize_issue_id_ref("L1-Unit001-001"), "")
+        self.assertEqual(_sanitize_issue_id_ref("ISS-Unit001-abc123"), "ISS-Unit001-abc123")
+
+    def test_single_key_request_interval_defaults_to_free_tier_safe_value(self) -> None:
+        self.assertEqual(_min_request_interval_for_key_count(1), 12.5)
+        self.assertEqual(_min_request_interval_for_key_count(2), 0.0)
+
+    def test_single_key_mode_uses_higher_retry_budget(self) -> None:
+        self.assertEqual(_max_retry_attempts_for_key_count(1), 6)
+        self.assertEqual(_max_retry_attempts_for_key_count(2), 4)
+
+    def test_single_key_initial_prompt_mentions_request_budgeting(self) -> None:
+        prompt = _build_initial_prompt(
+            "Unit001",
+            120,
+            40,
+            request_constrained=True,
+        )
+        self.assertIn("Use as few model turns as possible", prompt)
+        self.assertIn("next forward_scan span", prompt)
+
+    def test_retry_delay_parsing_from_quota_error_text(self) -> None:
+        exc = RuntimeError("429 RESOURCE_EXHAUSTED. Please retry in 1.260354859s.")
+        self.assertEqual(_extract_retry_delay_seconds(exc), 1.260354859)
 
     def test_l1_importance_uses_shared_calibration(self) -> None:
         raw_objects = [
@@ -279,6 +700,51 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(normalized[0]["type"], "method_change")
         self.assertGreaterEqual(normalized[0]["importance"], 0.5)
 
+    def test_incremental_final_importance_caps_apply_by_type(self) -> None:
+        capped = apply_incremental_final_importance_caps(
+            [
+                {"type": "open_question", "importance": 0.99, "content": "Q"},
+                {"type": "decision", "importance": 1.0, "content": "D"},
+                {"type": "todo", "importance": 0.82, "content": "T"},
+            ]
+        )
+
+        self.assertEqual(capped[0]["importance"], 0.80)
+        self.assertEqual(capped[1]["importance"], 0.92)
+        self.assertEqual(capped[2]["importance"], 0.65)
+
+    def test_direct_issue_importance_cap_helpers(self) -> None:
+        self.assertEqual(
+            calibrate_issue_importance(
+                0.95,
+                episode_count=6,
+                status="open",
+                title="meeting agenda",
+                summary="weekly meeting agenda and logistics",
+            ),
+            0.6,
+        )
+        self.assertEqual(
+            calibrate_issue_importance(
+                0.95,
+                episode_count=6,
+                status="open",
+                title="tiramisu tasting",
+                summary="weekend barbecue and dessert event",
+            ),
+            0.5,
+        )
+        self.assertEqual(
+            calibrate_issue_importance(
+                0.95,
+                episode_count=4,
+                status="open",
+                title="recording instructions",
+                summary="turn off microphones and use more comfortable headsets",
+            ),
+            0.55,
+        )
+
     def test_incremental_stop_condition_helpers(self) -> None:
         self.assertEqual(next_forward_span(0, 5, 2), (1, 2))
         self.assertFalse(should_stop(2, 5))
@@ -299,8 +765,31 @@ class IncrementalBridgeTests(unittest.TestCase):
         )
         self.assertTrue(should_stop(progress, 5))
 
+    def test_forward_scan_read_is_forced_to_expected_progress_window(self) -> None:
+        transcript = "\n".join(f"[S]: line {index}" for index in range(1, 81))
+        seed_transcript_lines(self.db_path, self.transcript_id, transcript)
+
+        payload, new_progress = _execute_tool_call(
+            db_path=self.db_path,
+            transcript_id=self.transcript_id,
+            function_call=types.FunctionCall(
+                name="read_transcript",
+                args={"start_line": 1, "end_line": 5, "purpose": "forward_scan"},
+            ),
+            max_line=80,
+            max_forward_line=40,
+            chunk_size=10,
+            recent_reads=[],
+        )
+
+        self.assertEqual(payload["output"]["start_line"], 41)
+        self.assertEqual(payload["output"]["end_line"], 50)
+        self.assertEqual(payload["correction"]["requested_start_line"], 1)
+        self.assertEqual(payload["correction"]["enforced_start_line"], 41)
+        self.assertEqual(new_progress, 50)
+
     def test_auto_tool_rounds_scales_with_transcript_length(self) -> None:
-        self.assertEqual(auto_max_tool_rounds(5746, 40), 596)
+        self.assertEqual(auto_max_tool_rounds(5746, 40), 1192)
 
         resolved, is_auto = resolve_max_tool_rounds(
             0,
@@ -308,7 +797,7 @@ class IncrementalBridgeTests(unittest.TestCase):
             chunk_size=40,
         )
         self.assertTrue(is_auto)
-        self.assertEqual(resolved, 596)
+        self.assertEqual(resolved, 1192)
 
         resolved, is_auto = resolve_max_tool_rounds(
             80,

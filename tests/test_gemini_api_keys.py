@@ -55,6 +55,17 @@ class GeminiApiKeyTests(unittest.TestCase):
 
         self.assertEqual(keys, ["key_a", "key_b", "key_c"])
 
+    def test_parse_legacy_numbered_keys_without_underscore(self) -> None:
+        keys = parse_gemini_api_keys_from_env(
+            {
+                "GEMINI_API_KEY1": "key_a",
+                "GEMINI_API_KEY2": "key_b",
+                "GEMINI_API_KEY3": "key_c",
+            }
+        )
+
+        self.assertEqual(keys, ["key_a", "key_b", "key_c"])
+
     def test_normalize_api_keys_deduplicates(self) -> None:
         self.assertEqual(
             normalize_api_keys("key_a, key_b; key_a"),

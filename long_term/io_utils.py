@@ -42,7 +42,10 @@ def parse_gemini_api_keys_from_env(env: dict[str, str] | None = None) -> list[st
         return multi_keys
 
     numbered_keys = _dedupe(
-        [source.get(f"GEMINI_API_KEY_{i}", "") for i in range(1, 10)]
+        [
+            source.get(f"GEMINI_API_KEY_{i}", "") or source.get(f"GEMINI_API_KEY{i}", "")
+            for i in range(1, 10)
+        ]
     )
     if numbered_keys:
         return numbered_keys

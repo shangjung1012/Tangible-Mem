@@ -7,6 +7,8 @@ import argparse
 import json
 import os
 import random
+import re
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -16,12 +18,40 @@ from gemini_clients import create_gemini_client
 from importance import (
     IMPORTANCE_SCALE,
     MIN_IMPORTANCE_THRESHOLD,
+    apply_linked_issue_importance_bonus,
     calibrate_l1_importance,
+    is_low_value_text,
+    linked_issue_importance_bonus,
+    normalize_importance_score,
 )
 from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
 from schema import BRIDGE_RESPONSE_SCHEMA, DEFAULT_MODEL_NAME, MEMORY_OBJ_TYPES
 
 TODO_PREFIXES = ("需要", "待辦", "應", "計劃", "必須")
+_CANDIDATE_TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+", re.IGNORECASE)
+_SPECULATIVE_OBJ_TYPES = {"argument", "open_question"}
+_CHECKLIST_MARKERS = (
+    "needs to include",
+    "should include",
+    "include:",
+    "includes:",
+    "包含：",
+    "需要包含",
+    "應包含",
+)
+_INCREMENTAL_TYPE_IMPORTANCE_CAPS = {
+    "argument": 0.8,
+    "open_question": 0.85,
+    "result": 0.9,
+}
+_INCREMENTAL_FINAL_TYPE_IMPORTANCE_CAPS = {
+    "decision": 0.92,
+    "method_change": 0.88,
+    "result": 0.88,
+    "todo": 0.65,
+    "open_question": 0.80,
+    "argument": 0.76,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +258,360 @@ def normalize_memory_objects(
     return normalized
 
 
+def _candidate_tokens(text: str) -> list[str]:
+    return [token.lower() for token in _CANDIDATE_TOKEN_RE.findall(str(text or ""))]
+
+
+def _candidate_signature(obj_type: str, content: str) -> tuple[str, tuple[str, ...]]:
+    tokens = _candidate_tokens(content)
+    return str(obj_type or "").lower(), tuple(tokens[:10])
+
+
+def _jaccard_overlap(left: list[str], right: list[str]) -> float:
+    left_set = set(left)
+    right_set = set(right)
+    if not left_set or not right_set:
+        return 0.0
+    return len(left_set & right_set) / len(left_set | right_set)
+
+
+def _merge_topics(left: list[str], right: list[str]) -> list[str]:
+    merged: list[str] = []
+    for topic in [*left, *right]:
+        clean = str(topic).strip()
+        if clean and clean not in merged:
+            merged.append(clean)
+    return merged
+
+
+def _token_overlap_ratio(left: list[str], right: list[str]) -> float:
+    left_set = set(left)
+    right_set = set(right)
+    if not left_set or not right_set:
+        return 0.0
+    return len(left_set & right_set) / min(len(left_set), len(right_set))
+
+
+def _is_checklist_like(content: str) -> bool:
+    text = str(content or "")
+    lowered = text.lower()
+    comma_count = text.count(",") + text.count("，") + text.count(";") + text.count("；")
+    token_count = len(_candidate_tokens(text))
+    return (
+        any(marker in lowered for marker in _CHECKLIST_MARKERS)
+        or comma_count >= 8
+        or token_count >= 55
+    )
+
+
+def _choose_more_durable_candidate(
+    current: dict[str, Any],
+    existing: dict[str, Any],
+) -> dict[str, Any]:
+    current_content = str(current.get("content") or "")
+    existing_content = str(existing.get("content") or "")
+    current_checklist = _is_checklist_like(current_content)
+    existing_checklist = _is_checklist_like(existing_content)
+
+    if current_checklist != existing_checklist:
+        return current if not current_checklist else existing
+
+    current_tokens = len(_candidate_tokens(current_content))
+    existing_tokens = len(_candidate_tokens(existing_content))
+    if current_tokens != existing_tokens:
+        return current if current_tokens < existing_tokens else existing
+
+    current_score = normalize_importance_score(current.get("importance", 0.0), fallback=0.0)
+    existing_score = normalize_importance_score(existing.get("importance", 0.0), fallback=0.0)
+    return current if current_score >= existing_score else existing
+
+
+def _merge_candidate_rows(
+    preferred: dict[str, Any],
+    other: dict[str, Any],
+) -> dict[str, Any]:
+    merged = dict(preferred)
+    preferred_evidence = str(preferred.get("evidence") or "")
+    other_evidence = str(other.get("evidence") or "")
+    if len(other_evidence) > len(preferred_evidence):
+        merged["evidence"] = other_evidence
+    merged["related_topics"] = _merge_topics(
+        preferred.get("related_topics", []),
+        other.get("related_topics", []),
+    )
+    merged["importance"] = max(
+        normalize_importance_score(preferred.get("importance", 0.0), fallback=0.0),
+        normalize_importance_score(other.get("importance", 0.0), fallback=0.0),
+    )
+    merged_review = dict(merged.get("_candidate_review", {}))
+    other_adjustments = list(other.get("_candidate_review", {}).get("adjustments", []))
+    merged_adjustments = list(merged_review.get("adjustments", []))
+    merged_adjustments.extend(
+        adjustment
+        for adjustment in other_adjustments
+        if adjustment not in merged_adjustments
+    )
+    if "merged_same_issue:+0.00" not in merged_adjustments:
+        merged_adjustments.append("merged_same_issue:+0.00")
+    merged_review["adjustments"] = merged_adjustments
+    merged["_candidate_review"] = merged_review
+    return merged
+
+
+def _find_issue_group_duplicate_index(
+    reviewed: list[dict[str, Any]],
+    row: dict[str, Any],
+    *,
+    issue_id: str,
+    obj_type: str,
+    content_tokens: list[str],
+) -> int | None:
+    if not issue_id or not content_tokens:
+        return None
+    checklist_like = _is_checklist_like(row.get("content", ""))
+    for index, existing in enumerate(reviewed):
+        existing_issue_id = str(existing.get("_issue_id") or existing.get("issue_id") or "").strip()
+        existing_type = str(existing.get("type") or "").lower()
+        if existing_issue_id != issue_id or existing_type != obj_type:
+            continue
+        existing_tokens = _candidate_tokens(existing.get("content", ""))
+        overlap = _token_overlap_ratio(content_tokens, existing_tokens)
+        if overlap >= 0.55:
+            return index
+        if checklist_like and overlap >= 0.2:
+            return index
+    return None
+
+
+def review_incremental_candidates(
+    raw_objects: list[dict[str, Any]],
+    issues: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Lightweight incremental-only candidate review before final normalization.
+
+    This pass is intentionally bounded and deterministic:
+    - dedupe near-identical raw objects
+    - penalize unsupported speculative objects
+    - lightly reward/punish consistency with a linked issue
+    """
+    issue_by_id = {
+        str(issue.get("issue_id") or ""): issue
+        for issue in issues
+        if str(issue.get("issue_id") or "").strip()
+    }
+    reviewed: list[dict[str, Any]] = []
+    signature_index: dict[tuple[str, tuple[str, ...]], int] = {}
+    stats = {
+        "input": len(raw_objects),
+        "kept": 0,
+        "dropped_duplicate": 0,
+        "dropped_weak": 0,
+    }
+
+    for raw_object in raw_objects:
+        row = dict(raw_object)
+        obj_type = str(row.get("type") or "decision").lower()
+        content = str(row.get("content") or "").strip()
+        evidence = str(row.get("evidence") or "").strip()
+        related_topics = [
+            str(topic).strip()
+            for topic in row.get("related_topics", [])
+            if str(topic).strip()
+        ] if isinstance(row.get("related_topics", []), list) else []
+        issue_id = str(row.get("_issue_id") or row.get("issue_id") or "").strip()
+        linked_issue = issue_by_id.get(issue_id)
+
+        if not content:
+            stats["dropped_weak"] += 1
+            continue
+
+        base_importance = normalize_importance_score(row.get("importance", 0.5))
+        reviewed_importance = base_importance
+        adjustments: list[str] = []
+
+        evidence_tokens = _candidate_tokens(evidence)
+        content_tokens = _candidate_tokens(content)
+        topic_tokens = _candidate_tokens(" ".join(related_topics))
+        object_tokens = [*content_tokens, *evidence_tokens, *topic_tokens]
+        checklist_like = _is_checklist_like(content)
+
+        if not evidence_tokens:
+            reviewed_importance = normalize_importance_score(reviewed_importance - 0.06)
+            adjustments.append("missing_evidence:-0.06")
+        elif len(evidence_tokens) < 4:
+            reviewed_importance = normalize_importance_score(reviewed_importance - 0.03)
+            adjustments.append("short_evidence:-0.03")
+
+        if checklist_like:
+            reviewed_importance = normalize_importance_score(reviewed_importance - 0.08)
+            adjustments.append("checklist_fragment:-0.08")
+
+        issue_overlap = 0.0
+        issue_text = ""
+        if linked_issue is not None:
+            issue_text = f"{linked_issue.get('title', '')}\n{linked_issue.get('summary', '')}"
+            issue_tokens = _candidate_tokens(
+                f"{linked_issue.get('title', '')} {linked_issue.get('summary', '')}"
+            )
+            issue_overlap = _jaccard_overlap(object_tokens, issue_tokens)
+            if issue_overlap >= 0.12:
+                reviewed_importance = normalize_importance_score(reviewed_importance + 0.03)
+                adjustments.append("issue_aligned:+0.03")
+            elif issue_overlap < 0.04:
+                reviewed_importance = normalize_importance_score(reviewed_importance - 0.04)
+                adjustments.append("issue_misaligned:-0.04")
+        elif obj_type in _SPECULATIVE_OBJ_TYPES:
+            reviewed_importance = normalize_importance_score(reviewed_importance - 0.05)
+            adjustments.append("unlinked_speculative:-0.05")
+
+        low_value_object = is_low_value_text(f"{content}\n{evidence}")
+        low_value_issue = bool(issue_text) and is_low_value_text(issue_text)
+        if low_value_object:
+            reviewed_importance = normalize_importance_score(reviewed_importance - 0.18)
+            adjustments.append("low_value_context:-0.18")
+        if low_value_issue:
+            reviewed_importance = normalize_importance_score(reviewed_importance - 0.10)
+            adjustments.append("low_value_issue:-0.10")
+
+        if (
+            linked_issue is None
+            and obj_type in _SPECULATIVE_OBJ_TYPES
+            and not evidence_tokens
+            and base_importance < 0.6
+        ):
+            stats["dropped_weak"] += 1
+            continue
+        if (
+            (low_value_object or low_value_issue)
+            and obj_type in {"result", "argument", "open_question", "todo"}
+            and reviewed_importance < 0.60
+        ):
+            stats["dropped_weak"] += 1
+            continue
+
+        type_cap = _INCREMENTAL_TYPE_IMPORTANCE_CAPS.get(obj_type)
+        if type_cap is not None and reviewed_importance > type_cap:
+            reviewed_importance = normalize_importance_score(type_cap)
+            adjustments.append(f"type_cap:{type_cap:.2f}")
+
+        row["importance"] = reviewed_importance
+        row["_candidate_review"] = {
+            "base_importance": base_importance,
+            "reviewed_importance": reviewed_importance,
+            "issue_overlap": round(issue_overlap, 3),
+            "adjustments": adjustments,
+        }
+        row["related_topics"] = related_topics
+
+        signature = _candidate_signature(obj_type, content)
+        if signature[1] and signature in signature_index:
+            kept_idx = signature_index[signature]
+            existing = reviewed[kept_idx]
+            existing_score = normalize_importance_score(existing.get("importance", 0.0), fallback=0.0)
+            current_score = normalize_importance_score(row.get("importance", 0.0), fallback=0.0)
+            if current_score > existing_score:
+                row["related_topics"] = _merge_topics(
+                    related_topics,
+                    existing.get("related_topics", []),
+                )
+                if len(evidence) < len(str(existing.get("evidence") or "")):
+                    row["evidence"] = str(existing.get("evidence") or "")
+                reviewed[kept_idx] = row
+            else:
+                existing["related_topics"] = _merge_topics(
+                    existing.get("related_topics", []),
+                    related_topics,
+                )
+                if len(evidence) > len(str(existing.get("evidence") or "")):
+                    existing["evidence"] = evidence
+                existing["importance"] = max(
+                    normalize_importance_score(existing.get("importance", 0.0), fallback=0.0),
+                    current_score,
+                )
+            stats["dropped_duplicate"] += 1
+            continue
+
+        merge_idx = _find_issue_group_duplicate_index(
+            reviewed,
+            row,
+            issue_id=issue_id,
+            obj_type=obj_type,
+            content_tokens=content_tokens,
+        )
+        if merge_idx is not None:
+            existing = reviewed[merge_idx]
+            preferred = _choose_more_durable_candidate(row, existing)
+            other = existing if preferred is row else row
+            reviewed[merge_idx] = _merge_candidate_rows(preferred, other)
+            stats["dropped_duplicate"] += 1
+            continue
+
+        signature_index[signature] = len(reviewed)
+        reviewed.append(row)
+
+    stats["kept"] = len(reviewed)
+    return reviewed, stats
+
+
+def propagate_issue_importance_to_raw_objects(
+    raw_objects: list[dict[str, Any]],
+    issues: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Apply a small bounded bonus from recurring linked issues before normalization.
+
+    This is incremental-only metadata propagation. The final L1 schema is unchanged
+    because normalize_memory_objects() ignores the internal _issue_id fields.
+    """
+    issue_importance_by_id = {
+        str(issue.get("issue_id") or ""): issue.get("importance", 0.0)
+        for issue in issues
+        if str(issue.get("issue_id") or "").strip()
+    }
+    issue_importance_by_key = {
+        str(issue.get("issue_key") or ""): issue.get("importance", 0.0)
+        for issue in issues
+        if str(issue.get("issue_key") or "").strip()
+    }
+    adjusted: list[dict[str, Any]] = []
+    for raw_object in raw_objects:
+        row = dict(raw_object)
+        issue_id = str(row.get("_issue_id") or row.get("issue_id") or "").strip()
+        issue_importance = issue_importance_by_id.get(issue_id)
+        if issue_importance is None:
+            issue_importance = issue_importance_by_key.get(issue_id)
+        if issue_importance is None:
+            adjusted.append(row)
+            continue
+
+        bonus = linked_issue_importance_bonus(issue_importance)
+        if bonus > 0:
+            row["importance"] = apply_linked_issue_importance_bonus(
+                row.get("importance", 0.5),
+                issue_importance,
+            )
+        adjusted.append(row)
+    return adjusted
+
+
+def apply_incremental_final_importance_caps(
+    memory_objects: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Keep incremental final scores readable without touching full-mode behavior."""
+    capped: list[dict[str, Any]] = []
+    for memory_object in memory_objects:
+        row = dict(memory_object)
+        obj_type = str(row.get("type") or "").lower()
+        type_cap = _INCREMENTAL_FINAL_TYPE_IMPORTANCE_CAPS.get(obj_type)
+        if type_cap is not None:
+            importance = normalize_importance_score(
+                row.get("importance", 0.0),
+                fallback=0.0,
+            )
+            row["importance"] = min(importance, type_cap)
+        capped.append(row)
+    return capped
+
+
 # ---------------------------------------------------------------------------
 # Tree insertion
 # ---------------------------------------------------------------------------
@@ -377,7 +761,23 @@ def main() -> None:
             chunk_size=args.chunk_size,
             max_tool_rounds=args.max_tool_rounds,
         )
-        raw_objects = incremental_result.raw_objects
+        reviewed_raw_objects, review_stats = review_incremental_candidates(
+            incremental_result.raw_objects,
+            incremental_result.issues,
+        )
+        print(
+            (
+                f"[incremental] candidate review: kept={review_stats['kept']}/"
+                f"{review_stats['input']}, dropped_duplicate={review_stats['dropped_duplicate']}, "
+                f"dropped_weak={review_stats['dropped_weak']}"
+            ),
+            file=sys.stderr,
+            flush=True,
+        )
+        raw_objects = propagate_issue_importance_to_raw_objects(
+            reviewed_raw_objects,
+            incremental_result.issues,
+        )
     else:
         llm_output = call_gemini_bridge(
             model_name=args.model,
@@ -389,6 +789,8 @@ def main() -> None:
         raw_objects = llm_output.get("memory_objects", [])
 
     memory_objects = normalize_memory_objects(raw_objects, meeting_id)
+    if args.mode == "incremental":
+        memory_objects = apply_incremental_final_importance_caps(memory_objects)
 
     insert_meeting_into_tree(
         tree=tree,
