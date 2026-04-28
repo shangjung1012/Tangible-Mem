@@ -1,0 +1,1141 @@
+[me018]: OK.
+[me013]: Uh.
+[me013]: Somebody else should run this.
+[me013]: I'm sick of being the one to sort of go through and say, "Well, what do you think about this?"
+[me013]: You wanna - ?
+[me018]: Should we take turns? You want me to run it today?
+[mn052]: Yeah.
+[me013]: Yeah. Why don't you run it today? OK.
+[me018]: OK.
+[me018]: OK. Um.
+[me018]: Let's see, maybe we should just get a list of items -
+[me018]: things that we should talk about.
+[me018]: Um,
+[me018]: I guess there's the usual updates, everybody going around and saying,
+[me018]: uh, you know, what they're working on, the things that happened the last week.
+[me018]: But aside from that is there anything in particular that anybody wants to bring up
+[mn052]: Mmm.
+[me018]: for today?
+[me018]: No? OK. So why don't we just around and people can give updates. Uh, do you want to start, Stephane?
+[fn002]: Oh.
+[mn007]: Alright. Um. Well, the first thing maybe is that the p- Eurospeech paper is, uh, accepted.
+[mn007]: Um. Yeah.
+[me018]: This is - what - what do you, uh - what's in the paper there?
+[mn007]: So it's the paper that describe basically the, um,
+[mn007]: system that were proposed for the Aurora.
+[me018]: The one that we s- we submitted the last round?
+[mn007]: Right, yeah.
+[me018]: Uh-huh.
+[mn052]: Yeah.
+[mn007]: Um - Yeah. So and the, fff comments seems - from the reviewer are good. So.
+[me018]: Hmm.
+[mn007]: Mmm -
+[mn007]: Yeah.
+[me018]: Where - where's it gonna be this year?
+[mn007]: It's, uh, Aalborg in Denmark. And it's, yeah,
+[me018]: Oh, OK.
+[mn007]: September.
+[me018]: Mmm.
+[mn007]: Mmm -
+[mn007]: Yeah. Then, uh, whhh well, I've been working on - on t- mainly on on-line normalization this week.
+[mn007]: Uh, I've been trying different - slightly - slightly different approaches.
+[mn007]: Um, the first thing is trying to play a little bit again with the, um, time constant.
+[mn007]: Uh, second thing is, uh, the training of, uh, on-line normalization with two different means,
+[mn007]: one mean for the silence and one for the speech.
+[mn007]: Um,
+[mn007]: and so I have two recursions which are controlled by the, um, probability of the voice activity detector.
+[mn007]: Mmm.
+[mn007]: This actually don't s- doesn't seem to help,
+[mn007]: although it doesn't hurt. So.
+[mn007]: But - well, both on-line normalization approach seems equivalent.
+[me018]: Are the means pretty different for the two?
+[mn007]: Well, they -
+[mn007]: Yeah. They can be very different. Yeah. Mm-hmm.
+[me018]: Hmm.
+[me013]: So do you maybe make errors in different places? Different kinds of errors?
+[mn007]: I didn't look, uh, more closely. Um. It might be, yeah. Mm-hmm.
+[mn052]: @@
+[mn007]: Um.
+[mn007]: Well, eh, there is one thing that we can observe, is that the mean are more different for -
+[mn007]: for Czero and Cone than for the other coefficients.
+[mn007]: And -
+[mn007]: Yeah.
+[mn007]: And - Yeah, it - the Cone is -
+[mn007]: There are strange - strange thing happening with Cone, is that
+[mn007]: when you have different kind of noises, the mean for the - the silence portion is - can be
+[mn007]: different.
+[me018]: Hmm.
+[mn007]: And -
+[mn007]: So when you look at the trajectory of Cone, it's - has a strange shape and
+[mn007]: I was expecting th- the s- that these two mean helps, especially because of the - the strange
+[mn007]: Cze- Cone shape,
+[mn007]: uh, which can - like, yo- you can have,
+[mn007]: um,
+[mn007]: a trajectory for the speech and then when you are in the silence it goes somewhere, but if the noise is different it goes somewhere else.
+[me018]: Oh.
+[mn007]: So which would mean that if we estimate the mean based on all the signal, even though we have
+[mn007]: frame dropping, but we don't frame ev- uh, drop everything, but -
+[mn007]: uh, this can - hurts the estimation of the mean for speech, and -
+[mn007]: Mmm. But I still have to investigate further, I think.
+[mn007]: Um, a third thing is, um,
+[mn007]: that instead of
+[mn007]: t- having a fixed time constant,
+[mn007]: I try to have a time constant that's smaller at the beginning of the utterances
+[mn007]: to adapt more quickly to the r- something that's closer to the right mean.
+[mn007]: T- t- um -
+[mn007]: Yeah. And then this time constant increases and I have a threshold that -
+[me013]: Mm-hmm.
+[mn007]: well, if it's higher than a certain threshold, I keep it to this threshold to still,
+[mn007]: uh, adapt, um, the mean when -
+[me013]: Mm-hmm.
+[mn007]: if the utterance is, uh, long enough to - to continue to adapt after, like, one second or -
+[me013]: Mm-hmm.
+[mn007]: Mmm.
+[mn007]: Uh, well, this doesn't help neither, but this doesn't hurt. So, well.
+[mn007]: It seems pretty -
+[me018]: Wasn't there some experiment you were gonna try where you did something differently for each,
+[me018]: um, uh - I don't know whether it was each
+[me018]: mel band or each, uh, um, FFT bin or someth- There was something you were gonna -
+[me018]: uh,
+[me018]: some parameter you were gonna vary depending on the frequency.
+[me018]: I don't know if that was -
+[mn007]: I guess it was -
+[mn007]: I don't know. No. u- Maybe it's this - this idea of having different on-line normalization,
+[mn007]: um, tunings for the different MFCC's.
+[me018]: For each, uh -
+[me013]: Mm-hmm.
+[mn007]: But -
+[mn007]: Mm-hmm.
+[me018]: Yeah. I - I thought, Morgan, you brought it up a couple meetings ago. And then it was something about,
+[me018]: uh, some- and then somebody said "yeah, it does seem like, you know, Czero is
+[me018]: the one that's, you know, the major one" or, uh, s- I can't remember exactly what it was now.
+[mn007]: Mmm.
+[mn007]: Yeah. There - uh, actually, yeah.
+[mn007]: S- um, it's very important to normalize Czero and much less to normalize the other coefficients. And, um,
+[mn007]: actu- uh, well, at least with the current on-line normalization scheme. And
+[mn007]: we - I think, we
+[mn007]: kind of know that normalizing Cone doesn't help with the current scheme. And -
+[mn007]: and - Yeah.
+[mn007]: In my idea, I -
+[mn007]: I was thinking that the - the - the reason is maybe because of these funny things that happen between speech and silence which have different means.
+[mn007]: Um - Yeah.
+[mn007]: But maybe it's not so - so easy to -
+[me013]: Um,
+[me013]: I- I really would like to suggest looking, um,
+[me013]: a little bit at the kinds of errors. I know you can get lost in that and go forever and not see too much, but -
+[mn007]: Mm-hmm.
+[me013]: sometimes, but - but, um,
+[me013]: just seeing that each of these things didn't make things better may not
+[me013]: be enough. It may be that they're making them better in some ways and worse in others, or increasing insertions and decreasing deletions, or -
+[mn007]: Yeah.
+[mn007]: Mm-hmm.
+[me013]: or, um,
+[me013]: um,
+[me013]: you know, helping with noisy case but hurting in quiet case. And if you saw that then maybe you - it would -
+[me013]: something would occur to you of how to deal with that.
+[mn007]: Mm-hmm.
+[mn007]: Mm-hmm.
+[mn052]: Hmm.
+[mn007]: Alright.
+[mn007]: Mmm.
+[mn007]: Yeah. W- um,
+[mn007]: So that's it, I think, for the on-line normalization.
+[mn007]: Um -
+[mn007]: Yeah. I've been playing a little bit with
+[mn007]: some kind of thresholding, and,
+[mn007]: mmm,
+[mn007]: as a first experiment, I think I-
+[mn007]: Yeah. Well, what I did is t- is to take,
+[mn007]: um -
+[mn007]: to measure the average -
+[mn007]: no, the maximum energy of s- each utterance and then put a threshold -
+[mn007]: Well, this for each mel band.
+[mn007]: Then put a threshold that's fifteen DB below -
+[mn007]: well, uh, a couple of DB below this maximum, and -
+[me013]: Mm-hmm.
+[me013]: Mmm.
+[mn007]: Actually it was not a threshold, it was just adding noise.
+[me013]: Mm-hmm.
+[mn007]: So I was adding a white noise energy,
+[mn007]: uh, that's fifteen DB below the maximum energy of the utterance.
+[mn007]: And -
+[mn007]: Yeah. When we look at - at the, um, MFCC that result from this, they are a lot more smoother.
+[mn007]: Um,
+[mn007]: when we compare, like, a channel zero and channel one utterance -
+[mn007]: um, so a clean and, uh, the same noisy utterance -
+[mn007]: well, there is almost no difference between the cepstral coefficients of the two.
+[me018]: Hmm.
+[mn007]: Um.
+[mn007]: And - Yeah. And the result that we have in term of speech recognition, actually it's not - it's not worse,
+[mn007]: it's not better neither,
+[me018]: Hmm.
+[mn007]: but it's, um, kind of surprising that it's not worse because
+[me006]: Sorry.
+[mn007]: basically you add noise that's fifteen DB - just fifteen DB below the maximum energy. And
+[me018]: So why does that m- smooth things out? I don't - I don't understand that.
+[mn007]: at least -
+[me013]: Well, there's less difference. Right? Cuz it's -
+[mn007]: It's - I think, it's whitening -
+[mn007]: This - the portion that are more silent, as you add a white noise that are - has a very high energy, it whitens everything and -
+[me018]: Huh. Oh, OK.
+[mn007]: and the high-energy portion of the speech
+[mn007]: don't get much affected anyway by the other noise. And as the noise you add is the same is - the shape, it's also the same.
+[me018]: Hmm.
+[me013]: Yeah.
+[mn007]: So they have - the trajectory are very, very similar. And - and -
+[me013]: So, I mean, again, if you trained in one kind of noise and tested in the same kind of noise, you'd -
+[me013]: you know, given enough training data you don't do b- do badly.
+[me013]: The reason that we d- that we have the problems we have is because it's different in training and test. Even if
+[me013]: the general kind is the same, the exact instances are different. And - and
+[me018]: Mm-hmm.
+[me013]: so when you whiten it, then it's like you - the - the only noise -
+[me013]: to - to first order, the only th- noise that you have is white noise and you've added the same thing to training and test. So it's,
+[me018]: Mm-hmm.
+[me018]: Hmm.
+[me013]: uh -
+[me018]: So would that be similar to, like, doing the smoothing, then, over time or - ?
+[mn007]: Mm-hmm.
+[me013]: Well, it's a kind of smoothing, but -
+[mn007]: I think it's - I think it's different. It's -
+[mn007]: it's something that - yeah, that affects more or less the silence portions because -
+[me018]: Mm-hmm.
+[mn007]: Well, anyway, the sp- the portion of speech that ha- have high energy are not ch-
+[me013]: Mm-hmm.
+[mn007]: a lot affected by the noises in the Aurora database. If - if you compare
+[mn007]: th- the two shut channels of SpeechDat-Car during speech portion, it's n-
+[mn007]: n- n-
+[mn007]: the MFCC are not very different.
+[mn007]: They are very different when energy's lower, like during fricatives or during speech pauses.
+[mn007]: And,
+[mn007]: uh -
+[me013]: Yeah, but you're still getting more recognition errors, which means that the differences, even though they look like they're not so big,
+[me013]: are - are hurting your recognition. Right?
+[mn007]: Ye-
+[mn007]: Yeah. So it distort the speech. Right. Um.
+[me013]: Yeah.
+[me018]: So performance went down?
+[mn007]: No. It didn't. But -
+[me018]: Oh.
+[mn007]: Yeah. So, but in this case I - I really expect that maybe
+[mn007]: the - the two - these two stream of features, they are very different. I mean, and
+[mn007]: maybe we could gain something by combining them or -
+[me013]: Well, the other thing is that you just picked one particular way of doing it. Uh, I mean, first place it's fifteen DB, uh,
+[me013]: down across the utterance. And
+[me013]: maybe you'd want to have something that was a little more adaptive. Secondly, you happened to pick fifteen DB and
+[mn007]: Mmm.
+[mn007]: Yeah.
+[me013]: maybe twenty'd be better, or - or twelve.
+[mn007]: Yeah. Right.
+[me018]: So what was the - what was the threshold part of it? Was the threshold, uh, how far down - ?
+[me013]: Yeah. Well, he - yeah, he had to figure out how much to add.
+[me013]: So he was looking - he was looking at the peak value.
+[me018]: Uh-huh.
+[me013]: Right? And then -
+[mn007]: Uh-huh.
+[me018]: And - and so what's - ho- I don't understand. How does it go? If it - if - if the peak value's above some threshold, then you add the noise? Or if it's below s-
+[mn007]: I systematically add the noise, but
+[mn007]: the, um, noise level is just some kind of threshold below the peak.
+[me018]: Oh, oh. I see. I see.
+[mn007]: Mmm.
+[mn007]: Um.
+[me013]: Yeah.
+[mn007]: Yeah. Which is not really noise, actually. It's just adding a constant to each of the mel, uh, energy.
+[me018]: Mm-hmm.
+[mn007]: To each of the mel filter bank. Yeah.
+[me018]: I see.
+[mn007]: So, yeah, it's really, uh, white noise. I th-
+[me018]: Mm-hmm.
+[me013]: Yeah.
+[me013]: So then afterwards a log is taken, and that's
+[me013]: so-
+[me013]: sort of why the -
+[mn007]: Mm-hmm.
+[me013]: the little variation tends to go away.
+[mn007]: Um.
+[mn007]: Yeah. So may- Well, the - this threshold is still a factor that we have to look at. And
+[mn007]: I don't know, maybe a constant noise addition would - would be fine also, or -
+[mn007]: Um -
+[me013]: Or - or not constant but - but, uh, varying over time in fact
+[mn007]: Mm-hmm.
+[me013]: is another way to go.
+[mn007]: Mm-hmm.
+[me013]: Um.
+[mn052]: @@
+[mn007]: Yeah.
+[mn007]: Um -
+[me013]: Were you using the - the normalization in addition to this? I mean, what was the rest of the
+[mn007]: Um -
+[me013]: system?
+[mn007]: Yeah. It was - it was, uh, the same system.
+[mn007]: Mm-hmm.
+[me013]: OK.
+[mn007]: It was the same system.
+[mn007]: Mmm.
+[mn007]: Oh, yeah.
+[mn007]: A third thing is that, um,
+[mn007]: I play a little bit with the, um - finding what was different between,
+[mn007]: um,
+[mn007]: @@
+[mn007]: And there were a couple of differences, like the LDA filters were not the same.
+[mn007]: Um,
+[mn007]: he had the France Telecom blind equalization in the system.
+[mn007]: Um,
+[mn007]: the number o- of MFCC that was - were used was different. You used thirteen and we used fifteen.
+[mn007]: Well, a bunch of differences. And, um, actually
+[mn007]: the result that he - he got were much better on TI-digits especially.
+[mn007]: So I'm kind of investigated to see what
+[mn007]: was the main factor for this difference. And it seems that
+[mn007]: the LDA filter is - is - was hurting.
+[mn007]: Um, so when we put s- some noise compensation
+[mn007]: the, um, LDA filter that - that's derived from noisy speech is not more - anymore optimal.
+[mn007]: And it makes a big difference, um, on TI-digits
+[mn007]: trained on clean.
+[mn007]: Uh, if we use the - the old LDA filter, I mean the LDA filter that was in the proposal, we have, like, eighty-two point seven percent recognition rate,
+[mn007]: um,
+[mn007]: on noisy speech when the system is trained on clean speech.
+[mn007]: But -
+[mn007]: and when we use the filter that's derived from clean speech we jumped -
+[mn007]: so from eighty-two point seven to eighty-five point one,
+[mn007]: which is
+[me013]: Mm-hmm.
+[mn007]: a huge leap.
+[mn007]: Um.
+[mn007]: Yeah. So now the results are more similar, and
+[mn007]: I don't - I will not, I think, investigate on the other differences,
+[mn007]: which is like the number of MFCC that we keep and other small things
+[mn007]: that we can I think optimize later on anyway.
+[me013]: Sure. But on the other hand if everybody is trying different kinds of noise suppression things and so forth, it might be good to standardize on the piece
+[me013]: that we're not changing. Right? So if there's
+[me013]: any particular reason to ha- pick one or the other, I mean -
+[me013]: Which - which one is closer to what the proposal was that was submitted to Aurora? Are they -
+[me013]: they both - ? Well, I mean -
+[mn007]: I think -
+[mn007]: Yeah. I think th- th- uh, the new system that I tested is, I guess, closer because it doesn't have -
+[mn052]: You mean the -
+[mn007]: it have less of - of France Telecom stuff, I -
+[mn052]: The - whatever you, uh, tested with recently. Right?
+[mn007]: Mmm?
+[mn007]: Yeah.
+[mn052]: Yeah?
+[me013]: Well, no, I - I'm - I -
+[me013]: Yeah, you're trying to add in France Telecom. Tell them about the rest of it. Like you said the number of filters might be
+[mn007]: But, we -
+[me013]: different or something. Right? Or -
+[mn052]: The number of cepstral coefficients is what?
+[me013]: Cep-
+[mn007]: Mm-hmm.
+[me013]: Yeah. So, I mean, I think we'd wanna standardize there, wouldn't we?
+[mn007]: Yeah, yeah.
+[me013]: So, sh- you guys should pick something and -
+[mn052]: Yeah.
+[mn052]: Yeah.
+[me013]: Well, all th- all three of you.
+[mn007]: I think we were gonna work with - with this or this new system, or with -
+[mn052]: Uh, so the - the - right now, the - the system that is there in the -
+[mn007]: So -
+[mn052]: what we have in the repositories, with - uses fifteen.
+[mn007]: Right. Yeah.
+[mn052]: Yeah, so - Yeah, so - Yep.
+[mn007]: But we will use the - the LDA filters f- derived from clean speech.
+[mn052]: Yeah, yeah. So -
+[mn007]: Well, yeah, actually it's - it's not the - the LDA filter. It's
+[mn007]: something that's also short enough in - in latency. So.
+[mn052]: Yeah. Well. Yeah.
+[mn052]: So, we haven't - w- we have been always using, uh, fifteen coefficients, not thirteen? Yeah.
+[mn007]: Yeah. Mm-hmm.
+[mn052]: Well, uh, that's - something's -
+[mn052]: Um. Yeah.
+[mn052]: Then -
+[mn052]: mmm - @@
+[me013]: I think as long as you guys agree on it, it doesn't matter. I think we have a maximum of sixty,
+[me013]: uh, features that we're allowed. So.
+[mn007]: Yeah.
+[mn052]: Yeah. Ma- maybe we can - I mean, at least,
+[mn052]: um, I'll t- s- run some experiments to see whether - once I have this
+[mn052]: noise compensation to see whether thirteen and fifteen really matters or not.
+[mn007]: Mm-hmm. Mm-hmm.
+[mn052]: Never tested it with the compensation, but without,
+[mn052]: uh, compensation it was like fifteen was s- slightly better than thirteen, so that's why we stuck to thirteen.
+[mn007]: Yeah.
+[mn007]: Yeah. And there is - there is also this log energy versus Czero.
+[mn052]: Sorry, fifteen.
+[mn052]: Yeah, the log energy versus Czero.
+[mn007]: Well.
+[mn052]: Uh, that's - that's the other thing. I mean, without noise compensation certainly Czero is better than log energy.
+[mn007]: W- w- if - if -
+[mn052]: Be- I mean, because the - there are more, uh, mismatched conditions than the matching conditions for testing.
+[mn007]: Mm-hmm.
+[mn052]: You know, always for the matched condition, you always get a slightly better performance for log energy than Czero.
+[mn007]: Mm-hmm.
+[mn052]: But not for - I mean,
+[mn052]: for matched and the clean condition both, you get log energy -
+[mn052]: I mean you get a better performance with log energy.
+[mn007]: Mm-hmm.
+[mn052]: Well, um, maybe once we have this noise compensation, I don't know, we have to try that also, whether we want to go for Czero or log energy.
+[mn007]: Mm-hmm.
+[mn052]: We can see that.
+[mn007]: Yeah.
+[mn052]: Hmm.
+[mn007]: Mmm.
+[me018]: So do you have more, Stephane, or - ?
+[mn007]: Uh, that's it, I think. Mmm.
+[me018]: Do you have anything, Morgan, or - ?
+[me013]: Uh, no. I'm just, you know, being a manager this week. So.
+[me018]: How about you, Barry?
+[me006]: Um, still working on my - my quals preparation stuff.
+[me006]: Um, so I'm - I'm thinking about, um, starting some,
+[me006]: uh, cheating experiments to, uh, determine the, um -
+[me006]: the relative effectiveness of, um, some intermediate categories that I want to classify.
+[me006]: So, for example, um, if I know where voicing occurs and everything, um,
+[me006]: I would do a phone - um, phone recognition experiment, um, somehow
+[me006]: putting in the - the, uh - the perfect knowledge that I have about voicing.
+[me006]: So, um, in particular I was thinking,
+[me006]: um, in - in the hybrid framework, just taking those LNA files,
+[me006]: and, um,
+[me006]: setting to zero those probabilities that, um -
+[me006]: that these phones are not voicing.
+[me006]: So say, like, I know this particular segment is voicing,
+[me018]: Mm-hmm.
+[me006]: um, I would say,
+[me006]: uh, go into the corresponding LNA file and zonk out the - the posteriors for,
+[me006]: um, those phonemes that, um, are not voiced,
+[me018]: Mm-hmm.
+[me006]: and then see what kinds of improvements I get.
+[me006]: And so this would be a useful thing, um, to know
+[me018]: Hmm.
+[me006]: in terms of, like, which - which, um - which of these categories are - are good for, um, speech recognition.
+[me018]: Mm-hmm.
+[me006]: So, that's -
+[me006]: I hope to get those, uh - those experiments done by - by the time quals come - come around in July.
+[me018]: So do you just take the probabilities of the other ones and spread them out evenly among the -
+[me006]: Yeah. I - I - I was thinking - OK, so just set to -
+[me018]: the remaining ones?
+[me006]: set to some really low number, the - the non-voiced, um, phones. Right? And then renormalize.
+[me018]: Mm-hmm.
+[me018]: Mmm.
+[me006]: Right.
+[me018]: Cool.
+[mn052]: Mm-hmm.
+[me006]: Yeah.
+[me018]: That will be really interesting to see, you know.
+[me018]: So then you're gonna feed the - those into some standard recognizer. Uh, wh- are you gonna do digits or - ?
+[me006]: Mm-hmm.
+[me006]: Yeah, m- Um, well, I'm gonna f- work with TIMIT -
+[me018]: With TIMIT. OK.
+[me006]: TIMIT - uh, phone recognition with TIMIT. And, um -
+[me018]: Mm-hmm.
+[me018]: Oh, so then you'll feed those -
+[me018]: Sorry. So where do the outputs of the net go into if you're doing phone recognition?
+[me006]: Oh. Um, the outputs of the net go into the standard, h- um, ICSI hybrid, um, recognizer.
+[me006]: So maybe, um, Chronos or -
+[me018]: An- and you're gonna - the - you're gonna do phone recognition with that? OK, OK.
+[me006]: Phone recognition. Right, right.
+[me018]: I see.
+[me006]: So. And, uh, another thing would be to extend this to, uh, digits or something where I can look at whole words.
+[me018]: Mm-hmm.
+[me006]: And I would be able to see, uh, not just, like, phoneme events,
+[me006]: but, um, inter-phoneme events.
+[me018]: Mm-hmm.
+[me006]: So, like, this is from a stop to - to a vo- a vocalic
+[me006]: segment. You know, so- something that is transitional in nature.
+[me018]: Right.
+[me018]: Cool.
+[me006]: Yeah.
+[me018]: Great. Uh -
+[me006]: So that's - that's it.
+[me018]: OK. Um -
+[me006]: Yeah.
+[me018]: Let's see, I haven't done a whole lot on anything related to this this week. I've been focusing mainly on Meeting Recorder stuff.
+[mn007]: Oh.
+[me018]: So, um, I guess I'll just pass it on to Dave.
+[me026]: Uh, OK. Well, in my lunch talk last week I - I said I'd tried phase normalization and gotten garbage results using that l- um, long-term mean subtraction approach.
+[me026]: It turned out there was a bug in my Matlab code.
+[me026]: So I tried it again, um,
+[me026]: and, um, the results
+[me026]: were - were better. I got intelligible speech back. But they still weren't as good as just subtracting the magnitude - the log magnitude means.
+[me026]: And also I've been talking to, um,
+[me026]: Andreas and Thilo about the, um, SmartKom language model and about coming up with a good model for,
+[me026]: um, far mike use of the SmartKom system. So
+[me026]: I'm gonna be working on, um, implementing this mean subtraction approach in the far-mike system - for the SmartKom system, I mean. And, um,
+[me026]: one of the experiments we're gonna do is, um, we're gonna, um, train the - a Broadcast News net,
+[me026]: which is because that's what we've been using so far, and, um, adapt it on some
+[me026]: other data. Um, An- Andreas wants to use, um,
+[me026]: data that resembles read speech, like these digit readings, because he feels that
+[me026]: the SmartKom system interaction is not gonna be exactly conversational.
+[me018]: Mm-hmm.
+[me026]: S- so actually I was wondering, how long does it take to train that Broadcast News net?
+[me013]: The big one takes a while. Yeah. That takes two, three weeks.
+[me026]: Two, three weeks.
+[me013]: So - but, you know, uh, you can get -
+[me013]: I don't know if you even want to run the big one, uh, um, in the - in the final system, cuz, you know, it takes a little while to run it. So,
+[me013]: um, you can scale it down by -
+[me013]: I'm sorry, it was two, three weeks for training up for the large Broadcast News test set - training set.
+[me026]: Oh.
+[me013]: I don't know how much you'd be training on.
+[me026]: OK.
+[me013]: The full? Uh, i- so if you trained on half as much and made the net, uh, uh, half as big, then it would be one fourth the amount of time and it'd be nearly as good.
+[me026]: OK.
+[me013]: So.
+[me026]: OK.
+[me013]: Yeah.
+[me013]: Also, I guess we had - we've had these, uh, little di- discussions - I guess you ha- haven't had a chance to work with it too much - about -
+[me013]: about, uh -
+[me013]: uh, uh m-
+[me013]: other ways of taking care of the phase.
+[me026]: Mm-hmm.
+[me013]: So, I mean, I - I guess that was something I could say would be that we've talked a little bit about you just doing it all with complex arithmetic
+[me013]: and, uh -
+[me013]: and not - not, uh, doing the polar representation with magnitude and phase. But
+[me013]: it looks like there's ways that one could potentially just work with the complex numbers and - and - and in principle get rid of the
+[me013]: effects of the average complex spectrum.
+[me013]: But -
+[me026]: And, um,
+[me026]: actually, regarding the phase normalization - So I did two experiments, and one is -
+[me026]: So, phases get added, modulo two pi,
+[me026]: and - because you only know the phase of the complex number t- t- to a value modulo two pi. And so I thought at first, um,
+[me026]: that, uh, what I should do is unwrap the phase because that will undo that.
+[me026]: Um, but I actually got worse results doing that unwrapping using the simple phase unwrapper that's in Matlab than I did not unwrapping at all.
+[me018]: Hmm.
+[mn052]: Mm-hmm.
+[me013]: Yeah.
+[me013]: P- So.
+[me026]: And that's all I have to say.
+[me018]: Hmm.
+[me013]: Yeah. So I'm - I'm still hopeful that - that - I mean, we - we don't even know if the phase
+[me013]: is something - the average phase is something that we do want to remove. I mean, maybe there's some
+[me013]: deeper reason why it isn't the right thing to do. But, um,
+[me013]: at least in principle it looks like there's - there's, uh, a couple potential ways to do it. One - one being to just work with the complex numbers,
+[me013]: um,
+[me013]: and, uh - in rectangular kind of coordinates. And the other is
+[me013]: to, uh, do a Taylor series -
+[me013]: Well. So you work with the complex numbers
+[me013]: and then when you get the spectrum - the average complex spectrum -
+[me013]: um, actually divide it out,
+[me013]: um, as opposed to taking the log and subtracting.
+[me013]: So then, um,
+[me013]: um, you know, there might be some numerical issues. We don't really know that.
+[me013]: The other thing we talked a little bit about was Taylor series expansion.
+[me013]: And, um, uh, actually I was talking to Dick Karp about it a little bit, and - and - and, since I got thinking about it, and - and, uh,
+[me013]: so one thing is that y- you'd have to do, I think, uh -
+[me013]: we may have to do this on a whiteboard, but I think you have to be a little careful about scaling the numbers that you're
+[me013]: taking - the complex numbers that you're taking the log of because
+[me013]: the Taylor expansion for it has, you know, a square and a cube, and - and so forth. And - and so if -
+[me013]: if you have a - a number that is modulus, you know, uh, very different from one -
+[me013]: It should be right around one, if it's -
+[me013]: cuz it's a expansion of log one - one minus epsilon or o- is - is
+[me013]: one plus epsilon,
+[me013]: or is it one plus - ? Well, there's an epsilon squared over two and an epsilon cubed over three, and so forth. So if epsilon is bigger than one, then it diverges.
+[me026]: OK.
+[me026]: Oh.
+[me013]: So you have to do some scaling. But that's not a big deal cuz it's the log of -
+[me013]: of K_ times a complex number, then you can just - that's the same as log of K_ plus log of the complex number.
+[me026]: Oh.
+[me026]: OK.
+[me013]: Uh, so there's -
+[me013]: converges. But.
+[me018]: Hmm.
+[me018]: OK. How about you, Sunil?
+[mn052]: So, um, I've been, uh, implementing this, uh, Wiener filtering for this Aurora task.
+[mn052]: And, uh,
+[mn052]: I - I actually thought it was - it was doing
+[mn052]: fine when I tested it once. I- it's, like, using a small section of the code. And then I ran the whole recognition experiment with Italian and I got,
+[mn052]: like, worse results than not using it.
+[mn052]: Then I -
+[mn052]: So, I've been trying to find where the problem came from. And then it looks like I have some problem in
+[mn052]: the way - there is some - some very silly bug somewhere. And, ugh!
+[mn052]: I - I mean, i- uh, it actually - i- it actually made the whole thing worse. I was looking at the spectrograms that I got
+[mn052]: and it's, like - w- it's - it's very horrible. Like, when I -
+[me013]: I - I missed the v- I'm sorry, I was - I was distracted. I missed the very first sentence. So then, I'm a little lost on the rest. What - what - what - ?
+[mn052]: Oh, I mean -
+[mn052]: Oh, yeah. I actually implemented the Wiener f- f- fil- filtering as a module and then tested it out separately. And it - it - it gave, like - I just got the signal out and it - it was OK.
+[me013]: Yeah, I see.
+[me013]: Oh, OK.
+[mn052]: So, I plugged it in somewhere and then - I mean, it's like I had to remove some part and then plugging it in somewhere. And then I - in that process I messed it up somewhere.
+[mn052]: So.
+[me013]: OK.
+[mn052]: So, it was real-
+[mn052]: I mean, I thought it was all fine and then I ran it, and I got something worse than not using it.
+[mn052]: So, I was like - I'm trying to find where the m- m- problem came, and it seems to be, like, somewhere - some silly stuff.
+[me013]: Uh-huh.
+[me013]: OK.
+[mn052]: And, um, the other thing, uh, was, uh, uh -
+[mn052]: Well, Hynek showed up one - suddenly on one day and then I was t- talking wi-
+[me013]: Right.
+[me013]: Yeah. As - as he is wont to do. Yeah.
+[mn052]: Uh, yeah. So I was actually - that day I was thinking about d- doing something about the Wiener filtering, and then Carlos matter of
+[mn052]: stuff. And then he showed up and then I told him. And then he gave me a whole bunch of filters - what Carlos used for his, uh,
+[mn052]: uh, thesis and then that was something which came up. And then, um -
+[mn052]: So, uh, I'm actually,
+[mn052]: uh, thinking of using that also in this, uh,
+[mn052]: W- Wiener filtering because that is a m- modified Wiener filtering approach, where instead of using the current frame, it uses
+[mn052]: adjacent frames also in designing the Wiener filter.
+[mn052]: So instead of designing our own new Wiener filters, I may just use one of those Carlos filters in - in this implementation and see whether it - it actually gives me something better
+[me013]: Mm-hmm.
+[mn052]: than using just the current f- current frame, which is in a way, uh, something like the smoothing - the Wiener filter -
+[me013]: Mm-hmm.
+[mn052]: but @@ -
+[mn052]: S- so, I don't know, I was h- I'm - I'm - I'm, like -
+[mn052]: that - so that is the next thing. Once this - I - once I sort this pro- uh, problem out maybe I'll just go into that also.
+[mn052]: And
+[mn052]: the - the other thing was about the subspace approach.
+[mn052]: So, um,
+[mn052]: I, like, plugged some groupings for computing this eigen- uh,
+[mn052]: uh, uh, s- values and eigenvectors. So just -
+[mn052]: I just @@ some small block of things which I needed to put together for
+[mn052]: the subspace approach. And I'm in the process of, like, building up that stuff.
+[mn052]: And, um,
+[mn052]: uh - Yeah.
+[mn052]: I guess - Yep. I guess that's it. And, uh, th- th- that's where I am right now.
+[mn052]: So.
+[me018]: Oh. How about you, Carmen?
+[fn002]: Mmm. I'm working with VTS.
+[fn002]: Um, I do several experiment with the Spanish database first, only with VTS and nothing more. Not VAD, no LDA, nothing more.
+[me018]: What - what is VTS again?
+[fn002]: Eh, Vectorial Taylor Series.
+[mn052]: New -
+[me018]: Oh, yes. Right, right.
+[fn002]: To remove the noise too.
+[me018]: I think I ask you that every single meeting, don't I? I ask you that question every meeting.
+[fn002]: What?
+[fn002]: Yeah. If - Well -
+[me013]: So, that'd be good from - for analysis. It's good to have some, uh, cases of the same utterance at different - different times. Yeah.
+[me018]: Yeah. "What is VTS?"
+[fn002]: VTS. I'm sor-
+[fn002]: Well, um, the question is that - Well.
+[fn002]: Remove some noise but not too much.
+[fn002]: And when we put the -
+[fn002]: m- m-
+[fn002]: the, em,
+[fn002]: VAD, the result is better. And we put everything,
+[fn002]: the result is better, but it's not better than the result that we have without VTS.
+[fn002]: No, no.
+[me013]: I see. So that @@
+[me013]: given that you're using the VAD also, the effect of the VTS is not so far -
+[fn002]: Is not.
+[me013]: Do you - How much of that do you think is due to just
+[me013]: the particular implementation and how much you're adjusting it? Or how much do you think is intrinsic to - ?
+[fn002]: Pfft. I don't know because -
+[fn002]: Hhh,
+[mn007]: Are you still using only the ten first frame for noise estimation or - ?
+[fn002]: Uh, I do the experiment using only the
+[mn007]: Or i- ?
+[fn002]: f-
+[mn007]: Yeah.
+[fn002]: onl- eh, to use on- only one fair estimation of the noise.
+[mn007]: Hmm.
+[fn002]: And also I did some experiment,
+[fn002]: uh, doing,
+[fn002]: um, a lying estimation of the noise.
+[fn002]: And, well, it's a little bit better but not -
+[fn002]: n-
+[mn007]: Maybe you have to standardize this thing also, noise estimation, because
+[mn007]: all the thing that you are testing use a different -
+[fn002]: Mmm.
+[mn052]: Mmm.
+[mn007]: They all need some - some noise - noise spectra but they use - every - all use a different one.
+[fn002]: No, I do that two - t- did two time.
+[me013]: I have an idea.
+[me013]: If - if, uh, uh, y- you're right. I mean, each of these require this.
+[me013]: Um, given that we're going to have
+[me013]: for this test at least of - uh, boundaries,
+[me013]: what if initially we start off by using known
+[me013]: sections of nonspeech for the estimation?
+[fn002]: Mm-hmm.
+[mn007]: Mm-hmm.
+[me013]: Right?
+[me013]: S- so, e- um,
+[mn007]: Yeah. Mm-hmm.
+[me013]: first place, I mean even if ultimately we wouldn't be given the boundaries,
+[me013]: uh, this would be a good initial experiment to separate out the effects of things. I mean, how much is the poor -
+[me013]: you know, relatively, uh, unhelpful result that you're getting in this or this or this is due to
+[me013]: some inherent limitation to the method for these tasks and how much of it is just due to the fact that you're not accurately
+[me013]: finding enough regions that - that are really
+[mn052]: Mmm.
+[fn002]: Mm-hmm.
+[me013]: n- noise?
+[mn007]: Mm-hmm.
+[me013]: Um.
+[me013]: So maybe if you tested it using that,
+[me013]: you'd have more reliable stretches of nonspeech to do the estimation from and see if that helps.
+[fn002]: Yeah. Another thing is the, em - the codebook, the initial codebook.
+[fn002]: That maybe, well, it's too clean and -
+[me013]: Mm-hmm.
+[fn002]: Cuz it's a - I don't know. The methods -
+[fn002]: If you want, you c- I can say something about the method.
+[me013]: Mm-hmm.
+[fn002]: Yeah. In the -
+[fn002]: Because it's
+[fn002]: a little bit different of the other method.
+[fn002]: Well, we have -
+[fn002]: If this - if this is the noise signal,
+[fn002]: uh, in the log domain, we have something like this.
+[fn002]: Now, we have something like this.
+[fn002]: And the idea of these methods is to -
+[fn002]: n- given a, um - How do you say?
+[me013]: Mm- hmm.
+[fn002]: I will read because it's better for my English.
+[fn002]: I- i- given
+[fn002]: is the estimate of the PDF of the noise signal when we have a,
+[fn002]: um,
+[fn002]: a statistic of the clean speech and an statistic of the noisy speech.
+[fn002]: And the clean speech - the statistic of the clean speech is from a codebook.
+[fn002]: Mmm? This is the idea.
+[fn002]: Well, like, this relation is not linear.
+[fn002]: The methods propose to develop this in a vectorial Taylor series approximation.
+[me013]: I- I'm actually just confused about the equations you have up there. So, uh,
+[me013]: the top equation is - is - is -
+[fn002]: No, this in the - it's - this is the log domain. I - I must to say that.
+[me013]: Which is - which is the log domain?
+[fn002]: Is the T_ - is egual - is equal to,
+[fn002]: uh,
+[fn002]: log of -
+[me013]: And - but Y_ is what? Y_ of - the spectrum or - ?
+[fn002]: Uh, this - this is this and this is this.
+[me013]: No, no. The top Y_ is what?
+[fn002]: Mm-hmm.
+[me013]: Is that power spectrum? No, is that power spectrum? Is it - ?
+[fn002]: Uh, this is the noisy speech.
+[mn007]: p- s- this -
+[mn007]: Yeah. I guess it's the power spectrum of noisy speech. Yeah. And -
+[fn002]: Yeah. It's the power spectrum.
+[me013]: Oh, OK.
+[me013]: So that's uh -
+[fn002]: This is the noisy - Yeah, it's -
+[fn002]: of the value -
+[me013]: OK.
+[me013]: Yeah, OK. So this - it's the magnitude squared or something. OK, so you have power spectrum added there
+[fn002]: Yeah.
+[me013]: and down here you have -
+[me013]: you - you put the -
+[me013]: depends on T_ , but - b- all of this is just - you just mean -
+[fn002]: w- o-
+[fn002]: Yeah. It's the same.
+[me013]: you just mean the log of the - of the one up above.
+[fn002]: Yeah.
+[mn007]: Mm-hmm.
+[me013]: And, uh, so that is
+[me013]: X_ times, uh,
+[fn002]: Yeah, maybe -
+[mn052]: One - one plus N_ by X_.
+[fn002]: But, n-
+[me013]: o-
+[fn002]: Well, y- we can expre- we can put this expression -
+[me013]: X_ times one plus, uh,
+[fn002]: The -
+[me013]: N_ - uh, N_ - N_ - N_ minus X_?
+[fn002]: Yeah.
+[me013]: And then,
+[fn002]: And the noise signal.
+[me013]: uh - So that's log of X_ plus log of one plus, uh -
+[me013]: Well.
+[me013]: Is that right? Log of -
+[mn052]: One plus N_ by X_.
+[fn002]: Well, mmm -
+[me013]: I actually don't see how you get that.
+[fn002]: Well, if we apply the log, we have E_ is n-
+[me013]: Uh.
+[mn007]: Mmm.
+[fn002]: uh, log -
+[mn052]: Uh, and -
+[fn002]: E_ is equal, oh, to log of
+[fn002]: X_ plus N_.
+[me013]: Yeah.
+[fn002]: And, well,
+[fn002]: uh, we can say that E_
+[mn052]: And, log of -
+[fn002]: is equal to log of,
+[fn002]: um, exponential of X_ plus exponential of N_.
+[me013]: Uh -
+[mn052]: Mm-hmm.
+[me013]: No.
+[mn052]: No.
+[me013]: That doesn't follow.
+[mn052]: Well, if E_ restricts -
+[fn002]: Well, this is - this is in the ti- the time domain. Well, we have that, um -
+[mn052]: It is y-
+[fn002]: We have first that, for example, X_
+[fn002]: is equal, uh - Well.
+[fn002]: This is the frequency domain and we can put u- that n- the log domain -
+[me013]: Yeah.
+[fn002]: log of X_ omega, but, well, in the time domain we have an exponential.
+[fn002]: No?
+[fn002]: No?
+[fn002]: Oh, maybe it's I am - I'm problem.
+[me013]: Yeah. I mean, just never mind what they are. Uh, it's just if X_ and N_ are variables -
+[me013]: Right?
+[mn052]: What is, uh - ?
+[me013]: The - the - the log of X_ plus N_ is not the same as the log of E_ to the X_ plus E_ to the N_.
+[fn002]: Yeah. But this i-
+[fn002]: Well, I don't -
+[fn002]: Well, uh, maybe -
+[me013]: Maybe we can take it off-line, but I - I don't know.
+[fn002]: I - I can do this incorrectly.
+[fn002]: Well, the expression that appear in the - in the paper,
+[fn002]: is, uh -
+[mn052]: The log -
+[mn052]: the Taylor series expansion for log one plus N_ by X_ is -
+[fn002]: is X_ -
+[mn007]: Is it the first-order expansion? Yeah, I guess. Yeah. Uh-huh.
+[me013]: OK. I- i-
+[mn052]: Yeah, the first one. Yeah.
+[mn052]: Yeah.
+[me013]: OK. Yeah. Cuz it doesn't just follow what's there. It has to be some, uh, Taylor series -
+[mn052]: Y- yeah. If - if you take log X_ into log one plus N_ by X_, and then expand the log one plus N_ by X_ into Taylor series -
+[mn007]: Yeah.
+[fn002]: Now, this is the - and then -
+[mn007]: Yeah, but the - the second expression that you put is the first-order expansion of
+[fn002]: Not exactly.
+[mn007]: the nonlinear relation between -
+[me013]: No.
+[fn002]: No, no, no. It's not the first space . Well, we have - pfft, uh, em -
+[fn002]: Well, we can put that
+[fn002]: X_ is equal - I_ is equal to log of, uh,
+[fn002]: mmm -
+[me013]: That doesn't follow.
+[fn002]: Well, we can put, uh, this?
+[mn052]: Mmm.
+[mn052]: No.
+[me013]: That - I mean, that - the f- top one does not imply the second one.
+[fn002]: The top?
+[me013]: Because - cuz the log of a sum is not the same as th- I mean, as - Yeah.
+[fn002]: Yeah, yeah, yeah, yeah, yeah. But we can -
+[fn002]: uh, we - we know that, for example, the log of
+[fn002]: E_ plus B_ is equal to log of E_ plus log
+[me013]: Right.
+[fn002]: to B_. And we can say here, it i-
+[me013]: Right. So you could s-
+[mn007]: What is that?
+[fn002]: And we can, uh, put this inside.
+[me013]: Yeah.
+[fn002]: And then we can,
+[fn002]: uh,
+[me013]: N- no, but -
+[fn002]: you know -
+[fn002]: Yeah.
+[mn052]: Uh.
+[me013]: I don't see how you get the second expression from the top one.
+[me013]: The - I mean, just more generally here,
+[me013]: if you say "log of, um, A_ plus B_",
+[me013]: the log of - log of A_ plus B_ is not -
+[me013]: or A_ plus B_ is not the,
+[me013]: um, log of E_ to the A_ plus E_ to the B_.
+[fn002]: No, no, no, no, no, no, no. This not. No.
+[me013]: Right? And that's what you seem to be saying.
+[fn002]: No. It's not. But this is the same - oh.
+[me013]: Right? Cuz you - cuz you - up here you have the A_ plus B_ -
+[fn002]: No. I say if I apply log, I have, uh, log of E_
+[fn002]: is equal to log of, uh - in this side, is equal to log of X_
+[me013]: Plus N_.
+[fn002]: plus N_.
+[me013]: Right.
+[fn002]: No? Right. This is right.
+[me013]: Right. And then how do you go from there to the - ?
+[fn002]: And then if I apply exponential,
+[fn002]: to have here
+[me013]: Look. OK, so let's - I mean, C_ equals A_ plus B_,
+[fn002]: E_ -
+[mn007]: It's log o- of capital Y_. Yeah, right. Capital Y_.
+[fn002]: Yeah.
+[me013]: and then -
+[mn052]: X_. X_. This is X_, inside.
+[mn007]: Mm-hmm.
+[fn002]: We have this, no?
+[me013]: Right. Yeah. That one's right.
+[fn002]: Mm-hmm.
+[mn052]: One and -
+[fn002]: S- uh, i- th- we can put here the set transformation.
+[me013]: Oh.
+[me013]: I see.
+[fn002]: No?
+[me013]: I see.
+[me013]: OK, I understand now. Alright, thanks.
+[fn002]: Yeah. In this case, well, we can put here a Y_.
+[me013]: OK. So, yeah. It's just by definition that the individual -
+[me013]: that the, uh - So, capital X_ is by definition the same as E_ to the little X_ because she's saying that the little X_ is - is the, uh - is the log.
+[me013]: Alright.
+[fn002]: Now we can put this. No?
+[me013]: Yeah.
+[fn002]: And here we can multiply by X_.
+[me013]: Alright. I think these things are a lot clearer when you can use fonts -
+[fn002]: Oh, yes.
+[me013]: different fonts there so you know which is which. But I - I under- I understand what you mean now. OK.
+[fn002]: Yeah, yeah. That's true. That's true.
+[fn002]: But this - this is correct? And now I can do it, uh - pfff!
+[me013]: Sure.
+[fn002]: I can put log
+[me013]: Oh.
+[fn002]: of EX
+[fn002]: plus log -
+[me013]: Yes. I understand now.
+[me013]: And that's where it comes from. Yeah.
+[fn002]: And this is -
+[mn007]: Yeah. Right.
+[me013]: Right.
+[fn002]: Now it's correct.
+[me013]: Right.
+[me013]: OK. Thanks.
+[fn002]: Well. The idea - Well, we have fixed this equa-
+[me013]: OK. So now once you get that - that one, then you - then you do a first- or second-order, or something, Taylor series expansion of this.
+[fn002]: Yeah. This is another linear relation that this - to develop this in
+[fn002]: vector s Taylor series.
+[mn007]: Yeah, sure.
+[me013]: Right.
+[fn002]: Mm-hmm. And for that, well, the goal is to obtain, um -
+[fn002]: est- estimate a PDF for the noisy speech
+[fn002]: when we have a - a statistic for clean speech and for the noisy speech.
+[fn002]: Mmm?
+[fn002]: And when w-
+[fn002]: the way to obtain the PDF for the noisy speech is -
+[fn002]: well, we know this
+[fn002]: statistic and we know the noisy st-
+[fn002]: well, we can apply first
+[fn002]: order of the vector st- Taylor series of the - of the - of - well,
+[fn002]: the order that we want, increase the complexity of the problem. And then when we have a expression, uh, for the
+[me013]: Mm-hmm.
+[fn002]: mean and variance of the noisy speech,
+[fn002]: we apply a technique of minimum mean-square estimation
+[me013]: Mm-hmm.
+[fn002]: to obtain the expected value
+[fn002]: of the clean speech given the - this
+[fn002]: statistic for the noisy speech -
+[me013]: Mm-hmm.
+[fn002]: the statistic for clean speech and the statistic of the noisy speech.
+[fn002]: This only that.
+[fn002]: But the idea is that -
+[fn002]: u-
+[mn007]: And the - the model of clean speech is a codebook. Right?
+[fn002]: Yeah. We have our codebook
+[fn002]: with different density Gaussian.
+[me013]: Mm-hmm.
+[fn002]: We can expre- we can put that the
+[fn002]: PDF for the clean test, probability of the clean speech is equal to -
+[me013]: Yeah.
+[fn002]: @@
+[mn007]: Mm-hmm.
+[me013]: So, um,
+[me013]: how - h-
+[me013]: how much - in - in the work they reported, how much noisy speech did you need to get, uh, good enough statistics
+[me013]: for the - to get this mapping?
+[fn002]: I don't know exactly.
+[me013]: Yeah.
+[fn002]: I - I need to s- I don't know exactly.
+[me013]: Yeah.
+[me013]: Cuz I think what's certainly characteristic of a lot of
+[me013]: the data in this test is that, um, you don't have -
+[me013]: the - the training set may not be a - a great estimator
+[me013]: for the noise in the test set. Sometimes it is and sometimes it's not.
+[fn002]: Yeah. I - the clean speech - the codebook for clean speech, I am using TIMIT.
+[fn002]: And I have now, uh, sixty-four
+[fn002]: Gaus- Gaussian.
+[me013]: Uh-huh.
+[me013]: And what are you using for the noisy - ? Y- y- doing that strictly -
+[fn002]: Of the noise - I estimate the noises wi- Well, for the noises I only use one Gaussian.
+[me013]: Mm-hmm.
+[me013]: And - and you - and you train it up entirely from, uh, nonspeech sections in the test?
+[mn007]: Hmm.
+[fn002]: Uh, yes. The first experiment that I do it is solely to calculate the, mmm - well, this value -
+[me013]: Yeah.
+[fn002]: uh, the compensation of the dictionary o- one time using the - the noise at the f-
+[fn002]: beginning of the sentence. This is the first experiment. And I fix this for all the -
+[me013]: Mm-hmm.
+[me013]: Yeah.
+[fn002]: all the sentences.
+[fn002]: Uh, because - well, the VTS methods -
+[fn002]: In fact the first thing that I do is to - to obtain, uh, an expression for E_ -
+[fn002]: probability e- expression of - of E_. That mean that the VTS - mmm, with the VTS we obtain, uh -
+[fn002]: well, we - we obtain the means for each Gaussian
+[fn002]: and the variance.
+[me013]: Mm-hmm.
+[fn002]: This is one. Eh, this is the composition of the dictionary.
+[me013]: Mm-hmm.
+[fn002]: This one thing. And the other thing that this - with these methods is to, uh, obtain - to calculate this value.
+[me013]: Mm-hmm.
+[fn002]: Because we can write -
+[fn002]: uh, we can write that
+[fn002]: the estimation of the clean speech
+[me013]: Mm-hmm.
+[fn002]: is equal at an expected value of
+[fn002]: the clean speech conditional to, uh, the noise signal -
+[fn002]: the probability f- of the - the statistic of the clean speech and the statistic of the noise.
+[me013]: Mm-hmm.
+[fn002]: This is the methods that say that we're going obtain this.
+[me013]: Mm-hmm.
+[fn002]: And we can put that this is equal to the estimated value of E_ minus a function
+[fn002]: that conditional to E_ to the T_ - to the noise signal. Well, this is - this function is the
+[fn002]: the term - after develop this, the term that we - we take.
+[fn002]: Give PX and, uh, P_ the noise.
+[mn052]: X_ K_ C_ noise.
+[me013]: Mmm.
+[fn002]: And I can put that this is equal to the noise signal minus -
+[fn002]: Well, I put before this name, uh -
+[fn002]: And I can calculate this.
+[me013]: What is the first variable in that probability?
+[fn002]: Uh, this is the Gaussian.
+[me013]: No, no. I'm sorry. In - in the one you pointed at. What's that variable?
+[fn002]: v-
+[fn002]: Uh, this is the -
+[mn052]: Weak. So probably it - it would do that.
+[fn002]: like this, but conditional. No, it's condition- it's not exactly this. It's
+[mn007]: It's one mixture of the model. Right?
+[fn002]: modify.
+[fn002]: Uh, if we have clean speech - we have the dictionary for the clean speech, we have a
+[fn002]: probability f- of - our - our weight for each Gaussian.
+[fn002]: No . And now, this weight is different now because it's conditional. And
+[me013]: OK.
+[me013]: Yes.
+[fn002]: this I need to - to calcu- I know this and I know this because this is from the dictionary that you have.
+[me013]: Uh-huh.
+[me013]: Uh-huh.
+[fn002]: I need to calculate this. And for calculate this,
+[me013]: Yes.
+[fn002]: I have an - I - I can develop an expression that is
+[mn052]: It's overlapping.
+[fn002]: that.
+[fn002]: I can calculate - I can - I calculated this value,
+[fn002]: uh, with the statistic of the noisy speech that I calculated before with the VTS approximation.
+[me013]: Mm-hmm.
+[fn002]: And - well, normalizing.
+[fn002]: And I know everything.
+[fn002]: Uh, with the,
+[fn002]: nnn -
+[fn002]: when I develop this in s- Taylor - Taylor series, I can't, um,
+[fn002]: calculate the mean and the variance
+[fn002]: of the - for each of the Gaussian of the dictionary for the noisy speech.
+[fn002]: Now.
+[fn002]: And this is fixed.
+[me013]: Mm-hmm.
+[fn002]: If I never do an estimat- a newer estimation of the noise, this mean as - mean and the variance are fixed.
+[me013]: Mm-hmm.
+[fn002]: And for each s- uh, frame of the speech the only thing that I need to do is to calculate this
+[fn002]: in order to calculate
+[fn002]: the estimation of the clean speech given our noisy speech.
+[me013]: So, I'm - I'm not following this perfectly but, um, I -
+[me013]: @@
+[me013]: Are you saying that all of these estimates are done using, um,
+[me013]: estimates of the probability density for the noise that are calculated only from the first ten frames?
+[fn002]: Yeah.
+[me013]: And never change throughout anything else?
+[fn002]: Never cha- This is one of the approximations that I am doing.
+[me013]: Per - per - per utterance, or per - ?
+[fn002]: Per utterance. Yes. Per utterance. Yes. And th-
+[me013]: Per utterance. OK.
+[me013]: So it's done - it's done new for each new utterance. So this changes the whole mapping for every utterance.
+[fn002]: Yeah. It's not -
+[fn002]: Yeah.
+[fn002]: Yeah. It's fixed, the dictionary. And the other estimation is when I do the uh on-line estimation, I change the means and variance of th- for the noisy speech
+[me013]: OK.
+[me013]: OK.
+[me013]: Yeah?
+[fn002]: each time that I detect noise.
+[me013]: Mm-hmm.
+[fn002]: I do it uh again this
+[fn002]: develop.
+[fn002]: Estimate the new mean and the variance of the noisy speech. And with th- with this new s- new mean and variance I estimate again this.
+[me013]: So you estimated, uh, f- completely forgetting what you had before?
+[fn002]: Um, no, no, no. It's not completely - No, it's - I am doing something like an adaptation of the noise.
+[me013]: Uh, or is there some adaptation?
+[me013]: OK.
+[me013]: Now do we know, either from their experience or from yours, that, uh, just having, uh, two parameters, the - the mean and variance, is enough?
+[me013]: Yeah. I mean, I know you don't have a lot of data to estimate with, but - but, uh,
+[me013]: um -
+[fn002]: I estimate mean and variance for each one of the Gaussian of the codebook.
+[me013]: No, I'm talking about the noise.
+[fn002]: Oh, um. Well, only one - I am only - using only one. I don't know i-
+[me013]: There's only one Gaussian.
+[me013]: Right.
+[me013]: And you - and - and it's, uh, uh - right, it's only -
+[me013]: it's only one -
+[me013]: Wait a minute. This is - what's the dimensionality of the Gaussian? This is -
+[fn002]: Uh, it's in - after the mel filter bank.
+[mn052]: @@
+[me013]: So this is twenty or something? Twenty?
+[fn002]: Twenty-three.
+[me013]: So it's - Yeah. So it's actually forty numbers that you're getting.
+[me013]: Yeah, maybe -
+[fn002]: Uh, the original paper say that only one Gaussian for the noise.
+[me013]: maybe you don't have a -
+[me013]: Well, yeah. But, I mean, no - no paper is - is a Bible, you know. This is - this is, uh -
+[fn002]: Yeah, maybe isn't the right thing.
+[fn002]: Yeah, yeah, yeah.
+[me013]: The question is, um,
+[me013]: whether it would be helpful, i- particularly if you used - if you had more -
+[me013]: So, suppose you did - This is almost cheating. It certainly isn't real-time. But if y- suppose you use the real boundaries that - that you were - in fact were given
+[me013]: by the VAD and so forth -th -th -
+[me013]: or I - I guess we're gonna be given even better boundaries than that.
+[me013]: And you look - you take all o- all of the nonspeech components in an utterance, so you have a fair amount.
+[me013]: Do you benefit from having a better model for the noise? That would be another question.
+[fn002]: Maybe.
+[me013]: So first question would be
+[me013]: to what extent i- are the errors that you're still seeing
+[me013]: based on the fact that you have poor boundaries for the, uh, uh, nonspeech?
+[me013]: And the second question might be, given that you have good boundaries,
+[me013]: could you do better if you used more parameters to characterize the noise?
+[me013]: Um.
+[me013]: Also another question might be -
+[me013]: Um, they are doing - they're using first term only of the vector Taylor series?
+[fn002]: Yeah.
+[me013]: Um, if you do a second term does it get too complicated cuz of the nonlinearity?
+[fn002]: Yeah. It's quite complicated.
+[me013]: Yeah, OK.
+[me013]: No, I won't ask the next question then.
+[fn002]: Oh, it's - it's the - for me it's the first time that I am working with VTS. Uh -
+[me013]: Yeah. No, it's interesting. Uh, w- we haven't had anybody work with it before, so it's interesting to get your - get your feedback about it.
+[fn002]: It's another type of approximation because i- because it's a statistic -
+[fn002]: statistic approximation to remove the noise.
+[fn002]: I don't know.
+[me013]: Right.
+[me018]: Great.
+[me018]: OK. Well, I guess we're about done. Um, so some of the digit forms don't have digits.
+[me018]: Uh, we ran out there were some blanks in there, so not everybody will be reading digits. But, um,
+[me018]: I guess you've got some. Right, Morgan?
+[me013]: I have some.
+[me018]: So, why don't you go ahead and start. And I think it's just us down here at this end that have them. So.
+[fn002]: um
+[mn052]: S-
+[me013]: Uh, OK.
+[mn052]: S- so, we switch off with this or n- ?
+[me018]: Whenever you're ready.
+[me018]: Uh, leave it on, uh, and the -
+[mn052]: No. OK.
+[me013]: They prefer to have them on just so that they're continuing to get the distant, uh, information.
+[me018]: Yeah.
+[mn052]: OK. OK.
+[me013]: Transcript L_ dash one six nine.
+[me013]: Three nine three, zero nine five, seven nine eight.
+[me013]: Two seven, six zero, five six, five eight, six seven.
+[me013]: Six one one, one eight, two four s- two six.
+[me013]: One nine zero zero, two, seven eight three.
+[me013]: Eight eight one, two two six, seven four one nine.
+[me013]: Seven nine four nine s- e- e-
+[me013]: Eight five seven eight, seven nine zero nine.
+[me013]: Two, three seven five, four one, seven six one, two.
+[me013]: Three seven six two, six three six seven, two nine four two.
+[me006]: Transcript L_ dash one sixty-seven.
+[me006]: Seven five six zero, five, three seven three.
+[me006]: One four seven, four four, nine two seven eight.
+[me006]: One one, six seven, three eight, eight five, five seven.
+[me006]: Eight, one six four, six four, eight two O_, three.
+[me006]: Three seven seven, five, two six three.
+[me006]: Two, eight five seven, nine five, six seven two, two.
+[me006]: Nine O_, one eight, three two, two six, two three.
+[me006]: Three two, five two, seven seven, nine four, nine six.
+[me018]: Transcript L_ dash one six eight.
+[me018]: Seven nine, nine nine, nine two, four eight, eight zero.
+[me018]: Six nine eight, seven zero, one eight four eight.
+[me018]: Zero three one, seven eight four, one seven eight two.
+[me018]: Five, two three two, six five, nine eight three, six.
+[me018]: Six five four zero, four one five zero, five eight eight two.
+[me018]: Zero, three five seven, two six, zero six five, nine.
+[me018]: Seven six two, eight one, nine five nine eight.
+[me018]: One one, four two, zero eight, six seven, nine eight.
+[me026]: Transcript L_ dash one seven four.
+[me026]: Four nine one one, eight, four seven nine.
+[me026]: Two four one two, seven, eight nine two.
+[me026]: Five one six six, three six seven seven, three two eight nine.
+[me026]: Seven six two, seven nine, three six one zero.
+[me026]: Five nine three five, seven, five six zero.
+[me026]: Four eight eight, eight eight two, nine eight eight.
+[me026]: Five nine, six seven, two five, zero six, nine four.
+[me026]: Eight two, two zero, one nine, two six, nine one.
+[me018]: OK.
+[me013]: OK. S-

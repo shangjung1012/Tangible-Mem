@@ -1,0 +1,1396 @@
+[me013]: OK. So uh, he's not here, so you get to -
+[fn002]: So.
+[fn002]: Yeah, I will try to explain the thing that I did this - this week - during this week.
+[me013]: Yeah.
+[fn002]: Well eh you know that I work - I begin to work with a new feature to detect voice-unvoice.
+[me018]: Mm-hmm.
+[fn002]: What I trying two MLP
+[fn002]: to - to the - with this new feature and the fifteen feature
+[fn002]: uh from the
+[fn002]: eh bus- base system
+[me018]: The - the mel cepstrum?
+[fn002]: No, satly the mes- the Mel Cepstrum, the new base system - the new base system.
+[me018]: Oh the - OK, the Aurora system.
+[fn002]: Yeah, we - yeah the Aurora system with the new filter,
+[me018]: OK.
+[fn002]: VAD or something like that. And I'm trying two MLP, one
+[fn002]: one that only have t- three output, voice, unvoice, and silence, and
+[me013]: Mm-hmm.
+[fn002]: other one that have fifty-six output.
+[fn002]: The probabilities of the allophone . And
+[fn002]: I tried to do some experiment of recognition with that
+[fn002]: and only have result with - with the MLP with the three output.
+[fn002]: And I put together the fifteen features and the three MLP output.
+[fn002]: And, well, the result are
+[fn002]: li- a little bit better, but more or less similar.
+[me013]: Uh, I - I'm - I'm slightly confused. What - what feeds the uh - the three-output net?
+[me018]: Hmm.
+[fn002]: Voice, unvoice, and si-
+[me013]: No no, what feeds it? What features does it see?
+[fn002]: The feature - the input?
+[fn002]: The inputs are the fifteen - the fifteen uh
+[fn002]: bases feature.
+[fn002]: the - with the new code.
+[me013]: Uh-huh.
+[fn002]: And the other three features are R_, the variance of the difference between the two spectrum,
+[me013]: Uh-huh.
+[fn002]: the variance of the auto-correlation function, except the - the first point, because half the height value is Rzero and also Rzero,
+[me013]: Mm-hmm.
+[me013]: Mm-hmm.
+[me013]: Mm-hmm.
+[me013]: Mm-hmm.
+[fn002]: the first coefficient of the auto-correlation function. That is like the energy
+[me013]: Right.
+[fn002]: with these three feature, also these three feature.
+[me013]: You wouldn't do like Rone over Rzero or something like that?
+[me013]: I mean usually for voiced-unvoiced you'd do - yeah, you'd do something - you'd do energy but then you have something like spectral slope, which is you get like Rone ov- over Rzero or something like that.
+[fn002]: Yeah.
+[fn002]: Uh yeah.
+[me018]: What are the R_'s?
+[me018]: I'm sorry I missed it.
+[me013]: R_ correlations.
+[fn002]: No, R_ c- No.
+[me018]: Oh.
+[fn002]: Auto-correlation? Yes, yes, the variance of the auto-correlation function that uses that @@
+[me013]: Ye-
+[me013]: Well that's the variance, but if you just say "what is -" I mean, to first order,
+[me013]: um yeah one of the differences between voiced, unvoiced and silence is energy.
+[me013]: Another one is - but the other one is the spectral shape.
+[fn002]: Yeah, I- I'll -
+[fn002]: The spectral shape, yeah.
+[me013]: Yeah, and so Rone over Rzero is what you typically use for that.
+[fn002]: No, I don't use that - I can't use -
+[me013]: No, I'm saying that's what people us- typically use.
+[fn002]: Mmm.
+[me013]: See, because it - because this is - this is just like a single number to tell you
+[me013]: um
+[me013]: "does the spectrum look like that or does it look like that ".
+[fn002]: Mm-hmm.
+[me006]: Oh. R_ - Rzero.
+[me013]: Right?
+[fn002]: Mm-hmm.
+[me013]: So if it's - if it's um - if it's low energy uh but the - but the spectrum looks
+[me013]: like that or like that,
+[fn002]: Mm-hmm.
+[me013]: it's probably silence.
+[me013]: Uh but if it's low energy and the spectrum looks like that,
+[me013]: it's probably unvoiced.
+[fn002]: Yeah.
+[me013]: So if you just - if you just had to pick
+[me013]: two features to determine voiced-unvoiced,
+[me013]: you'd pick something about the spectrum like uh Rone over Rzero,
+[fn002]: Mm-hmm, OK.
+[me013]: um and Rzero
+[me013]: or i- i- you know you'd have some other energy measure and like in the old days people did like uh zero crossing
+[me013]: counts.
+[fn002]: Yeah, yeah.
+[me013]: Right. S- Yeah. Um,
+[fn002]: Well, I can also th- use this.
+[fn002]: Bec- because the result are a little bit better but we have in a point that
+[me013]: Yeah.
+[fn002]: everything is more or less the similar - more or less similar.
+[me013]: But um
+[fn002]: It's not quite better.
+[me013]: Right, but it seemed to me that what you were
+[me013]: what you were getting at before was that there is something about the difference between the original signal or the original FFT and with the filter which is what - and the variance was one take uh on it.
+[fn002]: Yeah, I used this too.
+[me013]: Right. But it - it could be something else. Suppose you didn't have anything like that. Then in that case, if you have two nets,
+[me013]: Alright, and this one has three outputs,
+[fn002]: Mm-hmm.
+[me013]: and this one has f-
+[me013]: whatever, fifty-six, or something, if you were to sum up the probabilities for the voiced and for the unvoiced and for the silence here, we've found in the past you'll do better at voiced-unvoiced-silence than you do with this one.
+[fn002]: Mm-hmm.
+[me013]: So just having the three output thing doesn't - doesn't really buy you anything.
+[fn002]: Yeah.
+[me013]: The issue is what you feed it.
+[fn002]: Yeah, I have - yeah.
+[me013]: So uh
+[me018]: So you're saying take the features that go into the voiced-unvoiced- silence net and feed those into the other one,
+[fn002]: No -
+[me013]: w-
+[me018]: as additional inputs, rather than having a separate -
+[me013]: W- well that's another way. That wasn't what I was saying but yeah that's certainly another thing to do. No I was just trying to say if you b- if you
+[fn002]: Yeah.
+[me013]: bring this into the picture over this, what more does it buy you?
+[me018]: Mmm.
+[me013]: And what I was saying is that the only thing I think that it buys you is um
+[me013]: based on whether you feed it something different.
+[me013]: And something different in some fundamental way. And so the kind of thing that - that she was talking about before,
+[me013]: was looking at something uh ab- um -
+[me013]: something
+[me013]: uh about the difference between the - the uh um
+[me013]: log FFT uh log power uh
+[me013]: and the log magnitude uh FF_- spectrum uh and the um uh filter bank.
+[fn002]: Yeah.
+[me013]: And so the filter bank
+[me013]: is chosen in fact to sort of integrate out the effects of pitch and she's saying you know trying - So the particular measure that she chose was the variance of this m- of this difference,
+[fn002]: Mm-hmm.
+[me013]: but that might not be the right number.
+[fn002]: Maybe.
+[me013]: Right? I mean maybe there's something about the variance that's - that's not enough or maybe there's something else that - that one could use, but
+[me013]: I think that, for me, the thing that - that struck me was that uh you wanna get something back here, so here's - here's an idea.
+[me013]: uh What about it you skip all the - all the really clever things, and just fed the log magnitude spectrum into this?
+[fn002]: Ah - I'm sorry.
+[me013]: This is f-
+[me013]: You have the log magnitude spectrum,
+[fn002]: Yeah. Mm-hmm.
+[me013]: and you were looking at that
+[me013]: and the difference between the filter bank and - and c- c- computing the variance.
+[fn002]: Mm-hmm.
+[me013]: That's a clever thing to do. What if you stopped being clever?
+[fn002]: Mm-hmm.
+[me013]: And you just took this thing in here because it's a neural net and neural nets are wonderful and
+[me013]: figure out what they can - what they most need from things, and
+[fn002]: Yeah.
+[me013]: I mean that's what they're good at.
+[me013]: So I mean you're - you're - you're trying to be clever and say what's the statistic that should - we should get about this difference but uh in fact,
+[me013]: you know maybe just feeding this in or -
+[me018]: Hmm.
+[me013]: or feeding both of them in
+[me013]: you know, another way, saying let it figure out what's the - what is the
+[me013]: interaction, especially if you do this over multiple frames?
+[fn002]: Mm-hmm.
+[me013]: Then you have this over time,
+[me013]: and - and both kinds of measures and uh you might get uh something better.
+[fn002]: Mm-hmm.
+[me013]: Um.
+[me018]: So - so don't uh -
+[me018]: don't do the division, but let the net
+[me018]: have everything.
+[me013]: That's another thing you could do yeah. Yeah.
+[fn002]: Yeah.
+[me013]: Um.
+[me013]: I mean, it seems to me, if you have exactly the right thing then it's better to do it without the net because otherwise you're asking the net to learn this - you know, say if you wanted to learn how to do multiplication.
+[me018]: Mm-hmm.
+[me013]: I mean you could feed it a bunch of s- you could feed two numbers that you wanted to multiply into a net
+[me013]: and have a bunch of nonlinearities in the middle and train it to get the product of the output and it would work.
+[me013]: But, it's kind of crazy, cuz we know how to multiply and you - you'd be you know much lower error usually if you just multiplied it out.
+[me013]: But suppose you don't really know what the right thing is. And that's what these sort of dumb machine learning methods are good at. So.
+[me013]: Um. Anyway. It's just a thought.
+[me018]: How long does it take, Carmen, to train up one of these nets?
+[fn002]: Oh, not too much.
+[me018]: Yeah.
+[fn002]: Mmm, one day or less.
+[me018]: Hmm.
+[me013]: Yeah, it's probably worth it.
+[me006]: What are - what are your f- uh frame error rates for - for this?
+[fn002]: Eh fifty-f- six
+[fn002]: uh no, the frame error rate? Fifty-six I think.
+[me006]: O-
+[me013]: Is that - maybe that's accuracy?
+[fn002]: Percent.
+[fn002]: The accuracy.
+[me006]: Fif- fifty-six percent accurate for v- voice-unvoice
+[fn002]: Mm-hmm.
+[fn002]: No for, yes f-
+[fn002]: I don't remember for voice-unvoice, maybe for the other one.
+[me006]: Oh, OK.
+[me013]: Yeah, voiced-unvoiced hopefully would be a lot better.
+[me006]: OK.
+[fn002]: for voiced. I don't reme-
+[me006]: Should be in nineties somewhere.
+[fn002]: Better. Maybe for voice-unvoice. This is for the other one. I should -
+[me006]: Right.
+[fn002]: I can't show that.
+[me006]: OK.
+[fn002]: But I think that fifty-five was for the - when the output are the fifty-six phone.
+[me006]: Mm-hmm.
+[fn002]: That I look in the - with the other - nnn the other MLP that we have are more or less the same number.
+[fn002]: Silence will be better but more or less the same.
+[me013]: I think at the frame level for fifty-six that was the kind of number we were getting for - for uh um reduced band width uh
+[fn002]: I think that - I - I - I think that for the other one, for the three output, is sixty- sixty-two, sixty-
+[me013]: stuff.
+[me006]: Mm-hmm.
+[fn002]: three more or less. It's -
+[me013]: That's all?
+[fn002]: Yeah.
+[me013]: That's pretty bad.
+[fn002]: Yeah, because it's noise also.
+[me013]: Aha!
+[me006]: Oh yeah.
+[fn002]: And we have-
+[me013]: Aha!
+[me013]: Yeah. Yeah. OK.
+[fn002]: I know.
+[me013]: But even i- in -
+[me013]: Oh yeah, in training. Still,
+[me013]: Uh.
+[me013]: Well actually, so this is a test that you should do then.
+[me013]: Um, if you're getting fifty-six percent over here, uh that's in noise also, right?
+[fn002]: Yeah, yeah, yeah.
+[me013]: Oh OK.
+[me013]: If you're getting fifty-six here,
+[me013]: try adding together the probabilities of all of the voiced phones here and all of the unvoiced phones
+[fn002]: will be -
+[me013]: and see what you get then.
+[fn002]: Yeah.
+[me013]: I bet you get better than sixty- three.
+[fn002]: Well I don't know, but -
+[fn002]: I th- I - I think that we - I have the result more or less. Maybe. I don't know.
+[fn002]: I don't - I'm not sure but
+[fn002]: I remember @@ that I can't show that.
+[me013]: OK, but that's a -
+[me013]: That is a - a good check point, you should do that anyway, OK?
+[fn002]: Yeah.
+[me013]: Given this - this uh
+[me013]: regular old net that's just for choosing for other purposes,
+[me013]: uh add up the probabilities of the different subclasses and see - see how well you do.
+[me013]: Uh and that - you know anything that you do over here should be at least as good as that.
+[fn002]: Mm-hmm.
+[me013]: OK.
+[fn002]: I will do that.
+[me018]: The targets for the neural net,
+[fn002]: But -
+[me018]: uh, they come from forced alignments?
+[fn002]: Uh,
+[fn002]: no.
+[me006]: TIMIT canonical ma- mappings.
+[fn002]: TIMIT.
+[me018]: Ah!
+[me013]: Oh. So, this is trained on TIMIT.
+[me018]: OK.
+[fn002]: Yeah.
+[me006]: Yeah, noisy TIMIT.
+[me013]: OK.
+[fn002]: Yeah this for TIMIT.
+[me013]: But noisy TIMIT?
+[me006]: Right.
+[fn002]: Noisy TIMIT. We have noisy TIMIT with the noise of the - the
+[fn002]: TI-digits. And now we have another noisy TIMIT also with the noise of uh Italian database.
+[me013]: I see.
+[me013]: Yeah.
+[me013]: Well there's gonna be - it looks like there's gonna be a noisy uh -
+[me013]: some large vocabulary noisy stuff too. Somebody's preparing.
+[me018]: Really?
+[me013]: Yeah.
+[me013]: I forget what it'll be, resource management, Wall Street Journal, something. Some - some read task actually, that they're -
+[me006]: Hmm!
+[me013]: preparing.
+[me018]: For what -
+[me018]: For Aurora?
+[me013]: Yeah.
+[me018]: Oh!
+[me013]: Yeah, so the uh -
+[me013]: Uh,
+[me013]: the issue is whether people make a decision now based on what they've already seen, or they make it later. And one of the arguments for making it later is let's make sure
+[me013]: that whatever techniques that we're using work for something more than - than connected digits.
+[me018]: Hmm.
+[me013]: So.
+[me018]: When are they planning -
+[me018]: When would they do that?
+[me013]: Mmm, I think late - uh I think in the summer sometime.
+[me018]: Hmm.
+[me013]: So.
+[me013]: OK, thanks.
+[fn002]: This is the work that I did during this date and also mmm
+[me013]: Uh-huh.
+[fn002]: I - H- Hynek last week say that if I have time I can to begin to - to study
+[fn002]: well seriously the France Telecom proposal to look at the code and something like that
+[me013]: Mm-hmm.
+[fn002]: to know exactly what they are doing because maybe that we can have some ideas
+[me013]: Mm-hmm.
+[fn002]: but not only to read the proposal. Look insi- look i-
+[fn002]: carefully what they are doing with the program @@ and I begin to - to work also in that.
+[fn002]: But the first thing that I don't understand is that they
+[fn002]: are using R_-
+[fn002]: the uh log energy that this quite - I don't know why they have some
+[fn002]: constant in the expression of the lower energy. I don't know what that means.
+[me018]: They have a constant in there, you said?
+[fn002]: Yeah.
+[me013]: Oh,
+[me013]: at the front it says uh "log energy is equal to the rounded version of sixteen over the log of two"
+[fn002]: This -
+[fn002]: Yeah.
+[me013]: Uh.
+[me013]: uh times the - Well, this is natural log, and maybe it has something to do with the fact that this is -
+[fn002]: Then maybe I can understand.
+[me018]: Is that some kind of base conversion, or - ?
+[me013]: I - I have no idea.
+[me013]: Yeah, that's what I was thinking, but - but um,
+[me013]: then there's the sixty-four,
+[me013]: Uh,
+[me013]: I don't know.
+[fn002]: Because maybe they're - the threshold that they are using on the basis of this value - I don't know exactly, because well th- I thought maybe they have a meaning. But I don't know what is the meaning of take exactly this value.
+[me018]: Experimental results.
+[me006]: Mc- McDonald's constant.
+[me013]: Yeah, it's pretty funny looking.
+[me018]: So they're taking the number inside the log and raising it to
+[me013]: I don't know.
+[me018]: sixteen over log
+[me018]: base two.
+[me013]: Yeah, I -
+[me013]: um
+[me013]: Right.
+[me013]: Sixteen over
+[me018]: Does it have to do with those sixty-fours, or - ?
+[me013]: two.
+[me013]: Um.
+[me013]: If we ignore the sixteen,
+[me013]: the natural log of t- one over the natural log of two times the natu-
+[me013]: I don't know.
+[me018]: Hmm.
+[me013]: Well , maybe somebody'll think of something, but this is uh -
+[me013]: It may just be that they - they want to have - for very small energies, they want to have some
+[fn002]: Yeah, the e-
+[me013]: kind of a -
+[fn002]: The effect I don't -
+[fn002]: @@ I can understand the effect of this, no? because it's to -
+[fn002]: to do something like that.
+[fn002]: No?
+[me013]: Well, it says, since you're taking a natural log, it says that when - when you get down to essentially zero energy,
+[fn002]: Mm-hmm.
+[me013]: this is gonna be the natural log of one, which is zero.
+[me013]: So it'll go down to
+[me013]: uh
+[me013]: to
+[me013]: the natural log being -
+[me013]: So the lowest value for this would be zero. So y- you're restricted to being positive.
+[me013]: And this sort of smooths it for very small energies.
+[me013]: Uh, why they chose sixty- four and something else, that was probably just experimental.
+[fn002]: Yeah.
+[me013]: And the - the - the constant in front of it, I have no idea.
+[me013]: um
+[fn002]: Well. I - I will look to try if I move this parameter in their code what happens, maybe everything is -
+[me013]: uh -
+[fn002]: Maybe they tres hole are on basis of this.
+[me013]: I mean -
+[fn002]: I don't know.
+[me013]: it -
+[me013]: they - they probably have some fi- particular
+[me013]: s- fixed point arithmetic that they're using, and then it just -
+[me018]: Yeah, I was just gonna say maybe it has something to do with hardware, something they were doing.
+[me013]: Yeah.
+[me013]: Yeah,
+[me013]: I mean that - they're s- probably working with fixed point or integer or something. I think you're supposed to on this stuff anyway, and -
+[me013]: and so maybe that puts it in the right realm somewhere.
+[me018]: Well it just, yeah, puts it in the right range, or -
+[me013]: Yeah.
+[me013]: I think, given at the level you're doing things in floating point on the computer, I don't think it matters, would be my guess, but.
+[fn002]: Mm-hmm.
+[fn002]: I - this more or less anything
+[me013]: Yeah.
+[me013]: OK, and wh- when did Stephane take off? He took off -
+[fn002]: I think that Stephane will arrive today or tomorrow.
+[me013]: Oh, he was gone these first few days, and then he's here for a couple days before he goes to Salt Lake City. OK.
+[fn002]: Mm-hmm.
+[fn002]: He's - I think that he is in Las Vegas or something like that.
+[me013]: Yeah.
+[me013]: Yeah.
+[me013]: So he's - he's going to ICASSP which is good. I - I don't know if there are many people
+[me013]: who are going to ICASSP
+[fn002]: Yeah.
+[me013]: so - so I thought, make sure somebody go.
+[fn002]: Yeah.
+[me018]: Do - have -
+[me018]: Have people sort of stopped going to ICASSP in recent years?
+[me013]: Um,
+[me013]: people are less consistent about going to ICASSP and I think it's still -
+[me013]: it's still a reasonable forum
+[me013]: for students to - to present things.
+[me013]: Uh,
+[me013]: it's -
+[me013]: I think for engineering students of any kind, I think it's - it's if you haven't been there much, it's good to go to,
+[me013]: uh to get a feel for things, a range of things, not just speech. Uh.
+[me018]: Hmm.
+[me013]: But I think for - for sort of dyed-in-the-wool speech people, um I think that ICSLP and Eurospeech are much more targeted.
+[me018]: Mm-hmm.
+[me013]: Uh. And then there's these other meetings, like HLT and - and uh
+[me018]: Mmm.
+[me013]: ASRU -
+[me013]: so there's - there's actually plenty of meetings that are really relevant to -
+[me013]: to uh
+[me013]: computational uh speech processing of one sort or another.
+[me018]: Mm-hmm.
+[me013]: Um.
+[me013]: So. I mean, I mostly just ignored it because I was too busy and didn't get to it.
+[me013]: So uh
+[me013]: Wanna talk a little bit about what we were talking about this morning? Just briefly, or
+[me006]: Oh! um uh
+[me013]: Or anything else?
+[me006]: Yeah. So. I - I guess
+[me006]: some of the
+[me006]: progress, I - I've been getting a - getting my committee members for the quals.
+[me006]: And um so far I have Morgan and Hynek,
+[me006]: Mike Jordan,
+[me006]: and I asked John Ohala and he agreed.
+[me018]: Cool.
+[me006]: Yeah. Yeah.
+[me006]: So I'm - I - I just need to ask um
+[me006]: Malek.
+[me006]: One more.
+[me006]: Um.
+[me006]: Tsk.
+[me006]: Then uh I talked a little bit about
+[me006]: um continuing with these dynamic ev- um acoustic events,
+[me006]: and um
+[me006]: we're - we're - we're
+[me006]: thinking about a way to test the completeness of
+[me006]: a - a set of um dynamic uh events.
+[me006]: Uh, completeness in the - in the sense that
+[me006]: um if we - if we pick these X_ number of acoustic events,
+[me006]: do they provide sufficient coverage
+[me006]: for the phones that we're trying to recognize
+[me006]: or - or the f- the words that we're gonna try to recognize later on.
+[me006]: And so Morgan and I were uh discussing
+[me006]: um s- uh s-
+[me006]: a form of a cheating experiment
+[me006]: where we get -
+[me006]: um we have uh
+[me006]: um
+[me006]: a chosen set of features, or acoustic events,
+[me006]: and we train up a hybrid
+[me006]: um system to do phone recognition on TIMIT.
+[me006]: So i- i- the idea is if we get good phone recognition results,
+[me006]: using um these set of acoustic events,
+[me006]: then
+[me006]: um that - that says that these acoustic events are g- sufficient to cover
+[me006]: a set of phones, at least found in TIMIT.
+[me006]: Um so i- it would be a -
+[me006]: a measure of
+[me006]: "are we on the right track with - with the -
+[me006]: the choices of our acoustic events".
+[me006]: Um,
+[me006]: So that's going on. And
+[me006]: also, just
+[me006]: uh working on my
+[me006]: uh final project for Jordan's class, uh which is -
+[me013]: Actually, let me - Hold that thought. Let me back up while we're still on it. The - the other thing I was suggesting, though, is that given that you're talking about binary features,
+[me006]: Yeah.
+[me006]: OK, sure.
+[me013]: uh, maybe the first thing to do is just to count
+[me013]: and uh count co-occurrences and get probabilities for a discrete HMM
+[me013]: cuz that'd be pretty simple because it's just - Say, if you had ten - ten events,
+[me013]: uh that you were counting, uh each frame would only have a thousand possible values for these ten bits,
+[me013]: and uh so you could make a table that would - say, if you had thirty-nine phone categories, that would be a thousand by thirty-nine, and just count the co-occurrences and divide them by the - the uh - uh uh occ- uh
+[me013]: count the co-occurrences between the event and the phone and divide them by the number of occurrences of the phone, and that would give you the likelihood of the - of the event given the phone. And um then just use that in a very simple HMM and uh
+[me013]: you could uh do phone recognition then and uh wouldn't have any of the issues of the uh training of the net or - I mean, it'd be on the simple side, but
+[me018]: Mm-hmm.
+[me013]: uh
+[me013]: um
+[me013]: you know, if - uh uh the example I was giving was that if - if you had um
+[me013]: onset of voicing and - and end of voicing as being two kinds of events,
+[me013]: then if you had those a- all marked correctly, and you counted co-occurrences, you should get it completely right.
+[me018]: Mm-hmm.
+[me013]: So.
+[me013]: um -
+[me013]: But you'd get all the other distinctions, you know, randomly wrong. I mean there'd be nothing to tell you that.
+[me013]: So
+[me013]: um
+[me013]: uh
+[me013]: If you just do this by counting, then you should be able to find out in a pretty straightforward way whether you have a sufficient uh set of events to - to do the kind of level of - of uh classification of phones that you'd like.
+[me013]: So that was - that was the idea. And then the other thing that we were discussing was - was um
+[me013]: OK, how do you get the - your training data.
+[me018]: Mm-hmm.
+[me013]: Cuz uh the Switchboard transcription project uh uh you know was
+[me013]: half a dozen people, or so working off and on over a couple years, and
+[me013]: uh similar - similar amount of data to what you're talking about with TIMIT training. So,
+[me013]: it seems to me that the only reasonable starting point is
+[me013]: uh to automatically translate the uh
+[me013]: current TIMIT markings into the markings you want.
+[me013]: And uh
+[me013]: it won't have the kind of characteristic that you'd like, of catching funny kind of things that maybe aren't
+[me018]: Mm-hmm.
+[me013]: there from these automatic markings, but - but uh
+[me013]: it's uh -
+[me018]: It's probably a good place to start.
+[me013]: Yeah.
+[me018]: Yeah.
+[me013]: Yeah and a short - short amount of time, just to - again, just to see if that information is sufficient
+[me018]: Mm-hmm.
+[me013]: to uh determine the phones.
+[me018]: Hmm.
+[me013]: So.
+[me018]: Yeah, you could even then -
+[me018]: to -
+[me018]: to get an idea about
+[me018]: how different it is, you could maybe take some subset
+[me018]: and
+[me018]: you know, go through a few sentences, mark them by hand and then see how different it is
+[me018]: from
+[me018]: you know, the canonical ones, just to get an idea - a rough idea of
+[me013]: Right.
+[me018]: h- if it really even makes a difference.
+[me013]: You can get a little feeling for it that way, yeah that is probably right.
+[me018]: Yeah.
+[me013]: I mean uh my - my guess would be that this is - since TIMIT's read speech that this would be less of a big deal, if you went and looked at spontaneous speech it'd be more - more of one.
+[me018]: Mm-hmm.
+[me018]: Right.
+[me018]: Right.
+[me013]: And the other thing would be, say, if you had these ten events, you'd wanna see, well what if you took
+[me013]: two events or four events or ten events or t- and you know, and -
+[me013]: and hopefully there should be some point at which
+[me013]: having more information doesn't tell you
+[me013]: really all that much more about what the phones are.
+[me018]: Mm-hmm.
+[me018]: You could define
+[me018]: other events as being sequences of these events
+[me018]: too.
+[me013]: Uh, you could, but the thing is, what he's talking about here is a uh - a translation to a per-frame feature vector,
+[me013]: so there's no sequence in that, I think. I think it's just a -
+[me018]: Unless you did like a second pass over it or something after you've got your -
+[me013]: Yeah, but we're just talking about something simple here,
+[me018]: Yeah. Yeah, yeah.
+[me013]: yeah,
+[me013]: to see if -
+[me018]: Yeah.
+[me018]: I'm adding complexity.
+[me013]: Yeah. Just - You know. The idea is with a - with a very simple statistical structure, could you - could you uh at least verify that you've chosen features that
+[me018]: Yeah.
+[me013]: are sufficient.
+[me013]: OK, and you were saying something - starting to say something else about your - your class project, or - ?
+[me006]: Oh.
+[me006]: Yeah th- Um.
+[me013]: Yeah.
+[me006]: So for my class project I'm
+[me006]: um
+[me006]: I'm
+[me006]: tinkering with uh support vector machines? something that we learned in class, and uh um basically just another method for doing classification.
+[me006]: And so I'm gonna apply that to
+[me006]: um compare it with the results by um King and Taylor who did
+[me006]: um these
+[me006]: um using recurrent neural nets,
+[me006]: they recognized
+[me006]: um
+[me006]: a set of phonological features
+[me006]: um
+[me006]: and made a mapping from the MFCC's to these phonological features, so I'm gonna
+[me006]: do a similar thing with -
+[me006]: with support vector machines and see if -
+[me018]: So what's the advantage of support vector machines? What -
+[me006]: Um. So, support vector machines are - are good with dealing with a less amount of data
+[me018]: Hmm.
+[me006]: and um so if you - if you give it less data it still does a reasonable job
+[me006]: in learning the - the patterns.
+[me018]: Hmm.
+[me006]: Um and
+[me006]: um
+[me013]: I guess it - yeah, they're sort of succinct,
+[me013]: and - and they
+[me006]: Yeah.
+[me013]: uh
+[me018]: Does there some kind of a distance metric that they use or how do they -
+[me018]: for cla- what do they do for classification?
+[me006]: Um. Right. So,
+[me006]: the - the simple idea behind a support vector machine is
+[me006]: um,
+[me006]: you have -
+[me006]: you have this feature space, right? and then it finds the optimal separating plane,
+[me018]: Mm-hmm.
+[me018]: Mm-hmm.
+[me006]: um between these two different um classes,
+[me018]: Mm-hmm.
+[me006]: and um
+[me006]: and so
+[me006]: um,
+[me006]: what it - i- at the end of the day, what it actually does is
+[me006]: it picks
+[me006]: those
+[me006]: examples of the features that are closest to the separating boundary, and remembers those
+[me018]: Mm-hmm.
+[me006]: and -
+[me006]: and uses them to recreate the boundary for the test set.
+[me006]: So, given these
+[me006]: um these features, or - or these - these examples,
+[me006]: um, critical examples,
+[me006]: which they call support f- support vectors,
+[me018]: Oh.
+[me006]: then um
+[me006]: given a new example,
+[me006]: if the new example falls
+[me006]: um away from the boundary in one direction then it's classified as being a part of this particular class
+[me006]: and otherwise it's the other class.
+[me018]: So why save the examples? Why not just save what the
+[me006]: Mm-hmm.
+[me018]: boundary itself is?
+[me006]: Um. Hmm. Let's see.
+[me006]: Uh.
+[me006]: Yeah, that's a good question. I - yeah.
+[me013]: That's another way of doing it.
+[me018]: Mmm.
+[me013]: Right? So - so it - I mean I - I guess it's -
+[me018]: Sort of an equivalent.
+[me013]: You know, it - it goes back to nearest-neighbor sort of thing, right? Um,
+[me018]: Mm-hmm.
+[me013]: i- i- if - is it eh w-
+[me013]: When is nearest-neighbor good? Well, nearest-neighbor good - is good if you have lots and lots of examples.
+[me013]: Um but of course if you have lots and lots of examples, then it can take a while to - to use nearest-neighbor. There's lots of look ups.
+[me013]: So a long time ago people talked about things where you would have
+[me013]: uh a condensed nearest-neighbor, where you would - you would - you would pick out uh some representative examples which would uh be sufficient to represent - to - to correctly classify everything that came in.
+[me018]: Oh.
+[me018]: Mm-hmm.
+[me013]: I - I think s- I think support vector stuff sort of goes back to -
+[me013]: to that kind of thing.
+[me018]: I see.
+[me013]: Um.
+[me018]: So rather than doing nearest neighbor where you compare to every single one,
+[me018]: you just pick a few
+[me018]: critical ones, and -
+[me013]: Yeah.
+[me018]: Hmm.
+[me013]: And th- the
+[me013]: You know, um
+[me013]: neural net approach uh or Gaussian mixtures for that matter are sort of - fairly brute force kinds of things, where you sort of -
+[me013]: you predefine that there is this big bunch of parameters and then you - you place them as you best can to define the boundaries, and in fact, as you know,
+[me013]: these things do take a lot of parameters and - and uh
+[me013]: if you have uh only a modest amount of data, you have trouble
+[me013]: uh learning them.
+[me013]: Um,
+[me018]: Mm-hmm.
+[me013]: so I - I guess the idea to this is that it - it is reputed to uh be somewhat better in that regard.
+[me006]: Right. I- it can be a - a reduced um parameterization of - of the - the model by just keeping certain selected examples.
+[me018]: Hmm.
+[me006]: Yeah.
+[me006]: So.
+[me013]: But I don't know if people have done sort of careful
+[me013]: comparisons of this on large tasks or anything.
+[me013]: Maybe - maybe they have.
+[me013]: I don't know.
+[me006]: Yeah, I don't know either.
+[me013]: Yeah.
+[me026]: S- do you get some kind of
+[me026]: number between zero and one at the output?
+[me006]: Actually you don't get a - you don't get a nice number between zero and one. You get - you get either a zero or a one.
+[me006]: Um,
+[me006]: uh there are - there are pap-
+[me006]: Well, basically, it's -
+[me006]: it's um
+[me006]: you - you get a distance measure
+[me006]: at the end of the day,
+[me006]: and then that distance measure is - is um -
+[me006]: is translated to a zero or one.
+[me006]: Um.
+[me013]: But that's looking at it for - for classification - for binary classification, right?
+[me006]: That's for classification, right.
+[me018]: And you get that for each class, you get a zero or a one.
+[me006]: Right.
+[me013]: But you have the distances to work with.
+[me006]: You have the distances to work with, yeah.
+[me013]: Cuz actually Mississippi State people did use support vector machines for uh uh speech recognition and they were using it to estimate probabilities.
+[me006]: Yeah.
+[me006]: Yeah, they -
+[me006]: they had a - had a way to translate the distances into - into probabilities with the - with the simple
+[me006]: um
+[me006]: uh sigmoidal function.
+[me013]: Yeah, and d- did they use sigmoid or a softmax type thing? And didn't they like exponentiate or something and then divide by the sum of them, or - ?
+[me006]: Um
+[me006]: Yeah, there's some - there's like one over one plus the exponential or something like that.
+[me013]: Oh it - i-
+[me013]: Oh, so it is a sigmoidal.
+[me006]: Yeah.
+[me013]: OK.
+[me013]: Alright.
+[me018]: Did the - did they get
+[me018]: good results with that?
+[me013]: I mean , they're OK, I - I don't - I don't think they were earth - earth shattering, but I think that
+[me018]: Hmm.
+[me013]: uh
+[me013]: this was a couple years ago, I remember them doing it at some meeting, and - and um
+[me013]: I don't think people were very critical because it was interesting just to -
+[me013]: to try this and
+[me013]: you know, it was the first time they tried it, so -
+[me018]: Hmm.
+[me013]: so the - you know, the numbers were not
+[me013]: incredibly good but there's you know,
+[me013]: it was th- reasonable.
+[me018]: Mm-hmm.
+[me013]: I - I don't remember anymore.
+[me013]: I don't even remember what the task was,
+[me013]: it was Broadcast News, or
+[me013]: something. I don't know.
+[me018]: Hmm.
+[me026]: Uh s- So Barry, if you just have zero and ones, how are you doing the speech recognition?
+[me006]: Right.
+[me006]: Oh I'm not do- I'm not planning on doing speech recognition with it. I'm just doing
+[me026]: Oh. OK .
+[me006]: detection of phonological features.
+[me006]: So uh for example,
+[me006]: this - this uh feature set called the uh sound patterns of English
+[me006]: um is just a bunch of
+[me006]: um
+[me006]: binary valued features.
+[me006]: Let's say, is this voicing, or is this not voicing, is this
+[me006]: sonorants, not sonorants, and
+[me026]: OK.
+[me006]: stuff like that. So.
+[me018]: Did you find any more mistakes in their tables?
+[me006]: Oh! Uh I haven't gone through the entire table, yet. Yeah, yesterday I brought Chuck
+[me006]: the table and I was like, "wait, this - is -
+[me006]: Is the mapping from N_ to - to this phonological feature called um "coronal" ,
+[me006]: is - is - should it be - shouldn't it be a one? or should it - should it be you know coronal instead of not coronal as it was labeled in the paper?"
+[me006]: So I ha- haven't hunted down all the - all the mistakes yet, but -
+[me013]: Uh-huh.
+[me013]: But a- as I was saying, people do get probabilities from these things, and - and uh
+[me026]: OK.
+[me013]: we were just trying to remember how they do, but people have used it for speech recognition, and they have gotten probabilities. So they have some conversion from these distances to
+[me026]: OK. OK. OK.
+[me013]: probabilities.
+[me006]: Right, yeah.
+[me013]: There's - you have - you have the paper, right? The Mississippi State paper?
+[me006]: Mm-hmm. Mm-hmm.
+[me013]: Yeah, if you're interested y- you could look, yeah.
+[me026]: And - OK. OK.
+[me006]: Yeah, I can - I can show you - I - yeah, our -
+[me018]: So in your - in - in the thing that you're doing, uh
+[me006]: Mm-hmm.
+[me018]: you have a vector of ones and zeros for each phone?
+[me006]: Uh, is this the class project, or - ?
+[me018]: Yeah.
+[me006]: OK.
+[me006]: um
+[me018]: Is that what you're -
+[me006]: Right,
+[me006]: Right, right f- so for every phone there is - there is a um - a vector of ones and zeros
+[me006]: f- uh corresponding to whether it exhibits a particular phonological feature or not.
+[me018]: Mm-hmm.
+[me018]: Mm-hmm.
+[me018]: And so when you do your wh- I'm - what is the task for the class project? To
+[me006]: Um
+[me018]: come up with the phones? or to come up with these vectors to see how closely they match the phones, or - ?
+[me006]: Oh.
+[me006]: Right, um to come up with a mapping from um MFCC's or s- some feature set,
+[me018]: Mm-hmm.
+[me006]: um to
+[me006]: uh w-
+[me006]: to whether there's existence of a particular phonological feature.
+[me006]: And um yeah, basically it's to learn a mapping
+[me006]: from -
+[me006]: from the MFCC's to
+[me006]: uh phonological features.
+[me006]: Is it - did that answer your question?
+[me018]: I think so.
+[me006]: OK.
+[me006]: C-
+[me018]: I guess -
+[me018]: I mean, uh -
+[me018]: I'm not sure what you - what you're - what you get out of your system. Do you get out a
+[me006]: Mm-hmm.
+[me018]: uh -
+[me018]: a vector of these ones and zeros and then try to find the closest matching phoneme to that vector, or - ?
+[me006]: Oh. No, no. I'm not - I'm not planning to do any - any phoneme mapping yet. Just -
+[me018]: Uh-huh.
+[me006]: it's - it's basically - it's - it's really simple, basically a detection
+[me006]: of phonological features.
+[me018]: I see.
+[me006]: Yeah, and um
+[me006]: cuz the uh -
+[me006]: So King and - and Taylor
+[me018]: Yeah.
+[me006]: um did this with uh recurrent neural nets, and this i- their - their idea was to first find
+[me018]: Mm-hmm.
+[me006]: a mapping from MFCC's to
+[me006]: uh phonological features and then later on, once you have these
+[me006]: phonological features,
+[me018]: Mm-hmm.
+[me006]: then uh map that to phones. So I'm - I'm sort of reproducing phase one of their stuff.
+[me018]: Mmm.
+[me018]: So they had one recurrent net for each particular feature?
+[me006]: Right.
+[me006]: Right.
+[me018]: I see.
+[me006]: Right.
+[me006]: Right.
+[me018]: I wo- did they compare that - I mean, what if you just did phone recognition and did the reverse lookup.
+[me006]: Uh.
+[me018]: So you recognize a phone and which ever phone was recognized, you spit out it's vector of ones and zeros.
+[me006]: Mm-hmm.
+[me018]: I mean uh -
+[me013]: I expect you could do that. That's probably not what he's going to do on his class project.
+[me006]: Uh.
+[me018]: Yeah. No.
+[me013]: Yeah.
+[me013]: So um have you had a chance to do
+[me006]: Yeah.
+[me013]: this um thing we talked about yet with the uh -
+[me013]: um
+[me018]: Insertion penalty?
+[me013]: Uh. No actually I was going a different - That's a good question, too, but I was gonna ask about the -
+[me013]: the um
+[me013]: changes to the data in comparing PLP and mel cepstrum
+[me013]: for the SRI
+[me013]: system.
+[me018]: Uh.
+[me018]: Well what I've been -
+[me018]: "Changes to the data", I'm not sure I -
+[me013]: Right.
+[me013]: So we talked on the phone about this, that -
+[me018]: Yeah.
+[me013]: that there was still a difference of a -
+[me013]: of a few percent
+[me018]: Right.
+[me013]: and
+[me013]: you told me that there was a difference in how the normalization was done.
+[me013]: And I was asking if you were going to do -
+[me013]: redo it
+[me018]: Mm-hmm.
+[me013]: uh for PLP with the normalization done as it had been done for the mel cepstrum.
+[me018]: Uh
+[me018]: right, no I haven't had a chance to do that.
+[me018]: What I've been doing is
+[me013]: OK.
+[me018]: uh
+[me018]: trying to figure out - it just seems to me like there's a um -
+[me018]: well it seems like there's a bug,
+[me018]: because
+[me018]: the difference
+[me018]: in performance is -
+[me018]: it's not gigantic
+[me018]: but it's big enough that it - it seems wrong.
+[me013]: Yeah, I agree, but I thought that the normalization difference was one of the
+[me018]: and -
+[me018]: Yeah, but I don't - I'm not -
+[me013]: possibilities, right?
+[me018]: Yeah, I guess I don't
+[me018]: think that the normalization difference is gonna account for everything.
+[me018]: So what I was working on is um
+[me013]: OK.
+[me018]: just going through and checking the headers of the wavefiles, to see if
+[me018]: maybe there was a um -
+[me018]: a certain type of compression or something that was done that my script wasn't catching. So that for some subset of
+[me018]: the training data,
+[me018]: uh the - the -
+[me018]: the features I was computing were junk.
+[me013]: OK.
+[me018]: Which would you know
+[me018]: cause it to perform OK, but uh,
+[me018]: you know, the - the models would be all messed up. So I was going through and just double-checking that kind of think first,
+[me013]: Mm-hmm.
+[me018]: to see if
+[me013]: I see.
+[me018]: there was just some kind of obvious bug in the way that I was computing the features.
+[me013]: OK.
+[me018]: Looking at all the sampling rates to make sure all the sampling rates were what -
+[me013]: Yeah.
+[me018]: eight K_, what I was assuming they were, um -
+[me013]: Yeah, that makes sense, to check all that.
+[me018]: Yeah. So I was doing that first, before I did these other things, just to make sure there wasn't something -
+[me013]: Although really,
+[me013]: uh
+[me013]: uh, a couple three percent
+[me013]: uh difference in word error rate
+[me013]: uh
+[me013]: could easily come
+[me013]: from some difference in normalization, I would think.
+[me013]: But
+[me018]: Yeah, and I think, hhh - I'm trying to remember but I think I recall that Andreas was saying that he was gonna run
+[me018]: sort of the reverse experiment.
+[me018]: Uh
+[me018]: which is to
+[me018]: try to
+[me018]: emulate the
+[me018]: normalization that we did but with the mel cepstral features.
+[me018]: Sort of, you know,
+[me018]: back up from the system that he had.
+[me018]: I thought he said he was gonna - I have to look back through my - my email from him.
+[me013]: Yeah, he's probably off at - at uh his
+[me018]: Yeah, he's gone
+[me013]: meeting now,
+[me018]: now.
+[me018]: Um.
+[me013]: yeah.
+[me013]: Yeah.
+[me013]: But yeah the - I sh- think they should be
+[me018]: But -
+[me013]: roughly equivalent,
+[me013]: um
+[me013]: I mean again
+[me013]: the Cambridge folk found the PLP actually to be a little better.
+[me018]: Right.
+[me013]: Uh
+[me013]: So it's -
+[me013]: um
+[me013]: I mean the other thing I wonder about was whether there was something just in the -
+[me013]: the bootstrapping of
+[me013]: their system which was
+[me013]: based on -
+[me013]: but maybe not, since they -
+[me018]: Yeah see one thing that's a little bit um -
+[me018]: I was looking - I've been studying and going through the logs for the system that um Andreas created.
+[me018]: And um
+[me018]: his uh - the way that the -
+[me018]: SR_ I system looks like it works is that it reads the wavefiles directly,
+[me018]: uh
+[me013]: Right.
+[me018]: and does all of the cepstral computation stuff on the fly.
+[me013]: Right.
+[me018]: And,
+[me018]: so there's no place where these -
+[me018]: where the cepstral files are stored, anywhere that I can go look at and compare
+[me018]: to the PLP ones, so
+[me018]: whereas with our features, he's actually storing
+[me018]: the cepstrum on disk, and he reads those in. But it looked like he had to give it -
+[me013]: Right.
+[me018]: uh even though the cepstrum is already computed, he has to give it
+[me018]: uh
+[me018]: a front-end parameter file. Which talks about the kind of
+[me018]: uh
+[me018]: com- computation that his mel cepstrum thing does, so
+[me013]: Uh-huh.
+[me018]: i-
+[me018]: I - I don't know if that - it probably doesn't mess it up, it probably just ignores it if it determines that it's already
+[me018]: in the right format or something but -
+[me018]: the - the - the two processes that happen are a little different.
+[me018]: So.
+[me013]: Yeah.
+[me013]: So anyway, there's stuff there to sort out.
+[me018]: Yeah.
+[me018]: Yeah.
+[me013]: So, OK. Let's go back to what you thought I was asking you.
+[me018]: Yeah no and I didn't have a chance to do that.
+[me013]: Ha!
+[me013]: Oh! You had the sa- same answer anyway.
+[me018]: Yeah.
+[me018]: Yeah. I've been um, -
+[me018]: I've been working with um
+[me018]: Jeremy
+[me018]: on his project and then I've been trying to track down this bug
+[me018]: in uh the ICSI front-end features.
+[me013]: Uh-huh.
+[me018]: So one thing that I did notice, yesterday I was studying the um -
+[me018]: the uh RASTA code
+[me013]: Uh-huh.
+[me018]: and it looks like we don't have any way to um
+[me018]: control the frequency range that we use in our analysis. We basically - it looks to me like we do the FFT, um and then we just take all the bins
+[me018]: and we use everything.
+[me018]: We don't have any set of parameters where we can say
+[me018]: you know, "only process from
+[me018]: you know a hundred and ten hertz to thirty-seven-fifty".
+[me013]: Um -
+[me018]: At least I couldn't see any kind of control for that.
+[me013]: Yeah, I don't think it's in there, I think it's in the uh uh
+[me013]: uh the filters.
+[me013]: So, the FF_ T is on everything, but the filters
+[me013]: um, for instance, ignore the - the lowest
+[me013]: bins
+[me013]: and the highest bins.
+[me013]: And what it does is it - it copies
+[me018]: The - the filters? Which filters?
+[me013]: um
+[me013]: The filter bank which is created by integrating over FF_ T bins.
+[me018]: Mm-hmm.
+[me013]: um
+[me018]: When you get the mel -
+[me018]: When you go to the mel scale.
+[me013]: Right.
+[me013]: Yeah, it's bark scale, and it's - it -
+[me013]: it um -
+[me013]: it actually copies
+[me013]: the uh um -
+[me013]: the second
+[me013]: filters over to the first. So the first filters are always - and you can s- you can specify a different number of
+[me013]: uh features - different number of filters, I think,
+[me013]: as I recall.
+[me013]: So you can specify a different number of filters, and whatever
+[me013]: um
+[me013]: uh you specify, the last ones are gonna be ignored. So that - that's a way that you sort of
+[me013]: change what the - what the bandwidth is.
+[me013]: Y- you can't do it without I think changing the number of filters, but -
+[me018]: I saw something about uh -
+[me018]: that looked like it was doing something like that, but I didn't quite understand it.
+[me018]: So maybe -
+[me013]: Yeah, so the idea is that the very lowest frequencies and - and typically the veriest highest frequencies are kind of junk.
+[me018]: Uh-huh.
+[me013]: And so um you just - for continuity you just approximate them by -
+[me013]: by the second to highest and second to lowest.
+[me018]: Mm-hmm.
+[me013]: It's just a simple thing we put in.
+[me013]: And - and so if you h-
+[me018]: But - so the - but that's a fixed uh thing? There's nothing that lets you -
+[me013]: Yeah,
+[me013]: I think that's a fixed thing. But
+[me013]: see - see my point? If you had -
+[me013]: If you had ten filters,
+[me013]: then you would be throwing away a lot at the two ends.
+[me018]: Mm-hmm.
+[me013]: And if you had -
+[me013]: if you had
+[me013]: fifty filters, you'd be throwing away hardly anything.
+[me018]: Mm-hmm.
+[me013]: Um, I don't remember there being an independent way of saying "we're just gonna
+[me013]: make them from here to here".
+[me018]: Use this analysis bandwidth or something.
+[me013]: But I - I - I don't know, it's actually been awhile since I've looked at it.
+[me018]: Yeah, I went through the Feacalc code and then
+[me018]: looked at
+[me018]: you know just calling the RASTA libs and thing like that. And I didn't - I couldn't see any wh- place where that kind of thing was done.
+[me018]: But
+[me018]: um
+[me018]: I didn't quite understand everything that I saw, so -
+[me013]: Yeah, see I don't know Feacalc at all.
+[me018]: Mm-hmm.
+[me013]: But it calls RASTA with some options, and
+[me018]: Right.
+[me013]: um
+[me013]: But I - I think in -
+[me013]: I don't know. I guess for some particular database you might find that you could tune that and tweak that to get that a little better, but I think that
+[me013]: in general it's not
+[me013]: that critical. I mean there's -
+[me018]: Yeah.
+[me013]: You can -
+[me013]: You can throw away stuff below a hundred hertz or so and it's just
+[me013]: not going to affect
+[me013]: phonetic classification at all.
+[me018]: Another thing I was thinking about was um is there a -
+[me018]: I was wondering if there's maybe um
+[me018]: certain settings of the parameters when you compute PLP which would basically cause it to output
+[me018]: mel cepstrum.
+[me018]: So that, in effect, what I could do is use our code but produce mel cepstrum
+[me018]: and compare that directly to -
+[me013]: Well, it's not precisely.
+[me013]: Yeah. I mean, um,
+[me018]: Hmm.
+[me013]: um
+[me013]: what you can do
+[me013]: is um
+[me013]: you can definitely change the - the filter bank from being uh
+[me013]: a uh trapezoidal integration to a - a - a triangular one,
+[me018]: Mm-hmm.
+[me013]: which is what the typical mel - mel cepstral uh filter bank does.
+[me018]: Mm-hmm.
+[me013]: And some people have claimed that they got some better performance doing that, so you certainly could do that
+[me013]: easily.
+[me013]: But the fundamental difference, I mean, there's other small differences -
+[me018]: There's a cubic root that happens, right?
+[me013]: Yeah, but, you know, as opposed to the log in the other case. I mean
+[me013]: the fundamental d- d- difference that we've seen any
+[me013]: kind of difference from before, which is actually an advantage for the PL_ P i- uh, I think, is that the - the smoothing at the end is auto-regressive instead of being cepstral -
+[me013]: uh, from cepstral truncation.
+[me013]: So um it's a little more noise robust.
+[me018]: Hmm.
+[me013]: Um, and that's - that's why when
+[me013]: people started getting databases that had a little more noise in it, like -
+[me013]: like uh um
+[me013]: Broadcast News and so on, that's why c- Cambridge switched to PLP I think.
+[me018]: Mm-hmm.
+[me013]: So um
+[me013]: That's a difference that I don't
+[me013]: think we put any way to get around, since it was an advantage.
+[me018]: Mm-hmm.
+[me013]: um
+[me013]: uh but we did -
+[me013]: eh we did hear this comment
+[me013]: from people at some point,
+[me013]: that
+[me013]: um
+[me013]: it
+[me013]: uh they got some better results with the triangular filters rather than the trapezoidal. So that is an option
+[me013]: in RASTA.
+[me018]: Hmm.
+[me013]: Uh and you can certainly
+[me013]: play with that.
+[me013]: But I think you're probably doing the right thing to look for bugs first.
+[me018]: Yeah just - it just seems like this kind of behavior could be caused by
+[me013]: I don't know.
+[me018]: you know s-
+[me018]: some of the training data being messed up.
+[me013]: Could be.
+[me018]: You know, you're sort of getting most of the way there, but there's a -
+[me018]: So I started going through and looking -
+[me018]: One of the things that I did notice was that the um
+[me018]: log likelihoods coming out of the log recognizer
+[me018]: from the PLP data
+[me018]: were much
+[me018]: lower,
+[me018]: much smaller,
+[me018]: than for the mel cepstral stuff,
+[me018]: and that the
+[me018]: average amount of pruning that was happening
+[me018]: was therefore a little bit higher
+[me018]: for the PLP features.
+[me013]: Oh-huh!
+[me018]: So, since he used the same exact pruning thresholds for both,
+[me018]: I was wondering if it could be that we're getting more pruning.
+[me013]: Oh!
+[me013]: He - he -
+[me013]: He used the identical pruning thresholds even though the s- the range of p- of the likeli-
+[me018]: Yeah.
+[me013]: Oh well that's -
+[me018]: Right.
+[me018]: Right.
+[me013]: That's a pretty good point right there. Yeah.
+[me018]: Yeah, so -
+[me013]: I would think that you might wanna do something like uh
+[me013]: you know, look at a few points to see where you are starting to get significant search errors.
+[me018]: That's -
+[me018]: Right.
+[me018]: Well, what I was gonna do is I was gonna take
+[me018]: um a couple of the utterances that he had run through,
+[me018]: then
+[me018]: run them through again but modify the pruning threshold and see if it
+[me018]: you know,
+[me018]: affects the score.
+[me013]: Yeah.
+[me013]: Yeah.
+[me018]: So.
+[me013]: But I mean you could - uh if -
+[me013]: if - if that looks promising you could, you know, r- uh run
+[me013]: the overall test set
+[me013]: with a - with a few different uh pruning thresholds for both,
+[me018]: Mm-hmm.
+[me018]: Right.
+[me013]: and presumably he's running at some pruning threshold that's -
+[me013]: that's uh, you know -
+[me013]: gets
+[me013]: very few search errors but is - is relatively fast and -
+[me018]: Mm-hmm.
+[me018]: Right. I mean, yeah, generally in these things you -
+[me018]: you turn back pruning really far, so
+[me018]: I - I didn't think it would be that big a deal because I was figuring well you have it turned back so far that
+[me018]: you know it -
+[me013]: But you may be in the wrong range for the PL_ P features for some reason.
+[me018]: Yeah.
+[me018]: Yeah.
+[me018]: Yeah.
+[me018]: And the uh the - the run time of the recognizer on the PLP features is longer
+[me018]: which sort of implies that the networks are bushier,
+[me018]: you know, there's more things it's considering
+[me018]: which goes along with the fact that the matches aren't as good.
+[me018]: So
+[me018]: uh, you know, it could be that we're just pruning
+[me018]: too much.
+[me018]: So.
+[me013]: Yeah.
+[me013]: Yeah, maybe just be different kind of distributions and - and yeah so that's another
+[me018]: Mm-hmm.
+[me013]: possible thing.
+[me018]: Mm-hmm.
+[me013]: They - they should - really shouldn't - There's no particular reason why they would be
+[me013]: exactly - behave exactly the same.
+[me018]: Mm-hmm.
+[me018]: Right.
+[me018]: Right.
+[me013]: So.
+[me018]: So.
+[me018]: There's lots of little differences. So.
+[me013]: Yeah.
+[me018]: Uh.
+[me013]: Yeah.
+[me018]: Trying to track it down.
+[me013]: Yeah.
+[me013]: I guess this was a little bit off topic, I guess, because I was - I was thinking in terms of th- this as being a - a - a - a core
+[me018]: Yeah
+[me013]: item that once we - once we had it going we would use for a number of the front-end things also.
+[me018]: Mm-hmm.
+[me013]: So.
+[me013]: um
+[me013]: Wanna -
+[me026]: That's -
+[me026]: as far as my stuff goes,
+[me013]: What's - what's on -
+[me026]: yeah, well I
+[me013]: Yeah.
+[me026]: tried this mean subtraction method. Um. Due to Avendano,
+[me026]: I'm taking s- um
+[me026]: six seconds of speech, um
+[me026]: I'm using two second
+[me026]: FFT analysis frames,
+[me026]: stepped by a half second
+[me026]: so it's a quarter length step and I -
+[me026]: I take that frame and four f- the four - I take - Sorry, I take the current frame and the four past frames and the
+[me026]: four future frames and that adds up to six seconds of speech.
+[me026]: And I calculate um
+[me026]: the spectral mean,
+[me026]: of the log magnitude spectrum over that N_.
+[me026]: I use that to normalize the s- the current center frame
+[me026]: by mean subtraction.
+[me026]: And I then - then I move to the next frame and I -
+[me026]: I do it again.
+[me026]: Well, actually I calculate all the means first and then I do the subtraction.
+[me026]: And um
+[me026]: the - I tried that with HDK, the Aurora setup of HDK training on clean TI-digits,
+[me026]: and um
+[me026]: it - it helped um in a phony reverberation case
+[me026]: um
+[me026]: where I just used the simulated impulse response
+[me026]: um
+[me026]: the error rate went from something like eighty
+[me026]: it was from something like eighteen percent
+[me026]: to um four percent.
+[me026]: And on meeting rec- recorder far mike digits, mike -
+[me026]: on channel F_, it went from um
+[me026]: forty-one percent error to eight percent error.
+[me018]: On - on the real data, not with artificial reverb?
+[me026]: Right.
+[me018]: Uh-huh.
+[me026]: And that - that was um
+[me026]: trained on clean speech only, which I'm guessing is the reason why the baseline was so bad.
+[me026]: Uh-huh .
+[me026]: And -
+[me013]: That's ac-
+[me013]: actually a little side point is I think that's the first results that we have
+[me013]: uh
+[me013]: uh
+[me013]: uh of any sort
+[me013]: on the far field uh -
+[me013]: on - on the far field data
+[me013]: uh for - recorded in - in meetings.
+[me026]: Oh um actually um
+[me026]: Adam ran the SRI recognizer.
+[me013]: Did he ?
+[me013]: On the near field, on the ne-
+[me026]: On the far field also. He did one PZM channel and one PDA channel.
+[me013]: Oh did he?
+[me013]: Oh! I didn't recall that.
+[me013]: What kind of numbers was he getting with that?
+[me026]: I -
+[me026]: I'm not sure, I think it was about five percent error for the PZM channel.
+[me013]: Five.
+[me026]: f- I think. Yeah.
+[me013]: So why were you getting forty- one here? Is this -
+[me026]: Um.
+[me026]: I - I'm g- I'm guessing it was the - the training data.
+[me026]: Uh, clean TI-digits is, like,
+[me026]: pretty pristine
+[me026]: training data, and if they trained
+[me026]: the SRI system on this
+[me026]: TV broadcast type stuff, I think it's a much wider range of channels and it -
+[me013]: No, but wait a minute. I -
+[me013]: I - I th -
+[me013]: I think he -
+[me013]: What am I saying here? Yeah, so that was the SRI system.
+[me013]: Maybe you're right. Yeah. Cuz it was getting like one percent -
+[me013]: So it's still this kind of ratio. It was - it was getting one percent or something on the near field. Wasn't it?
+[me018]: Mm-hmm, or
+[me013]: Yeah. Yeah. I think it was getting around one percent for the near - for the n-
+[me018]: it wa a- it was around one. Yeah.
+[me013]: for the close mike.
+[me026]: Huh?
+[me026]: OK.
+[me013]: So it was like one to five - So it's still this kind of ratio. It's just -
+[me013]: yeah, it's a lot more training data.
+[me013]: So
+[me013]: So probably it should be something we should try then is to - is to see if -
+[me013]: is at some point just to take -
+[me013]: i- to transform the data and then -
+[me013]: and then uh use th- use it for the SRI system.
+[me026]: b- You me- you mean um ta-
+[me013]: So you're - so you have a system which for one reason or another is relatively poor,
+[me026]: Yeah.
+[me013]: and - and uh you have something like forty-one percent error
+[me013]: uh and then you transform it to eight by doing - doing this - this work.
+[me013]: Um.
+[me013]: So here's this other system, which is a lot better,
+[me013]: but there's still this kind of ratio. It's something like five percent error
+[me013]: with the - the distant mike, and one percent with the close mike.
+[me026]: OK.
+[me013]: So the question is
+[me013]: how close to that one can you get
+[me013]: if you transform the data using that system.
+[me026]: r- Right, so - so I guess this SRI system is trained on a lot of s- Broadcast News or Switchboard data.
+[me013]: Yeah.
+[me026]: Is that right? Do you know which one it is?
+[me018]: It's trained on a lot of different things. Um.
+[me018]: It's trained on
+[me018]: uh a lot of Switchboard, Call Home,
+[me026]: Uh-huh.
+[me018]: um
+[me018]: a bunch of different sources, some digits, there's some digits training in there.
+[me026]: OK .
+[me026]: O- one thing I'm wondering about is what this mean subtraction method
+[me006]: Hmm.
+[me026]: um will do if it's faced with additive noise.
+[me026]: Cuz I - I - it's cuz I don't know what log magnitude spectral subtraction is gonna do
+[me026]: to additive noise.
+[me013]: Yeah, well, it's - it's not exactly the right thing but
+[me026]: That's - that's the -
+[me026]: Uh-huh.
+[me013]: uh
+[me013]: but you've already seen that cuz there is added noise here.
+[me026]: That's - that's - Yeah, that's true.
+[me013]: Yeah.
+[me026]: That's a good point.
+[me013]: So um -
+[me026]: OK, so it's then - then it's - it's -
+[me026]: it's reasonable to expect it would be helpful if we used it with the SRI system and
+[me013]: Yeah, I mean, as helpful - I mean,
+[me013]: so that's the question.
+[me013]: Yeah, w- we're often asked this when we work with a system that - that isn't - isn't sort of industry - industry standard great,
+[me026]: Uh-huh.
+[me013]: uh and we see some reduction in error using some clever method, then, you know, will it work on a -
+[me013]: on a - on a good system.
+[me013]: So
+[me013]: uh
+[me013]: you know, this other one's - it was a pretty good system. I think,
+[me013]: you know, one - one percent
+[me013]: word error rate on digits is - uh digit strings is not
+[me013]: uh you know stellar, but -
+[me013]: but given that this is real
+[me026]: Mm-hmm.
+[me013]: digits, as opposed to uh sort of laboratory -
+[me013]: Well.
+[me018]: And it wasn't trained on this task either.
+[me013]: And it wasn't trained on this task. Actually one percent is sort of -
+[me013]: you know, sort of in a reasonable range. People would say "yeah, I could - I can imagine getting that".
+[me026]: Mm-hmm.
+[me013]: And uh so the - the four or five percent or something is - is - is quite poor.
+[me026]: Mm-hmm.
+[me013]: Uh, you know, if you're doing a uh -
+[me013]: a sixteen digit uh credit card number you'll
+[me013]: basically get it wrong almost all the time.
+[me026]: Hmm.
+[me013]: So. So. Uh,
+[me013]: um a significant reduction in the error for that would be great.
+[me026]: Huh, OK.
+[me013]: And - and then, uh Yeah. So.
+[me013]: Yeah.
+[me013]: Cool.
+[me026]: Sounds good.
+[me013]: Yeah.
+[me013]: Alright, um,
+[me013]: I actually have to run.
+[me013]: So I don't think I can do the digits, but
+[me013]: um,
+[me013]: I guess I'll leave my microphone on?
+[me018]: Uh, yeah.
+[me013]: Yeah. Thank you .
+[me018]: Yep.
+[me013]: Actually, I could just go first, come to think of it.
+[me013]: Then I can be out of here quickly.
+[me018]: Yeah. That'll work.
+[me013]: That's alright. I just have to run for another appointment.
+[me013]: OK, did I t- Yeah. I left it on.
+[me013]: OK.
+[me013]: OK, this is transcript L_ dash one one zero.
+[me013]: nine zero two five seven three two six six
+[me013]: one six six six seven four two zero eight
+[me013]: five one six nine four seven seven nine five zero
+[me013]: five six zero two two five seven seven
+[me013]: six zero eight nine zero seven two six four five
+[me013]: two one nine two eight nine five five eight eight
+[me013]: three two five zero two nine three four
+[me013]: four six one two zero eight eight five
+[me006]: Um transcript L_ one one one.
+[me006]: three six two eight three three two two O_ seven
+[me006]: one six six five four two six eight nine zero zero six
+[me006]: three nine three three four seven five four seven nine six zero
+[me006]: nine nine zero three seven four three two seven five four two
+[me006]: four nine three five one nine seven eight one
+[me006]: eight five O_ four nine four zero seven five three
+[me006]: seven five eight four four one seven zero one
+[me006]: eight five five three two five O_ three eight
+[me018]: Transcript L_ dash one one two.
+[me018]: zero seven eight seven six two one six four six five three
+[me018]: one two five eight four seven seven two seven zero
+[me018]: six three six three four seven nine seven six
+[me018]: five two nine nine three two seven three two nine
+[me018]: nine nine three eight nine one four one seven six O_ four
+[me018]: four zero zero eight six seven four five eight
+[me018]: zero six six three five nine seven seven seven
+[me018]: seven three five five three two four five zero eight
+[me026]: R- I'm reading transcript L_ dash one one three.
+[me026]: six five six nine seven two eight four four O_ eight seven
+[me026]: five one eight seven four zero five seven zero two
+[me026]: four two five O_ three seven six eight one
+[me026]: seven seven nine two one seven nine zero nine
+[me026]: zero six zero five six eight eight five nine
+[me026]: five two two two five five six six two nine
+[me026]: one one seven two zero six seven one six two
+[me026]: zero two three zero one nine zero two three
+[fn002]: Transcript L_ dash w- one one five.
+[fn002]: zero six four seven three two two seven one
+[fn002]: zero eight seven five eight six seven three
+[fn002]: seven five seven five five one one nine one four
+[fn002]: nine eight four one nine three one zero zero two
+[fn002]: four one zero three six eight two one nine
+[fn002]: six two eight nine six nine one eight six
+[fn002]: five six five zero three one one six
+[fn002]: six three nine eight seven eight three nine eight nine

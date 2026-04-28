@@ -1,0 +1,1008 @@
+[mn015]: So I guess this is more or less now just to get you up to date, Johno.
+[mn015]: This is what, uh,
+[me003]: This is a meeting for me.
+[mn015]: um,
+[mn015]: Eva,
+[mn015]: Bhaskara, and I did.
+[fn050]: Did you add more stuff to it? later?
+[mn015]: Um. Why?
+[fn050]: Um.
+[fn050]: I don't know.
+[fn050]: There were, like, the - you know, @@ and all that stuff. But.
+[fn050]: I thought you - you said you were adding stuff but I don't know.
+[mn015]: Uh, no. This is -
+[mn015]: Um,
+[mn015]: Ha!
+[mn015]: Very nice.
+[mn015]: Um, so we thought that,
+[mn015]: We can write up
+[mn015]: uh,
+[mn015]: an element,
+[mn015]: and - for each of the situation
+[mn015]: nodes that we observed in the Bayes-net?
+[mn015]: So.
+[mn015]: What's the situation like at the entity that is mentioned? if we know anything about it? Is it under construction?
+[mn015]: Or is it
+[mn015]: on fire or something happening to it? Or is it stable?
+[mn015]: and so forth, going all the way
+[mn015]: um,
+[mn015]: f-
+[mn015]: through Parking,
+[mn015]: Location, Hotel, Car, Restroom,
+[mn015]: @@
+[mn015]: Riots, Fairs, Strikes, or
+[mn015]: Disasters.
+[me003]: So is - This is - A situation are - is all the things which can be happening right now?
+[me003]: Or, what is the situation
+[me003]: type?
+[mn015]: That's basically just specifying the - the input for the - w- what's
+[me003]: Oh, I see y- Why are you specifying it in XML?
+[mn015]: Um.
+[mn015]: Just because it forces us to be specific about the values
+[mn015]: here?
+[me003]: OK.
+[mn015]: And, also, I mean, this is a - what the input is going to be. Right?
+[mn015]: So, we will, uh -
+[mn015]: This is a schema. This is -
+[me003]: Well, yeah. I just don't know if this is th- l- what the - Does - This is what Java Bayes takes? as a
+[mn015]: No, because I mean if we -
+[me003]: Bayes-net spec?
+[mn015]: I mean we're sure gonna interface to -
+[mn015]: We're gonna get an XML document from somewhere.
+[mn015]: Right? And that XML document will say
+[mn015]: "We are able to - We were able to observe that w- the element,
+[mn015]: um, @@ of the Location that the car is near. "
+[mn015]: So that's gonna be -
+[mn015]: Um.
+[me003]: So this is the situational context, everything in it. Is that what Situation is short for, shi- situational context?
+[mn015]: Yep.
+[me003]: OK.
+[mn015]: So this is just,
+[mn015]: again, a- an XML schemata which defines a set of possible, uh, permissible XML
+[mn015]: structures,
+[mn015]: which we view as input into the Bayes-net.
+[mn015]: Right?
+[me003]: And then we can r- uh
+[me003]: possibly run one of them uh
+[me003]: transformations?
+[me003]: That put it into the format that the Bayes n- or Java Bayes or whatever wants?
+[mn015]: Yea- Are you talking - are you talking about the - the structure?
+[me003]: Well it -
+[mn015]: I mean when you observe a node.
+[me003]: When you - when you say
+[me003]: the input to the v- Java Bayes,
+[mn015]: Um-hmm.
+[me003]: it takes a certain format, right?
+[me003]: Which I don't think is this.
+[me003]: Although I don't know.
+[mn015]: No, it's certainly not this.
+[mn015]: Nuh.
+[me003]: So you could just - Couldn't you just run a -
+[mn015]: XSL . Yeah.
+[me003]: Yeah.
+[me003]: To convert it into the Java Bayes for- format?
+[mn015]: Yep.
+[me003]: OK.
+[mn015]: That's -
+[mn015]: That's no problem, but
+[mn015]: I even think that, um -
+[mn015]: I mean, once - Once you have this sort of as - running as a module -
+[mn015]: Right? What you want is -
+[mn015]: You wanna say, "OK, give me the posterior probabilities of the Go-there node,
+[mn015]: when this is happening."
+[mn015]: Right? When the person said this, the car is there, it's raining, and this is happening.
+[mn015]: And with this you can specify the - what's happening in the situation, and what's happening
+[mn015]: with the user.
+[mn015]: So we get -
+[mn015]: After we are done, through the Situation we get the User Vector.
+[mn015]: So, this is a -
+[me003]: So this is just a specification of all the possible inputs?
+[mn015]: Yep.
+[mn015]: And,
+[mn015]: all the possible outputs, too.
+[me003]: OK.
+[mn015]: So, we have, um,
+[mn015]: for example, the, uh, Go-there decision node
+[mn015]: which has two
+[mn015]: elements, going-there
+[mn015]: and its posterior probability,
+[mn015]: and not-going-there and its posterior probability,
+[mn015]: because the output is always gonna be
+[mn015]: all the decision nodes and all the - the - a- all the posterior probabilities for all the values.
+[me003]: And then we would just look at the, eh, Struct that we wanna look at in terms of if - if we're only asking about one of the -
+[me003]: So like, if I'm just interested in the going-there node,
+[me003]: I would just pull that information out of the Struct
+[me003]: that gets return- that would - that Java Bayes would output?
+[mn015]: Um,
+[mn015]: pretty much, yes, but
+[mn015]: I think it's a little bit more complex.
+[mn015]: As, if I understand it correctly, it always gives you all the posterior probabilities for all the values of all decision nodes.
+[mn015]: So, when we
+[mn015]: input something,
+[mn015]: we always get the, uh, posterior probabilities for all of these. Right?
+[me003]: OK.
+[mn015]: So there is no way of telling it t-
+[mn015]: not to tell us about the EVA values.
+[me003]: Yeah, wait I agree, that's - yeah, use - oh, uh Yeah, OK.
+[mn015]: So - so we get this whole
+[mn015]: list of - of, um,
+[mn015]: things, and the question is
+[mn015]: what to do with it,
+[mn015]: what to hand on,
+[mn015]: how to interpret it,
+[mn015]: in a sense.
+[mn015]: So y- you said if you - "I'm only interested in whether he wants to go there or not", then I just look at that node,
+[mn015]: look which one -
+[me003]: Look at that Struct in the output, right?
+[mn015]: Yep.
+[mn015]: Look at that Struct in the - the output, even though
+[mn015]: I wouldn't call it a "Struct". But.
+[me003]: Well i- well, it's an XML Structure that's being res- returned, right?
+[mn015]: Oh. Mm-hmm.
+[mn015]: So every part of a structure is a "Struct".
+[mn015]: Yeah.
+[me003]: Yeah, I just uh - I just was - abbreviated it
+[me003]: to Struct in my head, and
+[me003]: started going with that.
+[mn015]: That element or object,
+[mn015]: I would say.
+[me003]: Not a CStruct. That's not what I was trying to k- though yeah.
+[mn015]: Yeah.
+[mn015]: OK.
+[mn015]: And, um,
+[mn015]: the reason is -
+[mn015]: why I think it's a little bit more complex or why - why we can even think about it as an interesting problem in and of itself is -
+[mn015]: Um.
+[mn015]: So.
+[mn015]: The, uh -
+[mn015]: Let's look at an example.
+[me003]: Well, w- wouldn't we just take the structure that's outputted
+[me003]: and then run another transformation on it, that would just dump the one that we wanted out?
+[mn015]: Yeah. w- We'd need to prune.
+[mn015]: Right?
+[mn015]: Throw things away.
+[me003]: Well, actually, you don't even need to do that with XML. D- Can't you just look at one specific -
+[mn015]: No-
+[mn015]: Yeah, exactly. The - @@
+[mn015]: Xerxes
+[mn015]: allows you to say, u- "Just give me the value of that, and that, and that."
+[mn015]: But, we don't really know what we're interested in before we look at the complete - at - at the overall result.
+[mn015]: So the person said,
+[mn015]: um,
+[mn015]: "Where is X_?" and so,
+[mn015]: we want to know,
+[mn015]: um,
+[mn015]: is - Does he want
+[mn015]: info?
+[mn015]: o- on this? or know the location?
+[mn015]: Or does he want to go there?
+[mn015]: Let's assume this is our - our question.
+[me003]: Sure.
+[mn015]: Nuh?
+[mn015]: So.
+[mn015]: Um.
+[mn015]: @@
+[mn015]: Do this in Perl.
+[mn015]: So we get -
+[mn015]: OK .
+[mn015]: Let's assume this is the output.
+[mn015]: So.
+[mn015]: We should con- be able to conclude from that that -
+[mn015]: I mean. It's always gonna give us a value of
+[mn015]: how likely we think i- it is that he wants to go there and doesn't want to go there,
+[mn015]: or how likely it is that he wants to
+[mn015]: get information.
+[mn015]: But, maybe w- we should just reverse this to make it a little bit more delicate.
+[mn015]: So, does he wanna know where it is? or does he wanna go there?
+[me003]: He wants to know where it is.
+[mn015]: Right.
+[mn015]: I - I - I tend to agree. And if it's -
+[mn015]: If -
+[me003]: Well now, y- I mean, you could -
+[mn015]: And i- if there's sort of a clear winner here,
+[mn015]: and, um -
+[mn015]: and this is pretty, uh -
+[mn015]: indifferent,
+[mn015]: then we - then we might conclude that he actually wants to
+[mn015]: just know where, uh t- uh, he does want to go there.
+[me003]: Uh, out of curiosity, is there a reason why we wouldn't
+[me003]: combine
+[me003]: these three nodes?
+[me003]: into one smaller subnet?
+[me003]: that would just
+[me003]: basically be
+[me003]: the question for - We have "where is X_?" is the question, right? That would just be Info-on or Location?
+[me003]: Based upon -
+[mn015]: Or Go-there. A lot of people ask that, if they actually just wanna go there.
+[mn015]: People come up to you on campus and say, "Where's the library?"
+[mn015]: You're gonna say - y- you're gonna say, g- "Go down that way."
+[mn015]: You're not gonna say "It's - It's five hundred yards away from you" or "It's north of you", or -
+[mn015]: "it's located -"
+[me003]: Well, I mean - But the - there's - So you just have three
+[me003]: decisions for the final node, that would link thes- these three nodes in the net together.
+[mn015]: Um.
+[mn015]: I don't know whether I understand what you mean. But. Again, in this -
+[mn015]: Given this input, we, also in some situations, may wanna
+[mn015]: postulate an opinion whether
+[mn015]: that person wants to go there now
+[mn015]: the nicest way, use a cab, or so s-
+[mn015]: wants to know it - wants to know where it is because he wants something fixed there, because he wants to
+[mn015]: visit t- it or whatever.
+[mn015]: So, it - n- I mean - a- All I'm saying is,
+[mn015]: whatever our input is, we're always gonna get the full
+[mn015]: output.
+[mn015]: And some -
+[mn015]: some things
+[mn015]: will always be sort of
+[mn015]: too - not significant enough.
+[me003]: Wha-
+[me003]: Or i- or i- it'll be tight. You won't - it'll be hard to decide. But I mean, I guess - I guess the thing is,
+[mn015]: Yep.
+[me003]: uh,
+[me003]: this is another, smaller, case of reasoning in the case of an uncertainty, which makes me think Bayes-net should be
+[me003]: the way to solve
+[me003]: these things. So if you had - If for every construction, right?
+[mn015]: Oh!
+[me003]: you could say, "Well, there - Here's the Where-Is construction."
+[me003]: And for the Where-Is construction, we know we need to l- look at this node,
+[me003]: that merges these three things together
+[mn015]: Mm-hmm.
+[me003]: as for th- to decide the response. And since we have a finite number of constructions that we can deal with, we could have a finite number of nodes.
+[mn015]: OK.
+[me003]: Say, if we had to y- deal with arbitrary language, it wouldn't make any sense to do that, because
+[mn015]: Mm-hmm.
+[me003]: there'd be no way to generate the nodes for every possible sentence.
+[mn015]: Mm-hmm.
+[me003]: But since we can only deal with a finite amount of stuff -
+[mn015]: So, basically, the idea is to f-
+[mn015]: to feed the output of that
+[mn015]: belief-net into another belief-net.
+[me003]: Yeah, so basically take these three things and then put them into another belief-net.
+[mn015]: But, why - why - why only those three? Why not the whol-
+[me003]: Well, I mean, d- For the Where-Is question.
+[me003]: So we'd have a node for the Where-Is question.
+[mn015]: Yeah. But we believe that all the decision nodes are - can be relevant for the Where-Is,
+[mn015]: and the Where - How-do-I-get-to or the Tell-me-something-about.
+[me012]: Is food not allowed in here?
+[me003]: You can come in if you want.
+[mn015]: Yes, it is allowed.
+[me003]: As long as y- you're not wearing your h- your h- headphones.
+[me012]: Alright. Just a second. I'll be back.
+[me003]: Well, I do- I - See, I don't know if this is a good idea or not. I'm just throwing it out.
+[me003]: But uh, it seems like we could have - I mea- or uh we could put all of the- all of the r- information that could also be relevant
+[me003]: into the Where-Is node answer
+[mn015]: Mm-hmm.
+[mn015]: Yep.
+[me003]: node
+[me003]: thing
+[me003]: stuff.
+[me003]: And uh -
+[fn050]: OK.
+[mn015]: I mean -
+[mn015]: Let's not forget we're gonna get some very strong input from these sub- dis- from these discourse things, right?
+[mn015]: So.
+[mn015]: "Tell me the location of X_."
+[mn015]: Nuh?
+[mn015]: Or "Where is X_ located
+[me003]: We u-
+[mn015]: at?" Nuh?
+[me003]: Yeah, I know, but the Bayes-net would be able to - The weights on the -
+[me003]: on the nodes in the Bayes-net would be able to do all that, wouldn't it?
+[mn015]: Mm-hmm.
+[me003]: Here's a k-
+[me003]: Oh!
+[me003]: Oh, I'll wait until you're plugged in.
+[me003]: Oh, don't sit there. Sit here.
+[me003]: You know how you don't like that one. It's OK.
+[me012]: Oh, do I not?
+[me003]: That's the weird one.
+[me003]: That's the one that's painful. That hurts. It hurts so bad.
+[me003]: I'm h- I'm happy that they're recording that.
+[me003]: That headphone. The headphone that you have to put on backwards, with the little - little thing - and the little - little foam block on it?
+[me003]: It's a painful, painful microphone.
+[mn015]: I think it's th- called "the Crown".
+[me003]: The crown?
+[fn050]: What?
+[mn015]: Yeah, versus "the Sony".
+[me012]: The Crown?
+[me012]: Is that the actual name?
+[mn015]: Mm-hmm.
+[me012]: OK.
+[mn015]: The manufacturer.
+[me003]: I don't see a manufacturer on it.
+[mn015]: You w-
+[me003]: Oh, wait, here it is. h- This thingy.
+[me003]: Yeah, it's "The Crown".
+[me003]: The crown of pain!
+[me012]: Yes.
+[mn015]: You're on-line?
+[me003]: Are you - are your mike o- Is your mike on? OK.
+[me012]: Indeed.
+[me003]: So you've been working with these guys? You know what's going on?
+[me012]: Yes, I have.
+[me012]: And, I do.
+[me012]: Yeah, alright. s- So where are we?
+[me003]: Excellent!
+[mn015]: We're discussing this.
+[me012]: I don't think it can handle French, but anyway.
+[mn015]: So.
+[mn015]: Assume we have something coming in. A person says, "Where is X_?", and we get a certain - We have a Situation vector and a User vector and everything is fine?
+[mn015]: An- an- and - and our - and our -
+[me003]: Did you just sti- Did you just stick the m- the - the - the microphone actually in the tea?
+[me012]: No.
+[mn015]: And, um,
+[me012]: I'm not drinking tea. What are you talking about?
+[me003]: Oh, yeah. Sorry.
+[mn015]: let's just assume our Bayes-net just has three decision nodes for the time being.
+[mn015]: These three, he wants to know something about it, he wants to know where it is, he wants to go there.
+[me003]: In terms of, these would be wha- how we would answer the question Where-Is, right?
+[me003]: We u-
+[me003]: This is - i- That's what you s- it seemed like, explained it to me earlier w-
+[me003]: We - we're - we wanna know how to answer the question "Where is X_?"
+[mn015]: Yeah, but, mmm.
+[mn015]: Yeah. @@
+[mn015]: No, I can - I can do the Timing node in here, too, and say "OK."
+[me003]: Well, yeah, but in the s- uh, let's just deal with the s- the simple case of we're not worrying about timing or anything.
+[me003]: We just want to know how we should answer "Where is X_?"
+[mn015]: OK.
+[mn015]: And, um,
+[mn015]: OK, and,
+[mn015]: Go-there has two values, right?, Go-there and not-Go-there. Let's assume those are the posterior probabilities of that.
+[me012]: Mm-hmm.
+[mn015]: Info-on has True or False and Location. So, he wants to know something about it, and he wants to know something - he wants to know Where-it-is,
+[me012]: Excuse me.
+[mn015]: has these values.
+[mn015]: And, um,
+[me003]: Oh, I see why we can't do that.
+[mn015]: And, um, in this case we would probably all agree that
+[mn015]: he wants to go there. Our belief-net thinks he wants to go there, right? In the, uh, whatever, if we have something like
+[me012]: Yeah.
+[me012]: Mm-hmm.
+[mn015]: this here,
+[mn015]: and
+[mn015]: this like that and maybe here also some -
+[me012]: You should probably
+[me012]: make them out of - Yeah.
+[me003]: Well, it-
+[mn015]: something like that,
+[mn015]: then we would guess, "Aha! He, our belief-net,
+[mn015]: has s- stronger beliefs that he wants to know where it is, than actually wants to go there."
+[mn015]: Right?
+[me003]: That it - Doesn't this assume, though, that they're evenly weighted?
+[fn050]: True.
+[me003]: Like -
+[me003]: I guess they are evenly weighted.
+[me012]: The different decision nodes, you mean?
+[me003]: Yeah, the Go-there, the Info-on, and the Location?
+[me012]: Well, d- yeah, this is making the assumption.
+[me012]: Yes.
+[me003]: Like -
+[mn015]: What do you mean by "differently weighted"? They don't feed into anything really anymore.
+[me003]: Or I jus-
+[me012]: But I mean, why do we -
+[me012]: @@
+[me003]: Le-
+[me012]: If we trusted the Go-there node more th- much more than we trusted the other ones, then we would conclude, even in this situation, that he wanted to go there.
+[me012]: So, in that sense, we weight them equally
+[mn015]: OK. Makes sense. Yeah.
+[me012]: right now.
+[me003]: So the- But I guess the- k- the question -
+[mn015]: But -
+[me003]: that I was as- er- wondering or maybe Robert was proposing to me
+[me003]: is -
+[me003]: How do we d- make the decision on - as to - which one to listen to?
+[me012]: Yeah, so, the final d- decision is the combination of these three. So again, it's - it's some kind of, uh -
+[me003]: Bayes-net.
+[me012]: Yeah, sure.
+[me003]: OK so, then, the question i- So then my question is t- to you then, would be -
+[me003]: So is the only r- reason we can make all these smaller Bayes-nets, because we know we can only deal with a finite set of constructions?
+[me003]: Cuz oth- If we're just taking arbitrary language in, we couldn't have a node for every possible question, you know?
+[me012]: A decision node for every possible question, you mean?
+[me003]: Well, I - like, in the case of - Yeah.
+[me003]: In the ca- Any piece of language, we wouldn't be able to answer it with this system, b- if we just h-
+[me003]: Cuz we wouldn't have the correct node. Basically, w- what you're s- proposing is a n- Where-Is node, right?
+[me012]: Yeah.
+[me003]: And - and if we - And if someone - says, you know, uh, something in Mandarin
+[me012]: So is -
+[me012]: Yeah.
+[me003]: to the system, we'd- wouldn't know which node to look at to answer that question, right?
+[me012]: Yeah.
+[mn015]: Mmm?
+[me003]: So, but - but if we have a finite - What?
+[mn015]: I don't see your point. What - what - what I am thinking, or what
+[mn015]: we're about to propose here is
+[mn015]: we're always gonna get the whole list of
+[mn015]: values and their posterior probabilities.
+[mn015]: And now we need an expert system or belief-net or something that interprets that,
+[mn015]: that looks at all the
+[mn015]: values and says,
+[mn015]: "The winner is
+[mn015]: Timing. Now, go there."
+[mn015]: "Uh, go there, Timing, now."
+[mn015]: Or, "The winner is Info-on,
+[mn015]: Function-Off."
+[mn015]: So, he wants to know something about it, and what it does.
+[mn015]: Nuh?
+[mn015]: Uh, regardless of - of - of the input. Wh- Regardle-
+[me003]: Yeah, but-
+[me003]: But how does the expert - but how does the expert system
+[me003]: know - how- who- which one to declare the winner, if it doesn't know the question it is, and how that question should be answered?
+[mn015]: Based on the k- what the question was, so what the discourse, the ontology, the situation and the user model gave us, we came up with these values for these decisions.
+[me003]: Yeah I know. But how do we weight what we get out?
+[me003]: As, which one i- Which ones are important?
+[me003]: So my i- So, if we were to it with a Bayes-net, we'd have to have a node -
+[me003]: for every question that we knew how to deal with,
+[me003]: that would take all of the inputs and weight them appropriately for that question.
+[mn015]: Mm-hmm.
+[me003]: Does that make sense?
+[me003]: Yay, nay?
+[me012]: Um, I mean, are you saying that, what happens if you try to scale this up to the situation, or are we just dealing with arbitrary language?
+[me003]: We -
+[me012]: Is that your point?
+[me003]: Well, no. I - I guess my question is,
+[me003]: Is the reason that we can make a node f- or - OK. So, lemme
+[me003]: see if I'm confused. Are we going to make a node for every question? Does that make sense? - Or not.
+[me012]: For every question? Like -
+[me003]: Every construction.
+[me012]: Hmm.
+[me012]: I don't - Not necessarily, I would think. I mean, it's not based on constructions, it's based on things like, uh, there's gonna be a node for Go-there or not, and there's gonna be a node for Enter, View, Approach.
+[me003]: Wel-
+[me003]: W- OK.
+[me003]: So, someone asked a question.
+[me012]: Yeah.
+[me003]: How do we decide
+[me003]: how to answer it?
+[me012]: @@
+[mn015]: Well, look at -
+[mn015]: look -
+[mn015]: Face yourself with this pr- question. You get this -
+[mn015]: You'll have - y- This is what you get.
+[mn015]: And now you have to make a decision. What do we think?
+[mn015]: What does this tell us?
+[mn015]: @@
+[mn015]: And not knowing what was asked, and what happened, and whether the person was a tourist or a local, because all of these factors have presumably already gone into making these
+[mn015]: posterior probabilities.
+[me003]: Yeah.
+[mn015]: What - what we need is a - just a mechanism that says,
+[mn015]: "Aha!
+[mn015]: There is -"
+[me003]: I just don't think a "winner-take-all" type of thing is the -
+[me012]: I mean, in general, like, we won't just have those three, right? We'll have, uh, like, many, many nodes.
+[mn015]: Yep.
+[me012]: So we have to, like - So that it's no longer possible to just look at the nodes themselves and figure out what the person is trying to say.
+[mn015]: Because there are interdependencies, right?
+[mn015]: The uh -
+[mn015]: Uh, no. So if - if
+[mn015]: for example, the Go-there posterior possibility is so high, um,
+[mn015]: uh, w- if it's - if it has reached - reached a certain height, then
+[mn015]: all of this becomes irrelevant. So. If - even if - if the function or the history or something is
+[mn015]: scoring pretty good on the true node, true value -
+[me003]: Wel-
+[me003]: I don't know about that, cuz that would suggest that - I mean -
+[mn015]: He wants to go there and know something about it?
+[me003]: Do they have to be mutual-
+[me003]: Yeah. Do they have to be mutually exclusive?
+[mn015]: I think to some extent they are.
+[mn015]: Or maybe they're not.
+[me003]: Cuz I, uh - The way you describe what they meant, they weren't mutu- uh, they didn't seem mutually exclusive to me.
+[mn015]: Well, if he doesn't want to go there,
+[mn015]: even if the Enter
+[mn015]: posterior proba- So.
+[me003]: Wel-
+[mn015]: Go-there is No.
+[mn015]: Enter is High, and Info-on is High.
+[me003]: Well, yeah, just out of the other three, though, that you had in the -
+[mn015]: Hmm?
+[me003]: those three nodes. The- d- They didn't seem like they were mutually exclusive.
+[mn015]: No, there's - No. But -
+[mn015]: It's through the -
+[me003]: So th- s- so, yeah, but some - So, some things would drop out, and some things would still be important.
+[mn015]: Mm-hmm.
+[me003]: But I guess what's confusing me is, if we have a Bayes-net to deal w- another Bayes-net to deal with this stuff,
+[me012]: Mm-hmm.
+[me003]: you know,
+[me003]: uh,
+[me003]: is the only reason - OK, so,
+[me003]: I guess,
+[me003]: if we have a Ba- another Bayes-net to deal with this stuff, the only r- reason
+[me003]: we can design it is cuz we know
+[me003]: what each question is asking?
+[me012]: Yeah.
+[me012]: I think that's true.
+[me003]: And then, so, the only reason - way we would know what question he's asking is based upon - Oh, so if - Let's say I had a construction parser, and I plug this in, I would know what each construction - the communicative
+[me003]: intent of the construction was
+[me012]: Mm-hmm.
+[me003]: and so then I would know how to weight the nodes appropriately, in response.
+[me003]: So no matter what they said, if I could map it onto a Where-Is construction,
+[me012]: Ge-
+[me012]: Mm-hmm.
+[me003]: I could say, "ah!
+[me003]: well the- the intent, here, was Where-Is",
+[me012]: OK, right.
+[me003]: and I could look at those.
+[me012]: Yeah.
+[me012]: Yes, I mean. Sure. You do need to know - I mean, to have that kind of information.
+[mn015]: Hmm.
+[mn015]: Yeah, I'm also agreeing that a simple
+[mn015]: pru-
+[mn015]: Take the ones where we have a clear winner.
+[mn015]: Forget about the ones where it's all sort of
+[mn015]: middle ground.
+[mn015]: Prune those out and just hand over the ones where we have a winner.
+[mn015]: Yeah, because that would be the easiest way.
+[mn015]: We just compose as an output an XML mes- message that says.
+[mn015]: "Go there now."
+[mn015]: "Enter
+[mn015]: historical information."
+[mn015]: And not care whether that's consistent with anything.
+[mn015]: Right?
+[mn015]: But in this case if we say, " definitely he doesn't want to go there. He just wants to know
+[mn015]: where it is."
+[mn015]: or let's call this - this "Look-At-H-"
+[mn015]: He wants to know something about the history of. So he said,
+[mn015]: "Tell me something about the history of that."
+[mn015]: Now, the e- But for some reason the Endpoint-Approach
+[mn015]: gets a really high score, too.
+[mn015]: We can't expect this to be sort of at O_ point
+[mn015]: three, three, three, O_ point, three, three, three, O_ point, three, three, three. Right?
+[mn015]: Somebody needs to zap that.
+[mn015]: You know?
+[mn015]: Or
+[mn015]: know -
+[mn015]: There needs to be some knowledge that -
+[me003]: We -
+[me003]: Yeah, but, the Bayes-net that would merge -
+[me003]: I just realized that I had my hand in between my mouth and my micr- er, my- and my microphone.
+[me003]: So then,
+[me003]: the Bayes-net that would merge
+[me003]: there, that would make the decision between Go-there, Info-on, and Location,
+[me003]: would have a node to tell you which one of those three you wanted, and based upon that node, then you would look at the other stuff.
+[mn015]: Yep.
+[me003]: I mean, it- i-
+[mn015]: Yep.
+[me003]: Does that make sense?
+[mn015]: Yep. It's sort of one of those, that's - It's more like a decision tree,
+[mn015]: if - if you want.
+[mn015]: You first look o- at the lowball ones, and then -
+[me003]: Yeah, i-
+[me003]: Yeah, I didn't intend to say that every possible - OK.
+[me003]: There was a confusion there, k- I didn't intend to say every possible thing should go into the Bayes-net, because some of the things aren't relevant in the Bayes-net
+[me003]: for a specific question.
+[me003]: Like the Endpoint
+[me003]: is not necessarily relevant in the Bayes-net for Where-Is until after you've decided whether you wanna go there or not.
+[mn015]: Mm-hmm.
+[me012]: Right.
+[me003]: Show us the way, Bhaskara.
+[me012]: I guess the other thing is that um, yeah. I mean, when you're asked a specific question and you don't even -
+[me012]: Like, if you're asked a Where-Is question, you may not even look - like, ask for the posterior probability of the, uh, EVA node, right?
+[me012]: Cuz, that's what - I mean, in the Bayes-net you always ask for the posterior probability of a specific node. So, I mean,
+[me012]: you may not even bother to compute things you don't need.
+[mn015]: Um.
+[mn015]: Aren't we always computing all?
+[me012]: No.
+[me012]: You can compute, uh, the posterior probability of one subset of the nodes, given
+[me012]: some other nodes, but
+[me012]: totally ignore some other nodes, also.
+[me012]: Basically, things you ignore get marginalized over.
+[mn015]: Yeah, but that's - that's just shifting the problem.
+[mn015]: Then you would have to make a decision, "OK, if it's a Where-Is question, which
+[me012]: Yeah. So you have to make -
+[me012]: Yeah.
+[mn015]: decision nodes do I query?"
+[me012]: Yes.
+[mn015]: That's un-
+[me012]: But I would think that's what you want to do. Right?
+[mn015]: Mmm.
+[fn050]: Well, eventually, you still have to pick out which ones you look at. So it's pretty much the same problem, isn't it?
+[mn015]: Yeah.
+[mn015]: Yeah - it's - it's - it's apples and oranges. Nuh?
+[mn015]: I mean, maybe it does make a difference in terms of performance,
+[mn015]: computational time. So either you
+[me012]: Mm-hmm.
+[mn015]: always have it compute all the posterior possibilities for all the values for all nodes, and then prune
+[me012]: Mmm.
+[mn015]: the ones you think that are
+[mn015]: irrelevant,
+[mn015]: or you just make a p-
+[mn015]: @@
+[mn015]: a priori
+[mn015]: estimate of what you think might be relevant and query those.
+[me012]: Yeah.
+[me003]: So basically, you'd have a decision tree query, Go-there.
+[me003]: If k- if that's false, query this one. If that's true, query that one. And just basically do a binary search through the - ?
+[me012]: I don't know if it would necessarily be that, uh, complicated. But, uh -
+[me012]: I mean, it w-
+[me003]: Well, in the case of Go-there, it would be. In the case - Cuz if you needed an- If y- If Go-there was true, you'd wanna know what endpoint
+[me003]: was. And if it was false, you'd wanna d- look at
+[me003]: either Lo- Income Info-on or History.
+[me012]: Yeah.
+[me012]: That's true, I guess. Yeah, so, in a way you would have that.
+[me003]: Also, I'm somewhat boggled by that Hugin software.
+[me012]: OK, why's that?
+[me003]: I can't figure out how to get the
+[me003]: probabilities into it.
+[me003]: Like, I'd look at -
+[me012]: Mm-hmm.
+[me003]: It's somewha- It's boggling me.
+[me012]: OK.
+[me012]: Alright.
+[me012]: Well, hopefully it's fixable.
+[me003]: Ju-
+[me003]: Oh yeah, yeah. I d- I just think I haven't
+[me012]: It's - there's a -
+[me003]: figured out what - the terms in Hugin mean, versus what Java Bayes terms are.
+[me012]: OK.
+[mn015]: Um, by the way, are - Do we know whether Jerry and Nancy are coming? Or - ?
+[me012]: So we can figure this out.
+[me012]: They should come when they're done their stuff, basically, whenever that is.
+[me012]: So.
+[me003]: What d- what do they need to do left?
+[me012]: Um,
+[me012]: I guess,
+[me012]: Jerry needs to enter marks, but I don't know if he's gonna do that now or later.
+[me012]: But, uh, if he's gonna enter marks, it's gonna take him awhile, I guess, and he won't be here.
+[me003]: And what's Nancy doing?
+[me012]: Nancy? Um, she was sorta finishing up the, uh,
+[me012]: calculation of marks and assigning of grades, but I don't know if she should be here.
+[me012]: Well - or, she should be free after that, so -
+[me012]: assuming she's coming to this meeting.
+[me012]: I don't know if she knows about it.
+[me003]: She's on the email list, right?
+[me012]: Is she? OK.
+[mn015]: Mm-hmm.
+[mn015]: OK.
+[mn015]: Because
+[mn015]: basically, what -
+[mn015]: where we also have decided, prior to
+[mn015]: this meeting is that
+[mn015]: we would have a rerun of the three of us sitting together
+[fn050]: OK.
+[mn015]: sometime this week again
+[me012]: OK.
+[mn015]: and finish up the, uh, values
+[mn015]: of
+[mn015]: this.
+[mn015]: So we have,
+[mn015]: uh -
+[mn015]: Believe it or not, we have all the bottom ones here.
+[me003]: Well, I -
+[fn050]: You added a bunch of nodes, for - ?
+[mn015]: Yep.
+[fn050]: OK.
+[mn015]: We - we - we have - Actually what we have is this line.
+[me003]: Uh, what do the, uh,
+[mn015]: Right?
+[me003]: structures
+[mn015]: Hmm?
+[me003]: do? So the - the - the -
+[me003]: For instance, this Location node's got two inputs,
+[me003]: that one you -
+[me012]: Four inputs.
+[mn015]: Hmm.
+[mn015]: Four.
+[me012]: Those are - The bottom things are inputs, also.
+[me003]: Oh, I see.
+[me012]: Yeah.
+[me003]: OK, that was-
+[me003]: OK.
+[me003]: That makes a lot more sense to me now.
+[mn015]: Yep.
+[me003]: Cuz I thought it was like, that
+[me003]: one in
+[me003]: Stuart's book about,
+[me003]: you know, the -
+[me012]: Alarm in the dog?
+[me003]: U- Yeah.
+[me012]: Yeah.
+[me003]: Or the earthquake and the alarm.
+[me012]: Sorry. Yeah, I'm confusing two.
+[me003]: Yeah, there's a dog one, too, but that's in Java Bayes, isn't it?
+[me012]: Right.
+[me012]: Maybe.
+[me003]: But there's something about
+[me003]: bowel problems or something with the dog.
+[me012]: Yeah.
+[mn015]: And we have all the
+[mn015]: top ones,
+[mn015]: all the ones to which no arrows are pointing.
+[mn015]: What we're missing are the -
+[mn015]: these, where arrows are pointing, where we're combining
+[mn015]: top ones.
+[mn015]: So, we have to come up with values for this, and
+[mn015]: this, this, this, and so forth.
+[mn015]: And maybe
+[mn015]: just fiddle around with it a little bit more.
+[mn015]: And, um.
+[mn015]: And then it's just, uh,
+[mn015]: edges,
+[mn015]: many of
+[mn015]: edges.
+[mn015]: And, um, we won't meet next Monday.
+[mn015]: So.
+[me003]: Cuz of Memorial Day?
+[mn015]: Yep.
+[me012]: We'll meet next Tuesday, I guess.
+[mn015]: Yeah.
+[me003]: When's Jerry leaving for -
+[me003]: Italia?
+[mn015]: On - on Friday.
+[me012]: Which Friday?
+[mn015]: This - this Friday.
+[me012]: OK.
+[fn050]: Oh. This Friday?
+[me003]: Ugh.
+[mn015]: This Friday.
+[me003]: As in, four days?
+[mn015]: Yep.
+[me003]: Or, three days?
+[me012]: Is he - How long is he gone for?
+[mn015]: Two weeks.
+[me012]: Italy, huh?
+[me012]: What's, uh - what's there?
+[mn015]: Well, it's a country.
+[mn015]: Buildings.
+[mn015]: People.
+[me003]: But it's not a conference or anything. He's just visiting.
+[me012]: Pasta.
+[mn015]: Hmm?
+[me012]: Right.
+[me012]: Just visiting.
+[mn015]: Vacation.
+[me012]: It's a pretty nice place,
+[me012]: in my brief, uh, encounter with it.
+[mn015]: Do you guys - Oh, yeah. So. Part of what we actually want to do is sort of schedule out what we want to surprise him with when - when he comes back.
+[mn015]: Um, so -
+[me003]: Oh, I think we should disappoint him.
+[mn015]: Yeah? You - or have a finished construction parser and a working belief-net, and uh -
+[me003]: That wouldn't be disappointing.
+[me003]: I think w- we should do absolutely no work
+[me003]: for the two weeks that he's gone.
+[mn015]: Well, that's actually what I had planned, personally. I had - I - I had sort of scheduled out in my mind that you guys do a lot of work, and I do nothing.
+[mn015]: And then, I sort of -
+[me003]: Oh, yeah, that sounds good, too.
+[mn015]: sort of bask in - in your glory.
+[mn015]: But, uh, i- do you guys have any vacation plans, because I myself am going to be,
+[mn015]: um,
+[mn015]: gone, but
+[mn015]: this is actually not really important. Just this weekend we're going camping.
+[me003]: Yeah, I'm wanna be this - gone this weekend, too.
+[mn015]: Ah.
+[mn015]: But we're all going to be here on Tuesday again?
+[mn015]: Looks like it?
+[fn050]: Yeah.
+[mn015]: OK, then. Let's meet - meet again next Tuesday.
+[mn015]: And, um,
+[mn015]: finish up this Bayes-net.
+[mn015]: And once we have finished it,
+[mn015]: I guess we can,
+[mn015]: um -
+[mn015]: and that's going to be more just you and me,
+[mn015]: because Bhaskara is doing probabilistic,
+[mn015]: recursive,
+[mn015]: structured,
+[mn015]: object-oriented,
+[mn015]: uh,
+[me003]: Killing machines!
+[mn015]: reasoning machines.
+[me012]: Yes.
+[mn015]: And, um -
+[me003]: Killing, reasoning. What's the difference?
+[fn050]: Wait. So you're saying, next Tuesday, is it the whole group meeting, or just
+[mn015]: Uh.
+[fn050]: us three working on it, or - or - ?
+[mn015]: The whole group.
+[mn015]: And we present our results,
+[mn015]: our final,
+[fn050]: OK.
+[mn015]: definite -
+[fn050]: So, when you were saying we need to do a re-run
+[fn050]: of, like -
+[me012]: h- What?
+[fn050]: What - Like, just working out the rest of the -
+[mn015]: Yeah. We should do this th- the upcoming days.
+[fn050]: This week?
+[mn015]: So, this week, yeah.
+[fn050]: OK.
+[me003]: When you say, "the whole group", you mean
+[me003]: the four of us, and Keith?
+[mn015]: And, Ami might.
+[me003]: Ami might be here, and it's possible that Nancy'll be here?
+[mn015]: Yep.
+[me003]: So,
+[me003]: yeah.
+[mn015]: Because, th- you know,
+[mn015]: once we have the belief-net done -
+[me003]: You're just gonna have to
+[me003]: explain it to me, then, on Tuesday, how it's all gonna work out.
+[me003]: You know.
+[mn015]: We will.
+[mn015]: OK. Because then, once we have it sort of up and running, then we can start you know,
+[mn015]: defining the interfaces and then feed stuff into it and get stuff out of it, and then
+[mn015]: hook it up to some
+[mn015]: fake construction
+[mn015]: parser and -
+[me003]: That you will have in about
+[me003]: nine months or so. Yeah.
+[mn015]: Yeah.
+[mn015]: And, um,
+[me003]: The first bad version'll be done in nine months.
+[mn015]: Yeah, I can worry about the ontology interface and you can - Keith can worry about the discourse. I mean, this is pretty - Um, I mean, I - I - I hope everybody uh knows that
+[mn015]: these are just going to be uh dummy values, right?
+[me012]: Which -
+[mn015]: where the -
+[me012]: Which ones?
+[mn015]: S- so - so if the endpoint - if the Go-there is Yes and No, then Go-there- discourse will just be fifty-fifty.
+[mn015]: Right?
+[me012]: Um, what do you mean? If the Go-there says No, then the Go-there is -
+[fn050]: I don't get it.
+[me012]: I don't u- understand.
+[mn015]: Um.
+[me012]: Like, the Go-there depends on all those four things.
+[mn015]: Yep.
+[me012]: Yeah.
+[mn015]: But, what are the values of the Go-there- discourse?
+[me012]: Well, it depends on the situation. If the discourse is strongly indicating that -
+[mn015]: Yeah, but, uh, we have no discourse input.
+[me012]: Oh, I see. The d- See, uh, specifically in our situation, D_ and O_ are gonna be, uh - Yeah. Sure. So, whatever.
+[fn050]: So, so far we have -
+[fn050]: Is that what the Keith node is?
+[mn015]: Yep.
+[fn050]: OK. And you're taking it out? for now? Or - ?
+[mn015]: Well, this is
+[mn015]: D_ -
+[mn015]: OK, this, I can - I can get it in here.
+[fn050]: All the D_ 's are -
+[mn015]: I can get it in here, so th- We have the, uh,
+[mn015]: um,
+[mn015]: sk- let's - let's call it "Keith-Johno
+[mn015]: node".
+[me012]: Johno?
+[mn015]: There is
+[mn015]: an H_
+[mn015]: somewhere printed .
+[me003]: There you go.
+[me012]: Yeah. People have the same problem with my name.
+[mn015]: Yeah.
+[me012]: Oops.
+[mn015]: And, um,
+[me003]: Does th- th- does the H_ go b- before the A_ or after the A_?
+[me012]: Oh, in my name? Before the A_.
+[me003]: Yeah.
+[me003]: OK, good.
+[me003]: Cuz you kn- When you said people have the same problem, I thought - Cuz my H_ goes after the uh e- e- e- the v-
+[me012]: People have the inverse problem with my name.
+[me003]: OK.
+[me003]: I always have to check,
+[me003]: every time y- I send you an email,
+[me003]: a past email of yours, to make sure I'm spelling your name correctly.
+[me012]: Yeah.
+[me012]: That's good.
+[me003]: I worry about you.
+[me012]: I appreciate that.
+[mn015]: But, when you abbreviate yourself as the "Basman" , you don't use any H_'s.
+[me012]: "Basman"? Yeah, it's because of the chessplayer named Michael Basman, who is my hero.
+[mn015]: OK.
+[me003]: You're a geek.
+[me003]: It's O_ K. I-
+[me003]: How do you pronou-
+[mn015]: OK.
+[me003]: How do you pronounce your name?
+[fn050]: Eva.
+[me003]: Eva?
+[fn050]: Yeah.
+[me012]: Not Eva?
+[me003]: What if I were - What if I were to call you Eva?
+[fn050]: I'd probably still respond to it.
+[me003]: @@
+[fn050]: I've had people call me Eva, but I don't know.
+[me003]: No, not just Eva, Eva. Like if I u-
+[me003]: take the V_ and s- pronounce it like it was a German V_ ?
+[mn015]: Which is F_.
+[me003]: Yeah.
+[fn050]: Um, no idea then.
+[mn015]: Voiced.
+[fn050]: What?
+[me003]: It sounds like an F_. There's also an F_ in German, which is why I -
+[fn050]: I -
+[fn050]: OK.
+[mn015]: Well, it's just the difference between voiced and unvoiced.
+[fn050]: OK.
+[me003]: Yeah.
+[me003]: As long as that's O_ K. I mean, I might slip out and say it accidentally. That's all I'm saying.
+[fn050]: Um.
+[fn050]: That's fine.
+[me012]: Yeah. It doesn't matter what those nodes are, anyway, because we'll just make the weights "zero" for now.
+[mn015]: Yep.
+[mn015]: We'll make them zero for now,
+[mn015]: because it - who - who knows what they come up with,
+[mn015]: what's gonna come in there.
+[mn015]: OK.
+[mn015]: And, um,
+[mn015]: then
+[mn015]: should we start on Thursday?
+[me012]: OK.
+[mn015]: And not meet tomorrow?
+[me012]: Sure.
+[mn015]: OK.
+[mn015]: I'll send an email,
+[mn015]: make a time suggestion.
+[me003]: Wait, maybe it's OK, so that -
+[me003]: that - that we can - that we have one node per construction.
+[me003]: Cuz even in people, like, they don't know what you're talking about if you're using some sort of strange construction.
+[mn015]: Yeah, they would still c- sort of get the closest, best fit.
+[me003]: Well, yeah, but I mean, the - uh, I mean, that's what the construction parser would do. Uh, I mean, if you said something completely arbitrary, it would f- find the
+[mn015]: Mm-hmm.
+[me003]: closest construction, right? But if you said something that was completel- er - h- theoretically the construction parser would do that -
+[mn015]: OK.
+[me003]: But if you said something for which there was no construction whatsoever,
+[me003]: n- people wouldn't have any idea what you were talking about.
+[mn015]: Mm-hmm.
+[me003]: Like "Bus dog fried egg." I mean.
+[me003]: You know.
+[mn015]: Or, if even something Chinese, for example.
+[me003]: Or, something in Mandarin, yeah.
+[me003]: Or Cantonese, as the case may be.
+[me003]: What do you think about that, Bhaskara?
+[me012]: I mean -
+[me012]: Well -
+[me012]: But how many constructions do - could we possibly have
+[me012]: nodes for?
+[me003]: In this system, or in r-
+[me012]: No, we. Like, when people do this kind of thing.
+[me003]: Oh, when p- How many constructions do people have?
+[me012]: Yeah.
+[me003]: I have not the slightest idea.
+[me012]: Is it considered to be like in - are they considered to be like very, uh, sort of s- abstract things?
+[me003]: Every noun is a construction.
+[me012]: OK, so it's like in the thousands.
+[me003]: The - Yeah.
+[me003]: Any - any form- meaning pair, to my understanding, is a construction.
+[me012]: OK.
+[mn015]: So.
+[me003]: And form u- starts at the level of noun - Or actually, maybe even sounds. Yeah.
+[mn015]: Phoneme. Yep.
+[me003]: And goes upwards
+[me003]: until you get
+[me003]: the ditransitive construction.
+[me003]: And then, of course, the c- I guess, maybe there can be the -
+[me012]: S-
+[me003]: Can there be combinations of the dit-
+[me012]: Discourse-level
+[me003]: Yeah.
+[me012]: constructions.
+[me003]: The "giving a speech" construction,
+[mn015]: Rhetorical constructions. Yeah.
+[me012]: Yes.
+[mn015]: But, I mean,
+[mn015]: you know, you can probably count -
+[mn015]: count the ways.
+[mn015]: I mean.
+[me003]: It's probab- Yeah, I would s- definitely say it's finite.
+[mn015]: Yeah.
+[me003]: And at least in compilers, that's all that really matters, as long as your analysis is finite.
+[me012]: How's that? How it can be finite, again?
+[me003]: Nah, I can't think of a way it would be infinite.
+[mn015]: Well, you can come up with new constructions.
+[me003]: Yeah.
+[me003]: If the - if your - if your brain was totally non-deterministic,
+[me003]: then perhaps there's a way to get, uh,
+[me003]: infin- an infinite number of constructions that you'd have to worry about.
+[me012]: But, I mean, in the practical sense, it's impossible.
+[me003]: Right. Cuz if we have a fixed number of neurons - ?
+[me012]: Yeah.
+[me003]: So the best-case scenario would be the number of constructions - or, the worst-case scenario is the number of constructions equals the number of neurons.
+[me012]: Well, two to the power of the number of neurons.
+[me003]: Right.
+[me003]: But still
+[me003]: finite.
+[mn015]: OK.
+[me003]: No, wait. Not necessarily, is it?
+[me003]: We can end the meeting. I just -
+[me003]: Can't you use different var- different levels of activation?
+[me003]: across, uh -
+[mn015]: Mm-hmm.
+[me003]: lots of different neurons, to specify different values?
+[me012]: Um, yeah, but there's, like, a certain level of -
+[me003]: There's a bandwidth issue, right? Yeah.
+[me012]: Bandw- Yeah, so you can't do better than something.
+[mn015]: Turn off the mikes. Otherwise it gets really tough for the tr-

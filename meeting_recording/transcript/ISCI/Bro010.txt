@@ -1,0 +1,1003 @@
+[me018]: OK, we're on.
+[me013]: OK, what are we talking about today?
+[mn007]: I don't know. Do you have news from the conference talk?
+[mn007]: Uh, that was
+[me013]: Uh -
+[fn002]: Yesterday
+[mn007]: programmed for yesterday -
+[mn007]: I guess.
+[me013]: Uh -
+[fn002]: Yesterday morning on video conference.
+[me013]: Uh, oh, I'm sorry. I know - now I know what you're talking about. No, nobody's told me anything.
+[mn007]: Well
+[me006]: Oh. Conference call.
+[mn007]: Alright.
+[me018]: Oh, this was the, uh,
+[me018]: talk where they were supposed to try to decide -
+[mn007]: To -
+[mn007]: to decide what to do, yeah.
+[fn002]: Yeah.
+[me018]: Ah, right.
+[me013]: Yeah. No, that would have been a good thing to find out before this meeting, that's. No, I have no - I have no idea. Um,
+[me013]: Uh, so I mean, let's - let's assume for right now that we're just kind of plugging on ahead, because even if they
+[mn007]: Yeah.
+[me013]: tell us that, uh, the rules are different, uh, we're still interested in
+[me013]: doing what we're doing. So what are you doing?
+[mn007]: Mm-hmm.
+[mn007]: Uh, well, we've -
+[mn007]: a little bit worked on trying to see,
+[fn002]: To improve -
+[mn007]: uh, what were the bugs and the problem with the latencies. So,
+[mn007]: We took - first we took the LDA filters and,
+[mn007]: uh, we designed new filters,
+[mn007]: using uh recursive filters actually.
+[me013]: So when you say "we", is that something Sunil is doing or is that - ?
+[mn007]: I'm sorry?
+[me013]: Who is doing that?
+[mn007]: Uh, us. Yeah.
+[me013]: Oh, oh. Oh, OK.
+[fn002]: But -
+[mn007]: So we took the filters -
+[mn007]: the FIR filters
+[mn007]: and we
+[mn007]: designed, uh, IIR filters that have the same frequency response.
+[me013]: Mm-hmm.
+[mn007]: Well,
+[mn007]: similar, but that have shorter delays.
+[me013]: Mm-hmm.
+[mn007]: So they had two filters, one for the low frequency bands and another for the high frequency bands.
+[mn007]: And so we redesigned two filters. And the low frequency band has
+[mn007]: sixty-four milliseconds of delay, and the high frequency band filter has something like eleven milliseconds compared to the two hundred milliseconds of the
+[mn007]: IIR filters.
+[mn007]: But it's not yet test. So we have the filters but we still have to implement a routine that does recursive filtering and -
+[me013]: OK.
+[me013]: You - you had a discussion with Sunil about this though?
+[mn007]: No.
+[mn007]: No.
+[me013]: Uh- huh.
+[me013]: Yeah, you should talk with him.
+[mn007]: Yeah, yeah.
+[me013]: Yeah. No, I mean, because the - the - the - the whole problem that happened before was coordination, right? So - so you need to
+[mn007]: Mm-hmm.
+[me013]: discuss with him what we're doing, uh, cuz they could be doing the same thing and - or something.
+[mn007]: Yeah.
+[mn007]: Mm-hmm.
+[mn007]: Uh, I - yeah, I don't know if th- that's what they were trying to -
+[me013]: Right.
+[mn007]: They were trying to do something different like
+[mn007]: taking, uh - well, using filter that takes only a past and
+[mn007]: this is just a little bit different. But I will- I will send him an email and tell him exactly what we are doing, so.
+[me013]: Yeah, yeah. Um, I mean -
+[mn007]: Um,
+[me013]: We just - we just have to be in contact more. I think that - the - the fact that we -
+[mn007]: Mm-hmm.
+[me013]: we did that with - had that thing with the latencies was indicative of the fact that there wasn't enough communication. So.
+[mn007]: Alright. Um,
+[me013]: OK.
+[mn007]: Yeah.
+[mn007]: Well, there is w- one, um,
+[mn007]: remark about these filters, that
+[mn007]: they don't have a linear phase. So,
+[me013]: Right.
+[mn007]: Well, I don't know, perhaps it - perhaps it doesn't hurt because the phase is almost linear but.
+[mn007]: Um, and so, yeah, for the delay I gave you here, it's -
+[mn007]: it's, uh, computed on
+[mn007]: the five hertz modulation frequency, which is the -
+[mn007]: mmm,
+[mn007]: well,
+[mn007]: the most important for speech so .
+[mn007]: Uh, this is the first thing.
+[fn002]: The low f- f-
+[me013]: So that would be, uh, a reduction of a hundred and thirty-six milliseconds, which, uh -
+[mn007]: Yeah.
+[me013]: What was the total we ended up with through the whole system?
+[mn007]: Three hundred and thirty.
+[me013]: So that would be within - ?
+[mn007]: Yeah, but there are other points actually,
+[mn007]: uh, which will perhaps add some more delay. Is that
+[mn007]: some other - other stuff in the process were perhaps not very -
+[mn007]: um
+[mn007]: perf- well, not very correct,
+[mn007]: like the downsampling which w- was simply dropping frames.
+[me013]: Yeah.
+[mn007]: Um,
+[mn007]: so we will try also to add a nice downsampling having a filter
+[me013]: Uh-huh.
+[mn007]: that - that - well,
+[mn007]: a low-pass filter at - at twenty-five hertz.
+[mn007]: Uh, because wh- when - when we look at the LDA filters, well, they are basically low-pass but
+[mn007]: they
+[mn007]: leave a lot of what's above twenty-five hertz.
+[me013]: Yeah.
+[mn007]: Um, and so, yeah, this will be another filter which would add ten milliseconds again.
+[me013]: Yeah.
+[mn007]: Um,
+[mn007]: yeah, and then there's a third thing,
+[mn007]: is that,
+[mn007]: um,
+[mn007]: basically the way
+[mn007]: on-line normalization was done
+[mn007]: uh,
+[mn007]: is just using this recursion
+[me013]: Yeah.
+[mn007]: on - on the um,
+[mn007]: um,
+[mn007]: on the feature stream,
+[mn007]: and - but this is a filter, so it has also a delay.
+[mn007]: Uh, and when we
+[mn007]: look at this filter actually it has a delay of eighty-five milliseconds. So if we -
+[me013]: Eighty - five .
+[mn007]: Yeah.
+[mn007]: If we want to be very
+[mn007]: correct, so if we want to -
+[mn007]: the estimation of the mean t- t- to - to be -
+[mn007]: well,
+[mn007]: the right estimation of the mean,
+[mn007]: we have to t- to take eighty-five milliseconds in the future.
+[mn007]: Mmm.
+[me013]: Hmm!
+[me013]: That's a little bit of a problem.
+[mn007]: Yeah.
+[mn007]: Um,
+[mn007]: But, well, when we add up everything it's - it will be alright.
+[mn007]: We would be at six- so, sixty-five,
+[mn007]: plus ten, plus - for the downsampling, plus eighty-five for the on-line normalization.
+[mn007]: So it's
+[me013]: Uh, yeah, but then there's -
+[mn007]: plus - plus eighty for the neural net and PCA.
+[me013]: Oh.
+[mn007]: So it would be around two hundred and forty - so, well,
+[me013]: Just - just barely in there.
+[mn007]: plus - plus the frames, but it's OK.
+[me018]: What's the allowable?
+[me013]: Two-fifty, unless they changed the rules.
+[mn007]: Hmm.
+[me013]: Which there is - there's some discussion of. But -
+[mn007]: Yeah.
+[me018]: What were they thinking of changing it to?
+[me013]: Uh, well the people who had very low latency want it to be low - uh, very -
+[me013]: very- very narrow, uh, latency bound. And the people who have longer latency don't. So.
+[me018]: Huh.
+[mn007]: So, yeah.
+[me013]: Unfortunately we're the main ones with long latency, but
+[me018]: Ah!
+[me013]: But, uh, you know, it's -
+[mn007]: Yeah, and basically the best proposal had something like thirty or forty milliseconds of latency. So.
+[me013]: Yeah.
+[mn007]: Well.
+[me013]: Yeah, so they were basically - I mean,
+[me013]: they were more or less trading computation for performance and we were,
+[me013]: uh, trading latency for performance. And
+[me013]: they were dealing with noise explicitly and we weren't, and
+[me013]: so I think of it as complementary,
+[me013]: that if we can put the -
+[me018]: Think of it as what?
+[me013]: Complementary.
+[me018]: Hmm.
+[me013]: I think the best systems -
+[me013]: so, uh, everything that we did in- in a way it was - it was just
+[me013]: adamantly insisting on going in with a brain damaged system, which is something - actually, we've done a lot over the last thirteen years.
+[me013]: Uh, which is we say, well this is the way we should do it. And then we do it. And then
+[me013]: someone else
+[me013]: does something that's straight forward. So, w- th- w- this was a test that largely had additive noise and we did - we adde-
+[me013]: did absolutely nothing explicitly to handle ad- additive noise.
+[me018]: Right.
+[me013]: We just, uh, you know, trained up systems
+[me013]: to be more discriminant.
+[me013]: And, uh, we did this, uh, RASTA-like filtering which
+[me013]: was done in the log domain and was tending to handle convolutional noise. We did - we actually did nothing about additive noise.
+[me013]: So, um,
+[me013]: the, uh, spectral sub- subtraction schemes a couple places did seem to- seem to do a nice job. And so, uh,
+[me013]: we're talking about putting - putting some of that in while still keeping some of our stuff. I think you should be able to end up with a system that's better than
+[me013]: both but clearly the way that we're operating for this other stuff does involved some latency to - to
+[me013]: get rid of most of that latency. To get down to forty or fifty milliseconds we'd have to throw out most of what we're doing.
+[me013]: And - and, uh, I don't think there's any good reason for it in the application actually. I mean, you're -
+[me013]: you're - you're speaking to a recognizer on a remote server
+[me013]: and, uh, having a - a - a quarter second
+[me013]: for some processing to clean it up. It doesn't seem like it's that
+[me013]: big a deal. These aren't large vocabulary things so the decoder shouldn't take a really long time, and.
+[me018]: Mm-hmm.
+[me013]: So.
+[me018]: And I don't think anybody's gonna notice the difference between a quarter of a second of latency and thirty milliseconds of latency.
+[me013]: No. What - what does - wa- was your experience when you were doing this stuff with, uh, the -
+[me013]: the - the surgical, uh,
+[me013]: uh, microscopes and so forth. Um, how long was it from when somebody, uh,
+[me013]: finished an utterance to when, uh, something started happening?
+[me018]: Um, we had a silence detector, so
+[me018]: we would look for the end of an utterance based on the silence detector.
+[me013]: Mm-hmm.
+[me018]: And I - I can't remember now off the top of my head how many
+[me018]: frames of silence we had to detect before we would declare it to be
+[me013]: Mm-hmm.
+[me013]: Mm-hmm.
+[me018]: the end of an utterance. Um,
+[me018]: but it was, uh,
+[me018]: I would say it was probably around the order of two hundred and fifty milliseconds.
+[me013]: Yeah, and that's when you'd start
+[me013]: doing things.
+[me018]: Yeah, we did the back trace at that point to get the answer.
+[me013]: Yeah.
+[me013]: Of course that didn't take too long at that point. Yeah.
+[me018]: No, no it was pretty quick.
+[me013]: Yeah, so you - you - so you had a
+[me018]: So -
+[me018]: this w-
+[me013]: so you had a - a quarter second delay before, uh,
+[me013]: plus some little processing time, and then
+[me018]: Right.
+[me013]: the - the microscope would start moving or something.
+[me018]: Right.
+[me013]: Yeah.
+[me018]: Right.
+[me013]: And there's physical inertia there, so probably the - the motion itself was all -
+[me018]: And it felt to, uh, the users that it was
+[me018]: instantaneous. I mean, as fast as talking to a person. It -
+[me018]: th- I don't think anybody ever complained about the delay.
+[me013]: Yeah, so you would think as long as it's under half a second or something. Uh, I'm not an expert on that but.
+[me018]: Yeah.
+[me018]: Yeah.
+[me018]: I don't remember the exact numbers but
+[me013]: Yeah.
+[me018]: it was something like that.
+[me018]: I don't think you can really tell.
+[me018]: A person - I don't think a person can tell the difference between,
+[me018]: uh, you know, a quarter of a second and a hundred milliseconds, and -
+[me013]: Yeah.
+[me018]: I'm not even sure if we can tell the difference between a quarter of a second and half a second.
+[me013]: Yeah.
+[me018]: I mean it just - it feels so quick.
+[me013]: I mean, basically if you - yeah, if you
+[me013]: said, uh, um,
+[me013]: "what's the, uh, uh - what's the shortest route to the opera?"
+[me013]: and it took half a second to get back to you, I mean, it would be f- I mean, it might even be too abrupt. You might have to put in a s- a s- a delay. Yeah.
+[me018]: Yeah.
+[me018]: Yeah.
+[me018]: I mean, it may feel different than talking to a person because when we talk to each other we tend to step on each other's utterances.
+[me018]: So like if I'm asking you a question, you may start answering before I'm even done.
+[me013]: Yeah.
+[me018]: So it - it would probably feel different but I don't think it would feel
+[me013]: Right.
+[me018]: slow.
+[me013]: Right.
+[me013]: Well, anyway,
+[me013]: I mean, I think -
+[me013]: we could cut - we know what else, we could cut down on the neural net time by - by, uh,
+[me013]: playing around a little bit, going more into the past, or something like that. We t- we talked about that.
+[me018]: So is the latency from the neural net caused by how far ahead you're looking?
+[me013]: Mm-hmm.
+[mn007]: Mm-hmm.
+[me013]: And there's also - well, there's the neural net and there's also this, uh, uh, multi-frame, uh, uh, KLT.
+[me018]: Wasn't there -
+[me018]: Was it in the, uh, recurrent neural nets where they weren't looking ahead at all?
+[me013]: They weren't looking ahead much.
+[me013]: They p- they looked ahead a little bit.
+[me018]: A little bit. OK.
+[me013]: Yeah.
+[me013]: Yeah, I mean, you could do this with a recurrent net. And - and then - But you also could just, um,
+[me013]: I mean, we haven't experimented with this but I imagine you could, um,
+[me013]: uh, predict a, uh -
+[me013]: um, a label, uh, from more in the past than in - than - than in the future.
+[me013]: I mean, we've d- we've done some stuff with that before. I think it - it works OK.
+[mn007]: Mm-hmm.
+[me013]: So.
+[me018]: We've always had - usually we used the symmetric windows but I don't think -
+[me013]: Yeah, but we've - but we played a little bit with - with asymmetric, guys. You can do it.
+[me018]: Yeah.
+[me013]: So.
+[me013]: So, that's what - that's what you're busy with, s- messing around with this, yeah.
+[mn007]: Uh, yeah.
+[me013]: And, uh,
+[fn002]: Also we were thinking to -
+[fn002]: to, uh, apply the eh, spectral subtraction from Ericsson and to - to change the contextual KLT for LDA.
+[mn007]: Yeah.
+[me013]: Uh-huh.
+[me018]: Change the what?
+[fn002]: The contextual KLT.
+[me018]: I'm missing that last word. Context-
+[me013]: K_ - KLT.
+[me006]: Oh. KLT.
+[fn002]: KLT - KLT, I'm sorry.
+[me018]: KLT. Oh, KLT. Uh-huh.
+[me013]: Mm-hmm.
+[fn002]: Uh, to change and use LDA discriminative.
+[mn007]: Yeah.
+[fn002]: But -
+[me013]: Uh- huh.
+[fn002]: I don't know.
+[me013]: Uh,
+[me018]: What is the advantage of that?
+[fn002]: Uh -
+[mn007]: Well, it's that by the- for the moment we have, uh, something that's discriminant and nonlinear.
+[mn007]: And the other is linear but it's not discriminant at all. Well, it's
+[mn007]: it's a linear transformation, that -
+[mn007]: Uh -
+[me013]: So at least just to understand maybe what the difference was between how much you were getting from
+[me013]: just putting the frames together and how much you're getting from the discriminative,
+[me013]: what the nonlinearity does for you or doesn't do for you.
+[me013]: Just to understand it a little better I guess.
+[mn007]: Mmm.
+[mn007]: Well - uh - yeah.
+[mn007]: Actually what we want to do, perhaps it's to replace - to - to have something that's discriminant but linear, also.
+[mn007]: And to see if it - if it improves ov- over - over the non-discriminant linear transformation.
+[mn007]: And if the neural net is better than this or, well.
+[me018]: Hmm.
+[me013]: Yeah, well, that's what I meant, is to see whether -
+[mn007]: So.
+[mn007]: Ye-
+[me013]: whether it - having the neural net really buys you anything.
+[mn007]: Mmm.
+[me013]: Uh, I mean, it doe- did look like it buys you something over just the KLT.
+[me013]: But maybe it's just the discrimination and - and maybe - yeah, maybe the nonlinear discrimination isn't necessary.
+[mn007]: Yeah.
+[fn002]: S- maybe.
+[mn007]: Yeah. Mm-hmm.
+[me013]: Could be.
+[fn002]: Maybe.
+[me013]: Good - good to know.
+[me013]: But the other part you were saying was the spectral subtraction, so you just kind of, uh -
+[mn007]: Yeah.
+[me013]: At what stage do you do that? Do you - you're doing that, um - ?
+[mn007]: So it would be on the um -
+[fn002]: We was think-
+[mn007]: on - on the mel frequency bands, so. Yeah, be- before everything.
+[fn002]: Yeah, we - no - nnn
+[me013]: OK, so just do that on the mel f-
+[fn002]: We - we was thinking to do before after VAD or-
+[fn002]: Oh, we don't know exactly when it's better. Before after VAD or -
+[mn007]: Yeah, um -
+[fn002]: and then
+[me013]: So - so you know that - that - that the way that
+[mn007]: Um.
+[me013]: they're - uh, one thing that would be no - good to find out about from this conference call is that what they were talking about, what they're proposing doing,
+[me013]: was having a third party, um,
+[me013]: run a good VAD,
+[me013]: and - and determine boundaries.
+[fn002]: Yeah.
+[me013]: And then given those boundaries,
+[fn002]: Begin to work.
+[me013]: then have everybody do the recognition.
+[me013]: The reason for that was that, um, uh -
+[me013]: if some- one p- one group put in the VAD and another didn't,
+[me013]: uh, or one had a better VAD than the other
+[me013]: since that - they're not viewing that as being
+[me013]: part of the - the task,
+[me013]: and that any - any manufacturer would
+[me013]: put a bunch of effort into having some s- kind of good speech-silence detection.
+[me013]: It still wouldn't be perfect but I mean,
+[me013]: e- the argument was "let's not have that be part of this test."
+[me013]: "Let's - let's separate that out."
+[me013]: And so,
+[me013]: uh, I guess they argued about that yesterday and,
+[me013]: yeah, I'm sorry, I don't - don't know the answer but we should find out. I'm sure we'll find out soon
+[me013]: what they, uh - what they decided.
+[me013]: So, uh - Yeah, so there's the question of the VAD but otherwise it's - it's on the - the, uh - the mel fil- filter bank, uh,
+[me013]: energies I guess? You do - doing the - ?
+[fn002]: Mm-hmm.
+[mn007]: Mmm, yeah.
+[fn002]: Mm-hmm.
+[me013]: And you're - you're subtracting in the - in the - in the -
+[me013]: I guess it's power - power domain,
+[me013]: uh, or - or magnitude domain. Probably power domain, right?
+[me013]: why
+[mn007]: I guess it's power domain, yeah. I don't remember exactly.
+[fn002]: I don't remember.
+[me013]: Yeah, yep.
+[mn007]: But - yeah, so it's before everything else, and -
+[me013]: I mean, if you look at the theory, it's - it should be in the power domain but - but, uh, I've seen implementations where people do it in the magnitude domain and -
+[mn007]: Yeah.
+[mn007]: Mmm.
+[me013]: I have asked people why and they shrug their shoulders and say, "oh, it works." So.
+[mn007]: Yeah.
+[me013]: Uh, and there's this - I guess there's this mysterious - I mean people who do this a lot I guess have developed little tricks of the trade. I mean, there's -
+[me013]: there's this, um - you don't just subtract the - the estimate of the noise spectrum. You subtract th- that times -
+[mn007]: A little bit more and -
+[me013]: Or - or less, or -
+[mn007]: Yeah.
+[mn007]: Yeah.
+[me018]: Really? Huh!
+[me013]: Yeah.
+[mn007]: And generated this - this, um,
+[me013]: Uh.
+[mn007]: so you have the estimation of the power spectra of the noise,
+[mn007]: and you multiply this by a factor which is depend- dependent on the SNR.
+[fn002]: Hmm, maybe .
+[mn007]: So. Well.
+[me018]: Hmm!
+[mn007]: When the speech lev- when the signal level is more important, compared to this noise level,
+[mn007]: the coefficient is small, and around one.
+[mn007]: But when the power le- the s- signal level is
+[mn007]: uh small compared to the noise level, the coefficient is more important.
+[mn007]: And this reduce actually the music- musical noise, uh
+[me018]: Oh!
+[mn007]: which is more important during silence portions, when
+[me018]: Uh-huh.
+[mn007]: the s- the energy's small.
+[me018]: Hmm!
+[mn007]: So there are tricks like this but, mmm.
+[me018]: Hmm!
+[me013]: Yeah.
+[me013]: So.
+[mn007]: Yeah.
+[me018]: Is the estimate of the noise spectrum a running estimate?
+[mn007]: Yeah.
+[me013]: Yeah.
+[me018]: Or -
+[mn007]: Yeah.
+[me013]: Well, that's - I mean, that's what differs from different -
+[me013]: different tasks and different s- uh, spectral subtraction methods. I mean, if -
+[me018]: Hmm!
+[me013]: if you have, uh, fair assurance that, uh,
+[me013]: the noise is - is quite stationary,
+[me013]: then the smartest thing to do is use as much
+[me013]: data as possible to estimate the noise, get a much better estimate, and subtract it off.
+[me018]: Mm-hmm.
+[me013]: But if it's varying at all, which is gonna be the case for almost any real situation, you have to
+[me013]: do it on-line, uh, with some forgetting factor or something.
+[me018]: So do you - is there some long window that extends into the past over which you calculate the average?
+[me013]: Well, there's a lot of different ways of computing the noise spectrum. So one of the things
+[me013]: that, uh, Hans-Guenter Hirsch did, uh - and pas- and other people - actually, he's - he wasn't the only one I guess,
+[me013]: was to, uh, take some period of - of - of speech
+[me013]: and in each band, uh, develop a histogram.
+[me013]: So, to get a decent histogram of these energies
+[me013]: takes at least a few seconds really. But, uh - I mean you can do it with a smaller amount but it's pretty rough.
+[me013]: And, um, in fact I think the NIST
+[me013]: standard method of determining signal-to-noise ratio is based on this.
+[me013]: So -
+[me018]: A couple seconds?
+[me013]: No, no, it's based on this kind of method, this histogram method. So you have a histogram.
+[me018]: Hmm.
+[me013]: Now, if you have signal and you have noise, you basically have these two bumps
+[me013]: in the histogram, which you could approximate as two Gaussians.
+[me018]: But wh- don't they overlap sometimes?
+[me013]: Oh, yeah.
+[me018]: OK.
+[me013]: So you have a mixture of two Gaussians.
+[me018]: Yeah.
+[me013]: Right? And you can use EM to figure out what it is. You know. So - so basically now you have this mixture of two Gaussians, you - you n- know what they are, and, uh - I mean, sorry, you estimate what they are,
+[me018]: Yeah.
+[me013]: and, uh, so this gives you what the signal is and what the noise e- energy is
+[me013]: in that band in the spectrum. And then you look over the whole thing and now you have a noise spectrum.
+[me013]: So, uh, Hans-Guenter Hirsch and others have used that kind of method. And the other thing to do
+[me013]: is - which is sort of more trivial and obvious - is to, uh,
+[me013]: uh, determine through magical means that - that, uh, there's no speech in some period, and then see what the spectrum is.
+[me018]: Mm-hmm.
+[me013]: Uh, but,
+[me013]: you know, it's - that - that - that's
+[me013]: tricky to do. It has mistakes. Uh, and if you've got enough time, uh, this other method appears to be somewhat more reliable.
+[me013]: Uh, a variant on that for just determining signal-to-noise ratio
+[me013]: is to just, uh - you can do a w- a uh - an iterative thing, EM-like thing, to determine means only. I guess it is EM still, but just - just determine the means only.
+[me013]: Don't worry about the variances. And then you just use those mean values as being the - the, uh
+[me018]: Mm-hmm.
+[me013]: uh
+[me013]: signal-to-noise ratio in that band.
+[me018]: But what is the -
+[me018]: it seems like this kind of thing could add to the latency.
+[me018]: I mean, depending on
+[me018]: where the window was that you used to calculate the signal-to-noise ratio.
+[mn007]: Yeah, sure.
+[mn007]: But -
+[mn007]: Mmm.
+[me013]: Not necessarily. Cuz if you don't look into the future, right? if you just - yeah - I mean, if you just - if you -
+[me018]: OK, well that - I guess that was my question, yeah.
+[me013]: you, uh - a- at the beginning you have some -
+[me018]: Guess.
+[me013]: esti- some guess and - and, uh, uh -
+[mn007]: Yeah, but it -
+[me013]: It's an interesting question. I wonder how they did
+[mn007]: Actually, it's a mmm -
+[me013]: do it?
+[mn007]: If- if you want to have a good estimation on non-stationary noise you have to look in the - in the future. I mean,
+[mn007]: if you take your window and build your histogram in this window,
+[mn007]: um, what you can expect is to have an estimation of th- of the noise in - in the middle of the window, not at the end. So -
+[fn002]: Mm-hmm.
+[me013]: Well, yeah, but what does - what - what - what does Alcatel do? And - and France Telecom.
+[mn007]: the - but - but people -
+[mn007]: The-
+[mn007]: They just look in the past. I guess it works because the noise are, uh
+[mn007]: pret- uh, almost stationary but,
+[me013]: Pretty stationary.
+[me006]: Pretty stationary, yeah.
+[me013]: Well, the thing, e- e- e- e-
+[mn007]: um -
+[me013]: Yeah, y- I mean, you're talking about non-stationary noise but I think that spectral subtraction is rarely - is - is not gonna work really well for - for non-stationary noise, you know?
+[mn007]: Well, if y- if you have a good estimation of the noise, yeah, because well it- it has to work. i-
+[me013]: But it's hard to - but that's hard to do.
+[mn007]: Yeah, that's hard to do. Yeah.
+[me013]: Yeah. So - so I think that - that what - what is -
+[mn007]: But -
+[me013]: wh- what's more common is that you're going to be helped with r- slowly varying or stationary noise.
+[mn007]: Mm-hmm.
+[me013]: That's what spectral subtraction will help with, practically speaking.
+[mn007]: Mm-hmm.
+[mn007]: Mm-hmm.
+[me013]: If it varies a lot, to get a- If - if - to get a good estimate you need a few seconds of speech, even if it's centered,
+[me013]: right? if you need a few seconds to get a decent estimate but it's changed a lot in a few seconds,
+[mn007]: Mm-hmm.
+[me013]: then it, you know, i- it's kind of a problem. I mean, imagine e- five hertz is the middle of the - of the speech modulation spectrum, right?
+[mn007]: Yeah.
+[mn007]: Mmm.
+[me013]: So imagine a jack hammer going at five hertz.
+[mn007]: Yeah, that's -
+[me013]: I mean, good - good luck. So,
+[mn007]: So in this case, yeah, sure, you cannot -
+[me013]: Yeah.
+[mn007]: But I think y- um,
+[mn007]: Hirsch does experiment with windows of
+[mn007]: like between five hundred milliseconds and one second. And
+[mn007]: well, five hundred wa- was not so bad. I mean
+[mn007]: and he worked on non-stationary noises, like noise modulated with
+[mn007]: well, wi- with amplitude modulations and
+[mn007]: things like that, and -
+[me018]: Were his, uh, windows centered around the -
+[mn007]: But -
+[mn007]: Um,
+[mn007]: yeah. Well, I think - Yeah. Well, in - in the paper he showed that actually the estimation of the noise is - is delayed. Well, it's - there is -
+[mn007]: you - you have to center the window, yeah.
+[me013]: Yeah.
+[mn007]: Mmm.
+[me013]: No, I understand it's better to do but I just think that - that, uh,
+[mn007]: Mmm.
+[me013]: for real noises wh- what - what's most likely to happen is that there'll be some things that are relatively stationary where you can use one or another spectral subtraction thing and other things where it's not so stationary and -
+[mn007]: Yeah.
+[me013]: I mean, you can always pick something that - that falls between your methods, uh, uh, but I don't know if, you know, if sinusoidally, uh,
+[mn007]: Hmm.
+[me013]: modul- amplitude modulated noise is - is sort of a big problem in - in in - practice. I think that it's uh -
+[mn007]: Yeah.
+[me018]: We could probably get a really good estimate of the noise if we just went to the noise files,
+[me018]: and built the averages from them.
+[me013]: Yeah.
+[me013]: Well.
+[mn007]: What -
+[mn007]: What do you mean?
+[me013]: Just cheat - You're saying, cheat.
+[mn007]: But if the - if the noise is stationary
+[me013]: Yeah.
+[me013]: Yeah.
+[mn007]: perhaps you don't even need some kind of noise estimation algorithm. We just take th- th-
+[mn007]: th- the beginning of the utterance and
+[me013]: Oh, yeah, sure.
+[mn007]: I- I know p- I don't know if people tried this for Aurora. Well, everybody seems to use some kind of adaptive, well,
+[fn002]: It's the same.
+[fn002]: Yeah.
+[me013]: But - but -
+[mn007]: scheme but,
+[fn002]: A dictionary.
+[me013]: you know, stationary -
+[mn007]: is it very useful and is the c-
+[me018]: Very slow adaptation.
+[me013]: Right, the word "stationary" is - has a very precise statistical meaning. But, you know, in - in signal-processing really what we're talking about I think is things that change slowly,
+[me018]: th-
+[me013]: uh, compared with our - our processing techniques. So
+[mn007]: Mm-hmm.
+[me013]: if you're driving along in a car I - I would think that most of the time
+[me013]: the nature of the noise is going to change relatively slowly. It's not gonna stay absolute the same. If you - if you check it out,
+[me013]: uh, five minutes later you may be in a different part of the road or
+[mn007]: Mm-hmm.
+[me013]: whatever. But it's - it's - i- i- i-
+[me013]: using the local
+[me013]: characteristics in time, is probably going to work pretty well.
+[mn007]: Mm-hmm.
+[me013]: But you could get hurt a lot if you just took some- something from the beginning of all the speech, of, you know, an hour of speech and then later -
+[mn007]: Yeah.
+[me013]: Uh, so they may be - you know, may be overly, uh, complicated for - for this test but -
+[me013]: but - but, uh, I don't know.
+[me013]: But what you're saying, you know, makes sense, though. I mean, if possible you shouldn't -
+[me013]: you should - you should make it, uh, the center of the - center of the window. But -
+[me013]: uh, we're already having problems with these delay, uh - delay issues. So, uh, we'll have to figure ways without it.
+[mn007]: Yeah, so.
+[me013]: Um,
+[me018]: If they're going to provide a,
+[me018]: uh, voice activity detector
+[me018]: that will tell you the boundaries of the speech, then,
+[me018]: couldn't you just go outside those boundaries and do your estimate there?
+[me013]: Oh, yeah.
+[me013]: You bet.
+[me013]: Yeah. So I - I imagine that's what they're doing, right? Is they're -
+[me013]: they're probably looking in nonspeech sections and getting some, uh -
+[mn007]: Yeah, they have some kind of threshold on - on the previous estimate, and - So.
+[me013]: @@
+[mn007]: Yeah.
+[mn007]: I think. Yeah, I think
+[mn007]: Ericsson used this kind of threshold. Yeah, so, they h- they have an estimate of the noise level
+[mn007]: and they put a threshold like six or ten DB above,
+[mn007]: and
+[mn007]: what's under this threshold is used to update the estimate.
+[mn007]: Is - is that right or - ?
+[fn002]: Yeah.
+[fn002]: I think so.
+[fn002]: I have not here the proposal.
+[mn007]: So it's - it's - Yeah.
+[me013]: Does France Telecom do this -
+[mn007]: It's like saying what's under the threshold is silence, and -
+[me006]: Hmm.
+[me013]: Does France Telecom do th- do the same thing?
+[me013]: More or less?
+[mn007]: I d- I -
+[mn007]: Y- you know, perhaps?
+[fn002]: No.
+[fn002]: I do- I have not here the proposal.
+[me013]: OK.
+[me013]: Um,
+[me013]: OK, if we're - we're done - done with that, uh,
+[me013]: let's see. Uh, maybe we can talk about a couple other things briefly, just, uh, things that - that we've been
+[me013]: chatting about but haven't made it into these meetings yet. So you're coming up with your quals proposal, and, uh - Wanna just
+[me013]: give a two three minute summary of what you're planning on doing?
+[me006]: Oh, um,
+[me006]: two, three, it can be shorter than that. Um.
+[me013]: Yeah.
+[me006]: Well, I've -
+[me006]: I've talked to some of you already. Um, but I'm, uh, looking into extending the work done by Larry Saul and John Allen and uh Mazin Rahim.
+[me006]: Um, they - they have a system that's, uh, a multi-band, um, system but their multi-band
+[me006]: is - is a little different than the way that we've been doing multi-band in the past, where
+[me006]: um - Where we've been
+[me006]: @@
+[me006]: uh taking um
+[me006]: sub-band features and i- training up these neural nets and - on - on phonetic targets, and then combining them some- somehow down the line,
+[me006]: um,
+[me006]: they're - they're taking sub-band features and, um,
+[me006]: training up a detector that detects for, um,
+[me006]: these phonetic features
+[me006]: for example, um, he presents um,
+[me006]: uh, a detector to detect sonorance.
+[me006]: And so what - what it basically is - is, um - it's - there's -
+[me006]: at the lowest level, there - it's - it's an OR ga- I mean, it's an AND gate. So, uh, on each sub-band you have several
+[me006]: independent tests,
+[me006]: to test whether
+[me006]: um, there's the existence of sonorance in a sub-band.
+[me006]: And then, um, it c- it's combined by a soft AND gate.
+[me006]: And at the - at the higher level,
+[me006]: for every - if, um - The higher level there's a soft OR gate.
+[me006]: Uh, so if - if this detector detects
+[me006]: um, the presence of - of sonorance in any of the sub-bands, then the detect- uh, the OR gate at the top says, "OK, well this frame
+[me006]: has evidence of sonorance." And these are all -
+[me018]: What are - what are some of the low level detectors that they use?
+[me006]: Oh, OK. Well, the low level detectors are logistic regressions.
+[me006]: Um, and the, uh - the one o-
+[me013]: So that, by the way, basically is a - is one of the units in our - in our - our neural network. So that's all it is. It's a sig- it's a sigmoid,
+[me006]: Yeah.
+[me013]: uh, with weighted sum at the input,
+[me018]: Hmm.
+[me006]: Right.
+[me013]: which you train by gradient descent.
+[me006]: Yeah, so he uses, um, an EM algorithm to -
+[me006]: to um train up these um parameters for the logistic regression.
+[me006]: The -
+[me013]: Well, actually, yeah, so I was using EM to get the targets.
+[me013]: So - so you have this - this - this AND gate - what we were calling an AND gate, but it's a product - product rule thing at the output.
+[me013]: And then he uses, uh, i- u- and then feeding into that are - I'm sorry, there's - it's an OR at the output, isn't it? Yeah, so that's the product. And then, um,
+[me006]: Mm-hmm.
+[me013]: then he has each of these AND things. And, um,
+[me013]: but - so they're little neural - neural units.
+[me013]: Um, and, um, they have to have targets. And so the targets come from EM.
+[me018]: And so are each of these, low level detectors - are they, uh -
+[me018]: are these something that you decide ahead of time, like "I'm going to look for this particular feature or I'm going to look at this frequency," or -
+[me018]: What - what - what are they looking at? What are their inputs?
+[me006]: Um -
+[me006]: Uh-
+[me006]: Right, so the - OK, so at each- for each sub-band
+[me006]: there are basically, uh, several measures of SNR and - and correlation.
+[me018]: Ah, OK, OK.
+[me006]: Um, um and he said there's like twenty of these per - per sub-band.
+[me006]: Um,
+[me006]: and for - for every s- every sub-band,
+[me006]: e- you - you just
+[me006]: pick ahead of time, um, "I'm going to have like five
+[me006]: i- independent logistic tests."
+[me018]: Mm-hmm.
+[me006]: And you initialize these parameters,
+[me006]: um, in some - some way
+[me006]: and use EM
+[me006]: to come up with your training targets for a - for the - the low-level detectors.
+[me018]: Mm-hmm.
+[me006]: And then, once you get that done, you - you - you train the whole -
+[me006]: whole thing on maximum likelihood. Um,
+[me006]: and h- he shows that using this - this method to detect sonorance is-
+[me006]: it's very robust compared to, um -
+[me006]: to typical, uh, full-band
+[me006]: Gaussian mixtures um estimations of - of sonorance.
+[me018]: Mm-hmm.
+[me018]: Mm-hmm.
+[me006]: And, uh so -
+[me006]: so that's just - that's just one detector. So you can imagine
+[me006]: building many of these detectors on different features. You get enough of these detectors together,
+[me006]: um, then you have enough information to do, um, higher level discrimination, for example, discriminating between phones
+[me018]: Mm-hmm.
+[me006]: and then you keep working your way up until you - you build a full recognizer.
+[me018]: Mm-hmm.
+[me006]: So, um, that's - that's the direction
+[me006]: which I'm - I'm thinking about going in my quals.
+[me018]: Cool.
+[me013]: You know, it has a number of properties that I really liked. I mean, one is the going towards, um,
+[me013]: using narrow band information for, uh, ph- phonetic features of some sort rather than just, uh,
+[me013]: immediately going for the - the typical sound units.
+[me018]: Right.
+[me013]: Another thing I like about it is that you t- this thing is going to be trained -
+[me013]: explicitly trained for a product of errors rule,
+[me013]: which is what, uh, Allen keeps pointing out that Fletcher observed in the twenties,
+[me018]: Mm-hmm.
+[me013]: uh, for people listening to narrow band stuff. That's Friday's talk, by the way.
+[me013]: And then, um,
+[me013]: Uh, the third thing I like about it is,
+[me013]: uh, and we've played around with this in a different kind of way a little bit but it hasn't been our dominant way of - of operating anything,
+[me013]: um, this issue of where the targets come from.
+[me013]: So in our case when we've been training it multi-band things, the way we get the targets for the individual bands
+[me013]: is, uh, that we get the phonetic label -
+[me013]: for the sound there and we say, "OK, we train every -" What this is saying is, OK, that's maybe what our ultimate goal is - or not ultimate but
+[me018]: Mm-hmm.
+[me013]: penultimate goal is getting these - these small sound units. But - but, um,
+[me013]: along the way how much should we, uh -
+[me013]: uh, what should we be training these intermediate things for?
+[me013]: I mean, because, uh, we don't know
+[me013]: uh, that this is a particularly good feature. I mean, there's no way, uh - someone in the audience yesterday was asking, "well couldn't you have people go through and mark the individual bands and say where the -
+[me013]: where it was sonorant or not?"
+[me018]: Mm-hmm.
+[me013]: But, you know, I think having a bunch of people listening to critical band wide,
+[me013]: uh, chunks of speech trying to determine whether - I think it'd be impossible. It's all gonna sound like - like sine waves to you, more or less. I mean - Well not- I mean, it's g- all g- narrow band
+[me006]: Ouch.
+[me018]: Mm-hmm.
+[me013]: uh, i- I m- I think it's very hard for someone to - to - a person to make that determination. So, um, um, we don't really know how those should be labeled.
+[me013]: It could sh- be that you should,
+[me013]: um,
+[me013]: not be paying that much attention to, uh, certain bands for certain sounds, uh, in order to get the
+[me018]: Mm-hmm.
+[me013]: best result. So, um, what we have been doing
+[me013]: there, just sort of mixing it all together, is certainly much - much cruder than that. We trained these things up on the - on the, uh- the final label. Now we have
+[me013]: I guess done experiments - you've probably done stuff where you have,
+[me013]: um, done separate, uh, Viterbis on the different -
+[me006]: Yeah. Forced alignment on the sub-band labels? Yeah.
+[me013]: Yeah.
+[me013]: You've done that. Did - did that help at all?
+[me006]: Um, it helps for one or t- one iteration but
+[me006]: um, anything after that
+[me006]: it doesn't help.
+[me013]: So - so that may or may t- it - that aspect of what he's doing may or may not be helpful because in a sense that's the same sort of thing. You're taking global information and determining what you - how you should - But this is - this is, uh, I th- I think a little more direct.
+[me013]: And -
+[me018]: How did they measure the performance of their detector?
+[me013]: Well, he's look- he's just actually looking at, uh, the confusions between sonorant and non-sonorant.
+[me018]: Mm-hmm.
+[me013]: So he hasn't applied it to recognition or if he did he didn't talk about it. It's - it's just -
+[me013]: And one of the concerns in the audience, actually, was that - that, um,
+[me013]: the, uh, uh - he - he did a comparison to, uh,
+[me013]: you know, our old foil, the - the nasty old standard recognizer with mel - mel filter bank at the front, and HMMs, and - and so forth.
+[me013]: And, um, it didn't do nearly as well, especially in - in noise.
+[me013]: But the - one of the good questions in the audience was, well, yeah, but that wasn't trained for that. I mean,
+[me013]: this use of a very smooth, uh, spectral envelope is something that, you know, has evolved as being generally a good thing for speech recognition
+[me013]: but if you knew that what you were gonna do is detect sonorants or not - So sonorants and non-sonorants is - is -
+[me013]: is almost like voiced-unvoiced, except I guess that the voiced stops are -
+[me013]: are also called "obstruents". Uh, so it's -
+[me013]: it's - uh, but with the exception of the stops I guess it's pretty much the same as voiced-unvoiced, right? So - so -
+[me018]: Mm-hmm.
+[me013]: Um. So, um,
+[me013]: if you knew you were doing that, if you were doing something say for a - a, uh - a - a Vocoder,
+[me013]: you wouldn't use the same kind of features. You would use something that was sensitive to the periodicity and - and not just the envelope.
+[me013]: Uh, and so in that sense it was an unfair test. Um,
+[me013]: so I think that the questioner was right. It - it was in that sense an unfair test. Nonetheless, it was one that was interesting because,
+[me013]: uh, this is what we are actually using for speech recognition, these smooth envelopes. And
+[me013]: this says that perhaps even, you know, trying to use them in the best way that we can, that - that - that we ordinarily do, with,
+[me013]: you know, Gaussian mixtures and HMMs and so forth, you - you don't, uh, actually do that well on determining whether something is sonorant or not. Which means you're gonna make errors between similar sounds that are son- sonorant or obstruent.
+[me018]: Didn't they -
+[me018]: Didn't they also do some kind of an oracle experiment
+[me018]: where they said "if we could detect the sonorants perfectly and then show how it would improve
+[me018]: speech recognition?
+[me018]: I thought I remember hearing about an experiment like that.
+[me013]: The- these same people? I don't remember that.
+[me018]: Mm-hmm.
+[me018]: Hmm.
+[me013]: That would - that's - you're right, that's exactly the question to follow up this discussion, is suppose you did that, uh, got that right. Um,
+[me013]: Yeah.
+[me018]: Hmm.
+[mn007]: What could be the other low level detectors, I mean, for -
+[mn007]: Other kind of features, or - ? in addition to detecting sonorants or - ?
+[me006]: Um -
+[mn007]: Th- that's what you want to - to - to go for also or - ?
+[me006]: What t-
+[me006]: Oh, build other - other detectors on different phonetic features? Um,
+[mn007]: Other low level detectors?
+[mn007]: Yeah.
+[me006]: uh Let's see, um,
+[me006]: Yeah, I d- I don't know.
+[me006]: e- Um,
+[me006]: um,
+[me006]: I mean, w- easiest thing would be to go - go do some voicing stuff but that's very similar to sonorance.
+[mn007]: Mm-hmm.
+[me006]: Um,
+[me018]: When we - when we talked with John Ohala the other day we made a list of some of the things that w-
+[me006]: Yeah.
+[me006]: Oh! OK.
+[me018]: like frication,
+[me006]: Mm-hmm.
+[me018]: abrupt closure,
+[me006]: Mm-hmm.
+[me018]: Rcoloring, nasality, voicing -
+[me013]: Yeah, so there's a half dozen like that that are - Now this was coming at it from a different angle but maybe it's a good
+[me018]: Uh .
+[me006]: Yeah, nasality.
+[me013]: way to start. Uh, these are things which, uh,
+[me013]: John felt that a - a, uh - a human annotator
+[me013]: would be able to reliably mark.
+[me006]: Oh, OK.
+[me013]: So the sort of things he felt would be difficult for a human annotator to reliably mark
+[me013]: would be tongue position kinds of things. Yeah.
+[me006]: Placing stuff, yeah.
+[me018]: Mm-hmm.
+[me013]: Uh -
+[me018]: There's also things like stress.
+[me018]: You can look at stress.
+[me006]: Mm-hmm.
+[me013]: But stress
+[me013]: doesn't, uh,
+[me013]: fit in this thing of coming up with features that will distinguish words from one another, right? It's a - it's a good thing to mark and will probably help us ultimate with recognition but -
+[me018]: Yeah, there's a few cases where it can like permit and permit.
+[me018]: But - that's not very common in English. In other languages it's more
+[me018]: uh, important.
+[me013]: Well, yeah, but i- either case you'd write PERMIT, right? So you'd get the word right.
+[me018]: No, I'm saying, i- i- e- I thought you were saying that stress doesn't help you distinguish between words.
+[me013]: Um,
+[me018]: Oh, I see what you're saying. As long as you get -
+[me013]: We're g- if we're doing - if we're talking about transcription as opposed to something else -
+[me018]: The sequence, right?
+[me018]: Yeah.
+[me018]: Yeah, yeah, yeah. Yeah.
+[me013]: Yeah.
+[me018]: Right.
+[me018]: So where it could help is maybe at a higher level. Yeah. Understanding, yeah. Exactly.
+[me006]: Like a understanding application. Yeah.
+[me013]: Right.
+[me013]: Yeah. But that's this afternoon's meeting. Yeah. We don't understand anything in this meeting.
+[me013]: Yeah, so that's - yeah, that's, you know, a neat - neat thing and - and, uh -
+[me006]: S- so, um, Ohala's going to help do these, uh transcriptions of the meeting data?
+[me013]: So.
+[me018]: Uh, well I don't know. We d- we sort of didn't get that far. Um, we just talked about some
+[me018]: possible features that could be marked
+[me018]: by humans and, um,
+[me006]: Hmm.
+[me018]: because of having maybe some extra transcriber time we thought we could go through and mark some portion of the data for that.
+[me018]: And, uh -
+[me006]: Hmm.
+[me013]: Yeah, I mean, that's not an immediate problem, that we don't immediately have a lot of extra transcriber time. But - but, uh, in the long term I guess Chuck is gonna continue the dialogue with John and - and, uh,
+[me018]: Yeah, right.
+[me013]: and, we'll - we'll end up doing some I think.
+[me018]: I'm definitely interested in this
+[me018]: area, too, f- uh, acoustic feature
+[me013]: Uh-huh.
+[me006]: OK.
+[me018]: stuff. So.
+[me013]: Yeah, I think it's an interesting - interesting way to go. Um,
+[me006]: Cool.
+[me013]: I say it like "said-int" . I think it has a number of good things.
+[me013]: Um,
+[me013]: so, uh, y- you want to talk maybe a c- two or three minutes about what
+[me013]: we've been talking about today and other days?
+[me026]: Ri-
+[me026]: Yeah, OK, so, um,
+[me026]: we're interested in, um, methods for far mike speech recognition, um, mainly, uh, methods that deal with the reverberation in the far mike signal. So, um,
+[me026]: one approach would be, um, say MSG and PLP, like was used in Aurora one and, um,
+[me026]: there are other approaches which actually attempt to remove the reverberation, instead of being robust to it like MSG.
+[me026]: And so we're interested in, um,
+[me026]: comparing the performance of um, a robust approach like MSG with these, um, speech enhancement or de-reverber- de-reverberation approaches.
+[mn007]: Mm-hmm.
+[me026]: @@
+[me026]: And, um,
+[me026]: it looks like we're gonna use the Meeting Recorder digits data for that.
+[mn007]: And the de-reverberation algorithm, do you have -
+[mn007]: can you give some more details on this or - ? Does it use one microphone?
+[me026]: o-
+[me026]: o-
+[mn007]: Several microphones? Does it - ?
+[me026]: OK, well, um,
+[me026]: there was something that was done by, um,
+[me026]: a guy named Carlos, I forget his last name, who worked with Hynek, who, um,
+[me013]: Avendano.
+[me026]: OK. Who, um,
+[me013]: Yeah.
+[mn007]: Mm-hmm.
+[me026]: um, it was like RASTA in the sense that of it was, um, de-convolution by filtering
+[me026]: um, except he used a longer time window,
+[mn007]: Mm-hmm.
+[me026]: like a second maybe. And the reason for that is RASTA's time window is too short to, um
+[me026]: include the whole, um, reverberation -
+[me026]: um, I don't know what you call it - the reverberation response.
+[me026]: @@
+[me026]: I- if you see wh- if you see what I mean.
+[me026]: The reverberation filter from my mouth to that mike is like - it's t- got- it's too long
+[me026]: in the - in the time domain for the um - for the RASTA filtering to take care of it.
+[me026]: And, um,
+[me026]: then there are a couple of other speech enhancement approaches
+[me026]: which haven't been tried for speech recognition yet but have just been tried for enhancement, which, um,
+[me026]: have the assumption that
+[me026]: um, you can do LPC
+[me026]: um
+[me026]: analysis of th- of the signal you get at the far microphone and
+[me026]: the, um, all pole filter that you get out of that should be good.
+[me026]: It's just the, um, excitation signal
+[me026]: that is going to be distorted by the reverberation
+[me026]: and so you can try and reconstruct a better excitation signal
+[me026]: and, um, feed that through the i-
+[me026]: um, all pole filter and get enhanced speech with reverberation reduced.
+[mn007]: Mm-hmm.
+[mn007]: Mm-hmm.
+[me013]: There's also this, uh, um,
+[me013]: uh, echo cancellation stuff that we've sort of been chasing, so, uh
+[me013]: we have, uh - and when we're saying these digits now we do have a close microphone signal and then there's the distant microphone signal.
+[me013]: And you could as a kind of baseline say, "OK, given that we have both of these, uh, we should be able to do, uh, a cancellation. "
+[me013]: So that, uh, um,
+[me013]: we - we, uh, essentially identify the system in between - the linear time invariant system between the microphones and - and - and - and re- and invert it,
+[me013]: uh, or - or cancel it out to - to some - some reasonable approximation
+[mn007]: Mm-hmm.
+[me013]: through one method or another. Uh, that's not a practical thing,
+[me013]: uh, if you have a distant mike, you don't have a close mike ordinarily, but we thought that might make - also might make a good baseline.
+[me013]: Uh, it still won't be perfect because there's noise.
+[me013]: Uh, but - And then there are s- uh, there are
+[me013]: single microphone methods that I think people have done for, uh - for this kind of de-reverberation. Do y- do you know any
+[me013]: references to any? Cuz I - I w- I was - w- w- I - I lead him down a - a bad
+[mn007]: Uh,
+[me013]: path on that. But.
+[mn007]: I g- I guess - I guess when people are working with single microphones,
+[mn007]: they are more trying to do -
+[mn007]: well, not - not very -
+[mn007]: Well, there is the Avendano work,
+[me013]: Right.
+[mn007]: but also trying to mmm,
+[mn007]: uh -
+[mn007]: trying to f- t-
+[mn007]: find the de-convolution filter
+[mn007]: but in the um -
+[mn007]: not in the time domain but in the
+[mn007]: uh
+[mn007]: the stream of features uh I guess .
+[me013]: Yeah, OK.
+[mn007]: Well, @@ there - there's someone working on this on
+[mn007]: i- in Mons
+[mn007]: So perhaps, yeah,
+[mn007]: we should try t- to - He's working on this, on trying to -
+[me013]: Yeah.
+[mn007]: on re- reverberation, um -
+[me013]: The first paper on this is gonna have great references, I can tell already.
+[mn007]: Mm-hmm.
+[me013]: It's always good to have references, especially when reviewers read it or - or one of the authors and,
+[me013]: feel they'll "You're OK, you've r- You cited me."
+[mn007]: So, yeah.
+[mn007]: Well, he did echo cancellation and he did some fancier things like, uh,
+[mn007]: uh, training different network on different reverberation conditions and then trying to find the best one, but. Well.
+[me013]: Yeah.
+[mn007]: Yeah.
+[me013]: The oth- the other thing, uh, that Dave was talking about earlier was, uh, uh, multiple mike things,
+[me013]: uh, where they're all distant. So, um, I mean, there's - there's all this work on arrays, but the other thing is, uh, what can we do that's cleverer
+[me013]: that can take some advantage of only two mikes, uh, particularly if there's an obstruction between them, as we - as we have over there.
+[mn007]: If there is - ?
+[me013]: An obstruction between them.
+[mn007]: Ah, yeah.
+[me013]: It creates a shadow which is - is helpful. It's part of why you have such good directionality with,
+[me013]: with two ears even though they're not several feet apart.
+[mn007]: Mm-hmm.
+[me013]: For
+[me013]: most - for most people's heads.
+[me018]: That could help though.
+[me013]: So that - Yeah, the - the head, in the way, is really -
+[me013]: that's what it's for.
+[me018]: That's what the head's for?
+[me013]: It's basically,
+[me013]: Yeah, it's to separate the ears.
+[me018]: To separate the ears?
+[me013]: That's right, yeah.
+[me013]: Yeah. Uh, so.
+[me013]: Anyway, O_ K. Uh, I think that's - that's all we have this week. And, uh, I think it's digit time.
+[me006]: Oh.
+[me018]: Actually the, um - For some reason the digit forms are blank.
+[me013]: Yeah?
+[me018]: Uh, I think th- that may be due to the fact that
+[me013]: Oh!
+[me018]: Adam ran out of digits, uh, and didn't have time to regenerate any.
+[me013]: Oh! I guess it's - Well there's no real reason to write our names on here then, is there?
+[me018]: Yeah, if you want to put your credit card numbers and, uh -
+[me006]: Oh, no - ?
+[me013]: Or do - did any - do we need the names for the other stuff, or - ?
+[me018]: Uh, yeah, I do need your names and - and the time, and all that, cuz we put that into the "key" files. Um.
+[me013]: Oh, OK.
+[me013]: Oh, OK.
+[me018]: But w-
+[me013]: OK.
+[me018]: That's why we have the forms, uh, even if there are no digits.
+[me013]: OK, yeah, I didn't notice this. I'm sitting here and I was - I was about to read them too. It's a, uh, blank sheet of paper.
+[me018]: So I guess we're - we're done.
+[me013]: Yeah, yeah, I'll do my credit card number later. OK.
