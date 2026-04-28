@@ -1,8 +1,9 @@
 # Short-Term Memory
 
-這個資料夾負責「一次輸入一次會議逐字稿」，並更新短期記憶。
+這個資料夾負責「一次輸入一次會議逐字稿」，先把逐字稿轉成 SQLite，再更新短期記憶。
 
 目前以 SQLite 為主要儲存（`short_term/short_term_memory.db`），避免每次覆寫大型 JSON 的風險。
+逐字稿會匯入 `short_term/transcripts.db`，讓 Gemini 透過 tool calling 自行決定要讀哪幾行，而不是一次吃完整逐字稿。
 
 ## 記憶結構
 
@@ -26,15 +27,21 @@
 - `normalizer.py`: 記憶資料正規化與 merge
 - `io_utils.py`: `.env`、JSON 讀寫與安全輸出
 - `sqlite_store.py`: SQLite schema、讀寫、snapshot 與 JSON bootstrap
+- `transcript_store.py`: 逐字稿 SQLite 匯入、overview、行範圍讀取
 
 ## 更新流程
 
-1. 讀取 SQLite 目前記憶（若 DB 為空，會從 `current_memory.json` bootstrap 一次）
-2. 讀取單一會議逐字稿（例如 `meeting_recording/transcript/49.txt`）
-3. 呼叫 Gemini，透過 tool calling 先讀 SQLite 中的記憶、再寫入更新
-4. 寫入工具會套用本地 normalizer，維持既有邏輯（含最近 3 次會議裁切），並直接落到 SQLite
-5. 更新完成後，系統會重新從 SQLite 載入最新記憶，並在 DB 內記錄 snapshot
-6. 每次更新都會從 SQLite 匯出 `short_term/snapshots/` 的 JSON snapshot，並在 `short_term/db_snapshots/` 產生 SQLite DB snapshot（另可選擇輸出 JSON mirror）
+1. 讀取單一會議逐字稿（例如 `meeting_recording/transcript/49.txt`）
+2. 將逐字稿逐行匯入 transcript SQLite（預設 `short_term/transcripts.db`）
+3. 讀取 SQLite 目前記憶（若 DB 為空，會從 `current_memory.json` bootstrap 一次）
+4. 呼叫 Gemini tool calling：
+   - `read_transcript_overview()` 取得逐字稿行數與頭尾預覽
+   - `read_transcript_lines(start_line, end_line, limit)` 分段讀逐字稿
+   - `read_short_term_memory(section, offset, limit)` 分段讀目前記憶
+   - `write_short_term_memory(updated_memory)` 對確認的小批更新逐步寫入
+5. 寫入工具會套用本地 normalizer，維持既有邏輯（含最近 3 次會議裁切），並直接落到 SQLite
+6. 更新完成後，系統會重新從 SQLite 載入最新記憶，並在 DB 內記錄 snapshot
+7. 每次更新都會從 SQLite 匯出 `short_term/snapshots/` 的 JSON snapshot，並在 `short_term/db_snapshots/` 產生 SQLite DB snapshot（另可選擇輸出 JSON mirror）
 
 ## 使用方式
 
@@ -48,6 +55,7 @@ uv run short_term/update_memory.py --transcript ./ICSI_original_transcripts/tran
 uv run short_term/update_memory.py \
   --transcript meeting_recording/transcript/49.txt \
   --db short_term/short_term_memory.db \
+  --transcript-db short_term/transcripts.db \
   --memory-json short_term/current_memory.json \
   --mirror-json \
   --snapshot-dir short_term/snapshots \

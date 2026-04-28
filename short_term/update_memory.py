@@ -15,6 +15,12 @@ from sqlite_store import (
     load_memory_with_fallback,
     save_memory_to_sqlite,
 )
+from transcript_store import (
+    DEFAULT_TRANSCRIPT_DB_PATH,
+    import_transcript_to_sqlite,
+    load_transcript_lines,
+    load_transcript_overview,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +34,11 @@ def parse_args() -> argparse.Namespace:
         "--db",
         default=str(DEFAULT_DB_PATH),
         help="Path to SQLite database for short-term memory.",
+    )
+    parser.add_argument(
+        "--transcript-db",
+        default=str(DEFAULT_TRANSCRIPT_DB_PATH),
+        help="Path to SQLite database used to store/read transcript lines.",
     )
     parser.add_argument(
         "--memory-json",
@@ -81,6 +92,7 @@ def main() -> None:
 
     transcript_path = Path(args.transcript).resolve()
     db_path = Path(args.db).resolve()
+    transcript_db_path = Path(args.transcript_db).resolve()
     memory_json_path = Path(args.memory_json).resolve()
     snapshot_dir = Path(args.snapshot_dir).resolve() if args.snapshot_dir else None
     db_snapshot_dir = (
@@ -94,6 +106,14 @@ def main() -> None:
     source_file = str(transcript_path)
     log(f"loading transcript: {transcript_path}")
     transcript = transcript_path.read_text(encoding="utf-8")
+    log(f"importing transcript into sqlite: {transcript_db_path}")
+    transcript_line_count = import_transcript_to_sqlite(
+        db_path=transcript_db_path,
+        meeting_id=meeting_id,
+        source_file=source_file,
+        transcript=transcript,
+    )
+    log(f"transcript imported lines={transcript_line_count}")
     log("loading memory source (sqlite/json fallback)")
     current_memory, memory_source = load_memory_with_fallback(
         db_path=db_path,
@@ -115,6 +135,25 @@ def main() -> None:
         log(f"writing sqlite db: {db_path}")
         save_memory_to_sqlite(db_path, memory)
 
+    def on_transcript_overview_read() -> dict[str, object]:
+        return load_transcript_overview(
+            db_path=transcript_db_path,
+            meeting_id=meeting_id,
+        )
+
+    def on_transcript_lines_read(
+        start_line: int,
+        end_line: int | None,
+        limit: int,
+    ) -> dict[str, object]:
+        return load_transcript_lines(
+            db_path=transcript_db_path,
+            meeting_id=meeting_id,
+            start_line=start_line,
+            end_line=end_line,
+            limit=limit,
+        )
+
     log(f"starting Gemini update (model={args.model}, meeting_id={meeting_id})")
     updated_memory = generate_updated_memory(
         model_name=args.model,
@@ -123,6 +162,9 @@ def main() -> None:
         current_memory=current_memory,
         meeting_id=meeting_id,
         source_file=source_file,
+        transcript_line_count=transcript_line_count,
+        on_transcript_overview_read=on_transcript_overview_read,
+        on_transcript_lines_read=on_transcript_lines_read,
         on_memory_read=None if args.dry_run else on_memory_read,
         on_memory_write=None if args.dry_run else on_memory_write,
         verbose=not args.quiet,

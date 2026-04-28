@@ -13,7 +13,7 @@ from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
 MAX_GENERATION_ATTEMPTS = 3
-MAX_TOOL_ROUNDS = 12
+MAX_TOOL_ROUNDS = 40
 MAX_API_RETRIES = 5
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
@@ -35,27 +35,31 @@ WRITABLE_MEMORY_SECTIONS = [
 
 
 def build_tool_call_prompt(
-    transcript: str,
     meeting_id: str,
     source_file: str,
+    transcript_line_count: int,
 ) -> str:
     return f"""
 你是一個「短期記憶 SQLite 更新器」。
 你必須使用工具完成更新，而不是直接在文字回覆最終 JSON。
+逐字稿已先匯入 SQLite；你不能一次拿到完整逐字稿，必須用工具分段讀取。
 
 任務流程（必須遵守）：
 1) 先呼叫 `read_short_term_memory(section="overview")` 取得目前記憶總覽。
-2) 根據 overview 判斷需要哪些區塊，再用 `read_short_term_memory` 分批讀取相關 section。
-3) 只讀你真的需要的部分；不要一開始就把完整記憶全部讀回來。
-4) 當你已經確認一小批更新時，就立刻呼叫 `write_short_term_memory` 寫入該批 patch。
-5) 你可以多次呼叫 `write_short_term_memory`，每次只寫「新增或變動的部分」，不要把整份 memory 原封不動回寫。
-6) 完成必要更新後，只做簡短確認，不要輸出最終 JSON。
+2) 再呼叫 `read_transcript_overview()` 取得逐字稿行數與頭尾預覽。
+3) 使用 `read_transcript_lines(start_line, end_line, limit)` 分段讀逐字稿。你可以自己決定每次讀幾行、從哪行讀到哪行；建議一次 20-50 行，最多依工具限制。
+4) 每讀完一段，就判斷該段是否形成完整主題/idea unit；如果內容延續到下一段，可以繼續讀下一段再寫。
+5) 當你已經確認一小批更新時，就立刻呼叫 `write_short_term_memory` 寫入該批 patch，然後繼續讀下一段逐字稿。
+6) 根據 transcript 內容判斷需要哪些 memory section，再用 `read_short_term_memory` 分批讀取相關 section。
+7) 只讀你真的需要的 memory 部分；不要一開始就把完整 memory 全部讀回來。
+8) 你可以多次呼叫 `write_short_term_memory`，每次只寫「新增或變動的部分」，不要把整份 memory 原封不動回寫。
+9) 完成必要更新後，只做簡短確認，不要輸出最終 JSON。
 
 更新規則：
 - 盡量保留既有 item_id / change_id / todo_id，不要無故改號。
 - 新增項目才新增新 id。
 - 若逐字稿顯示完成/取消/方法修正，更新 status 或 method_changes。
-- evidence 優先寫逐字稿中的短證據句。
+- evidence 優先寫逐字稿中的短證據句，並盡量附上行號，例如「L42-L47: ...」。
 - 若無法確定 owner / proposer，填 unknown。
 - 文字欄位請優先繁體中文。
 - 系統會在本地維護 meeting_history_ids，並裁切 meeting_window 成最近三次；你只要提供合理更新即可。
@@ -63,6 +67,7 @@ def build_tool_call_prompt(
 - 若 action items / method changes / experiment todos 很多，請使用 `offset` + `limit` 分頁讀取。
 - overview 會提供 compact `action_item_index`；新增 action item 前，必須先用這個 index 檢查是否其實是在延續現有 item。
 - 只有在非常確定 memory 很小、或真的無法分批完成時，才可使用 `section="full"`。
+- 不要嘗試一次讀完整 transcript；如果 transcript 很短，也請至少透過 `read_transcript_lines` 讀取。
 - 在寫入 `action_items` / `method_changes` / `experiment_todos` 之前，必須先讀過對應 section，否則寫入會被拒絕。
 - 如果要新增沒有 `item_id` 的 action item，且現有 action items 超過一頁，請先讀完整 action_items 分頁，避免把現有任務誤判成新任務。
 - 每次寫入最多只更新少數 top-level sections；如果有很多變更，請拆成多次 write。
@@ -70,7 +75,10 @@ def build_tool_call_prompt(
 - 不要重複提交沒有實際變化的 patch。
 
 建議策略：
-- 第一步永遠先讀 `overview`。
+- 第一步永遠先讀 memory `overview`，第二步讀 transcript overview。
+- 從第 1 行開始分段讀 transcript，維持一個「已處理到第幾行」的內部進度。
+- 如果某段只是在延續上一段主題，先不要急著寫；等 idea unit 完整後再寫。
+- 若讀到新的短期事項、會議安排、待辦、狀態變更或下次討論重點，先查相關 memory section，再寫 patch。
 - 先用 overview 的 `action_item_index` 找候選既有 action item；若語意相關，更新既有 `item_id`。
 - 如果要找既有 action item / method change / experiment todo 的完整內容，再分頁讀該 section，而不是直接讀 full。
 - 若會議中同時有多個更新，請按主題或項目分批寫入，例如先寫 meeting summary，再寫 action items，再寫 method changes。
@@ -78,6 +86,7 @@ def build_tool_call_prompt(
   - 只更新 meeting summary：傳 `meeting_window`
   - 只更新部分 action items：傳 `action_items`
   - 只更新 next_meeting_focus：傳 `next_meeting_focus`
+- `write_short_term_memory` 的 `note` 請簡短標明依據的 transcript 行號範圍，方便 debug。
 
 Schema 說明（欄位參考）：
 {json.dumps(SCHEMA_DESCRIPTION, ensure_ascii=False, indent=2)}
@@ -85,9 +94,7 @@ Schema 說明（欄位參考）：
 Current meeting metadata:
 - meeting_id: {meeting_id}
 - source_file: {source_file}
-
-Transcript:
-{transcript}
+- transcript_line_count: {transcript_line_count}
 """.strip()
 
 
@@ -477,6 +484,11 @@ def generate_updated_memory(
     current_memory: dict[str, Any],
     meeting_id: str,
     source_file: str,
+    transcript_line_count: int | None = None,
+    on_transcript_overview_read: Callable[[], dict[str, Any]] | None = None,
+    on_transcript_lines_read: (
+        Callable[[int, int | None, int], dict[str, Any]] | None
+    ) = None,
     on_memory_read: Callable[[], dict[str, Any]] | None = None,
     on_memory_write: Callable[[dict[str, Any]], None] | None = None,
     verbose: bool = True,
@@ -487,9 +499,13 @@ def generate_updated_memory(
 
     client = genai.Client(api_key=api_key)
     prompt = build_tool_call_prompt(
-        transcript=transcript,
         meeting_id=meeting_id,
         source_file=source_file,
+        transcript_line_count=(
+            transcript_line_count
+            if transcript_line_count is not None
+            else len([line for line in transcript.splitlines() if line.strip()])
+        ),
     )
     log(
         f"start model={model_name} meeting_id={meeting_id} "
@@ -501,14 +517,120 @@ def generate_updated_memory(
         state: dict[str, Any] = {
             "base_memory": current_memory,
             "latest_memory": current_memory,
-            "target_memory_version": int(current_memory.get("memory_version", 0) or 0) + 1,
+            "target_memory_version": (
+                int(current_memory.get("memory_version", 0) or 0) + 1
+            ),
             "write_count": 0,
             "written_memory": None,
             "read_sections": set(),
             "read_ranges": {},
             "read_totals": {},
             "fully_read_sections": set(),
+            "transcript_read_count": 0,
         }
+
+        def read_transcript_overview() -> dict[str, Any]:
+            """Read transcript metadata and a tiny head/tail preview from SQLite."""
+            if on_transcript_overview_read is None:
+                nonempty_lines = [
+                    line.strip()
+                    for line in transcript.splitlines()
+                    if line.strip()
+                ]
+                return {
+                    "ok": True,
+                    "meeting_id": meeting_id,
+                    "source_file": source_file,
+                    "line_count": len(nonempty_lines),
+                    "first_lines": [
+                        {
+                            "line_number": index + 1,
+                            "speaker": "",
+                            "text": line,
+                            "raw_line": line,
+                        }
+                        for index, line in enumerate(nonempty_lines[:3])
+                    ],
+                    "last_lines": [
+                        {
+                            "line_number": (
+                                len(nonempty_lines)
+                                - len(nonempty_lines[-3:])
+                                + index
+                                + 1
+                            ),
+                            "speaker": "",
+                            "text": line,
+                            "raw_line": line,
+                        }
+                        for index, line in enumerate(nonempty_lines[-3:])
+                    ],
+                }
+            return on_transcript_overview_read()
+
+        def read_transcript_lines(
+            start_line: int = 1,
+            end_line: int = 0,
+            limit: int = 30,
+        ) -> dict[str, Any]:
+            """Read a partial line range from the SQLite-backed transcript.
+
+            Args:
+                start_line: First transcript line to read, using 1-based line numbers.
+                end_line: Last transcript line to read. Use 0 to let limit decide.
+                limit: Maximum number of lines to return.
+            """
+            if on_transcript_lines_read is None:
+                nonempty_lines = [
+                    line.strip()
+                    for line in transcript.splitlines()
+                    if line.strip()
+                ]
+                safe_start = max(int(start_line or 1), 1)
+                safe_limit = max(min(int(limit or 30), 80), 1)
+                safe_end = (
+                    int(end_line)
+                    if int(end_line or 0) > 0
+                    else safe_start + safe_limit - 1
+                )
+                safe_end = max(min(safe_end, safe_start + safe_limit - 1), safe_start)
+                rows = nonempty_lines[safe_start - 1 : safe_end]
+                state["transcript_read_count"] += len(rows)
+                return {
+                    "ok": True,
+                    "meeting_id": meeting_id,
+                    "start_line": safe_start,
+                    "end_line": safe_end,
+                    "returned_count": len(rows),
+                    "line_count": len(nonempty_lines),
+                    "has_more": safe_end < len(nonempty_lines),
+                    "next_start_line": (
+                        safe_end + 1 if safe_end < len(nonempty_lines) else None
+                    ),
+                    "items": [
+                        {
+                            "line_number": safe_start + index,
+                            "speaker": "",
+                            "text": line,
+                            "raw_line": line,
+                        }
+                        for index, line in enumerate(rows)
+                    ],
+                }
+
+            normalized_end_line = int(end_line or 0)
+            result = on_transcript_lines_read(
+                start_line,
+                normalized_end_line if normalized_end_line > 0 else None,
+                limit,
+            )
+            try:
+                state["transcript_read_count"] += int(
+                    result.get("returned_count", 0) or 0
+                )
+            except (AttributeError, TypeError, ValueError):
+                state["transcript_read_count"] += 1
+            return result
 
         def read_short_term_memory(
             section: str = "overview",
@@ -525,7 +647,11 @@ def generate_updated_memory(
                 limit: Maximum number of rows to return for paginated sections.
             """
             normalized_section = str(section or "overview").strip().lower()
-            memory = on_memory_read() if on_memory_read is not None else state["latest_memory"]
+            memory = (
+                on_memory_read()
+                if on_memory_read is not None
+                else state["latest_memory"]
+            )
             state["latest_memory"] = memory
             state["read_sections"].add(normalized_section)
             result = _slice_memory_section(
@@ -553,6 +679,15 @@ def generate_updated_memory(
                 return {
                     "ok": False,
                     "error": "updated_memory must be a JSON object.",
+                }
+
+            if int(state.get("transcript_read_count", 0) or 0) <= 0:
+                return {
+                    "ok": False,
+                    "error": (
+                        "Read transcript lines with read_transcript_lines before writing "
+                        "memory, so every patch is grounded in transcript evidence."
+                    ),
                 }
 
             patch_sections = _extract_patch_sections(updated_memory)
@@ -666,7 +801,12 @@ def generate_updated_memory(
         config = types.GenerateContentConfig(
             system_instruction="你是嚴謹的短期記憶維護助手，必須先讀後寫，並只呼叫必要工具。",
             temperature=0.1,
-            tools=[read_short_term_memory, write_short_term_memory],
+            tools=[
+                read_transcript_overview,
+                read_transcript_lines,
+                read_short_term_memory,
+                write_short_term_memory,
+            ],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             tool_config=types.ToolConfig(
                 function_calling_config=types.FunctionCallingConfig(mode="AUTO")
@@ -699,12 +839,31 @@ def generate_updated_memory(
                     f"args_keys={sorted(args.keys())} "
                     f"args={json.dumps(args, ensure_ascii=False, sort_keys=True)}"
                 )
-                signature = f"{tool_name}:{json.dumps(args, ensure_ascii=False, sort_keys=True)}"
+                signature = (
+                    f"{tool_name}:"
+                    f"{json.dumps(args, ensure_ascii=False, sort_keys=True)}"
+                )
                 if signature not in seen_calls:
                     repeated_only = False
                 seen_calls.add(signature)
 
-                if tool_name == "read_short_term_memory":
+                if tool_name == "read_transcript_overview":
+                    try:
+                        tool_result = read_transcript_overview()
+                    except TypeError as exc:
+                        tool_result = {
+                            "ok": False,
+                            "error": f"Invalid tool args for read_transcript_overview: {exc}",
+                        }
+                elif tool_name == "read_transcript_lines":
+                    try:
+                        tool_result = read_transcript_lines(**args)
+                    except (TypeError, ValueError) as exc:
+                        tool_result = {
+                            "ok": False,
+                            "error": f"Invalid tool args for read_transcript_lines: {exc}",
+                        }
+                elif tool_name == "read_short_term_memory":
                     try:
                         tool_result = read_short_term_memory(**args)
                     except TypeError as exc:
