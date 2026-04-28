@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRANSCRIPT_DIR="${1:-"$ROOT_DIR/ICSI_original_transcripts/transcripts"}"
+TRANSCRIPT_DIR="${1:-"$ROOT_DIR/meeting_recording/transcript/ISCI"}"
 MEETING_PREFIX="${MEETING_PREFIX:-Bmr}"
 START_FROM_RAW="${START_FROM:-}"
 START_FROM_MEETING=""
@@ -31,8 +31,8 @@ transcripts=()
 while IFS= read -r transcript; do
   transcripts+=("$transcript")
 done < <(
-  find "$TRANSCRIPT_DIR" -maxdepth 1 -type f -name '*.mrt' \
-    | grep -E "/${MEETING_PREFIX}[0-9]{3}\\.mrt$" \
+  find "$TRANSCRIPT_DIR" -maxdepth 1 -type f -name '*.txt' \
+    | grep -E "/${MEETING_PREFIX}[0-9]{3}\\.txt$" \
     | sort
 )
 
@@ -44,7 +44,7 @@ fi
 selected_transcripts=()
 for transcript in "${transcripts[@]}"; do
   meeting_file="$(basename "$transcript")"
-  meeting_id="${meeting_file%.mrt}"
+  meeting_id="${meeting_file%.txt}"
   if [[ -n "$START_FROM_MEETING" && "$meeting_id" < "$START_FROM_MEETING" ]]; then
     continue
   fi
