@@ -227,6 +227,44 @@ class ShortTermNormalizerTests(unittest.TestCase):
             "imported or created; updated fields: detail, priority",
         )
 
+    def test_experiment_todo_update_accepts_item_id_alias(self) -> None:
+        previous = {
+            "memory_version": 1,
+            "meeting_history_ids": ["Bmr002"],
+            "experiment_todos": [
+                {
+                    "todo_id": "E008",
+                    "description": "Original stress-tag experiment",
+                    "status": "open",
+                    "owner": "fe008",
+                    "related_action_item_ids": ["A007"],
+                    "meeting_id": "Bmr002",
+                    "evidence": "L1666-1676",
+                }
+            ],
+        }
+
+        updated = normalize_memory(
+            updated_memory={
+                "experiment_todos": [
+                    {
+                        "item_id": "E008",
+                        "description": "Refined stress-tag pilot",
+                        "evidence": "L1666-1676, L1744-1773",
+                    }
+                ]
+            },
+            previous_memory=previous,
+            meeting_id="Bmr002",
+            source_file="Bmr002.txt",
+        )
+
+        todos = updated["experiment_todos"]
+        self.assertEqual(len(todos), 1)
+        self.assertEqual(todos[0]["todo_id"], "E008")
+        self.assertEqual(todos[0]["description"], "Refined stress-tag pilot")
+        self.assertEqual(todos[0]["owner"], "fe008")
+
 
 if __name__ == "__main__":
     unittest.main()

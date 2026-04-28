@@ -465,6 +465,91 @@ def _section_fully_read(state: dict[str, Any], section: str) -> bool:
     return section in state.get("fully_read_sections", set())
 
 
+def _record_transcript_overview_read(
+    state: dict[str, Any],
+    result: dict[str, Any],
+) -> None:
+    try:
+        line_count = int(result.get("line_count", 0) or 0)
+    except (AttributeError, TypeError, ValueError):
+        return
+    if line_count > 0:
+        state["transcript_total_count"] = line_count
+
+
+def _record_transcript_lines_read(
+    state: dict[str, Any],
+    result: dict[str, Any],
+) -> None:
+    if not isinstance(result, dict):
+        state["transcript_read_count"] += 1
+        return
+
+    try:
+        returned_count = int(result.get("returned_count", 0) or 0)
+    except (TypeError, ValueError):
+        returned_count = 0
+    state["transcript_read_count"] += returned_count
+
+    try:
+        line_count = int(result.get("line_count", 0) or 0)
+    except (TypeError, ValueError):
+        line_count = 0
+    if line_count > 0:
+        state["transcript_total_count"] = line_count
+
+    items = result.get("items")
+    line_numbers: list[int] = []
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            try:
+                line_numbers.append(int(item.get("line_number", 0) or 0))
+            except (TypeError, ValueError):
+                continue
+
+    if line_numbers:
+        start = min(line_numbers)
+        end = max(line_numbers)
+    else:
+        try:
+            start = int(result.get("start_line", 0) or 0)
+            end = int(result.get("end_line", 0) or 0)
+        except (TypeError, ValueError):
+            return
+        if returned_count > 0:
+            end = min(end, start + returned_count - 1)
+
+    if start > 0 and end >= start:
+        state["transcript_read_ranges"].append((start - 1, end))
+
+
+def _transcript_fully_read(state: dict[str, Any]) -> bool:
+    try:
+        total_count = int(state.get("transcript_total_count", 0) or 0)
+    except (TypeError, ValueError):
+        total_count = 0
+    if total_count <= 0:
+        return False
+    return _ranges_cover_total(state.get("transcript_read_ranges", []), total_count)
+
+
+def _next_unread_transcript_line(state: dict[str, Any]) -> int:
+    ranges = sorted(
+        (max(start, 0), max(end, 0))
+        for start, end in state.get("transcript_read_ranges", [])
+    )
+    covered_until = 0
+    for start, end in ranges:
+        if end <= covered_until:
+            continue
+        if start > covered_until:
+            break
+        covered_until = end
+    return covered_until + 1
+
+
 def _patch_adds_unknown_action_item(
     updated_memory: dict[str, Any],
     current_memory: dict[str, Any],
@@ -543,6 +628,9 @@ def generate_updated_memory(
             "read_totals": {},
             "fully_read_sections": set(),
             "transcript_read_count": 0,
+            "transcript_read_ranges": [],
+            "transcript_total_count": int(transcript_line_count or 0),
+            "transcript_finish_reminders": 0,
         }
 
         def read_transcript_overview() -> dict[str, Any]:
@@ -553,7 +641,7 @@ def generate_updated_memory(
                     for line in transcript.splitlines()
                     if line.strip()
                 ]
-                return {
+                result = {
                     "ok": True,
                     "meeting_id": meeting_id,
                     "source_file": source_file,
@@ -582,7 +670,11 @@ def generate_updated_memory(
                         for index, line in enumerate(nonempty_lines[-3:])
                     ],
                 }
-            return on_transcript_overview_read()
+                _record_transcript_overview_read(state, result)
+                return result
+            result = on_transcript_overview_read()
+            _record_transcript_overview_read(state, result)
+            return result
 
         def read_transcript_lines(
             start_line: int = 1,
@@ -611,8 +703,7 @@ def generate_updated_memory(
                 )
                 safe_end = max(min(safe_end, safe_start + safe_limit - 1), safe_start)
                 rows = nonempty_lines[safe_start - 1 : safe_end]
-                state["transcript_read_count"] += len(rows)
-                return {
+                result = {
                     "ok": True,
                     "meeting_id": meeting_id,
                     "start_line": safe_start,
@@ -633,6 +724,8 @@ def generate_updated_memory(
                         for index, line in enumerate(rows)
                     ],
                 }
+                _record_transcript_lines_read(state, result)
+                return result
 
             normalized_end_line = int(end_line or 0)
             result = on_transcript_lines_read(
@@ -640,12 +733,7 @@ def generate_updated_memory(
                 normalized_end_line if normalized_end_line > 0 else None,
                 limit,
             )
-            try:
-                state["transcript_read_count"] += int(
-                    result.get("returned_count", 0) or 0
-                )
-            except (AttributeError, TypeError, ValueError):
-                state["transcript_read_count"] += 1
+            _record_transcript_lines_read(state, result)
             return result
 
         def read_short_term_memory(
@@ -841,6 +929,28 @@ def generate_updated_memory(
         while max_tool_rounds is None or round_index <= max_tool_rounds:
             function_calls = list(response.function_calls or [])
             if not function_calls:
+                if not _transcript_fully_read(state):
+                    state["transcript_finish_reminders"] += 1
+                    if state["transcript_finish_reminders"] > 3:
+                        raise RuntimeError(
+                            "Gemini stopped before reading the full transcript."
+                        )
+                    next_line = _next_unread_transcript_line(state)
+                    log(
+                        f"round {round_index}: transcript not fully read; "
+                        f"requesting continuation from line {next_line}"
+                    )
+                    response = _call_with_retry(
+                        lambda: chat.send_message(
+                            "你尚未讀完整份逐字稿，不能結束。"
+                            f"請呼叫 read_transcript_lines 從第 {next_line} 行繼續讀，"
+                            "直到 has_more=false，再做必要更新。"
+                        ),
+                        log=log,
+                        operation_name="tool-calling send_message transcript continuation",
+                    )
+                    round_index += 1
+                    continue
                 log(f"round {round_index}: no tool call returned")
                 break
 

@@ -13,8 +13,10 @@ for module_name in ("schema", "normalizer", "llm_client"):
 from llm_client import (  # noqa: E402
     _patch_adds_unknown_action_item,
     _record_memory_read,
+    _record_transcript_lines_read,
     _section_fully_read,
     _slice_memory_section,
+    _transcript_fully_read,
     build_tool_call_prompt,
 )
 
@@ -99,6 +101,40 @@ class ShortTermLlmClientTests(unittest.TestCase):
                 memory,
             )
         )
+
+    def test_transcript_read_tracking_requires_full_coverage(self) -> None:
+        state = {
+            "transcript_read_count": 0,
+            "transcript_read_ranges": [],
+            "transcript_total_count": 5,
+        }
+
+        _record_transcript_lines_read(
+            state,
+            {
+                "returned_count": 2,
+                "line_count": 5,
+                "items": [
+                    {"line_number": 1},
+                    {"line_number": 2},
+                ],
+            },
+        )
+        self.assertFalse(_transcript_fully_read(state))
+
+        _record_transcript_lines_read(
+            state,
+            {
+                "returned_count": 3,
+                "line_count": 5,
+                "items": [
+                    {"line_number": 3},
+                    {"line_number": 4},
+                    {"line_number": 5},
+                ],
+            },
+        )
+        self.assertTrue(_transcript_fully_read(state))
 
     def test_tool_prompt_describes_transcript_fields(self) -> None:
         prompt = build_tool_call_prompt(

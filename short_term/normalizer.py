@@ -400,7 +400,7 @@ def normalize_experiment_todos(raw_items: Any, meeting_id: str) -> list[dict[str
     for row in raw_items:
         if not isinstance(row, dict):
             continue
-        raw_id = normalize_str(row.get("todo_id"))
+        raw_id = normalize_str(row.get("todo_id")) or normalize_str(row.get("item_id"))
         todo_id = raw_id if raw_id and raw_id not in used_ids else next_seq_id("E", used_ids)
         used_ids.add(todo_id)
 
@@ -541,7 +541,9 @@ def merge_experiment_todo_patch(
     used_ids = set(item_map)
 
     for patch in _raw_rows(updated_items):
-        raw_id = normalize_str(patch.get("todo_id"))
+        raw_id = normalize_str(patch.get("todo_id")) or normalize_str(
+            patch.get("item_id")
+        )
         is_existing = raw_id in item_map
         todo_id = raw_id
         if not todo_id or (todo_id in used_ids and not is_existing):
