@@ -13,7 +13,7 @@ from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
 MAX_GENERATION_ATTEMPTS = 3
-MAX_TOOL_ROUNDS = 80
+MAX_TOOL_ROUNDS: int | None = None
 MAX_API_RETRIES = 5
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
@@ -502,6 +502,7 @@ def generate_updated_memory(
     on_memory_read: Callable[[], dict[str, Any]] | None = None,
     on_memory_write: Callable[[dict[str, Any]], None] | None = None,
     log_callback: Callable[[str], None] | None = None,
+    max_tool_rounds: int | None = MAX_TOOL_ROUNDS,
     verbose: bool = True,
 ) -> dict[str, Any]:
     def log(message: str) -> None:
@@ -523,7 +524,8 @@ def generate_updated_memory(
     )
     log(
         f"start model={model_name} meeting_id={meeting_id} "
-        f"memory_version={int(current_memory.get('memory_version', 0) or 0)}"
+        f"memory_version={int(current_memory.get('memory_version', 0) or 0)} "
+        f"max_tool_rounds={max_tool_rounds if max_tool_rounds is not None else 'unlimited'}"
     )
 
     for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
@@ -835,7 +837,8 @@ def generate_updated_memory(
             operation_name="tool-calling send_message initial",
         )
 
-        for round_index in range(1, MAX_TOOL_ROUNDS + 1):
+        round_index = 1
+        while max_tool_rounds is None or round_index <= max_tool_rounds:
             function_calls = list(response.function_calls or [])
             if not function_calls:
                 log(f"round {round_index}: no tool call returned")
@@ -900,6 +903,9 @@ def generate_updated_memory(
                 log=log,
                 operation_name=f"tool-calling send_message round {round_index}",
             )
+            round_index += 1
+        else:
+            log(f"tool loop reached max_tool_rounds={max_tool_rounds}")
 
         written_memory = state.get("written_memory")
         if isinstance(written_memory, dict):

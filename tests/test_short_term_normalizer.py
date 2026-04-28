@@ -169,6 +169,64 @@ class ShortTermNormalizerTests(unittest.TestCase):
         self.assertEqual(meeting["key_points"], ["keep point"])
         self.assertEqual(meeting["open_questions"], ["keep question"])
 
+    def test_action_history_collapses_repeated_updates_in_same_meeting(self) -> None:
+        previous = {
+            "memory_version": 1,
+            "meeting_history_ids": ["Bmr001"],
+            "action_items": [
+                {
+                    "item_id": "A003",
+                    "title": "Plan data workflow",
+                    "detail": "Initial detail",
+                    "proposer": "me011",
+                    "owner": "me011",
+                    "created_meeting_id": "Bmr001",
+                    "created_time_hint": "",
+                    "dependencies": [],
+                    "status": "open",
+                    "priority": "medium",
+                    "evidence": "L384",
+                    "last_updated_meeting_id": "Bmr001",
+                    "history": [
+                        {
+                            "version": 0,
+                            "meeting_id": "Bmr001",
+                            "change": "imported or created",
+                        },
+                        {
+                            "version": 1,
+                            "meeting_id": "Bmr001",
+                            "change": "updated fields: detail",
+                        },
+                    ],
+                }
+            ],
+        }
+
+        updated = normalize_memory(
+            updated_memory={
+                "action_items": [
+                    {
+                        "item_id": "A003",
+                        "detail": "Expanded detail",
+                        "priority": "high",
+                    }
+                ]
+            },
+            previous_memory=previous,
+            meeting_id="Bmr001",
+            source_file="Bmr001.txt",
+        )
+
+        history = updated["action_items"][0]["history"]
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["version"], 0)
+        self.assertEqual(history[0]["meeting_id"], "Bmr001")
+        self.assertEqual(
+            history[0]["change"],
+            "imported or created; updated fields: detail, priority",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

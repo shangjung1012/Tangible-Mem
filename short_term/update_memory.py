@@ -78,6 +78,12 @@ def parse_args() -> argparse.Namespace:
         help="Directory for update logs. Set to empty string to disable file logging.",
     )
     parser.add_argument(
+        "--max-tool-rounds",
+        type=int,
+        default=0,
+        help="Max Gemini tool-calling rounds. Default 0 means unlimited.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print updated memory JSON without writing files.",
@@ -151,6 +157,9 @@ def main() -> None:
     )
     log("loading GEMINI_API_KEY from .env")
     api_key = load_env()
+    max_tool_rounds = None if args.max_tool_rounds == 0 else args.max_tool_rounds
+    if args.max_tool_rounds < 0:
+        raise RuntimeError("--max-tool-rounds must be >= 0")
 
     def on_memory_read() -> dict[str, object]:
         return load_memory_from_sqlite(db_path)
@@ -192,6 +201,7 @@ def main() -> None:
         on_memory_read=None if args.dry_run else on_memory_read,
         on_memory_write=None if args.dry_run else on_memory_write,
         log_callback=emit_line,
+        max_tool_rounds=max_tool_rounds,
         verbose=not args.quiet,
     )
     log("Gemini update completed")

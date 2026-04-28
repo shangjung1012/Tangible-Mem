@@ -145,6 +145,71 @@ def _next_history_version(history: Any) -> int:
     return max_version + 1
 
 
+def _combine_history_change_text(*changes: Any) -> str:
+    segments: list[str] = []
+    updated_fields: set[str] = set()
+
+    for change in changes:
+        for segment in normalize_str(change).split(";"):
+            segment = segment.strip()
+            if not segment:
+                continue
+            if segment.startswith("updated fields:"):
+                fields_text = segment.removeprefix("updated fields:").strip()
+                for field in fields_text.split(","):
+                    field = field.strip()
+                    if field and field != "content":
+                        updated_fields.add(field)
+                continue
+            if segment not in segments:
+                segments.append(segment)
+
+    if updated_fields:
+        segments.append(f"updated fields: {', '.join(sorted(updated_fields))}")
+    return "; ".join(segments) if segments else "updated"
+
+
+def _history_change_with_fields(existing_change: Any, changed_fields: list[str]) -> str:
+    fields_text = ", ".join(changed_fields) if changed_fields else "content"
+    return _combine_history_change_text(
+        existing_change,
+        f"updated fields: {fields_text}",
+    )
+
+
+def _collapse_action_history_by_meeting(
+    history: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    collapsed: list[dict[str, Any]] = []
+    index_by_meeting_id: dict[str, int] = {}
+
+    for row in history:
+        meeting_id = normalize_str(row.get("meeting_id"))
+        if not meeting_id:
+            continue
+
+        if meeting_id in index_by_meeting_id:
+            existing = collapsed[index_by_meeting_id[meeting_id]]
+            existing["change"] = _combine_history_change_text(
+                existing.get("change"),
+                row.get("change"),
+            )
+            continue
+
+        index_by_meeting_id[meeting_id] = len(collapsed)
+        collapsed.append(
+            {
+                "version": 0,
+                "meeting_id": meeting_id,
+                "change": normalize_str(row.get("change"), "updated"),
+            }
+        )
+
+    for version, row in enumerate(collapsed):
+        row["version"] = version
+    return collapsed
+
+
 def _append_action_history(
     item: dict[str, Any],
     meeting_id: str,
@@ -156,6 +221,17 @@ def _append_action_history(
         history = []
     else:
         history = [row for row in history if isinstance(row, dict)]
+    history = _collapse_action_history_by_meeting(history)
+
+    for index in range(len(history) - 1, -1, -1):
+        if normalize_str(history[index].get("meeting_id")) != meeting_id:
+            continue
+        history[index]["change"] = _history_change_with_fields(
+            history[index].get("change"),
+            changed_fields,
+        )
+        updated["history"] = history
+        return updated
 
     fields_text = ", ".join(changed_fields) if changed_fields else "content"
     history.append(
@@ -218,6 +294,7 @@ def normalize_action_items(raw_items: Any, meeting_id: str) -> list[dict[str, An
                         "change": normalize_str(h.get("change")),
                     }
                 )
+            history = _collapse_action_history_by_meeting(history)
         if not history:
             history = [
                 {

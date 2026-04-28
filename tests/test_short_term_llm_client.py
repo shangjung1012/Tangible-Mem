@@ -113,6 +113,11 @@ class ShortTermLlmClientTests(unittest.TestCase):
         self.assertIn("raw_line", prompt)
         self.assertIn("next_start_line", prompt)
 
+    def test_max_tool_rounds_constant_defaults_to_unlimited(self) -> None:
+        from llm_client import MAX_TOOL_ROUNDS  # noqa: PLC0415
+
+        self.assertIsNone(MAX_TOOL_ROUNDS)
+
 
 if __name__ == "__main__":
     unittest.main()
