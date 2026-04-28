@@ -15,6 +15,7 @@ from llm_client import (  # noqa: E402
     _record_memory_read,
     _section_fully_read,
     _slice_memory_section,
+    build_tool_call_prompt,
 )
 
 
@@ -98,6 +99,19 @@ class ShortTermLlmClientTests(unittest.TestCase):
                 memory,
             )
         )
+
+    def test_tool_prompt_describes_transcript_fields(self) -> None:
+        prompt = build_tool_call_prompt(
+            meeting_id="Bmr001",
+            source_file="meeting_recording/transcript/ISCI/Bmr001.txt",
+            transcript_line_count=917,
+        )
+
+        self.assertIn("read_transcript_lines", prompt)
+        self.assertIn("speaker", prompt)
+        self.assertIn("text", prompt)
+        self.assertIn("raw_line", prompt)
+        self.assertIn("next_start_line", prompt)
 
 
 if __name__ == "__main__":

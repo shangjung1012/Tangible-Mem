@@ -11,7 +11,7 @@ DEFAULT_TRANSCRIPT_DB_PATH = Path(__file__).resolve().parent / "transcripts.db"
 DEFAULT_TRANSCRIPT_PAGE_SIZE = 30
 MAX_TRANSCRIPT_PAGE_SIZE = 80
 
-_SPEAKER_LINE_RE = re.compile(r"^\[(?P<speaker>[^\]]+)\]:\s*(?P<text>.*)$")
+_SPEAKER_LINE_RE = re.compile(r"^\[(?P<speaker>[^\]]+)\]\s*:\s*(?P<text>.*)$")
 
 
 def _utc_now_iso() -> str:

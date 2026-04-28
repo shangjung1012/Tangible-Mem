@@ -13,7 +13,7 @@ from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
 MAX_GENERATION_ATTEMPTS = 3
-MAX_TOOL_ROUNDS = 40
+MAX_TOOL_ROUNDS = 80
 MAX_API_RETRIES = 5
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
@@ -47,7 +47,7 @@ def build_tool_call_prompt(
 任務流程（必須遵守）：
 1) 先呼叫 `read_short_term_memory(section="overview")` 取得目前記憶總覽。
 2) 再呼叫 `read_transcript_overview()` 取得逐字稿行數與頭尾預覽。
-3) 使用 `read_transcript_lines(start_line, end_line, limit)` 分段讀逐字稿。你可以自己決定每次讀幾行、從哪行讀到哪行；建議一次 20-50 行，最多依工具限制。
+3) 使用 `read_transcript_lines(start_line, end_line, limit)` 分段讀逐字稿。你可以自己決定每次讀幾行、從哪行讀到哪行；建議一次 40-80 行，最多依工具限制。
 4) 每讀完一段，就判斷該段是否形成完整主題/idea unit；如果內容延續到下一段，可以繼續讀下一段再寫。
 5) 當你已經確認一小批更新時，就立刻呼叫 `write_short_term_memory` 寫入該批 patch，然後繼續讀下一段逐字稿。
 6) 根據 transcript 內容判斷需要哪些 memory section，再用 `read_short_term_memory` 分批讀取相關 section。
@@ -74,9 +74,19 @@ def build_tool_call_prompt(
 - 如果工具回傳 no-op 或 prerequisite read error，代表你需要先多讀一點，再提交更小的 patch。
 - 不要重複提交沒有實際變化的 patch。
 
+Transcript 工具回傳格式：
+- `read_transcript_overview()` 會回傳 `line_count`、頭尾少量預覽、建議起始行。
+- `read_transcript_lines(...)` 的每個 item 都包含：
+  - `line_number`：逐字稿行號，可作為 evidence 的 Lxx
+  - `speaker`：說話者，例如 `me011`、`fe016`、`SPEAKER_00`
+  - `text`：該 speaker 說的內容，不含 `[speaker]:`
+  - `raw_line`：原始整行，例如 `[me011]: OK, so we're live.`
+- 判斷內容時請優先使用 `speaker` 與 `text` 欄位，不要再自行解析 `raw_line`。
+
 建議策略：
 - 第一步永遠先讀 memory `overview`，第二步讀 transcript overview。
 - 從第 1 行開始分段讀 transcript，維持一個「已處理到第幾行」的內部進度。
+- 如果 `read_transcript_lines` 回傳 `has_more=true`，下一次優先使用 `next_start_line` 繼續讀。
 - 如果某段只是在延續上一段主題，先不要急著寫；等 idea unit 完整後再寫。
 - 若讀到新的短期事項、會議安排、待辦、狀態變更或下次討論重點，先查相關 memory section，再寫 patch。
 - 先用 overview 的 `action_item_index` 找候選既有 action item；若語意相關，更新既有 `item_id`。
@@ -821,7 +831,6 @@ def generate_updated_memory(
             operation_name="tool-calling send_message initial",
         )
 
-        seen_calls: set[str] = set()
         for round_index in range(1, MAX_TOOL_ROUNDS + 1):
             function_calls = list(response.function_calls or [])
             if not function_calls:
@@ -829,7 +838,6 @@ def generate_updated_memory(
                 break
 
             parts: list[types.Part] = []
-            repeated_only = True
             log(f"round {round_index}: {len(function_calls)} tool call(s)")
             for function_call in function_calls:
                 tool_name = function_call.name or ""
@@ -839,13 +847,6 @@ def generate_updated_memory(
                     f"args_keys={sorted(args.keys())} "
                     f"args={json.dumps(args, ensure_ascii=False, sort_keys=True)}"
                 )
-                signature = (
-                    f"{tool_name}:"
-                    f"{json.dumps(args, ensure_ascii=False, sort_keys=True)}"
-                )
-                if signature not in seen_calls:
-                    repeated_only = False
-                seen_calls.add(signature)
 
                 if tool_name == "read_transcript_overview":
                     try:
@@ -889,9 +890,6 @@ def generate_updated_memory(
                     )
                 )
 
-            if repeated_only:
-                log(f"round {round_index}: repeated tool signatures only, stop tool loop")
-                break
             log(f"round {round_index}: sending tool responses back to Gemini")
             response = _call_with_retry(
                 lambda: chat.send_message(parts),

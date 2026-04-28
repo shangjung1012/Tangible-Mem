@@ -85,6 +85,30 @@ class ShortTermTranscriptStoreTests(unittest.TestCase):
             self.assertTrue(page["has_more"])
             self.assertEqual(page["next_start_line"], 3)
 
+    def test_import_splits_icsi_participant_id_and_text(self) -> None:
+        transcript = "[me011]: OK, so we're live.\n[fe016] : Right."
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "transcripts.db"
+            import_transcript_to_sqlite(
+                db_path=db_path,
+                meeting_id="Bmr001",
+                source_file="meeting_recording/transcript/ISCI/Bmr001.txt",
+                transcript=transcript,
+            )
+
+            page = load_transcript_lines(
+                db_path=db_path,
+                meeting_id="Bmr001",
+                start_line=1,
+                limit=2,
+            )
+
+            self.assertEqual(page["items"][0]["speaker"], "me011")
+            self.assertEqual(page["items"][0]["text"], "OK, so we're live.")
+            self.assertEqual(page["items"][1]["speaker"], "fe016")
+            self.assertEqual(page["items"][1]["text"], "Right.")
+
 
 if __name__ == "__main__":
     unittest.main()
