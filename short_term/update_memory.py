@@ -6,7 +6,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from io_utils import load_env, print_json_safe, save_json
+from genai_client import describe_genai_config, load_dotenv_files, load_genai_config
+from io_utils import print_json_safe, save_json
 from llm_client import generate_updated_memory
 from schema import DEFAULT_MODEL_NAME
 from sqlite_store import (
@@ -26,6 +27,7 @@ from transcript_store import (
 
 
 def parse_args() -> argparse.Namespace:
+    load_dotenv_files()
     parser = argparse.ArgumentParser(description="Update short-term memory from one transcript.")
     parser.add_argument(
         "--transcript",
@@ -155,8 +157,9 @@ def main() -> None:
         f"version={int(current_memory.get('memory_version', 0) or 0)} "
         f"meeting_history={len(current_memory.get('meeting_history_ids', []))}"
     )
-    log("loading GEMINI_API_KEY from .env")
-    api_key = load_env()
+    log("loading Google Gen AI client config")
+    genai_config = load_genai_config()
+    log(f"using {describe_genai_config(genai_config)}")
     max_tool_rounds = None if args.max_tool_rounds == 0 else args.max_tool_rounds
     if args.max_tool_rounds < 0:
         raise RuntimeError("--max-tool-rounds must be >= 0")
@@ -187,10 +190,10 @@ def main() -> None:
             limit=limit,
         )
 
-    log(f"starting Gemini update (model={args.model}, meeting_id={meeting_id})")
+    log(f"starting GenAI update (model={args.model}, meeting_id={meeting_id})")
     updated_memory = generate_updated_memory(
         model_name=args.model,
-        api_key=api_key,
+        api_key=None,
         transcript=transcript,
         current_memory=current_memory,
         meeting_id=meeting_id,
@@ -203,8 +206,9 @@ def main() -> None:
         log_callback=emit_line,
         max_tool_rounds=max_tool_rounds,
         verbose=not args.quiet,
+        client_config=genai_config,
     )
-    log("Gemini update completed")
+    log("GenAI update completed")
 
     if args.dry_run:
         log("dry-run enabled, skip DB snapshots and JSON snapshot files")

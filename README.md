@@ -22,7 +22,7 @@ GEMINI_API_KEY=your_api_key_here
 # optional: 要輪流使用多把 Gemini key 時，改用這行
 GEMINI_API_KEYS=key_1,key_2,key_3
 # optional: 預設生成模型（bridge / summarize / planner / gate）
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-2.5-pro
 # optional: 長期記憶 semantic retrieval 使用的 embedding 模型
 GEMINI_EMBED_MODEL=models/gemini-embedding-001
 ```

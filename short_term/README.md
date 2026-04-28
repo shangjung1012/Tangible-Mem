@@ -3,7 +3,7 @@
 這個資料夾負責「一次輸入一次會議逐字稿」，先把逐字稿轉成 SQLite，再更新短期記憶。
 
 目前以 SQLite 為主要儲存（`short_term/short_term_memory.db`），避免每次覆寫大型 JSON 的風險。
-逐字稿會匯入 `short_term/transcripts.db`，讓 Gemini 透過 tool calling 自行決定要讀哪幾行，而不是一次吃完整逐字稿。
+逐字稿會匯入 `short_term/transcripts.db`，讓 Gemini（透過 Vertex AI / Google Gen AI SDK）使用 tool calling 自行決定要讀哪幾行，而不是一次吃完整逐字稿。
 
 ## 記憶結構
 
@@ -23,6 +23,7 @@
 
 - `update_memory.py`: CLI 入口與流程 orchestration（Gemini tool calling + SQLite）
 - `schema.py`: 短期記憶 schema、狀態常數、`response_json_schema`
+- `genai_client.py`: Google Gen AI client 設定，預設使用 Vertex AI + ADC
 - `llm_client.py`: Gemini prompt、tool calling（read/write memory）與 structured fallback
 - `normalizer.py`: 記憶資料正規化與 merge
 - `io_utils.py`: `.env`、JSON 讀寫與安全輸出
@@ -60,7 +61,7 @@ uv run short_term/update_memory.py \
   --mirror-json \
   --snapshot-dir short_term/snapshots \
   --db-snapshot-dir short_term/db_snapshots \
-  --model gemini-2.5-flash
+  --model gemini-2.5-pro
 ```
 
 ## 測試 Retrieval QA
@@ -126,3 +127,23 @@ uv run short_term/retrieve_qa.py \
 這個參數很適合拿來 debug 檢索效果，或比較不同 `--retrieval-mode` 的差異。
 
 embedding 會快取在 `short_term/.embedding_cache.json`，避免每次都重算 chunk embeddings。
+
+## Vertex AI 設定
+
+short-term 預設走 Vertex AI，不再需要 `GEMINI_API_KEY`。本機需先完成 ADC：
+
+```bash
+gcloud auth application-default login
+gcloud config set project virtual-mentor-494016
+```
+
+可在 `.env` 明確設定：
+
+```bash
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_CLOUD_PROJECT=virtual-mentor-494016
+GOOGLE_CLOUD_LOCATION=global
+GOOGLE_APPLICATION_CREDENTIALS=/Users/shangjung/.config/gcloud/application_default_credentials.json
+```
+
+若 `GOOGLE_CLOUD_PROJECT` 沒設定，程式會嘗試讀取目前的 `gcloud config get-value project`。若 `GOOGLE_APPLICATION_CREDENTIALS` 沒設定，程式會預設讀取 `~/.config/gcloud/application_default_credentials.json`。如需暫時切回 Gemini Developer API，設定 `GOOGLE_GENAI_USE_VERTEXAI=false` 並提供 `GEMINI_API_KEY` 或 `GOOGLE_API_KEY`。

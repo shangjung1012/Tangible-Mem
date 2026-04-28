@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
-
 from schema import DEFAULT_MEMORY
+
+try:
+    from .genai_client import load_dotenv_files, load_genai_config
+except ImportError:  # pragma: no cover - script execution fallback
+    from genai_client import load_dotenv_files, load_genai_config
 
 
 def utc_now_iso() -> str:
@@ -23,13 +25,11 @@ def utc_now_iso() -> str:
 
 
 def load_env() -> str:
-    root_env = Path(__file__).resolve().parents[1] / ".env"
-    load_dotenv(root_env, override=True)
-    load_dotenv(override=True)
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is missing. Please set it in .env.")
-    return api_key
+    load_dotenv_files()
+    config = load_genai_config()
+    if config.use_vertexai:
+        return ""
+    return config.api_key or ""
 
 
 def load_memory(path: Path) -> dict[str, Any]:

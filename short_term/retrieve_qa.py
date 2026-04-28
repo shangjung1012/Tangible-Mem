@@ -12,7 +12,7 @@ from typing import Any
 
 from google import genai
 
-from io_utils import load_env
+from genai_client import create_genai_client, describe_genai_config, load_genai_config
 from schema import DEFAULT_MODEL_NAME
 from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
@@ -507,7 +507,7 @@ def retrieve_chunks(
     if retrieval_mode in {"semantic", "hybrid"}:
         if client is None:
             raise RuntimeError(
-                "Semantic retrieval requires a Gemini client and API key."
+                "Semantic retrieval requires a Google Gen AI client."
             )
         semantic_scores = semantic_scores_for_chunks(
             client=client,
@@ -709,8 +709,9 @@ def main() -> None:
 
     client: genai.Client | None = None
     if not args.no_llm or args.retrieval_mode in {"semantic", "hybrid"}:
-        api_key = load_env()
-        client = genai.Client(api_key=api_key)
+        genai_config = load_genai_config()
+        print(f"Using {describe_genai_config(genai_config)}")
+        client = create_genai_client(genai_config)
 
     if args.question:
         run_single_question(

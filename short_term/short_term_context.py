@@ -12,8 +12,10 @@ from typing import Any
 from google import genai
 
 try:
+    from .genai_client import create_genai_client, load_genai_config
     from .sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 except ImportError:  # pragma: no cover - script execution fallback
+    from genai_client import create_genai_client, load_genai_config
     from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
 
@@ -469,7 +471,7 @@ def retrieve_chunks(
     if retrieval_mode in {"semantic", "hybrid"}:
         if client is None:
             raise RuntimeError(
-                "Semantic retrieval requires a Gemini client and API key."
+                "Semantic retrieval requires a Google Gen AI client."
             )
         semantic_scores = semantic_scores_for_chunks(
             client=client,
@@ -536,7 +538,7 @@ def format_context(chunks: list[ScoredChunk]) -> str:
 
 def retrieve_short_term_context(
     query: str,
-    api_key: str,
+    api_key: str | None = None,
     retrieval_mode: str = "hybrid",
     top_k: int = 6,
     embedding_model: str = DEFAULT_EMBEDDING_MODEL_NAME,
@@ -554,7 +556,7 @@ def retrieve_short_term_context(
     chunks = build_chunks(memory)
     client: genai.Client | None = None
     if retrieval_mode in {"semantic", "hybrid"}:
-        client = genai.Client(api_key=api_key)
+        client = create_genai_client(load_genai_config(api_key=api_key))
 
     retrieved = retrieve_chunks(
         chunks=chunks,

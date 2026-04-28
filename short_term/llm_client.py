@@ -9,6 +9,12 @@ from typing import Any, Callable
 from google import genai
 from google.genai import errors, types
 
+from genai_client import (
+    GenAIConfig,
+    create_genai_client,
+    describe_genai_config,
+    load_genai_config,
+)
 from normalizer import normalize_memory
 from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
@@ -574,7 +580,7 @@ def _patch_adds_unknown_action_item(
 
 def generate_updated_memory(
     model_name: str,
-    api_key: str,
+    api_key: str | None,
     transcript: str,
     current_memory: dict[str, Any],
     meeting_id: str,
@@ -589,6 +595,7 @@ def generate_updated_memory(
     log_callback: Callable[[str], None] | None = None,
     max_tool_rounds: int | None = MAX_TOOL_ROUNDS,
     verbose: bool = True,
+    client_config: GenAIConfig | None = None,
 ) -> dict[str, Any]:
     def log(message: str) -> None:
         line = f"[llm_update] {message}"
@@ -597,7 +604,8 @@ def generate_updated_memory(
         elif verbose:
             print(line, flush=True)
 
-    client = genai.Client(api_key=api_key)
+    genai_config = client_config or load_genai_config(api_key=api_key)
+    client = create_genai_client(genai_config)
     prompt = build_tool_call_prompt(
         meeting_id=meeting_id,
         source_file=source_file,
@@ -608,7 +616,8 @@ def generate_updated_memory(
         ),
     )
     log(
-        f"start model={model_name} meeting_id={meeting_id} "
+        f"start backend={describe_genai_config(genai_config)} "
+        f"model={model_name} meeting_id={meeting_id} "
         f"memory_version={int(current_memory.get('memory_version', 0) or 0)} "
         f"max_tool_rounds={max_tool_rounds if max_tool_rounds is not None else 'unlimited'}"
     )
