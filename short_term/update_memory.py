@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from io_utils import load_env, print_json_safe, save_json
@@ -71,6 +73,11 @@ def parse_args() -> argparse.Namespace:
         help=f"Gemini model name (default: {DEFAULT_MODEL_NAME}).",
     )
     parser.add_argument(
+        "--log-dir",
+        default="short_term/logs",
+        help="Directory for update logs. Set to empty string to disable file logging.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print updated memory JSON without writing files.",
@@ -86,10 +93,6 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    def log(message: str) -> None:
-        if not args.quiet:
-            print(f"[update_memory] {message}", flush=True)
-
     transcript_path = Path(args.transcript).resolve()
     db_path = Path(args.db).resolve()
     transcript_db_path = Path(args.transcript_db).resolve()
@@ -104,6 +107,27 @@ def main() -> None:
 
     meeting_id = transcript_path.stem
     source_file = str(transcript_path)
+
+    log_path: Path | None = None
+    if args.log_dir:
+        log_dir = Path(args.log_dir).resolve()
+        log_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = log_dir / f"{timestamp}_{meeting_id}.log"
+        log_path.write_text("", encoding="utf-8")
+
+    def emit_line(line: str) -> None:
+        if not args.quiet:
+            print(line, flush=True)
+        if log_path is not None:
+            with log_path.open("a", encoding="utf-8") as handle:
+                handle.write(line + "\n")
+
+    def log(message: str) -> None:
+        emit_line(f"[update_memory] {message}")
+
+    if log_path is not None:
+        log(f"log file: {log_path}")
     log(f"loading transcript: {transcript_path}")
     transcript = transcript_path.read_text(encoding="utf-8")
     log(f"importing transcript into sqlite: {transcript_db_path}")
@@ -167,13 +191,17 @@ def main() -> None:
         on_transcript_lines_read=on_transcript_lines_read,
         on_memory_read=None if args.dry_run else on_memory_read,
         on_memory_write=None if args.dry_run else on_memory_write,
+        log_callback=emit_line,
         verbose=not args.quiet,
     )
     log("Gemini update completed")
 
     if args.dry_run:
         log("dry-run enabled, skip DB snapshots and JSON snapshot files")
-        print_json_safe(updated_memory)
+        if log_path is not None:
+            emit_line(json.dumps(updated_memory, ensure_ascii=False, indent=2))
+        else:
+            print_json_safe(updated_memory)
         return
 
     log("reloading persisted memory from sqlite")
@@ -195,22 +223,24 @@ def main() -> None:
         snapshot_name = f"{snapshot_tag}.json"
         snapshot_path = snapshot_dir / snapshot_name
         save_json(snapshot_path, persisted_memory)
-        print(f"JSON snapshot saved: {snapshot_path}")
+        emit_line(f"JSON snapshot saved: {snapshot_path}")
 
     if db_snapshot_dir is not None:
         db_snapshot_path = db_snapshot_dir / f"{snapshot_tag}.db"
         export_db_snapshot(db_path=db_path, snapshot_path=db_snapshot_path)
-        print(f"DB file snapshot saved: {db_snapshot_path}")
+        emit_line(f"DB file snapshot saved: {db_snapshot_path}")
 
-    print(f"Updated memory DB: {db_path}")
-    print(f"Loaded initial memory from: {memory_source}")
-    print(f"DB snapshot_id={snapshot_id}")
-    print(f"memory_version={persisted_memory['memory_version']}")
-    print(
+    emit_line(f"Updated memory DB: {db_path}")
+    emit_line(f"Loaded initial memory from: {memory_source}")
+    emit_line(f"DB snapshot_id={snapshot_id}")
+    emit_line(f"memory_version={persisted_memory['memory_version']}")
+    emit_line(
         "meeting_window="
         f"{len(persisted_memory['meeting_window'])} "
         f"action_items={len(persisted_memory['action_items'])}"
     )
+    if log_path is not None:
+        emit_line(f"Log saved: {log_path}")
 
 
 if __name__ == "__main__":

@@ -501,11 +501,15 @@ def generate_updated_memory(
     ) = None,
     on_memory_read: Callable[[], dict[str, Any]] | None = None,
     on_memory_write: Callable[[dict[str, Any]], None] | None = None,
+    log_callback: Callable[[str], None] | None = None,
     verbose: bool = True,
 ) -> dict[str, Any]:
     def log(message: str) -> None:
-        if verbose:
-            print(f"[llm_update] {message}", flush=True)
+        line = f"[llm_update] {message}"
+        if log_callback is not None:
+            log_callback(line)
+        elif verbose:
+            print(line, flush=True)
 
     client = genai.Client(api_key=api_key)
     prompt = build_tool_call_prompt(
