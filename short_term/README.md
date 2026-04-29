@@ -3,7 +3,7 @@
 這個資料夾負責「一次輸入一次會議逐字稿」，先把逐字稿轉成 SQLite，再更新短期記憶。
 
 目前以 SQLite 為主要儲存（`short_term/short_term_memory.db`），避免每次覆寫大型 JSON 的風險。
-逐字稿會匯入 `short_term/transcripts.db`，讓 Gemini（透過 Vertex AI / Google Gen AI SDK）使用 tool calling 自行決定要讀哪幾行，而不是一次吃完整逐字稿。
+逐字稿會匯入 `short_term/transcripts.db`。更新流程使用 LangGraph local-first orchestration，讓多個受限 Gemini sub-agent 產生候選，再由 deterministic verifier / reducer / normalizer 控制寫入。
 
 ## 記憶結構
 
@@ -21,10 +21,15 @@
 
 ## 檔案拆分
 
-- `update_memory.py`: CLI 入口與流程 orchestration（Gemini tool calling + SQLite）
+- `update_memory.py`: CLI 入口與 LangGraph orchestration（Vertex Gemini sub-agents + SQLite）
+- `langgraph_update.py`: LangGraph workflow（window planning、segmentation、extraction、verify、reduce、persist）
+- `agents.py`: Context Planner / Segment / Summary / Action / Method / Experiment / Focus sub-agent prompt 與 JSON schema
+- `verifier.py`: deterministic candidate validation（evidence、ID、enum、confidence、section ownership）
+- `reducer.py`: verified candidates → partial memory patch
+- `research_logger.py`: 每次更新的 prompt / raw response / parsed JSON / graph event / report log
 - `schema.py`: 短期記憶 schema、狀態常數、`response_json_schema`
 - `genai_client.py`: Google Gen AI client 設定，預設使用 Vertex AI + ADC
-- `llm_client.py`: Gemini prompt、tool calling（read/write memory）與 structured fallback
+- `llm_client.py`: legacy tool-calling helper（目前 CLI 不再使用）
 - `normalizer.py`: 記憶資料正規化與 merge
 - `io_utils.py`: `.env`、JSON 讀寫與安全輸出
 - `sqlite_store.py`: SQLite schema、讀寫、snapshot 與 JSON bootstrap
@@ -35,14 +40,16 @@
 1. 讀取單一會議逐字稿（例如 `meeting_recording/transcript/49.txt`）
 2. 將逐字稿逐行匯入 transcript SQLite（預設 `short_term/transcripts.db`）
 3. 讀取 SQLite 目前記憶（若 DB 為空，會從 `current_memory.json` bootstrap 一次）
-4. 呼叫 Gemini tool calling：
-   - `read_transcript_overview()` 取得逐字稿行數與頭尾預覽
-   - `read_transcript_lines(start_line, end_line, limit)` 分段讀逐字稿
-   - `read_short_term_memory(section, offset, limit)` 分段讀目前記憶
-   - `write_short_term_memory(updated_memory)` 對確認的小批更新逐步寫入
-5. 寫入工具會套用本地 normalizer，維持既有邏輯（含最近 3 次會議裁切），並直接落到 SQLite
+4. LangGraph 依序執行：
+   - `ContextPlannerAgent` 規劃下一段 forward window 與 lookback/lookahead
+   - `SegmentAgent` 判斷 idea units；若需要更多上下文，回到 planner 補讀
+   - Summary / Action / Method / Experiment / Focus sub-agent 只產生各自 section 的候選 JSON
+   - `verifier.py` deterministic 拒絕無 evidence、非法 ID/enum、低 confidence、越權 section 的候選
+   - `reducer.py` 合併通過候選為 partial patch
+5. partial patch 交給本地 `normalizer.py`，維持既有邏輯（含最近 3 次會議裁切），再寫入 SQLite
 6. 更新完成後，系統會重新從 SQLite 載入最新記憶，並在 DB 內記錄 snapshot
 7. 每次更新都會從 SQLite 匯出 `short_term/snapshots/` 的 JSON snapshot，並在 `short_term/db_snapshots/` 產生 SQLite DB snapshot（另可選擇輸出 JSON mirror）
+8. 每次更新會建立 `short_term/research_logs/<run_id>/`，保存 prompts、raw responses、parsed JSON、graph events、候選與 final report，方便研究與調 prompt
 
 ## 使用方式
 
@@ -61,8 +68,26 @@ uv run short_term/update_memory.py \
   --mirror-json \
   --snapshot-dir short_term/snapshots \
   --db-snapshot-dir short_term/db_snapshots \
-  --model gemini-2.5-pro
+  --model gemini-2.5-pro \
+  --chunk-size 80 \
+  --max-lookback-lines 20 \
+  --max-lookahead-lines 40 \
+  --checkpoint-db short_term/langgraph_checkpoints.db \
+  --research-log-dir short_term/research_logs \
+  --log-level debug
 ```
+
+`--max-tool-rounds` 已保留為相容參數，但 LangGraph 流程不再使用 Gemini tool-calling loop，傳入時只會印出 deprecated warning。
+
+研究 log 主要檔案：
+
+- `graph_events.jsonl`: 每個 LangGraph node 的 start/end、耗時、摘要
+- `prompts/*.prompt.txt`: 完整 prompt（預設保留）
+- `responses/*.raw.txt` / `*.parsed.json`: LLM 原始與解析後輸出
+- `candidates/raw_candidates.json`: 所有 sub-agent 候選
+- `candidates/verified_candidates.json`: 通過 deterministic verifier 的候選
+- `candidates/rejected_candidates.json`: 被拒絕的候選與原因
+- `final_patch.json` / `final_memory.json` / `report.md`: 最終寫入前後結果與人工可讀報告
 
 ## 測試 Retrieval QA
 

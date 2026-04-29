@@ -4,14 +4,24 @@ import re
 from copy import deepcopy
 from typing import Any
 
-from io_utils import utc_now_iso
-from schema import (
-    ACTION_ITEM_STATUS,
-    DEFAULT_MEMORY,
-    EXPERIMENT_STATUS,
-    METHOD_CHANGE_STATUS,
-    PRIORITY_LEVELS,
-)
+try:
+    from .io_utils import utc_now_iso
+    from .schema import (
+        ACTION_ITEM_STATUS,
+        DEFAULT_MEMORY,
+        EXPERIMENT_STATUS,
+        METHOD_CHANGE_STATUS,
+        PRIORITY_LEVELS,
+    )
+except ImportError:  # pragma: no cover - script execution fallback
+    from io_utils import utc_now_iso
+    from schema import (
+        ACTION_ITEM_STATUS,
+        DEFAULT_MEMORY,
+        EXPERIMENT_STATUS,
+        METHOD_CHANGE_STATUS,
+        PRIORITY_LEVELS,
+    )
 
 
 def next_seq_id(prefix: str, used_ids: set[str]) -> str:

@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from schema import DEFAULT_MEMORY
-
 try:
+    from .schema import DEFAULT_MEMORY
     from .genai_client import load_dotenv_files, load_genai_config
 except ImportError:  # pragma: no cover - script execution fallback
+    from schema import DEFAULT_MEMORY
     from genai_client import load_dotenv_files, load_genai_config
 
 

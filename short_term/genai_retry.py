@@ -60,6 +60,8 @@ def call_with_retry(
     func: Callable[[], Any],
     *,
     log: Callable[[str], None] | None = None,
+    on_retry: Callable[[dict[str, Any]], None] | None = None,
+    sleep_func: Callable[[float], None] = time.sleep,
     operation_name: str,
     max_retries: int = MAX_API_RETRIES,
 ) -> Any:
@@ -71,12 +73,23 @@ def call_with_retry(
                 raise
 
             delay_seconds = _retry_delay_seconds(exc, attempt)
+            if on_retry is not None:
+                on_retry(
+                    {
+                        "operation_name": operation_name,
+                        "attempt": attempt,
+                        "max_retries": max_retries,
+                        "delay_seconds": round(delay_seconds, 4),
+                        "error_type": type(exc).__name__,
+                        "error": str(exc),
+                    }
+                )
             if log is not None:
                 log(
                     f"{operation_name} failed with retryable error "
                     f"(attempt {attempt}/{max_retries}): {exc}. "
                     f"sleep {delay_seconds:.1f}s before retry"
                 )
-            time.sleep(delay_seconds)
+            sleep_func(delay_seconds)
 
     raise RuntimeError("Unreachable: retry attempts exhausted unexpectedly.")

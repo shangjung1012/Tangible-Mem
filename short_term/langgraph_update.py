@@ -1,0 +1,744 @@
+from __future__ import annotations
+
+from collections import Counter
+from pathlib import Path
+from typing import Any, Callable
+
+from langgraph.graph import END, StateGraph
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+try:
+    from .agents import (
+        ShortTermAgentSuite,
+        build_context_planner_prompt,
+        build_extraction_prompt,
+        build_segment_prompt,
+        flatten_agent_candidates,
+    )
+    from .genai_client import GenAIConfig, create_genai_client
+    from .graph_state import ShortTermGraphState, memory_summary
+    from .normalizer import normalize_memory
+    from .reducer import reduce_candidates
+    from .research_logger import ResearchLogger, elapsed, timed
+    from .sqlite_store import save_memory_to_sqlite
+    from .transcript_store import load_transcript_lines
+    from .verifier import verify_candidates
+except ImportError:  # pragma: no cover - script execution fallback
+    from agents import (
+        ShortTermAgentSuite,
+        build_context_planner_prompt,
+        build_extraction_prompt,
+        build_segment_prompt,
+        flatten_agent_candidates,
+    )
+    from genai_client import GenAIConfig, create_genai_client
+    from graph_state import ShortTermGraphState, memory_summary
+    from normalizer import normalize_memory
+    from reducer import reduce_candidates
+    from research_logger import ResearchLogger, elapsed, timed
+    from sqlite_store import save_memory_to_sqlite
+    from transcript_store import load_transcript_lines
+    from verifier import verify_candidates
+
+
+def run_short_term_langgraph_update(
+    *,
+    model_name: str,
+    client_config: GenAIConfig,
+    current_memory: dict[str, Any],
+    memory_source: str,
+    meeting_id: str,
+    source_file: str,
+    db_path: Path,
+    transcript_db_path: Path,
+    transcript_overview: dict[str, Any],
+    transcript_line_count: int,
+    checkpoint_db_path: Path,
+    research_log_dir: Path,
+    log_level: str = "debug",
+    keep_full_prompts: bool = True,
+    chunk_size: int = 80,
+    max_lookback_lines: int = 20,
+    max_lookahead_lines: int = 40,
+    dry_run: bool = False,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> tuple[dict[str, Any], Path]:
+    logger = ResearchLogger(
+        root_dir=research_log_dir,
+        meeting_id=meeting_id,
+        log_level=log_level,
+        keep_full_prompts=keep_full_prompts,
+    )
+    logger.write_run_meta(
+        {
+            "meeting_id": meeting_id,
+            "source_file": source_file,
+            "model_name": model_name,
+            "memory_source": memory_source,
+            "db_path": str(db_path),
+            "transcript_db_path": str(transcript_db_path),
+            "checkpoint_db_path": str(checkpoint_db_path),
+            "dry_run": dry_run,
+            "chunk_size": chunk_size,
+            "max_lookback_lines": max_lookback_lines,
+            "max_lookahead_lines": max_lookahead_lines,
+        }
+    )
+
+    client = create_genai_client(client_config)
+    agents = ShortTermAgentSuite(client=client, model_name=model_name)
+
+    initial_state: ShortTermGraphState = {
+        "run_id": logger.run_id,
+        "meeting_id": meeting_id,
+        "source_file": source_file,
+        "model_name": model_name,
+        "db_path": str(db_path),
+        "transcript_db_path": str(transcript_db_path),
+        "checkpoint_db_path": str(checkpoint_db_path),
+        "research_log_dir": str(research_log_dir),
+        "log_level": log_level,
+        "keep_full_prompts": keep_full_prompts,
+        "dry_run": dry_run,
+        "chunk_size": max(1, int(chunk_size or 80)),
+        "max_lookback_lines": max(0, int(max_lookback_lines or 0)),
+        "max_lookahead_lines": max(0, int(max_lookahead_lines or 0)),
+        "max_context_rounds": 3,
+        "transcript_line_count": transcript_line_count,
+        "transcript_overview": transcript_overview,
+        "current_memory": current_memory,
+        "memory_source": memory_source,
+        "processed_until_line": 0,
+        "planner_history": [],
+        "context_rounds": 0,
+        "raw_candidates": [],
+        "verified_candidates": [],
+        "rejected_candidates": [],
+        "final_patch": {},
+        "final_memory": {},
+        "report": {},
+        "persisted": False,
+        "read_line_numbers": [],
+    }
+
+    graph = _build_graph(
+        agents=agents,
+        logger=logger,
+        db_path=db_path,
+        transcript_db_path=transcript_db_path,
+        progress_callback=progress_callback,
+    )
+
+    checkpoint_db_path.parent.mkdir(parents=True, exist_ok=True)
+    with SqliteSaver.from_conn_string(str(checkpoint_db_path)) as checkpointer:
+        compiled = graph.compile(checkpointer=checkpointer)
+        final_state = compiled.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": logger.run_id}},
+        )
+
+    final_memory = final_state.get("final_memory")
+    if not isinstance(final_memory, dict) or not final_memory:
+        raise RuntimeError("LangGraph update did not produce final_memory.")
+    return final_memory, logger.run_dir
+
+
+def _build_graph(
+    *,
+    agents: ShortTermAgentSuite,
+    logger: ResearchLogger,
+    db_path: Path,
+    transcript_db_path: Path,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> StateGraph:
+    graph = StateGraph(ShortTermGraphState)
+
+    def load_inputs(state: ShortTermGraphState) -> dict[str, Any]:
+        return _node(
+            logger,
+            "load_inputs",
+            state,
+            lambda: {
+                "report": {
+                    "run_id": state["run_id"],
+                    "meeting_id": state["meeting_id"],
+                    "memory_summary": memory_summary(state["current_memory"]),
+                }
+            },
+            summary={
+                "line_count": state.get("transcript_line_count", 0),
+                "memory": memory_summary(state.get("current_memory", {})),
+            },
+            progress_callback=progress_callback,
+        )
+
+    def plan_next_window(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            prompt = build_context_planner_prompt(state)
+            result = agents.context_planner.run(
+                prompt=prompt,
+                logger=logger,
+                input_summary=_input_summary(state),
+            )
+            parsed = result.parsed
+            processed = int(state.get("processed_until_line", 0) or 0)
+            total = int(state.get("transcript_line_count", 0) or 0)
+            chunk_size = int(state.get("chunk_size", 80) or 80)
+            plan = _sanitize_plan(
+                parsed,
+                processed_until=processed,
+                total_lines=total,
+                chunk_size=chunk_size,
+                max_lookback=int(state.get("max_lookback_lines", 20) or 20),
+                max_lookahead=int(state.get("max_lookahead_lines", 40) or 40),
+            )
+            history = list(state.get("planner_history", []))
+            history.append(plan)
+            return {"current_plan": plan, "planner_history": history}
+
+        return _node(logger, "plan_next_window", state, run, progress_callback=progress_callback)
+
+    def read_window(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            plan = state.get("current_plan", {})
+            start = int(plan.get("start_line", 1) or 1)
+            end = int(plan.get("end_line", start) or start)
+            lookback = int(plan.get("lookback_lines", 0) or 0)
+            lookahead = int(plan.get("lookahead_lines", 0) or 0)
+            total = int(state.get("transcript_line_count", 0) or 0)
+            context_start = max(1, start - lookback)
+            context_end = min(total, end + lookahead)
+            page = load_transcript_lines(
+                db_path=transcript_db_path,
+                meeting_id=str(state["meeting_id"]),
+                start_line=context_start,
+                end_line=context_end,
+                limit=max(1, context_end - context_start + 1),
+            )
+            items = page.get("items", []) if isinstance(page, dict) else []
+            line_numbers = list(state.get("read_line_numbers", []))
+            for item in items:
+                if isinstance(item, dict):
+                    try:
+                        line_numbers.append(int(item.get("line_number", 0) or 0))
+                    except (TypeError, ValueError):
+                        continue
+            window = {
+                "context_start_line": context_start,
+                "context_end_line": context_end,
+                "forward_start_line": start,
+                "forward_end_line": end,
+                "items": items,
+            }
+            return {
+                "current_window": window,
+                "read_line_numbers": sorted(set(line_numbers)),
+            }
+
+        return _node(logger, "read_window", state, run, progress_callback=progress_callback)
+
+    def segment_window(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            prompt = build_segment_prompt(state)
+            result = agents.segment.run(
+                prompt=prompt,
+                logger=logger,
+                input_summary=_input_summary(state),
+            )
+            units = result.parsed.get("units", [])
+            if not isinstance(units, list):
+                units = []
+            window = state.get("current_window", {})
+            allowed = _window_line_set(window)
+            clean_units = [
+                unit
+                for unit in units
+                if isinstance(unit, dict)
+                and int(unit.get("line_start", 0) or 0) in allowed
+                and int(unit.get("line_end", 0) or 0) in allowed
+            ]
+            needs_more = any(bool(unit.get("needs_more_context")) for unit in clean_units)
+            context_rounds = int(state.get("context_rounds", 0) or 0)
+            if needs_more:
+                context_rounds += 1
+            else:
+                context_rounds = 0
+            if context_rounds > int(state.get("max_context_rounds", 3) or 3):
+                needs_more = False
+            return {
+                "current_units": clean_units,
+                "needs_more_context": needs_more,
+                "context_rounds": context_rounds,
+            }
+
+        return _node(logger, "segment_window", state, run, progress_callback=progress_callback)
+
+    def extract_meeting_summary(state: ShortTermGraphState) -> dict[str, Any]:
+        return _extract_node(
+            state,
+            logger,
+            agents.meeting,
+            "meeting_window",
+            "meeting_summary",
+            "只產生當場 meeting summary / key_points / open_questions 候選。summary 不得包含 action item 細節，除非它是會議主軸。",
+            progress_callback=progress_callback,
+        )
+
+    def extract_action_items(state: ShortTermGraphState) -> dict[str, Any]:
+        return _extract_node(
+            state,
+            logger,
+            agents.action,
+            "action_items",
+            "action_items",
+            "只產生 action item create/update 候選。必須比對 current action item index；更新既有任務必須引用既有 item_id。只有明確新任務才使用 operation=create 並留空 item_id。",
+            progress_callback=progress_callback,
+        )
+
+    def extract_method_changes(state: ShortTermGraphState) -> dict[str, Any]:
+        return _extract_node(
+            state,
+            logger,
+            agents.method,
+            "method_changes",
+            "method_changes",
+            "只處理方法、流程、實驗策略、資料處理方式的變更，不處理一般摘要或單純待辦。",
+            progress_callback=progress_callback,
+        )
+
+    def extract_experiment_todos(state: ShortTermGraphState) -> dict[str, Any]:
+        return _extract_node(
+            state,
+            logger,
+            agents.experiment,
+            "experiment_todos",
+            "experiment_todos",
+            "只處理實驗執行 TODO，不處理一般行政待辦。若 related action item 明確存在才填 related_action_item_ids。",
+            progress_callback=progress_callback,
+        )
+
+    def extract_next_focus(state: ShortTermGraphState) -> dict[str, Any]:
+        def run_extract() -> dict[str, Any]:
+            result = _extract_candidates(
+                state,
+                logger,
+                agents.focus,
+                "next_meeting_focus",
+                "next_meeting_focus",
+                "只產生下次會議或近期追蹤焦點，不把 open questions 原封不動塞入。",
+            )
+            raw = list(state.get("raw_candidates", [])) + result
+            window = state.get("current_window", {})
+            processed_until = max(
+                int(state.get("processed_until_line", 0) or 0),
+                int(window.get("forward_end_line", 0) or 0)
+                if isinstance(window, dict)
+                else 0,
+            )
+            return {
+                "raw_candidates": raw,
+                "processed_until_line": processed_until,
+            }
+
+        return _node(logger, "extract_next_focus", state, run_extract, progress_callback=progress_callback)
+
+    def verify_all_candidates(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            verified, rejected, rejection_counts = verify_candidates(
+                list(state.get("raw_candidates", [])),
+                current_memory=state.get("current_memory", {}),
+                allowed_line_numbers={
+                    int(line) for line in state.get("read_line_numbers", [])
+                },
+            )
+            logger.candidates(
+                raw=list(state.get("raw_candidates", [])),
+                verified=verified,
+                rejected=rejected,
+            )
+            report = dict(state.get("report", {}))
+            report["rejection_counts"] = rejection_counts
+            return {
+                "verified_candidates": verified,
+                "rejected_candidates": rejected,
+                "report": report,
+            }
+
+        return _node(logger, "verify_candidates", state, run, progress_callback=progress_callback)
+
+    def reduce_patch(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            patch = reduce_candidates(list(state.get("verified_candidates", [])))
+            return {"final_patch": patch}
+
+        return _node(logger, "reduce_patch", state, run, progress_callback=progress_callback)
+
+    def normalize_and_persist(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            final_memory = normalize_memory(
+                updated_memory=state.get("final_patch", {}),
+                previous_memory=state.get("current_memory", {}),
+                meeting_id=str(state["meeting_id"]),
+                source_file=str(state["source_file"]),
+            )
+            if not bool(state.get("dry_run", False)):
+                save_memory_to_sqlite(db_path, final_memory)
+            return {"final_memory": final_memory, "persisted": not state.get("dry_run", False)}
+
+        return _node(logger, "normalize_and_persist", state, run, progress_callback=progress_callback)
+
+    def final_report(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            report = _build_report(state, logger.run_id)
+            logger.final_outputs(
+                final_patch=state.get("final_patch", {}),
+                final_memory=state.get("final_memory", {}),
+                report=report,
+            )
+            return {"report": report}
+
+        return _node(logger, "final_report", state, run, progress_callback=progress_callback)
+
+    graph.add_node("load_inputs", load_inputs)
+    graph.add_node("plan_next_window", plan_next_window)
+    graph.add_node("read_window", read_window)
+    graph.add_node("segment_window", segment_window)
+    graph.add_node("extract_meeting_summary", extract_meeting_summary)
+    graph.add_node("extract_action_items", extract_action_items)
+    graph.add_node("extract_method_changes", extract_method_changes)
+    graph.add_node("extract_experiment_todos", extract_experiment_todos)
+    graph.add_node("extract_next_focus", extract_next_focus)
+    graph.add_node("verify_candidates", verify_all_candidates)
+    graph.add_node("reduce_patch", reduce_patch)
+    graph.add_node("normalize_and_persist", normalize_and_persist)
+    graph.add_node("final_report", final_report)
+
+    graph.set_entry_point("load_inputs")
+    graph.add_edge("load_inputs", "plan_next_window")
+    graph.add_edge("plan_next_window", "read_window")
+    graph.add_edge("read_window", "segment_window")
+    graph.add_conditional_edges(
+        "segment_window",
+        _route_after_segment,
+        {
+            "more_context": "plan_next_window",
+            "extract": "extract_meeting_summary",
+        },
+    )
+    graph.add_edge("extract_meeting_summary", "extract_action_items")
+    graph.add_edge("extract_action_items", "extract_method_changes")
+    graph.add_edge("extract_method_changes", "extract_experiment_todos")
+    graph.add_edge("extract_experiment_todos", "extract_next_focus")
+    graph.add_conditional_edges(
+        "extract_next_focus",
+        _route_after_window,
+        {
+            "next_window": "plan_next_window",
+            "verify": "verify_candidates",
+        },
+    )
+    graph.add_edge("verify_candidates", "reduce_patch")
+    graph.add_edge("reduce_patch", "normalize_and_persist")
+    graph.add_edge("normalize_and_persist", "final_report")
+    graph.add_edge("final_report", END)
+    return graph
+
+
+def _extract_node(
+    state: ShortTermGraphState,
+    logger: ResearchLogger,
+    agent: Any,
+    section: str,
+    agent_kind: str,
+    instructions: str,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    node_name = f"extract_{section}"
+
+    def run() -> dict[str, Any]:
+        candidates = _extract_candidates(
+            state,
+            logger,
+            agent,
+            section,
+            agent_kind,
+            instructions,
+        )
+        return {"raw_candidates": list(state.get("raw_candidates", [])) + candidates}
+
+    return _node(
+        logger,
+        node_name,
+        state,
+        run,
+        progress_callback=progress_callback,
+    )
+
+
+def _extract_candidates(
+    state: ShortTermGraphState,
+    logger: ResearchLogger,
+    agent: Any,
+    section: str,
+    agent_kind: str,
+    instructions: str,
+) -> list[dict[str, Any]]:
+    prompt = build_extraction_prompt(
+        agent_kind=agent_kind,
+        state=state,
+        instructions=instructions,
+    )
+    result = agent.run(
+        prompt=prompt,
+        logger=logger,
+        input_summary=_input_summary(state),
+    )
+    return flatten_agent_candidates(agent.name, section, result.parsed)
+
+
+def _route_after_segment(state: ShortTermGraphState) -> str:
+    return "more_context" if state.get("needs_more_context") else "extract"
+
+
+def _route_after_window(state: ShortTermGraphState) -> str:
+    processed = int(state.get("processed_until_line", 0) or 0)
+    total = int(state.get("transcript_line_count", 0) or 0)
+    return "next_window" if processed < total else "verify"
+
+
+def _sanitize_plan(
+    raw: dict[str, Any],
+    *,
+    processed_until: int,
+    total_lines: int,
+    chunk_size: int,
+    max_lookback: int,
+    max_lookahead: int,
+) -> dict[str, Any]:
+    default_start = min(total_lines, processed_until + 1) if total_lines else 1
+    start = _safe_int(raw.get("start_line"), default_start)
+    if start <= processed_until:
+        start = default_start
+    start = max(1, min(total_lines or 1, start))
+    end = _safe_int(raw.get("end_line"), start + chunk_size - 1)
+    end = max(start, min(total_lines or start, end))
+    if end - start + 1 > chunk_size:
+        end = min(total_lines or end, start + chunk_size - 1)
+    lookback = max(0, min(max_lookback, _safe_int(raw.get("lookback_lines"), 0)))
+    lookahead = max(0, min(max_lookahead, _safe_int(raw.get("lookahead_lines"), 0)))
+    risk = str(raw.get("risk", "medium")).strip().lower()
+    if risk not in {"low", "medium", "high"}:
+        risk = "medium"
+    return {
+        "start_line": start,
+        "end_line": end,
+        "lookback_lines": lookback,
+        "lookahead_lines": lookahead,
+        "reason": str(raw.get("reason", "default sanitized plan")).strip(),
+        "risk": risk,
+    }
+
+
+def _node(
+    logger: ResearchLogger,
+    name: str,
+    state: ShortTermGraphState,
+    fn: Any,
+    *,
+    summary: dict[str, Any] | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    started = timed()
+    logger.graph_event(node=name, event="start", summary=summary or {})
+    _emit_progress(
+        progress_callback,
+        state=state,
+        node=name,
+        event="start",
+        summary=summary or {},
+    )
+    try:
+        updates = fn()
+        merged = dict(state)
+        merged.update(updates)
+        node_summary = _node_summary(name, merged)
+        duration = elapsed(started)
+        logger.state_snapshot(name, merged)
+        logger.graph_event(
+            node=name,
+            event="end",
+            duration_seconds=duration,
+            summary=node_summary,
+        )
+        _emit_progress(
+            progress_callback,
+            state=merged,
+            node=name,
+            event="end",
+            summary=node_summary,
+            duration_seconds=duration,
+        )
+        return updates
+    except Exception as exc:
+        duration = elapsed(started)
+        logger.graph_event(
+            node=name,
+            event="end",
+            status="error",
+            duration_seconds=duration,
+            summary={"error": str(exc)},
+        )
+        _emit_progress(
+            progress_callback,
+            state=state,
+            node=name,
+            event="error",
+            summary={"error": str(exc)},
+            duration_seconds=duration,
+        )
+        raise
+
+
+def _emit_progress(
+    callback: Callable[[dict[str, Any]], None] | None,
+    *,
+    state: dict[str, Any],
+    node: str,
+    event: str,
+    summary: dict[str, Any],
+    duration_seconds: float | None = None,
+) -> None:
+    if callback is None:
+        return
+    try:
+        callback(
+            {
+                "run_id": state.get("run_id", ""),
+                "meeting_id": state.get("meeting_id", ""),
+                "node": node,
+                "event": event,
+                "duration_seconds": duration_seconds,
+                "processed_until_line": state.get("processed_until_line", 0),
+                "transcript_line_count": state.get("transcript_line_count", 0),
+                "line_range": _line_range(state.get("current_window", {})),
+                "raw_candidates": len(state.get("raw_candidates", [])),
+                "verified_candidates": len(state.get("verified_candidates", [])),
+                "rejected_candidates": len(state.get("rejected_candidates", [])),
+                "summary": summary,
+            }
+        )
+    except Exception:
+        return
+
+
+def _node_summary(name: str, state: dict[str, Any]) -> dict[str, Any]:
+    if name == "segment_window":
+        return {
+            "units": len(state.get("current_units", [])),
+            "needs_more_context": bool(state.get("needs_more_context")),
+        }
+    if name.startswith("extract_"):
+        return {"raw_candidates": len(state.get("raw_candidates", []))}
+    if name == "verify_candidates":
+        return {
+            "verified": len(state.get("verified_candidates", [])),
+            "rejected": len(state.get("rejected_candidates", [])),
+        }
+    if name == "reduce_patch":
+        return {
+            key: len(value) if isinstance(value, list) else 1
+            for key, value in state.get("final_patch", {}).items()
+        }
+    if name == "normalize_and_persist":
+        return {
+            "persisted": bool(state.get("persisted")),
+            "memory": memory_summary(state.get("final_memory", {})),
+        }
+    return {}
+
+
+def _input_summary(state: dict[str, Any]) -> dict[str, Any]:
+    window = state.get("current_window", {})
+    return {
+        "meeting_id": state.get("meeting_id"),
+        "processed_until_line": state.get("processed_until_line"),
+        "transcript_line_count": state.get("transcript_line_count"),
+        "line_range": _line_range(window),
+        "memory": memory_summary(state.get("current_memory", {})),
+        "raw_candidates": len(state.get("raw_candidates", [])),
+    }
+
+
+def _line_range(window: Any) -> str:
+    if not isinstance(window, dict):
+        return ""
+    start = window.get("context_start_line")
+    end = window.get("context_end_line")
+    if not start or not end:
+        return ""
+    return f"L{start}-L{end}"
+
+
+def _window_line_set(window: Any) -> set[int]:
+    if not isinstance(window, dict):
+        return set()
+    output: set[int] = set()
+    for item in window.get("items", []):
+        if not isinstance(item, dict):
+            continue
+        try:
+            output.add(int(item.get("line_number", 0) or 0))
+        except (TypeError, ValueError):
+            continue
+    return output
+
+
+def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
+    rejected = state.get("rejected_candidates", [])
+    rejection_counts = Counter(
+        reason
+        for row in rejected
+        if isinstance(row, dict)
+        for reason in row.get("rejection_reasons", [])
+    )
+    final_memory = state.get("final_memory", {})
+    final_patch = state.get("final_patch", {})
+    warnings: list[str] = []
+    if rejection_counts.get("missing_evidence", 0):
+        warnings.append("Some candidates were rejected because evidence was missing.")
+    if rejection_counts.get("low_confidence", 0):
+        warnings.append("Some candidates were rejected because confidence was low.")
+    if not final_patch:
+        warnings.append("No verified candidate produced a final patch.")
+    return {
+        "run_id": run_id,
+        "meeting_id": state.get("meeting_id", ""),
+        "processed_until_line": state.get("processed_until_line", 0),
+        "transcript_line_count": state.get("transcript_line_count", 0),
+        "candidate_counts": {
+            "raw": len(state.get("raw_candidates", [])),
+            "verified": len(state.get("verified_candidates", [])),
+            "rejected": len(state.get("rejected_candidates", [])),
+        },
+        "rejection_counts": dict(rejection_counts),
+        "final": {
+            "memory_version": final_memory.get("memory_version", ""),
+            "meeting_window": len(final_memory.get("meeting_window", []))
+            if isinstance(final_memory, dict)
+            else 0,
+            "action_items": len(final_memory.get("action_items", []))
+            if isinstance(final_memory, dict)
+            else 0,
+            "patch_sections": sorted(final_patch.keys())
+            if isinstance(final_patch, dict)
+            else [],
+        },
+        "warnings": warnings,
+    }
+
+
+def _safe_int(value: Any, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
