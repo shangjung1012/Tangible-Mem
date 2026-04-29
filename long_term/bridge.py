@@ -434,11 +434,13 @@ def review_incremental_candidates(
         topic_tokens = _candidate_tokens(" ".join(related_topics))
         object_tokens = [*content_tokens, *evidence_tokens, *topic_tokens]
         checklist_like = _is_checklist_like(content)
+        short_evidence = False
 
         if not evidence_tokens:
             reviewed_importance = normalize_importance_score(reviewed_importance - 0.06)
             adjustments.append("missing_evidence:-0.06")
-        elif len(evidence_tokens) < 4:
+        elif len(evidence_tokens) <= 4:
+            short_evidence = True
             reviewed_importance = normalize_importance_score(reviewed_importance - 0.03)
             adjustments.append("short_evidence:-0.03")
 
@@ -472,6 +474,19 @@ def review_incremental_candidates(
         if low_value_issue:
             reviewed_importance = normalize_importance_score(reviewed_importance - 0.10)
             adjustments.append("low_value_issue:-0.10")
+        if short_evidence and issue_overlap < 0.08:
+            short_evidence_caps = {
+                "argument": 0.50,
+                "open_question": 0.50,
+                "todo": 0.50,
+                "result": 0.55,
+                "method_change": 0.55,
+                "decision": 0.55,
+            }
+            cap = short_evidence_caps.get(obj_type)
+            if cap is not None and reviewed_importance > cap:
+                reviewed_importance = normalize_importance_score(cap)
+                adjustments.append(f"weak_evidence_cap:{cap:.2f}")
 
         if (
             linked_issue is None

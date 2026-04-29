@@ -62,6 +62,8 @@ class IncrementalExtractionResult:
 class ToolLoopState:
     active_forward_span: ReadSpanRecord | None = None
     forward_span_issue_ids: list[str] = field(default_factory=list)
+    pending_finalization: bool = False
+    final_span: ReadSpanRecord | None = None
 
 
 def next_forward_span(
@@ -194,6 +196,65 @@ def _select_recent_span(
         if not preferred_purpose or span.purpose == preferred_purpose:
             return span
     return recent_reads[-1] if recent_reads else None
+
+
+def _tokenize_overlap_text(text: str) -> set[str]:
+    tokens: set[str] = set()
+    for chunk in re.findall(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]+", str(text or "")):
+        clean = chunk.strip().lower()
+        if not clean:
+            continue
+        tokens.add(clean)
+        if re.fullmatch(r"[\u4e00-\u9fff]+", clean) and len(clean) > 1:
+            tokens.update(clean)
+    return tokens
+
+
+def _token_overlap_score(left: set[str], right: set[str]) -> float:
+    if not left or not right:
+        return 0.0
+    return len(left & right) / len(left | right)
+
+
+def _resolve_current_span_issue_for_object(
+    *,
+    db_path: Path,
+    transcript_id: str,
+    tool_state: ToolLoopState,
+    content: str,
+    evidence: str,
+    related_topics: list[str],
+) -> str:
+    candidate_ids = [issue_id for issue_id in tool_state.forward_span_issue_ids if issue_id]
+    if len(candidate_ids) <= 1:
+        return candidate_ids[0] if candidate_ids else ""
+
+    issue_by_id = {
+        str(issue.get("issue_id") or ""): issue
+        for issue in load_issues(db_path, transcript_id)
+    }
+    object_tokens = _tokenize_overlap_text(
+        f"{content}\n{evidence}\n{' '.join(related_topics)}"
+    )
+    scored: list[tuple[float, str]] = []
+    for issue_id in candidate_ids:
+        issue = issue_by_id.get(issue_id)
+        if issue is None:
+            continue
+        issue_tokens = _tokenize_overlap_text(
+            f"{issue.get('title', '')}\n{issue.get('summary', '')}"
+        )
+        score = _token_overlap_score(object_tokens, issue_tokens)
+        scored.append((score, issue_id))
+
+    if not scored:
+        return ""
+    scored.sort(reverse=True)
+    best_score, best_issue_id = scored[0]
+    second_score = scored[1][0] if len(scored) > 1 else 0.0
+    if best_score >= 0.12 and (best_score - second_score) >= 0.03:
+        return best_issue_id
+    return ""
 
 
 def _bound_line_ids_to_recent_span(
@@ -400,6 +461,57 @@ def _build_initial_prompt(
             "forward_scan span in the same response when the local context is clear."
         )
     return prompt
+
+
+def _build_finalization_prompt(
+    *,
+    transcript_id: str,
+    max_line: int,
+    tool_state: ToolLoopState,
+    had_tool_errors: bool = False,
+) -> str:
+    span = tool_state.final_span or tool_state.active_forward_span
+    span_text = (
+        f"{span.start_line}-{span.end_line}"
+        if span is not None
+        else f"ending at line {max_line}"
+    )
+    active_issue_ids = ", ".join(tool_state.forward_span_issue_ids) or "(none yet)"
+    prompt = (
+        f"forward_scan is complete for transcript {transcript_id} at line {max_line}. "
+        f"You have already read the final span {span_text}. "
+        "Do not call read_transcript again. "
+        "Finish any remaining issue updates and L1 object creations for that final span now, "
+        "in one response if possible. "
+        f"Active issue_ids from that final span: {active_issue_ids}. "
+        "If more than one issue is active, every create_l1_object must include the explicit issue_id."
+    )
+    if had_tool_errors:
+        prompt += (
+            " The previous response had tool-call errors because an object was missing a usable "
+            "issue_id/issue_key. Fix those links now."
+        )
+    prompt += " If nothing remains, return no tool calls."
+    return prompt
+
+
+def _post_tool_round_action(
+    *,
+    max_forward_line: int,
+    max_line: int,
+    tool_state: ToolLoopState,
+    had_forward_read: bool,
+    had_tool_errors: bool,
+) -> str:
+    if not should_stop(max_forward_line, max_line):
+        return "continue"
+    if not tool_state.pending_finalization:
+        return "complete"
+    if had_forward_read:
+        return "finalize_next_round"
+    if had_tool_errors:
+        return "retry_finalization"
+    return "complete"
 
 
 def _build_config(
@@ -717,6 +829,9 @@ def _execute_tool_call(
                 end_line=int(span["end_line"]),
                 max_line=max_line,
             )
+            if purpose == "forward_scan" and new_progress >= max_line:
+                tool_state.pending_finalization = True
+                tool_state.final_span = tool_state.active_forward_span
             return (
                 {
                     "output": span,
@@ -798,11 +913,25 @@ def _execute_tool_call(
             obj_type = str(args.get("type") or "decision").lower()
             if obj_type not in MEMORY_OBJ_TYPES:
                 obj_type = "decision"
+            content = str(args.get("content") or "").strip()
+            evidence = str(args.get("evidence") or "").strip()
+            related_topics = _safe_str_list(args.get("related_topics", []))
             issue_ref = _sanitize_issue_id_ref(args.get("issue_id"))
             issue_key = str(args.get("issue_key") or "").strip()
             if not issue_ref and not issue_key:
                 if len(tool_state.forward_span_issue_ids) == 1:
                     issue_ref = tool_state.forward_span_issue_ids[0]
+                elif len(tool_state.forward_span_issue_ids) > 1:
+                    issue_ref = _resolve_current_span_issue_for_object(
+                        db_path=db_path,
+                        transcript_id=transcript_id,
+                        tool_state=tool_state,
+                        content=content,
+                        evidence=evidence,
+                        related_topics=related_topics,
+                    )
+                    if issue_ref:
+                        issue_key = ""
                 elif not tool_state.forward_span_issue_ids and tool_state.active_forward_span is not None:
                     span = tool_state.active_forward_span
                     return {
@@ -813,7 +942,7 @@ def _execute_tool_call(
                             "then retry create_l1_object with that issue_id."
                         )
                     }, max_forward_line
-                elif len(tool_state.forward_span_issue_ids) > 1:
+                if len(tool_state.forward_span_issue_ids) > 1 and not issue_ref and not issue_key:
                     return {
                         "error": (
                             "create_l1_object requires an explicit issue_id or issue_key because "
@@ -840,10 +969,10 @@ def _execute_tool_call(
                 }, max_forward_line
             raw_object = {
                 "type": obj_type,
-                "content": str(args.get("content") or "").strip(),
+                "content": content,
                 "importance": _safe_float(args.get("importance"), 0.5),
-                "evidence": str(args.get("evidence") or "").strip(),
-                "related_topics": _safe_str_list(args.get("related_topics", [])),
+                "evidence": evidence,
+                "related_topics": related_topics,
             }
             obj_id = save_l1_object(
                 db_path=db_path,
@@ -1060,6 +1189,8 @@ def extract_incremental_l1_objects(
                     contents.append(model_content)
                 response_parts: list[types.Part] = []
                 summaries: list[str] = []
+                had_tool_errors = False
+                had_forward_read = False
                 for function_call in function_calls:
                     previous_forward_line = max_forward_line
                     payload, max_forward_line = _execute_tool_call(
@@ -1073,6 +1204,11 @@ def extract_incremental_l1_objects(
                         tool_state=tool_state,
                         api_key=api_key,
                         embed_cache=issue_embed_cache,
+                    )
+                    had_tool_errors = had_tool_errors or ("error" in payload)
+                    had_forward_read = had_forward_read or (
+                        (function_call.name or "") == "read_transcript"
+                        and str((function_call.args or {}).get("purpose") or "forward_scan") == "forward_scan"
                     )
                     summaries.append(
                         _tool_progress_summary(
@@ -1097,6 +1233,48 @@ def extract_incremental_l1_objects(
                         f"raw_l1={len(load_l1_objects(db_path, transcript_id))}"
                     ),
                 )
+                post_round_action = _post_tool_round_action(
+                    max_forward_line=max_forward_line,
+                    max_line=max_line,
+                    tool_state=tool_state,
+                    had_forward_read=had_forward_read,
+                    had_tool_errors=had_tool_errors,
+                )
+                if post_round_action in {"finalize_next_round", "retry_finalization"}:
+                    contents.append(
+                        types.Content(
+                            role="user",
+                            parts=[
+                                types.Part(
+                                    text=_build_finalization_prompt(
+                                        transcript_id=transcript_id,
+                                        max_line=max_line,
+                                        tool_state=tool_state,
+                                        had_tool_errors=had_tool_errors,
+                                    )
+                                )
+                            ],
+                        )
+                    )
+                    _progress_log(
+                        progress,
+                        (
+                            f"[incremental] round {round_index}/{max_tool_rounds}: "
+                            "forward_scan reached the final line; "
+                            "entering finalization mode for the last span."
+                        ),
+                    )
+                    continue
+                if post_round_action == "complete":
+                    tool_state.pending_finalization = False
+                    _progress_log(
+                        progress,
+                        (
+                            f"[incremental] completed scan at line "
+                            f"{max_forward_line}/{max_line}."
+                        ),
+                    )
+                    break
                 if (
                     round_index % CONTEXT_RESET_INTERVAL_ROUNDS == 0
                     or len(contents) >= MAX_CONTENT_ITEMS_BEFORE_RESET

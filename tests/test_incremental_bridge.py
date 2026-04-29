@@ -21,6 +21,7 @@ from bridge import (  # noqa: E402
 from gemini_incremental_extractor import (  # noqa: E402
     ReadSpanRecord,
     ToolLoopState,
+    _build_finalization_prompt,
     _build_initial_prompt,
     _bound_line_ids_to_recent_span,
     _compact_issue_line_ids,
@@ -29,6 +30,7 @@ from gemini_incremental_extractor import (  # noqa: E402
     _infer_issue_purpose,
     _max_retry_attempts_for_key_count,
     _min_request_interval_for_key_count,
+    _post_tool_round_action,
     _sanitize_issue_id_ref,
     auto_max_tool_rounds,
     build_function_response_part,
@@ -643,6 +645,24 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(reviewed[0]["importance"], 0.55)
         self.assertIn("low_value_cap:0.55", reviewed[0]["_candidate_review"]["adjustments"])
 
+    def test_candidate_review_caps_short_evidence_method_change(self) -> None:
+        raw_objects = [
+            {
+                "type": "method_change",
+                "content": "討論了將「意圖」一詞替換為「目標」的術語精煉。",
+                "importance": 0.82,
+                "evidence": "That's right. Uh.",
+                "related_topics": [],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(len(reviewed), 1)
+        self.assertEqual(stats["dropped_weak"], 0)
+        self.assertEqual(reviewed[0]["importance"], 0.55)
+        self.assertIn("weak_evidence_cap:0.55", reviewed[0]["_candidate_review"]["adjustments"])
+
     def test_candidate_review_caps_low_value_meeting_move_result(self) -> None:
         raw_objects = [
             {
@@ -918,6 +938,124 @@ class IncrementalBridgeTests(unittest.TestCase):
         )
 
         self.assertEqual(payload["output"]["issue_id"], "ISS-Unit001-demo")
+
+    def test_create_l1_object_auto_links_best_matching_issue_from_current_span(self) -> None:
+        transcript = "\n".join(f"[S]: line {index}" for index in range(1, 41))
+        seed_transcript_lines(self.db_path, self.transcript_id, transcript)
+        upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="迴聲消除作為下一步",
+            issue_id="ISS-Unit001-echo",
+            issue_key="echo_next_step",
+            status="open",
+            importance=0.7,
+            summary="ASR 需要迴聲消除來改善表現。",
+        )
+        upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="主轉錄通道版本",
+            issue_id="ISS-Unit001-master",
+            issue_key="master_channelized_version",
+            status="open",
+            importance=0.7,
+            summary="未來修改都在通道化版本中進行。",
+        )
+
+        payload, _ = _execute_tool_call(
+            db_path=self.db_path,
+            transcript_id=self.transcript_id,
+            function_call=types.FunctionCall(
+                name="create_l1_object",
+                args={
+                    "type": "result",
+                    "content": "迴聲消除是改善 ASR 的下一個關鍵步驟。",
+                    "importance": 0.8,
+                    "evidence": "echo cancellation is the critical next step for ASR",
+                    "related_topics": ["ASR", "echo cancellation"],
+                },
+            ),
+            max_line=40,
+            max_forward_line=20,
+            chunk_size=20,
+            recent_reads=[],
+            tool_state=ToolLoopState(
+                active_forward_span=ReadSpanRecord(
+                    purpose="forward_scan",
+                    start_line=1,
+                    end_line=20,
+                ),
+                forward_span_issue_ids=["ISS-Unit001-echo", "ISS-Unit001-master"],
+            ),
+        )
+
+        self.assertEqual(payload["output"]["issue_id"], "ISS-Unit001-echo")
+
+    def test_finalization_prompt_mentions_explicit_issue_ids(self) -> None:
+        prompt = _build_finalization_prompt(
+            transcript_id="Unit001",
+            max_line=220,
+            tool_state=ToolLoopState(
+                active_forward_span=ReadSpanRecord(
+                    purpose="forward_scan",
+                    start_line=181,
+                    end_line=220,
+                ),
+                final_span=ReadSpanRecord(
+                    purpose="forward_scan",
+                    start_line=181,
+                    end_line=220,
+                ),
+                forward_span_issue_ids=["ISS-Unit001-a", "ISS-Unit001-b"],
+                pending_finalization=True,
+            ),
+            had_tool_errors=True,
+        )
+
+        self.assertIn("Do not call read_transcript again", prompt)
+        self.assertIn("ISS-Unit001-a, ISS-Unit001-b", prompt)
+        self.assertIn("missing a usable issue_id/issue_key", prompt)
+
+    def test_post_tool_round_action_enters_and_completes_finalization(self) -> None:
+        state = ToolLoopState(
+            pending_finalization=True,
+            final_span=ReadSpanRecord(
+                purpose="forward_scan",
+                start_line=181,
+                end_line=220,
+            ),
+        )
+        self.assertEqual(
+            _post_tool_round_action(
+                max_forward_line=220,
+                max_line=220,
+                tool_state=state,
+                had_forward_read=True,
+                had_tool_errors=False,
+            ),
+            "finalize_next_round",
+        )
+        self.assertEqual(
+            _post_tool_round_action(
+                max_forward_line=220,
+                max_line=220,
+                tool_state=state,
+                had_forward_read=False,
+                had_tool_errors=True,
+            ),
+            "retry_finalization",
+        )
+        self.assertEqual(
+            _post_tool_round_action(
+                max_forward_line=220,
+                max_line=220,
+                tool_state=state,
+                had_forward_read=False,
+                had_tool_errors=False,
+            ),
+            "complete",
+        )
 
     def test_auto_tool_rounds_scales_with_transcript_length(self) -> None:
         self.assertEqual(auto_max_tool_rounds(5746, 40), 1192)
