@@ -22,6 +22,14 @@ from short_term.reducer import reduce_candidates  # noqa: E402
 from short_term.research_logger import ResearchLogger  # noqa: E402
 from short_term.langgraph_update import _build_graph  # noqa: E402
 from short_term.genai_retry import call_with_retry  # noqa: E402
+from short_term.memory_tools import (  # noqa: E402
+    AgentToolContext,
+    AgentToolPolicy,
+    read_short_term_memory_tool,
+    write_memory_candidate_tool,
+)
+from short_term.sqlite_store import save_memory_to_sqlite  # noqa: E402
+from short_term.staging_store import load_staged_candidates  # noqa: E402
 from short_term.transcript_store import import_transcript_to_sqlite  # noqa: E402
 from short_term.verifier import verify_candidates  # noqa: E402
 
@@ -130,7 +138,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(events[0]["attempt"], 1)
         self.assertEqual(events[0]["operation_name"], "test operation")
 
-    def test_verifier_rejects_missing_evidence_and_unknown_update_id(self) -> None:
+    def test_verifier_warns_missing_evidence_and_rejects_unknown_update_id(self) -> None:
         current_memory = {
             "action_items": [
                 {
@@ -180,10 +188,10 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             allowed_line_numbers={1, 2, 3},
         )
 
-        self.assertEqual(verified, [])
-        self.assertEqual(len(rejected), 2)
+        self.assertEqual(len(verified), 1)
+        self.assertEqual(verified[0]["warnings"], ["missing_evidence"])
+        self.assertEqual(len(rejected), 1)
         self.assertEqual(counts["update_unknown_id"], 1)
-        self.assertEqual(counts["missing_evidence"], 1)
 
     def test_verifier_accepts_valid_candidates_and_reducer_builds_patch(self) -> None:
         candidates = [
@@ -230,6 +238,41 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertNotIn("confidence", patch["action_items"][0])
         self.assertNotIn("evidence", patch["action_items"][0])
         self.assertEqual(patch["next_meeting_focus"], ["追蹤實驗資料格式"])
+
+    def test_verifier_rejects_duplicate_create(self) -> None:
+        candidates = [
+            {
+                "agent": "action_item_agent",
+                "section": "action_items",
+                "candidate_id": "dup",
+                "payload": {
+                    "item_id": "",
+                    "title": "整理實驗資料",
+                    "detail": "duplicate",
+                    "proposer": "unknown",
+                    "owner": "unknown",
+                    "status": "open",
+                    "priority": "medium",
+                    "dependencies": [],
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={
+                "action_items": [{"item_id": "A001", "title": "整理實驗資料"}],
+                "method_changes": [],
+                "experiment_todos": [],
+            },
+            allowed_line_numbers=set(),
+        )
+
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(counts["duplicate_create"], 1)
 
     def test_graph_event_jsonl_is_valid_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -304,6 +347,70 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(state["final_patch"]["next_meeting_focus"], ["準備實驗資料"])
             self.assertEqual(state["final_memory"]["meeting_history_ids"], ["Bmr003"])
             self.assertFalse(state["persisted"])
+
+    def test_memory_tools_read_sqlite_and_write_staging(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "memory.db"
+            save_memory_to_sqlite(
+                db_path,
+                {
+                    "memory_version": 1,
+                    "last_updated_utc": "2026-04-30T00:00:00Z",
+                    "last_updated_meeting_id": "Bmr000",
+                    "meeting_history_ids": ["Bmr000"],
+                    "meeting_window": [],
+                    "action_items": [
+                        {
+                            "item_id": "A001",
+                            "title": "Existing task",
+                            "detail": "",
+                            "proposer": "unknown",
+                            "owner": "unknown",
+                            "status": "open",
+                            "priority": "medium",
+                            "dependencies": [],
+                            "created_meeting_id": "Bmr000",
+                            "last_updated_meeting_id": "Bmr000",
+                            "history": [],
+                        }
+                    ],
+                    "method_changes": [],
+                    "experiment_todos": [],
+                    "next_meeting_focus": [],
+                },
+            )
+            context = AgentToolContext(
+                db_path=db_path,
+                run_id="run_Bmr004",
+                meeting_id="Bmr004",
+                policy=AgentToolPolicy(
+                    agent_name="action_item_agent",
+                    read_sections={"action_items"},
+                    required_read_sections={"action_items"},
+                    write_sections={"action_items"},
+                ),
+            )
+
+            read_result = read_short_term_memory_tool(context, section="action_items")
+            write_result = write_memory_candidate_tool(
+                context,
+                operation="update",
+                target_section="action_items",
+                target_id="A001",
+                candidate_payload={"item_id": "A001", "title": "Existing task"},
+                confidence=0.8,
+            )
+            staged = load_staged_candidates(
+                db_path,
+                run_id="run_Bmr004",
+                agent_name="action_item_agent",
+                target_section="action_items",
+            )
+
+            self.assertTrue(read_result["ok"])
+            self.assertTrue(write_result["ok"])
+            self.assertEqual(len(staged), 1)
+            self.assertEqual(staged[0]["target_id"], "A001")
 
 
 class _FakeAgent:

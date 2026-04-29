@@ -17,10 +17,12 @@ try:
     )
     from .genai_client import GenAIConfig, create_genai_client
     from .graph_state import ShortTermGraphState, memory_summary
+    from .memory_tools import AgentToolContext, AgentToolPolicy
     from .normalizer import normalize_memory
     from .reducer import reduce_candidates
     from .research_logger import ResearchLogger, elapsed, timed
     from .sqlite_store import save_memory_to_sqlite
+    from .staging_store import clear_staging_for_run, load_staged_candidates
     from .transcript_store import load_transcript_lines
     from .verifier import verify_candidates
 except ImportError:  # pragma: no cover - script execution fallback
@@ -33,10 +35,12 @@ except ImportError:  # pragma: no cover - script execution fallback
     )
     from genai_client import GenAIConfig, create_genai_client
     from graph_state import ShortTermGraphState, memory_summary
+    from memory_tools import AgentToolContext, AgentToolPolicy
     from normalizer import normalize_memory
     from reducer import reduce_candidates
     from research_logger import ResearchLogger, elapsed, timed
     from sqlite_store import save_memory_to_sqlite
+    from staging_store import clear_staging_for_run, load_staged_candidates
     from transcript_store import load_transcript_lines
     from verifier import verify_candidates
 
@@ -84,6 +88,7 @@ def run_short_term_langgraph_update(
             "max_lookahead_lines": max_lookahead_lines,
         }
     )
+    clear_staging_for_run(db_path, logger.run_id)
 
     client = create_genai_client(client_config)
     agents = ShortTermAgentSuite(client=client, model_name=model_name)
@@ -111,8 +116,9 @@ def run_short_term_langgraph_update(
         "processed_until_line": 0,
         "planner_history": [],
         "context_rounds": 0,
-        "raw_candidates": [],
-        "verified_candidates": [],
+            "raw_candidates": [],
+            "tool_reads": {},
+            "verified_candidates": [],
         "rejected_candidates": [],
         "final_patch": {},
         "final_memory": {},
@@ -280,7 +286,7 @@ def _build_graph(
             agents.meeting,
             "meeting_window",
             "meeting_summary",
-            "只產生當場 meeting summary / key_points / open_questions 候選。summary 不得包含 action item 細節，除非它是會議主軸。",
+            "只產生當場 meeting summary / key_points / open_questions 候選。使用 operation=create/update/no_op；summary 不得包含 action item 細節，除非它是會議主軸。每個與會議理解有關的 unit 都要判斷是否應更新 meeting_window；相關但不更新時用 no_op 記錄原因。",
             progress_callback=progress_callback,
         )
 
@@ -291,7 +297,7 @@ def _build_graph(
             agents.action,
             "action_items",
             "action_items",
-            "只產生 action item create/update 候選。必須比對 current action item index；更新既有任務必須引用既有 item_id。只有明確新任務才使用 operation=create 並留空 item_id。",
+            "只產生 action item create/update/close/no_op 候選。必須先讀 action_items；更新或關閉既有任務必須引用既有 item_id。只有明確新任務才使用 operation=create 並留空 item_id。每個含有承諾、待辦、進度、完成、取消、阻塞、負責人或下一步的 unit 都要處理；若不是 action item 或資訊不足，使用 no_op 記錄。",
             progress_callback=progress_callback,
         )
 
@@ -302,7 +308,7 @@ def _build_graph(
             agents.method,
             "method_changes",
             "method_changes",
-            "只處理方法、流程、實驗策略、資料處理方式的變更，不處理一般摘要或單純待辦。",
+            "只處理方法、流程、實驗策略、資料處理方式的 create/update/no_op，不處理一般摘要或單純待辦。更新既有方法變更必須引用既有 change_id。每個涉及 procedure、analysis choice、data processing、experiment strategy、evaluation criteria 的 unit 都要處理；若不構成方法變更，使用 no_op 記錄。",
             progress_callback=progress_callback,
         )
 
@@ -313,7 +319,7 @@ def _build_graph(
             agents.experiment,
             "experiment_todos",
             "experiment_todos",
-            "只處理實驗執行 TODO，不處理一般行政待辦。若 related action item 明確存在才填 related_action_item_ids。",
+            "只處理實驗執行 TODO 的 create/update/close/no_op，不處理一般行政待辦。更新或關閉既有 TODO 必須引用既有 todo_id。若 related action item 明確存在才填 related_action_item_ids。每個涉及 run experiment、prepare data、compare result、debug experiment、collect metric 的 unit 都要處理；若不構成實驗 TODO，使用 no_op 記錄。",
             progress_callback=progress_callback,
         )
 
@@ -325,7 +331,7 @@ def _build_graph(
                 agents.focus,
                 "next_meeting_focus",
                 "next_meeting_focus",
-                "只產生下次會議或近期追蹤焦點，不把 open questions 原封不動塞入。",
+                "只產生下次會議或近期追蹤焦點的 replace/create/no_op 候選，不把 open questions 原封不動塞入。每個含有下次要看、近期要追、未決但需要 follow-up 的 unit 都要處理；若只是一般問題或已在其他 section 處理，使用 no_op 記錄。",
             )
             raw = list(state.get("raw_candidates", [])) + result
             window = state.get("current_window", {})
@@ -488,12 +494,89 @@ def _extract_candidates(
         state=state,
         instructions=instructions,
     )
-    result = agent.run(
-        prompt=prompt,
-        logger=logger,
-        input_summary=_input_summary(state),
+    policy = _agent_tool_policy(str(agent.name), section)
+    tool_context = AgentToolContext(
+        db_path=Path(str(state["db_path"])),
+        run_id=str(state["run_id"]),
+        meeting_id=str(state["meeting_id"]),
+        policy=policy,
     )
+    try:
+        result = agent.run(
+            prompt=prompt,
+            logger=logger,
+            input_summary=_input_summary(state),
+            tool_context=tool_context,
+        )
+    except TypeError:
+        result = agent.run(
+            prompt=prompt,
+            logger=logger,
+            input_summary=_input_summary(state),
+        )
+    staged = load_staged_candidates(
+        Path(str(state["db_path"])),
+        run_id=str(state["run_id"]),
+        agent_name=str(agent.name),
+        target_section=section,
+    )
+    if staged:
+        existing_ids = {
+            str(candidate.get("candidate_id", ""))
+            for candidate in state.get("raw_candidates", [])
+            if isinstance(candidate, dict)
+        }
+        return [
+            candidate
+            for candidate in staged
+            if str(candidate.get("candidate_id", "")) not in existing_ids
+        ]
     return flatten_agent_candidates(agent.name, section, result.parsed)
+
+
+def _agent_tool_policy(agent_name: str, section: str) -> AgentToolPolicy:
+    policies = {
+        "meeting_summary_agent": AgentToolPolicy(
+            agent_name=agent_name,
+            read_sections={"overview", "meeting_window"},
+            required_read_sections={"meeting_window"},
+            write_sections={"meeting_window"},
+        ),
+        "action_item_agent": AgentToolPolicy(
+            agent_name=agent_name,
+            read_sections={"overview", "action_items"},
+            required_read_sections={"action_items"},
+            write_sections={"action_items"},
+        ),
+        "method_change_agent": AgentToolPolicy(
+            agent_name=agent_name,
+            read_sections={"overview", "method_changes"},
+            required_read_sections={"method_changes"},
+            write_sections={"method_changes"},
+        ),
+        "experiment_todo_agent": AgentToolPolicy(
+            agent_name=agent_name,
+            read_sections={"overview", "experiment_todos", "action_items"},
+            required_read_sections={"experiment_todos"},
+            write_sections={"experiment_todos"},
+        ),
+        "next_focus_agent": AgentToolPolicy(
+            agent_name=agent_name,
+            read_sections={
+                "overview",
+                "action_items",
+                "method_changes",
+                "experiment_todos",
+                "next_meeting_focus",
+            },
+            required_read_sections={"next_meeting_focus"},
+            write_sections={"next_meeting_focus"},
+        ),
+    }
+    return policies.get(
+        agent_name,
+        AgentToolPolicy(agent_name=agent_name, read_sections={"overview"}, write_sections={section}),
+    )
 
 
 def _route_after_segment(state: ShortTermGraphState) -> str:
@@ -704,8 +787,14 @@ def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
     final_memory = state.get("final_memory", {})
     final_patch = state.get("final_patch", {})
     warnings: list[str] = []
-    if rejection_counts.get("missing_evidence", 0):
-        warnings.append("Some candidates were rejected because evidence was missing.")
+    warning_counts = Counter(
+        warning
+        for row in state.get("verified_candidates", []) + state.get("rejected_candidates", [])
+        if isinstance(row, dict)
+        for warning in row.get("warnings", [])
+    )
+    if warning_counts.get("missing_evidence", 0):
+        warnings.append("Some candidates had no evidence and were kept for debug review.")
     if rejection_counts.get("low_confidence", 0):
         warnings.append("Some candidates were rejected because confidence was low.")
     if not final_patch:
@@ -721,6 +810,9 @@ def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
             "rejected": len(state.get("rejected_candidates", [])),
         },
         "rejection_counts": dict(rejection_counts),
+        "warning_counts": dict(warning_counts),
+        "staged_operations": _candidate_operation_counts(state.get("raw_candidates", [])),
+        "final_writes": _final_write_summary(state.get("verified_candidates", [])),
         "final": {
             "memory_version": final_memory.get("memory_version", ""),
             "meeting_window": len(final_memory.get("meeting_window", []))
@@ -735,6 +827,46 @@ def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
         },
         "warnings": warnings,
     }
+
+
+def _candidate_operation_counts(candidates: Any) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    if not isinstance(candidates, list):
+        return {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        payload = candidate.get("payload", {})
+        operation = str(
+            candidate.get("operation")
+            or (payload.get("operation") if isinstance(payload, dict) else "")
+            or "unknown"
+        )
+        section = str(candidate.get("section", "unknown"))
+        counts[f"{section}:{operation}"] += 1
+    return dict(counts)
+
+
+def _final_write_summary(candidates: Any) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    if not isinstance(candidates, list):
+        return output
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        payload = candidate.get("payload", {})
+        output.append(
+            {
+                "candidate_id": candidate.get("candidate_id", ""),
+                "agent": candidate.get("agent", ""),
+                "section": candidate.get("section", ""),
+                "operation": candidate.get("operation")
+                or (payload.get("operation") if isinstance(payload, dict) else ""),
+                "target_id": candidate.get("target_id", ""),
+                "warnings": candidate.get("warnings", []),
+            }
+        )
+    return output
 
 
 def _safe_int(value: Any, fallback: int) -> int:

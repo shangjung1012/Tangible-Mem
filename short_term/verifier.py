@@ -53,6 +53,7 @@ def verify_candidates(
         if not isinstance(payload, dict):
             reasons.append("payload_not_object")
             payload = {}
+        warnings = list(candidate.get("warnings", [])) if isinstance(candidate.get("warnings"), list) else []
 
         allowed_agents = SECTION_AGENT_ALLOWLIST.get(section)
         if allowed_agents is None:
@@ -62,21 +63,47 @@ def verify_candidates(
 
         evidence = str(payload.get("evidence", "")).strip()
         if not evidence:
-            reasons.append("missing_evidence")
+            warnings.append("missing_evidence")
         elif not _evidence_lines_are_allowed(evidence, allowed_line_numbers):
-            reasons.append("evidence_line_not_read")
+            warnings.append("evidence_line_not_read")
 
         confidence = _safe_float(payload.get("confidence"), 0.0)
         if confidence < CONFIDENCE_THRESHOLD:
             reasons.append("low_confidence")
 
-        operation = str(payload.get("operation", "")).strip()
+        operation = str(payload.get("operation") or candidate.get("operation") or "").strip()
+        target_id = str(candidate.get("target_id", "")).strip()
+        if target_id:
+            if section == "action_items" and not str(payload.get("item_id", "")).strip():
+                payload["item_id"] = target_id
+            elif section == "method_changes" and not str(payload.get("change_id", "")).strip():
+                payload["change_id"] = target_id
+            elif section == "experiment_todos" and not str(payload.get("todo_id", "")).strip():
+                payload["todo_id"] = target_id
         if section == "action_items":
             _verify_action(payload, operation, existing_action_ids, reasons)
+            if operation == "create" and _duplicate_text(
+                payload.get("title"),
+                current_memory.get("action_items", []),
+                "title",
+            ):
+                reasons.append("duplicate_create")
         elif section == "method_changes":
             _verify_method(payload, operation, existing_method_ids, reasons)
+            if operation == "create" and _duplicate_text(
+                payload.get("topic"),
+                current_memory.get("method_changes", []),
+                "topic",
+            ):
+                reasons.append("duplicate_create")
         elif section == "experiment_todos":
             _verify_experiment(payload, operation, existing_todo_ids, reasons)
+            if operation == "create" and _duplicate_text(
+                payload.get("description"),
+                current_memory.get("experiment_todos", []),
+                "description",
+            ):
+                reasons.append("duplicate_create")
         elif section == "meeting_window":
             if not str(payload.get("meeting_id", "")).strip():
                 reasons.append("missing_meeting_id")
@@ -85,9 +112,15 @@ def verify_candidates(
                 reasons.append("missing_focus_text")
 
         if reasons:
-            rejected.append({**candidate, "rejection_reasons": sorted(set(reasons))})
+            rejected.append(
+                {
+                    **candidate,
+                    "warnings": sorted(set(warnings)),
+                    "rejection_reasons": sorted(set(reasons)),
+                }
+            )
         else:
-            verified.append(candidate)
+            verified.append({**candidate, "warnings": sorted(set(warnings))})
 
     reason_counts = Counter(
         reason
@@ -104,21 +137,23 @@ def _verify_action(
     reasons: list[str],
 ) -> None:
     item_id = str(payload.get("item_id", "")).strip()
-    if operation not in {"create", "update"}:
+    if operation not in {"create", "update", "close", "no_op"}:
         reasons.append("invalid_operation")
-    if operation == "update" and item_id not in existing_ids:
+    if operation in {"update", "close"} and item_id not in existing_ids:
         reasons.append("update_unknown_id")
     if operation == "create" and item_id and item_id in existing_ids:
         reasons.append("create_collides_existing_id")
-    if str(payload.get("status", "")).strip() not in ACTION_ITEM_STATUS:
+    status = str(payload.get("status", "")).strip()
+    if (operation == "create" or status) and status not in ACTION_ITEM_STATUS:
         reasons.append("invalid_status")
-    if str(payload.get("priority", "")).strip() not in PRIORITY_LEVELS:
+    priority = str(payload.get("priority", "")).strip()
+    if (operation == "create" or priority) and priority not in PRIORITY_LEVELS:
         reasons.append("invalid_priority")
-    if not str(payload.get("title", "")).strip():
+    if operation == "create" and not str(payload.get("title", "")).strip():
         reasons.append("missing_title")
-    if not str(payload.get("owner", "")).strip():
+    if operation == "create" and not str(payload.get("owner", "")).strip():
         reasons.append("missing_owner")
-    if not str(payload.get("proposer", "")).strip():
+    if operation == "create" and not str(payload.get("proposer", "")).strip():
         reasons.append("missing_proposer")
 
 
@@ -129,15 +164,17 @@ def _verify_method(
     reasons: list[str],
 ) -> None:
     change_id = str(payload.get("change_id", "")).strip()
-    if operation not in {"create", "update"}:
+    if operation not in {"create", "update", "no_op"}:
         reasons.append("invalid_operation")
     if operation == "update" and change_id not in existing_ids:
         reasons.append("update_unknown_id")
     if operation == "create" and change_id and change_id in existing_ids:
         reasons.append("create_collides_existing_id")
-    if str(payload.get("status", "")).strip() not in METHOD_CHANGE_STATUS:
+    status = str(payload.get("status", "")).strip()
+    if (operation == "create" or status) and status not in METHOD_CHANGE_STATUS:
         reasons.append("invalid_status")
-    for key in ("topic", "after", "reason"):
+    required = ("topic", "after", "reason") if operation == "create" else ()
+    for key in required:
         if not str(payload.get(key, "")).strip():
             reasons.append(f"missing_{key}")
 
@@ -149,17 +186,18 @@ def _verify_experiment(
     reasons: list[str],
 ) -> None:
     todo_id = str(payload.get("todo_id", "")).strip()
-    if operation not in {"create", "update"}:
+    if operation not in {"create", "update", "close", "no_op"}:
         reasons.append("invalid_operation")
-    if operation == "update" and todo_id not in existing_ids:
+    if operation in {"update", "close"} and todo_id not in existing_ids:
         reasons.append("update_unknown_id")
     if operation == "create" and todo_id and todo_id in existing_ids:
         reasons.append("create_collides_existing_id")
-    if str(payload.get("status", "")).strip() not in EXPERIMENT_STATUS:
+    status = str(payload.get("status", "")).strip()
+    if (operation == "create" or status) and status not in EXPERIMENT_STATUS:
         reasons.append("invalid_status")
-    if not str(payload.get("description", "")).strip():
+    if operation == "create" and not str(payload.get("description", "")).strip():
         reasons.append("missing_description")
-    if not str(payload.get("owner", "")).strip():
+    if operation == "create" and not str(payload.get("owner", "")).strip():
         reasons.append("missing_owner")
 
 
@@ -193,3 +231,20 @@ def _safe_float(value: Any, fallback: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return fallback
+
+
+def _duplicate_text(value: Any, rows: Any, key: str) -> bool:
+    needle = _normalize_text(value)
+    if len(needle) < 6 or not isinstance(rows, list):
+        return False
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        haystack = _normalize_text(row.get(key))
+        if needle and haystack and (needle == haystack or needle in haystack or haystack in needle):
+            return True
+    return False
+
+
+def _normalize_text(value: Any) -> str:
+    return " ".join(str(value or "").casefold().split())

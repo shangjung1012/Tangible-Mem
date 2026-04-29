@@ -34,6 +34,7 @@ class ShortTermGraphState(TypedDict, total=False):
     read_line_numbers: list[int]
 
     raw_candidates: list[dict[str, Any]]
+    tool_reads: dict[str, list[str]]
     verified_candidates: list[dict[str, Any]]
     rejected_candidates: list[dict[str, Any]]
     final_patch: dict[str, Any]

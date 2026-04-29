@@ -15,7 +15,6 @@ from sqlite_store import (
     append_snapshot,
     export_db_snapshot,
     load_memory_from_sqlite,
-    load_memory_with_fallback,
 )
 from transcript_store import (
     DEFAULT_TRANSCRIPT_DB_PATH,
@@ -45,17 +44,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--memory-json",
         default="short_term/current_memory.json",
-        help="Legacy JSON path used for bootstrap (read) and optional mirror (write).",
+        help="Deprecated no-op. JSON is now only exported from SQLite for human review.",
     )
     parser.add_argument(
         "--no-bootstrap-json",
         action="store_true",
-        help="Do not import legacy JSON when SQLite is empty.",
+        help="Deprecated no-op. JSON bootstrap is disabled.",
     )
     parser.add_argument(
         "--mirror-json",
         action="store_true",
-        help="Also mirror latest memory into --memory-json after DB write.",
+        help="Deprecated no-op. JSON mirror writes are disabled.",
     )
     parser.add_argument(
         "--snapshot-dir",
@@ -325,12 +324,15 @@ def main() -> None:
         transcript=transcript,
     )
     log(f"transcript imported lines={transcript_line_count}")
-    log("loading memory source (sqlite/json fallback)")
-    current_memory, memory_source = load_memory_with_fallback(
-        db_path=db_path,
-        json_path=memory_json_path,
-        bootstrap_from_json=not args.no_bootstrap_json,
-    )
+    if args.memory_json != "short_term/current_memory.json":
+        log("--memory-json is deprecated and ignored; JSON is human-readable export only")
+    if args.no_bootstrap_json:
+        log("--no-bootstrap-json is deprecated and ignored; JSON bootstrap is disabled")
+    if args.mirror_json:
+        log("--mirror-json is deprecated and ignored; JSON mirror writes are disabled")
+    log("loading memory source from sqlite only")
+    current_memory = load_memory_from_sqlite(db_path)
+    memory_source = "sqlite"
     log(
         f"memory loaded from={memory_source} "
         f"version={int(current_memory.get('memory_version', 0) or 0)} "
@@ -393,10 +395,6 @@ def main() -> None:
         meeting_id=meeting_id,
         memory=persisted_memory,
     )
-
-    if args.mirror_json:
-        log(f"writing mirror json from sqlite: {memory_json_path}")
-        save_json(memory_json_path, persisted_memory)
 
     snapshot_tag = meeting_id
     if snapshot_dir is not None:

@@ -4,7 +4,15 @@ import json
 from typing import Any
 
 
-INTERNAL_KEYS = {"operation", "confidence", "evidence"}
+INTERNAL_KEYS = {
+    "operation",
+    "confidence",
+    "evidence",
+    "evidence_lines",
+    "evidence_quote",
+    "note",
+    "warnings",
+}
 
 
 def reduce_candidates(candidates: list[dict[str, Any]]) -> dict[str, Any]:
@@ -22,6 +30,7 @@ def reduce_candidates(candidates: list[dict[str, Any]]) -> dict[str, Any]:
             for candidate in candidates
             if candidate.get("section") == section
             and isinstance(candidate.get("payload"), dict)
+            and str(candidate.get("operation") or candidate.get("payload", {}).get("operation") or "") != "no_op"
         ]
         if not rows:
             continue

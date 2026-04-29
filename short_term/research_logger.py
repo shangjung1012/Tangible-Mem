@@ -29,6 +29,7 @@ class ResearchLogger:
             "prompts",
             "responses",
             "candidates",
+            "tool_calls",
         ):
             (self.run_dir / child).mkdir(parents=True, exist_ok=True)
 
@@ -130,6 +131,33 @@ class ResearchLogger:
             rejected,
         )
 
+    def tool_call(
+        self,
+        *,
+        agent_name: str,
+        tool_name: str,
+        args_summary: dict[str, Any],
+        result_summary: dict[str, Any],
+        latency_seconds: float,
+        error: str = "",
+    ) -> None:
+        self._counter += 1
+        payload = {
+            "agent_name": agent_name,
+            "tool_name": tool_name,
+            "timestamp": _utc_like_now(),
+            "args_summary": args_summary,
+            "result_summary": result_summary,
+            "latency_seconds": latency_seconds,
+            "error": error,
+        }
+        self._write_json(
+            self.run_dir
+            / "tool_calls"
+            / f"{self._counter:03d}_{agent_name}_{tool_name}.json",
+            payload,
+        )
+
     def final_outputs(
         self,
         *,
@@ -202,6 +230,34 @@ def _render_report(report: dict[str, Any]) -> str:
     if isinstance(rejection_counts, dict) and rejection_counts:
         for reason, value in rejection_counts.items():
             lines.append(f"- {reason}: {value}")
+    else:
+        lines.append("- none")
+    warning_counts = report.get("warning_counts", {})
+    lines.extend(["", "## Candidate Warnings"])
+    if isinstance(warning_counts, dict) and warning_counts:
+        for warning, value in warning_counts.items():
+            lines.append(f"- {warning}: {value}")
+    else:
+        lines.append("- none")
+    operations = report.get("staged_operations", {})
+    lines.extend(["", "## Staged Operations"])
+    if isinstance(operations, dict) and operations:
+        for operation, value in operations.items():
+            lines.append(f"- {operation}: {value}")
+    else:
+        lines.append("- none")
+    final_writes = report.get("final_writes", [])
+    lines.extend(["", "## Final Writes"])
+    if isinstance(final_writes, list) and final_writes:
+        for row in final_writes:
+            if isinstance(row, dict):
+                lines.append(
+                    "- "
+                    f"{row.get('section', '')} "
+                    f"{row.get('operation', '')} "
+                    f"target={row.get('target_id', '')} "
+                    f"candidate={row.get('candidate_id', '')}"
+                )
     else:
         lines.append("- none")
     lines.extend(["", "## Final"])
