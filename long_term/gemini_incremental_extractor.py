@@ -6,7 +6,7 @@ import random
 import re
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +14,7 @@ from google import genai
 from google.genai import types
 
 from embedder import EmbedCache
-from gemini_clients import create_gemini_client, normalize_api_keys
+from gemini_clients import create_gemini_client, get_configured_client_count
 from incremental_store import (
     READ_PURPOSES,
     get_max_line_id,
@@ -56,6 +56,12 @@ class IncrementalExtractionResult:
     max_forward_line: int
     raw_objects: list[dict[str, Any]]
     issues: list[dict[str, Any]]
+
+
+@dataclass
+class ToolLoopState:
+    active_forward_span: ReadSpanRecord | None = None
+    forward_span_issue_ids: list[str] = field(default_factory=list)
 
 
 def next_forward_span(
@@ -457,6 +463,15 @@ def _extract_retry_delay_seconds(exc: Exception) -> float | None:
     return None
 
 
+def _line_ids_overlap_span(
+    line_ids: list[int],
+    span: ReadSpanRecord | None,
+) -> bool:
+    if span is None:
+        return False
+    return any(span.start_line <= int(line_id) <= span.end_line for line_id in line_ids)
+
+
 def _wait_for_request_slot(
     request_state: dict[str, float],
     *,
@@ -632,11 +647,13 @@ def _execute_tool_call(
     max_forward_line: int,
     chunk_size: int,
     recent_reads: list[ReadSpanRecord],
+    tool_state: ToolLoopState | None = None,
     api_key: str | list[str] | None = None,
     embed_cache: EmbedCache | None = None,
 ) -> tuple[dict[str, Any], int]:
     name = function_call.name or ""
     args = function_call.args or {}
+    tool_state = tool_state or ToolLoopState()
 
     try:
         if name == "read_transcript":
@@ -687,6 +704,13 @@ def _execute_tool_call(
                 )
             )
             del recent_reads[:-8]
+            if purpose == "forward_scan":
+                tool_state.active_forward_span = ReadSpanRecord(
+                    purpose=purpose,
+                    start_line=int(span["start_line"]),
+                    end_line=int(span["end_line"]),
+                )
+                tool_state.forward_span_issue_ids.clear()
             new_progress = update_forward_progress(
                 max_forward_line,
                 purpose=purpose,
@@ -756,6 +780,12 @@ def _execute_tool_call(
             )
             refreshed_issue = dict(refreshed_issue)
             refreshed_issue["last_purpose"] = purpose
+            if purpose == "forward_scan" and (
+                not line_ids or _line_ids_overlap_span(line_ids, tool_state.active_forward_span)
+            ):
+                issue_id = str(refreshed_issue.get("issue_id") or "").strip()
+                if issue_id and issue_id not in tool_state.forward_span_issue_ids:
+                    tool_state.forward_span_issue_ids.append(issue_id)
             return {
                 "output": {
                     "issue": refreshed_issue,
@@ -768,14 +798,46 @@ def _execute_tool_call(
             obj_type = str(args.get("type") or "decision").lower()
             if obj_type not in MEMORY_OBJ_TYPES:
                 obj_type = "decision"
+            issue_ref = _sanitize_issue_id_ref(args.get("issue_id"))
+            issue_key = str(args.get("issue_key") or "").strip()
+            if not issue_ref and not issue_key:
+                if len(tool_state.forward_span_issue_ids) == 1:
+                    issue_ref = tool_state.forward_span_issue_ids[0]
+                elif not tool_state.forward_span_issue_ids and tool_state.active_forward_span is not None:
+                    span = tool_state.active_forward_span
+                    return {
+                        "error": (
+                            "create_l1_object requires update_issue first for the current "
+                            f"forward_scan span {span.start_line}-{span.end_line}. "
+                            "Call update_issue with a concise title/summary and a few evidence line_ids, "
+                            "then retry create_l1_object with that issue_id."
+                        )
+                    }, max_forward_line
+                elif len(tool_state.forward_span_issue_ids) > 1:
+                    return {
+                        "error": (
+                            "create_l1_object requires an explicit issue_id or issue_key because "
+                            "multiple issues were already updated for the current forward_scan span: "
+                            + ", ".join(tool_state.forward_span_issue_ids)
+                        )
+                    }, max_forward_line
             resolved_issue = resolve_issue_reference(
                 db_path,
                 transcript_id,
-                issue_ref=_sanitize_issue_id_ref(args.get("issue_id")),
-                issue_key=str(args.get("issue_key") or ""),
+                issue_ref=issue_ref,
+                issue_key=issue_key,
                 api_key=api_key,
                 embed_cache=embed_cache,
             )
+            if not str(resolved_issue.get("issue_id") or "").strip() and not str(
+                resolved_issue.get("issue_key") or ""
+            ).strip():
+                return {
+                    "error": (
+                        "create_l1_object could not resolve a linked issue. "
+                        "Call update_issue first, then retry with the returned issue_id."
+                    )
+                }, max_forward_line
             raw_object = {
                 "type": obj_type,
                 "content": str(args.get("content") or "").strip(),
@@ -931,7 +993,7 @@ def extract_incremental_l1_objects(
     )
 
     client = client or create_gemini_client(api_key)
-    key_count = len(normalize_api_keys(api_key))
+    key_count = get_configured_client_count(api_key)
     request_constrained = key_count <= 1
     min_request_interval_s = _min_request_interval_for_key_count(key_count)
     max_retries = _max_retry_attempts_for_key_count(key_count)
@@ -967,6 +1029,7 @@ def extract_incremental_l1_objects(
 
     max_forward_line = 0
     recent_reads: list[ReadSpanRecord] = []
+    tool_state = ToolLoopState()
     request_state: dict[str, float] = {}
     issue_embed_cache = EmbedCache()
     try:
@@ -1007,6 +1070,7 @@ def extract_incremental_l1_objects(
                         max_forward_line=max_forward_line,
                         chunk_size=chunk_size,
                         recent_reads=recent_reads,
+                        tool_state=tool_state,
                         api_key=api_key,
                         embed_cache=issue_embed_cache,
                     )

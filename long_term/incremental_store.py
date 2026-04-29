@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from embedder import EmbedCache, cosine_similarity, embed_text
+from gemini_clients import get_configured_client_count
 from importance import calibrate_issue_importance
 from schema import EMBED_MODEL_NAME
 
@@ -548,7 +549,7 @@ def _find_matching_issue(
             best_row = row
     if best_score >= ISSUE_LEXICAL_FAST_MATCH_THRESHOLD:
         return best_row
-    if api_key and embed_cache and lexical_candidates:
+    if get_configured_client_count(api_key) > 0 and embed_cache and lexical_candidates:
         semantic_best_row: sqlite3.Row | None = None
         semantic_best_score = 0.0
         for lexical_score, row in sorted(

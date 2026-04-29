@@ -48,12 +48,29 @@ Recall 目前走 semantic retrieval：先用 embedding 對 L1 做搜尋，再把
 在專案根目錄的 `.env` 至少放：
 
 ```env
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_CLOUD_PROJECT=your-gcp-project
+GOOGLE_CLOUD_LOCATION=global
+GOOGLE_APPLICATION_CREDENTIALS=/abs/path/to/service-account.json
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_EMBED_MODEL=models/gemini-embedding-001
+```
+
+如果你走 Vertex AI express mode，也可以不用 service account，改放：
+
+```env
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_API_KEY=your_vertex_api_key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+如果你還是要走舊的 Gemini Developer API，才需要：
+
+```env
 GEMINI_API_KEY=your_api_key
 # optional: 要輪流使用多把 key 時，改用這行
 GEMINI_API_KEYS=key_1,key_2,key_3
 # optional: 也可改用 GEMINI_API_KEY_1 / 2 / 3 寫法
-GEMINI_MODEL=gemini-2.5-flash
-GEMINI_EMBED_MODEL=models/gemini-embedding-001
 ```
 
 ## 常用流程
@@ -92,7 +109,7 @@ uv run long_term/cli.py bridge \
 補充：
 
 - `--mode full` 是預設值，保留原本 full-transcript bridge 行為。
-- `--mode incremental` 需要 `.env` 中的 `GEMINI_API_KEY`；如果有 `GEMINI_API_KEYS=key_1,key_2,key_3`，每次 Gemini model call 會自動輪替使用，預設模型同樣是 `gemini-2.5-flash`。
+- `--mode incremental` 需要可用的 GenAI 認證。支援 Vertex AI（`GOOGLE_GENAI_USE_VERTEXAI=true`，搭配 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_APPLICATION_CREDENTIALS`，或 `GOOGLE_API_KEY`）以及舊的 Gemini API key。若是多把 API key 模式，會自動輪替使用。
 - incremental 會把進度印到 stderr，例如目前 round、掃到第幾行、issues / raw L1 數量；`--max-tool-rounds 0` 代表依逐字稿長度自動估算上限。長會議會定期從 SQLite 工作狀態重建 Gemini context，避免 input token 歷史持續膨脹。
 - `--incremental-db` 是工作日誌，不是 canonical long-term store；正式輸出仍是 `long_term/tree.json` 和 snapshots。
 - incremental 的 raw L1 candidate 不是直接進 `tree.json`：會先做一層 deterministic review，包含近似重複候選合併、同 issue checklist fragment 合併、缺少 evidence 的 speculative object 降權或丟棄、以及 linked issue 語意對齊的小幅加減分。這一層只作用在 incremental working objects，不改 final L1 schema。

@@ -20,6 +20,7 @@ from bridge import (  # noqa: E402
 )
 from gemini_incremental_extractor import (  # noqa: E402
     ReadSpanRecord,
+    ToolLoopState,
     _build_initial_prompt,
     _bound_line_ids_to_recent_span,
     _compact_issue_line_ids,
@@ -590,7 +591,7 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(reviewed[0]["importance"], 0.85)
         self.assertIn("type_cap:0.85", reviewed[0]["_candidate_review"]["adjustments"])
 
-    def test_candidate_review_drops_low_value_social_result(self) -> None:
+    def test_candidate_review_caps_low_value_social_result(self) -> None:
         raw_objects = [
             {
                 "type": "result",
@@ -603,10 +604,11 @@ class IncrementalBridgeTests(unittest.TestCase):
 
         reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
 
-        self.assertEqual(reviewed, [])
-        self.assertEqual(stats["dropped_weak"], 1)
+        self.assertEqual(len(reviewed), 1)
+        self.assertEqual(stats["dropped_weak"], 0)
+        self.assertEqual(reviewed[0]["importance"], 0.44)
 
-    def test_candidate_review_drops_low_value_logistics_result(self) -> None:
+    def test_candidate_review_caps_low_value_logistics_result(self) -> None:
         raw_objects = [
             {
                 "type": "result",
@@ -614,6 +616,59 @@ class IncrementalBridgeTests(unittest.TestCase):
                 "importance": 0.58,
                 "evidence": "They already ordered more comfortable headsets and reminded everyone to turn off the microphones.",
                 "related_topics": ["setup"],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(len(reviewed), 1)
+        self.assertEqual(stats["dropped_weak"], 0)
+        self.assertEqual(reviewed[0]["importance"], 0.4)
+
+    def test_candidate_review_caps_low_value_procedural_method_change(self) -> None:
+        raw_objects = [
+            {
+                "type": "method_change",
+                "content": "提供錄音操作指示，強調按黑色方塊停止錄音以免清除資料。",
+                "importance": 0.82,
+                "evidence": "Hit the black square when you're done, but don't hit record again or it will erase everything.",
+                "related_topics": ["錄音", "操作說明"],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(len(reviewed), 1)
+        self.assertEqual(stats["dropped_weak"], 0)
+        self.assertEqual(reviewed[0]["importance"], 0.55)
+        self.assertIn("low_value_cap:0.55", reviewed[0]["_candidate_review"]["adjustments"])
+
+    def test_candidate_review_caps_low_value_meeting_move_result(self) -> None:
+        raw_objects = [
+            {
+                "type": "result",
+                "content": "會議地點已變更，且Nancy可能無法出席。",
+                "importance": 0.8,
+                "evidence": "I was looking for you downstairs. I didn't know you had moved the meeting. Nancy probably won't show up.",
+                "related_topics": ["會議", "出席"],
+            }
+        ]
+
+        reviewed, stats = review_incremental_candidates(raw_objects, issues=[])
+
+        self.assertEqual(len(reviewed), 1)
+        self.assertEqual(stats["dropped_weak"], 0)
+        self.assertEqual(reviewed[0]["importance"], 0.55)
+        self.assertIn("low_value_cap:0.55", reviewed[0]["_candidate_review"]["adjustments"])
+
+    def test_candidate_review_drops_very_low_value_digit_reading_result(self) -> None:
+        raw_objects = [
+            {
+                "type": "result",
+                "content": "會議中進行了數字轉錄朗讀環節。",
+                "importance": 0.44,
+                "evidence": "Why don't we do the digits and then turn the mikes off.",
+                "related_topics": ["Digit Transcription", "Meeting Procedure"],
             }
         ]
 
@@ -787,6 +842,82 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(payload["correction"]["requested_start_line"], 1)
         self.assertEqual(payload["correction"]["enforced_start_line"], 41)
         self.assertEqual(new_progress, 50)
+
+    def test_create_l1_object_requires_issue_update_for_current_forward_span(self) -> None:
+        transcript = "\n".join(f"[S]: line {index}" for index in range(1, 41))
+        seed_transcript_lines(self.db_path, self.transcript_id, transcript)
+
+        payload, new_progress = _execute_tool_call(
+            db_path=self.db_path,
+            transcript_id=self.transcript_id,
+            function_call=types.FunctionCall(
+                name="create_l1_object",
+                args={
+                    "type": "result",
+                    "content": "保留一條結果",
+                    "importance": 0.6,
+                    "evidence": "line 12",
+                    "related_topics": [],
+                },
+            ),
+            max_line=40,
+            max_forward_line=20,
+            chunk_size=20,
+            recent_reads=[],
+            tool_state=ToolLoopState(
+                active_forward_span=ReadSpanRecord(
+                    purpose="forward_scan",
+                    start_line=1,
+                    end_line=20,
+                )
+            ),
+        )
+
+        self.assertIn("update_issue first", payload["error"])
+        self.assertEqual(new_progress, 20)
+
+    def test_create_l1_object_auto_links_single_issue_from_current_span(self) -> None:
+        transcript = "\n".join(f"[S]: line {index}" for index in range(1, 41))
+        seed_transcript_lines(self.db_path, self.transcript_id, transcript)
+        upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Demo issue",
+            issue_id="ISS-Unit001-demo",
+            issue_key="demo_issue",
+            status="open",
+            importance=0.6,
+            summary="Current span issue.",
+        )
+
+        payload, _ = _execute_tool_call(
+            db_path=self.db_path,
+            transcript_id=self.transcript_id,
+            function_call=types.FunctionCall(
+                name="create_l1_object",
+                args={
+                    "type": "result",
+                    "content": "保留一條結果",
+                    "importance": 0.6,
+                    "evidence": "line 12",
+                    "related_topics": [],
+                },
+            ),
+            max_line=40,
+            max_forward_line=20,
+            chunk_size=20,
+            recent_reads=[],
+            tool_state=ToolLoopState(
+                active_forward_span=ReadSpanRecord(
+                    purpose="forward_scan",
+                    start_line=1,
+                    end_line=20,
+                ),
+                forward_span_issue_ids=["ISS-Unit001-demo"],
+            ),
+        )
+
+        self.assertEqual(payload["output"]["issue_id"], "ISS-Unit001-demo")
 
     def test_auto_tool_rounds_scales_with_transcript_length(self) -> None:
         self.assertEqual(auto_max_tool_rounds(5746, 40), 1192)

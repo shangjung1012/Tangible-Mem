@@ -161,8 +161,8 @@ long_term/
 
 ### `io_utils.py`
 提供：
-- `load_api_keys()` — 從 `.env` 讀取 `GEMINI_API_KEY` / `GEMINI_API_KEYS` / `GEMINI_API_KEY_1...9`
-- `load_env()` — 向後相容：回傳第一把 Gemini API key
+- `load_api_keys()` — 從 `.env` 讀取 `GOOGLE_API_KEY` / `GEMINI_API_KEY` 系列，若啟用 Vertex AI 則允許無 key 走 ADC
+- `load_env()` — 向後相容：回傳第一把 API key；Vertex ADC 模式下會回傳空字串
 - `load_tree(path)` — 讀取 `tree.json`，檔案不存在時回傳空樹
 - `save_json(path, data)` — 序列化寫入（自動建立父目錄）
 - `utc_now_iso()` — 回傳 UTC 時間字串（如 `2026-04-06T13:20:50Z`）

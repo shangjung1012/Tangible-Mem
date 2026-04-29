@@ -481,13 +481,22 @@ def review_incremental_candidates(
         ):
             stats["dropped_weak"] += 1
             continue
-        if (
-            (low_value_object or low_value_issue)
-            and obj_type in {"result", "argument", "open_question", "todo"}
-            and reviewed_importance < 0.60
-        ):
-            stats["dropped_weak"] += 1
-            continue
+        if low_value_object or low_value_issue:
+            low_value_caps = {
+                "argument": 0.50,
+                "open_question": 0.50,
+                "todo": 0.50,
+                "result": 0.55,
+                "method_change": 0.55,
+                "decision": 0.55,
+            }
+            cap = low_value_caps.get(obj_type)
+            if cap is not None and reviewed_importance > cap:
+                reviewed_importance = normalize_importance_score(cap)
+                adjustments.append(f"low_value_cap:{cap:.2f}")
+            if reviewed_importance < 0.35:
+                stats["dropped_weak"] += 1
+                continue
 
         type_cap = _INCREMENTAL_TYPE_IMPORTANCE_CAPS.get(obj_type)
         if type_cap is not None and reviewed_importance > type_cap:
