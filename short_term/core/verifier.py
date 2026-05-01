@@ -12,7 +12,7 @@ try:
         PRIORITY_LEVELS,
     )
 except ImportError:  # pragma: no cover
-    from schema import (
+    from short_term.core.schema import (
         ACTION_ITEM_STATUS,
         EXPERIMENT_STATUS,
         METHOD_CHANGE_STATUS,
@@ -177,6 +177,10 @@ def _verify_method(
     for key in required:
         if not str(payload.get(key, "")).strip():
             reasons.append(f"missing_{key}")
+    if operation == "create" and _looks_like_inventory_only_method_change(payload):
+        reasons.append("inventory_not_method_change")
+    if operation == "create" and _looks_like_unresolved_method_change(payload):
+        reasons.append("unresolved_method_change")
 
 
 def _verify_experiment(
@@ -199,6 +203,8 @@ def _verify_experiment(
         reasons.append("missing_description")
     if operation == "create" and not str(payload.get("owner", "")).strip():
         reasons.append("missing_owner")
+    if operation == "create" and status == "completed":
+        reasons.append("completed_create_not_allowed")
 
 
 def _evidence_lines_are_allowed(evidence: str, allowed: set[int]) -> bool:
@@ -248,3 +254,40 @@ def _duplicate_text(value: Any, rows: Any, key: str) -> bool:
 
 def _normalize_text(value: Any) -> str:
     return " ".join(str(value or "").casefold().split())
+
+
+def _looks_like_inventory_only_method_change(payload: dict[str, Any]) -> bool:
+    topic = _normalize_text(payload.get("topic"))
+    before = _normalize_text(payload.get("before"))
+    after = _normalize_text(payload.get("after"))
+    reason = _normalize_text(payload.get("reason"))
+    combined = " ".join(part for part in (topic, before, after, reason) if part)
+    if not combined:
+        return False
+    inventory_markers = (
+        "inventory",
+        "microphone",
+        "setup for recording",
+        "multiple microphones were used",
+        "to document the recording setup",
+        "document the recording setup",
+        "described all microphones",
+        "recording setup",
+    )
+    if before == "not specified" and any(marker in combined for marker in inventory_markers):
+        return True
+    return False
+
+
+def _looks_like_unresolved_method_change(payload: dict[str, Any]) -> bool:
+    after = _normalize_text(payload.get("after"))
+    reason = _normalize_text(payload.get("reason"))
+    combined = " ".join(part for part in (after, reason) if part)
+    unresolved_markers = (
+        "unresolved discussion",
+        "needs to be clarified",
+        "conflicting estimates",
+        "not established",
+        "to plan for",
+    )
+    return any(marker in combined for marker in unresolved_markers)

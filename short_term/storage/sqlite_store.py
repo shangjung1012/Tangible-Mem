@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Any, Iterator
 
 try:
-    from .schema import DEFAULT_MEMORY
+    from ..core.schema import DEFAULT_MEMORY
 except ImportError:  # pragma: no cover - script execution fallback
-    from schema import DEFAULT_MEMORY
+    from short_term.core.schema import DEFAULT_MEMORY
 
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent / "short_term_memory.db"

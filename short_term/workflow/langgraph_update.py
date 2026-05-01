@@ -8,41 +8,41 @@ from langgraph.graph import END, StateGraph
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 try:
-    from .agents import (
+    from ..agents import (
         ShortTermAgentSuite,
         build_context_planner_prompt,
         build_extraction_prompt,
         build_segment_prompt,
         flatten_agent_candidates,
     )
-    from .genai_client import GenAIConfig, create_genai_client
-    from .graph_state import ShortTermGraphState, memory_summary
-    from .memory_tools import AgentToolContext, AgentToolPolicy
-    from .normalizer import normalize_memory
-    from .reducer import reduce_candidates
-    from .research_logger import ResearchLogger, elapsed, timed
-    from .sqlite_store import save_memory_to_sqlite
-    from .staging_store import clear_staging_for_run, load_staged_candidates
-    from .transcript_store import load_transcript_lines
-    from .verifier import verify_candidates
+    from ..runtime.genai_client import GenAIConfig, create_genai_client
+    from ..core.graph_state import ShortTermGraphState, memory_summary
+    from ..storage.memory_tools import AgentToolContext, AgentToolPolicy
+    from ..core.normalizer import normalize_memory
+    from ..core.reducer import reduce_candidates
+    from ..runtime.research_logger import ResearchLogger, elapsed, timed
+    from ..storage.sqlite_store import save_memory_to_sqlite
+    from ..storage.staging_store import clear_staging_for_run, load_staged_candidates
+    from ..storage.transcript_store import load_transcript_lines
+    from ..core.verifier import verify_candidates
 except ImportError:  # pragma: no cover - script execution fallback
-    from agents import (
+    from short_term.agents import (
         ShortTermAgentSuite,
         build_context_planner_prompt,
         build_extraction_prompt,
         build_segment_prompt,
         flatten_agent_candidates,
     )
-    from genai_client import GenAIConfig, create_genai_client
-    from graph_state import ShortTermGraphState, memory_summary
-    from memory_tools import AgentToolContext, AgentToolPolicy
-    from normalizer import normalize_memory
-    from reducer import reduce_candidates
-    from research_logger import ResearchLogger, elapsed, timed
-    from sqlite_store import save_memory_to_sqlite
-    from staging_store import clear_staging_for_run, load_staged_candidates
-    from transcript_store import load_transcript_lines
-    from verifier import verify_candidates
+    from short_term.runtime.genai_client import GenAIConfig, create_genai_client
+    from short_term.core.graph_state import ShortTermGraphState, memory_summary
+    from short_term.storage.memory_tools import AgentToolContext, AgentToolPolicy
+    from short_term.core.normalizer import normalize_memory
+    from short_term.core.reducer import reduce_candidates
+    from short_term.runtime.research_logger import ResearchLogger, elapsed, timed
+    from short_term.storage.sqlite_store import save_memory_to_sqlite
+    from short_term.storage.staging_store import clear_staging_for_run, load_staged_candidates
+    from short_term.storage.transcript_store import load_transcript_lines
+    from short_term.core.verifier import verify_candidates
 
 
 def run_short_term_langgraph_update(
@@ -116,6 +116,11 @@ def run_short_term_langgraph_update(
         "processed_until_line": 0,
         "planner_history": [],
         "context_rounds": 0,
+        "meeting_window_candidates_buffer": [],
+        "action_items_candidates_buffer": [],
+        "method_changes_candidates_buffer": [],
+        "experiment_todos_candidates_buffer": [],
+        "next_meeting_focus_candidates_buffer": [],
             "raw_candidates": [],
             "tool_reads": {},
             "verified_candidates": [],
@@ -279,6 +284,15 @@ def _build_graph(
 
         return _node(logger, "segment_window", state, run, progress_callback=progress_callback)
 
+    def start_extraction(state: ShortTermGraphState) -> dict[str, Any]:
+        return _node(
+            logger,
+            "start_extraction",
+            state,
+            lambda: {},
+            progress_callback=progress_callback,
+        )
+
     def extract_meeting_summary(state: ShortTermGraphState) -> dict[str, Any]:
         return _extract_node(
             state,
@@ -297,7 +311,7 @@ def _build_graph(
             agents.action,
             "action_items",
             "action_items",
-            "只產生 action item create/update/close/no_op 候選。必須先讀 action_items；更新或關閉既有任務必須引用既有 item_id。只有明確新任務才使用 operation=create 並留空 item_id。每個含有承諾、待辦、進度、完成、取消、阻塞、負責人或下一步的 unit 都要處理；若不是 action item 或資訊不足，使用 no_op 記錄。",
+            "只產生 action item create/update/close/no_op 候選。必須先讀 action_items；更新或關閉既有任務必須引用既有 item_id。只有明確新任務才使用 operation=create 並留空 item_id。每個含有承諾、待辦、進度、完成、取消、阻塞、負責人或下一步的 unit 都要處理；若不是 action item 或資訊不足，使用 no_op 記錄。不要把純方法討論、純 inventory 描述、或當場已完成且不需後續追蹤的執行事件寫成 action item。",
             progress_callback=progress_callback,
         )
 
@@ -308,7 +322,7 @@ def _build_graph(
             agents.method,
             "method_changes",
             "method_changes",
-            "只處理方法、流程、實驗策略、資料處理方式的 create/update/no_op，不處理一般摘要或單純待辦。更新既有方法變更必須引用既有 change_id。每個涉及 procedure、analysis choice、data processing、experiment strategy、evaluation criteria 的 unit 都要處理；若不構成方法變更，使用 no_op 記錄。",
+            "只處理方法、流程、實驗策略、資料處理方式的 create/update/no_op，不處理一般摘要或單純待辦。更新既有方法變更必須引用既有 change_id。每個涉及 procedure、analysis choice、data processing、experiment strategy、evaluation criteria 的 unit 都要處理；若不構成方法變更，使用 no_op 記錄。只有明確採納、切換、替換、開始使用的新 procedure/strategy 才能 create/update。單純設備 inventory、現況描述、背景脈絡、未決提議、長期願景、一般 safety/administrative TODO 不算 method change。",
             progress_callback=progress_callback,
         )
 
@@ -319,21 +333,60 @@ def _build_graph(
             agents.experiment,
             "experiment_todos",
             "experiment_todos",
-            "只處理實驗執行 TODO 的 create/update/close/no_op，不處理一般行政待辦。更新或關閉既有 TODO 必須引用既有 todo_id。若 related action item 明確存在才填 related_action_item_ids。每個涉及 run experiment、prepare data、compare result、debug experiment、collect metric 的 unit 都要處理；若不構成實驗 TODO，使用 no_op 記錄。",
+            "只處理實驗執行 TODO 的 create/update/close/no_op，不處理一般行政待辦。更新或關閉既有 TODO 必須引用既有 todo_id。若 related action item 明確存在才填 related_action_item_ids。每個涉及 run experiment、prepare data、compare result、debug experiment、collect metric 的 unit 都要處理；若不構成實驗 TODO，使用 no_op 記錄。create 只保留尚未完成或仍需追蹤的實驗工作；不要把當場已完成的朗讀、已做完的執行事件、純記錄內容、或一般硬體/行政工作寫成 experiment_todo。",
             progress_callback=progress_callback,
         )
 
     def extract_next_focus(state: ShortTermGraphState) -> dict[str, Any]:
-        def run_extract() -> dict[str, Any]:
-            result = _extract_candidates(
-                state,
-                logger,
-                agents.focus,
-                "next_meeting_focus",
-                "next_meeting_focus",
-                "只產生下次會議或近期追蹤焦點的 replace/create/no_op 候選，不把 open questions 原封不動塞入。每個含有下次要看、近期要追、未決但需要 follow-up 的 unit 都要處理；若只是一般問題或已在其他 section 處理，使用 no_op 記錄。",
-            )
-            raw = list(state.get("raw_candidates", [])) + result
+        return _extract_node(
+            state,
+            logger,
+            agents.focus,
+            "next_meeting_focus",
+            "next_meeting_focus",
+            "只產生下次會議或近期追蹤焦點的 replace/create/no_op 候選，不把 open questions 原封不動塞入。每個含有下次要看、近期要追、未決但需要 follow-up 的 unit 都要處理；若只是一般問題或已在其他 section 處理，使用 no_op 記錄。只保留真正需要後續討論的 1 到 3 個焦點；不要把所有未完議題都塞進來，也不要重複 action item 或 method change 的內容。",
+            progress_callback=progress_callback,
+        )
+
+    def collect_window_candidates(state: ShortTermGraphState) -> dict[str, Any]:
+        def run() -> dict[str, Any]:
+            raw = list(state.get("raw_candidates", []))
+            existing_ids = {
+                str(candidate.get("candidate_id", ""))
+                for candidate in raw
+                if isinstance(candidate, dict)
+            }
+            buffer_updates: dict[str, Any] = {}
+            for section, agent in (
+                ("meeting_window", agents.meeting),
+                ("action_items", agents.action),
+                ("method_changes", agents.method),
+                ("experiment_todos", agents.experiment),
+                ("next_meeting_focus", agents.focus),
+            ):
+                for candidate in state.get(_section_buffer_key(section), []):
+                    if not isinstance(candidate, dict):
+                        continue
+                    candidate_id = str(candidate.get("candidate_id", "")).strip()
+                    if candidate_id and candidate_id in existing_ids:
+                        continue
+                    raw.append(candidate)
+                    if candidate_id:
+                        existing_ids.add(candidate_id)
+                staged = load_staged_candidates(
+                    Path(str(state["db_path"])),
+                    run_id=str(state["run_id"]),
+                    agent_name=str(agent.name),
+                    target_section=section,
+                )
+                for candidate in staged:
+                    candidate_id = str(candidate.get("candidate_id", ""))
+                    if not candidate_id or candidate_id in existing_ids:
+                        continue
+                    raw.append(candidate)
+                    existing_ids.add(candidate_id)
+                buffer_updates[_section_buffer_key(section)] = []
+
             window = state.get("current_window", {})
             processed_until = max(
                 int(state.get("processed_until_line", 0) or 0),
@@ -344,9 +397,16 @@ def _build_graph(
             return {
                 "raw_candidates": raw,
                 "processed_until_line": processed_until,
+                **buffer_updates,
             }
 
-        return _node(logger, "extract_next_focus", state, run_extract, progress_callback=progress_callback)
+        return _node(
+            logger,
+            "collect_window_candidates",
+            state,
+            run,
+            progress_callback=progress_callback,
+        )
 
     def verify_all_candidates(state: ShortTermGraphState) -> dict[str, Any]:
         def run() -> dict[str, Any]:
@@ -409,11 +469,13 @@ def _build_graph(
     graph.add_node("plan_next_window", plan_next_window)
     graph.add_node("read_window", read_window)
     graph.add_node("segment_window", segment_window)
+    graph.add_node("start_extraction", start_extraction)
     graph.add_node("extract_meeting_summary", extract_meeting_summary)
     graph.add_node("extract_action_items", extract_action_items)
     graph.add_node("extract_method_changes", extract_method_changes)
     graph.add_node("extract_experiment_todos", extract_experiment_todos)
     graph.add_node("extract_next_focus", extract_next_focus)
+    graph.add_node("collect_window_candidates", collect_window_candidates)
     graph.add_node("verify_candidates", verify_all_candidates)
     graph.add_node("reduce_patch", reduce_patch)
     graph.add_node("normalize_and_persist", normalize_and_persist)
@@ -428,15 +490,21 @@ def _build_graph(
         _route_after_segment,
         {
             "more_context": "plan_next_window",
-            "extract": "extract_meeting_summary",
+            "extract": "start_extraction",
         },
     )
-    graph.add_edge("extract_meeting_summary", "extract_action_items")
-    graph.add_edge("extract_action_items", "extract_method_changes")
-    graph.add_edge("extract_method_changes", "extract_experiment_todos")
-    graph.add_edge("extract_experiment_todos", "extract_next_focus")
+    graph.add_edge("start_extraction", "extract_meeting_summary")
+    graph.add_edge("start_extraction", "extract_action_items")
+    graph.add_edge("start_extraction", "extract_method_changes")
+    graph.add_edge("start_extraction", "extract_experiment_todos")
+    graph.add_edge("start_extraction", "extract_next_focus")
+    graph.add_edge("extract_meeting_summary", "collect_window_candidates")
+    graph.add_edge("extract_action_items", "collect_window_candidates")
+    graph.add_edge("extract_method_changes", "collect_window_candidates")
+    graph.add_edge("extract_experiment_todos", "collect_window_candidates")
+    graph.add_edge("extract_next_focus", "collect_window_candidates")
     graph.add_conditional_edges(
-        "extract_next_focus",
+        "collect_window_candidates",
         _route_after_window,
         {
             "next_window": "plan_next_window",
@@ -470,7 +538,7 @@ def _extract_node(
             agent_kind,
             instructions,
         )
-        return {"raw_candidates": list(state.get("raw_candidates", [])) + candidates}
+        return {_section_buffer_key(section): candidates}
 
     return _node(
         logger,
@@ -489,9 +557,16 @@ def _extract_candidates(
     agent_kind: str,
     instructions: str,
 ) -> list[dict[str, Any]]:
+    filtered_state = dict(state)
+    filtered_state["current_units"] = _filter_units_for_agent(
+        state.get("current_units", []),
+        section=section,
+    )
+    if not filtered_state["current_units"]:
+        return []
     prompt = build_extraction_prompt(
         agent_kind=agent_kind,
-        state=state,
+        state=filtered_state,
         instructions=instructions,
     )
     policy = _agent_tool_policy(str(agent.name), section)
@@ -505,14 +580,14 @@ def _extract_candidates(
         result = agent.run(
             prompt=prompt,
             logger=logger,
-            input_summary=_input_summary(state),
+            input_summary=_input_summary(filtered_state),
             tool_context=tool_context,
         )
     except TypeError:
         result = agent.run(
             prompt=prompt,
             logger=logger,
-            input_summary=_input_summary(state),
+            input_summary=_input_summary(filtered_state),
         )
     staged = load_staged_candidates(
         Path(str(state["db_path"])),
@@ -520,18 +595,183 @@ def _extract_candidates(
         agent_name=str(agent.name),
         target_section=section,
     )
-    if staged:
-        existing_ids = {
-            str(candidate.get("candidate_id", ""))
-            for candidate in state.get("raw_candidates", [])
-            if isinstance(candidate, dict)
+    parsed_candidates = flatten_agent_candidates(agent.name, section, result.parsed)
+    existing_ids = {
+        str(candidate.get("candidate_id", ""))
+        for candidate in state.get("raw_candidates", [])
+        if isinstance(candidate, dict)
+    }
+
+    output: list[dict[str, Any]] = [
+        candidate
+        for candidate in staged
+        if str(candidate.get("candidate_id", "")) not in existing_ids
+    ]
+
+    # Gemini tool-calling sometimes writes staging rows with an empty or nearly
+    # empty candidate_payload, while the final JSON response still contains the
+    # full structured candidate. Keep the parsed JSON candidates as a fallback
+    # so verifier/reducer can still operate on complete payloads.
+    if not staged or any(_candidate_payload_is_sparse(row) for row in staged):
+        output.extend(parsed_candidates)
+        return output
+
+    staged_signatures = {_candidate_signature(row) for row in output}
+    for candidate in parsed_candidates:
+        signature = _candidate_signature(candidate)
+        if signature in staged_signatures:
+            continue
+        output.append(candidate)
+    return output
+
+
+def _candidate_payload_is_sparse(candidate: dict[str, Any]) -> bool:
+    payload = candidate.get("payload")
+    if not isinstance(payload, dict):
+        return True
+    content_keys = {
+        str(key).strip()
+        for key, value in payload.items()
+        if str(key).strip()
+        and key not in {"operation", "confidence", "evidence"}
+        and value not in (None, "", [], {})
+    }
+    return not content_keys
+
+
+def _candidate_signature(candidate: dict[str, Any]) -> tuple[str, str, str, str]:
+    payload = candidate.get("payload", {})
+    if not isinstance(payload, dict):
+        payload = {}
+    operation = str(
+        candidate.get("operation")
+        or payload.get("operation")
+        or ""
+    ).strip()
+    target_id = str(candidate.get("target_id", "")).strip()
+    payload_json = str(sorted(payload.items()))
+    return (
+        str(candidate.get("section", "")).strip(),
+        operation,
+        target_id,
+        payload_json,
+    )
+
+
+def _filter_units_for_agent(units: Any, *, section: str) -> list[dict[str, Any]]:
+    if not isinstance(units, list):
+        return []
+    normalized_units = [unit for unit in units if isinstance(unit, dict)]
+    if section == "meeting_window":
+        return normalized_units
+
+    allowed_hints = {
+        "action_items": {
+            "action_item",
+            "action_items",
+            "task",
+            "todo",
+            "next_step",
+            "blocker",
+            "decision",
+        },
+        "method_changes": {
+            "method_change",
+            "method_changes",
+            "process",
+            "procedure",
+            "workflow",
+            "decision",
+            "analysis_choice",
+        },
+        "experiment_todos": {
+            "experiment_todo",
+            "experiment_todos",
+            "experiment",
+            "research",
+            "data_collection",
+            "metric",
+            "debug",
+        },
+        "next_meeting_focus": {
+            "next_focus",
+            "next_meeting_focus",
+            "follow_up",
+            "open_question",
+            "planning",
+            "research_direction",
+            "problem",
+        },
+    }.get(section, set())
+    keywords = {
+        "action_items": (
+            "need to",
+            "should",
+            "will",
+            "next",
+            "follow up",
+            "todo",
+            "task",
+            "owner",
+            "blocked",
+        ),
+        "method_changes": (
+            "procedure",
+            "workflow",
+            "process",
+            "strategy",
+            "analysis",
+            "segment",
+            "recognition",
+            "resampling",
+            "change",
+            "start doing",
+            "instead of",
+        ),
+        "experiment_todos": (
+            "experiment",
+            "collect data",
+            "prepare data",
+            "run",
+            "compare",
+            "metric",
+            "debug",
+            "recognition",
+            "segmentation",
+        ),
+        "next_meeting_focus": (
+            "next time",
+            "follow up",
+            "bring that up",
+            "need to discuss",
+            "unresolved",
+            "clarify",
+            "track",
+            "figure out",
+        ),
+    }.get(section, ())
+
+    matched: list[dict[str, Any]] = []
+    for unit in normalized_units:
+        hints = {
+            str(value).strip().lower().replace("-", "_")
+            for value in unit.get("kind_hint", [])
+            if str(value).strip()
         }
-        return [
-            candidate
-            for candidate in staged
-            if str(candidate.get("candidate_id", "")) not in existing_ids
-        ]
-    return flatten_agent_candidates(agent.name, section, result.parsed)
+        text = " ".join(
+            str(unit.get(key, "")).strip().lower()
+            for key in ("topic", "reason")
+        )
+        if hints & allowed_hints:
+            matched.append(unit)
+            continue
+        if any(keyword in text for keyword in keywords):
+            matched.append(unit)
+    return matched
+
+
+def _section_buffer_key(section: str) -> str:
+    return f"{section}_candidates_buffer"
 
 
 def _agent_tool_policy(agent_name: str, section: str) -> AgentToolPolicy:

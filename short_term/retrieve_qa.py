@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import re
+import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,10 +13,17 @@ from typing import Any
 
 from google import genai
 
-from genai_client import create_genai_client, describe_genai_config, load_genai_config
-from genai_retry import call_with_retry
-from schema import DEFAULT_MODEL_NAME
-from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from short_term.runtime.genai_client import (
+    create_genai_client,
+    describe_genai_config,
+    load_genai_config,
+)
+from short_term.runtime.genai_retry import call_with_retry
+from short_term.core.schema import DEFAULT_MODEL_NAME
+from short_term.storage.sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
 DEFAULT_EMBEDDING_MODEL_NAME = "gemini-embedding-001"
 

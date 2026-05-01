@@ -3,20 +3,28 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
-from genai_client import describe_genai_config, load_dotenv_files, load_genai_config
-from io_utils import print_json_safe, save_json
-from langgraph_update import run_short_term_langgraph_update
-from schema import DEFAULT_MODEL_NAME
-from sqlite_store import (
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from short_term.runtime.genai_client import (
+    describe_genai_config,
+    load_dotenv_files,
+    load_genai_config,
+)
+from short_term.storage.io_utils import print_json_safe, save_json
+from short_term.workflow.langgraph_update import run_short_term_langgraph_update
+from short_term.core.schema import DEFAULT_MODEL_NAME
+from short_term.storage.sqlite_store import (
     DEFAULT_DB_PATH,
     append_snapshot,
     export_db_snapshot,
     load_memory_from_sqlite,
 )
-from transcript_store import (
+from short_term.storage.transcript_store import (
     DEFAULT_TRANSCRIPT_DB_PATH,
     import_transcript_to_sqlite,
     load_transcript_overview,

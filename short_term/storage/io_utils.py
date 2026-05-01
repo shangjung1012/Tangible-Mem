@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .schema import DEFAULT_MEMORY
-    from .genai_client import load_dotenv_files, load_genai_config
+    from ..core.schema import DEFAULT_MEMORY
+    from ..runtime.genai_client import load_dotenv_files, load_genai_config
 except ImportError:  # pragma: no cover - script execution fallback
-    from schema import DEFAULT_MEMORY
-    from genai_client import load_dotenv_files, load_genai_config
+    from short_term.core.schema import DEFAULT_MEMORY
+    from short_term.runtime.genai_client import load_dotenv_files, load_genai_config
 
 
 def utc_now_iso() -> str:

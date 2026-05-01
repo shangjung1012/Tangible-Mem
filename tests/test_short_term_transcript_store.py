@@ -8,10 +8,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SHORT_TERM_DIR = REPO_ROOT / "short_term"
 sys.path.insert(0, str(SHORT_TERM_DIR))
-for module_name in ("transcript_store",):
+for module_name in ("storage.transcript_store",):
     sys.modules.pop(module_name, None)
 
-from transcript_store import (  # noqa: E402
+from storage.transcript_store import (  # noqa: E402
     import_transcript_to_sqlite,
     load_transcript_lines,
     load_transcript_overview,

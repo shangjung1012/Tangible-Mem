@@ -7,10 +7,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SHORT_TERM_DIR = REPO_ROOT / "short_term"
 sys.path.insert(0, str(SHORT_TERM_DIR))
-for module_name in ("schema", "io_utils", "normalizer"):
+for module_name in ("core.schema", "storage.io_utils", "core.normalizer"):
     sys.modules.pop(module_name, None)
 
-from normalizer import normalize_memory  # noqa: E402
+from core.normalizer import normalize_memory  # noqa: E402
 
 
 class ShortTermNormalizerTests(unittest.TestCase):

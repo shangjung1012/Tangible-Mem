@@ -5,7 +5,7 @@ from copy import deepcopy
 from typing import Any
 
 try:
-    from .io_utils import utc_now_iso
+    from ..storage.io_utils import utc_now_iso
     from .schema import (
         ACTION_ITEM_STATUS,
         DEFAULT_MEMORY,
@@ -14,8 +14,8 @@ try:
         PRIORITY_LEVELS,
     )
 except ImportError:  # pragma: no cover - script execution fallback
-    from io_utils import utc_now_iso
-    from schema import (
+    from short_term.storage.io_utils import utc_now_iso
+    from short_term.core.schema import (
         ACTION_ITEM_STATUS,
         DEFAULT_MEMORY,
         EXPERIMENT_STATUS,

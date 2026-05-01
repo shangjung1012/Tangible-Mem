@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from short_term.short_term_context import retrieve_short_term_context
+from short_term.retrieval.short_term_context import retrieve_short_term_context
 
 
 def get_short_term_memory_context(
@@ -19,9 +19,11 @@ def get_short_term_memory_context(
     retrieval_mode: str = "hybrid",
     top_k: int = 6,
 ) -> dict[str, str]:
-    """Retrieve short-term memory context from current meeting memory JSON.
+    """Retrieve short-term memory context from short-term memory storage.
 
     Use this for recent status, owners, TODOs, latest decisions, and near-term progress.
+
+    The short-term pipeline is SQLite-first; JSON is only a fallback/export path.
 
     Args:
         query: User question.

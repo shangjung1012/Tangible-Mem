@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .graph_state import memory_summary
+    from ..core.graph_state import memory_summary
     from .sqlite_store import load_memory_from_sqlite
     from .staging_store import write_staged_candidate
 except ImportError:  # pragma: no cover
-    from graph_state import memory_summary
-    from sqlite_store import load_memory_from_sqlite
-    from staging_store import write_staged_candidate
+    from short_term.core.graph_state import memory_summary
+    from short_term.storage.sqlite_store import load_memory_from_sqlite
+    from short_term.storage.staging_store import write_staged_candidate
 
 
 DEFAULT_PAGE_SIZE = 50

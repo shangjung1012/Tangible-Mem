@@ -11,27 +11,27 @@ sys.path.insert(0, str(REPO_ROOT))
 
 for module_name in (
     "short_term.agents",
-    "short_term.graph_state",
-    "short_term.reducer",
-    "short_term.research_logger",
-    "short_term.verifier",
+    "short_term.core.graph_state",
+    "short_term.core.reducer",
+    "short_term.runtime.research_logger",
+    "short_term.core.verifier",
 ):
     sys.modules.pop(module_name, None)
 
-from short_term.reducer import reduce_candidates  # noqa: E402
-from short_term.research_logger import ResearchLogger  # noqa: E402
-from short_term.langgraph_update import _build_graph  # noqa: E402
-from short_term.genai_retry import call_with_retry  # noqa: E402
-from short_term.memory_tools import (  # noqa: E402
+from short_term.core.reducer import reduce_candidates  # noqa: E402
+from short_term.runtime.research_logger import ResearchLogger  # noqa: E402
+from short_term.workflow.langgraph_update import _build_graph  # noqa: E402
+from short_term.runtime.genai_retry import call_with_retry  # noqa: E402
+from short_term.storage.memory_tools import (  # noqa: E402
     AgentToolContext,
     AgentToolPolicy,
     read_short_term_memory_tool,
     write_memory_candidate_tool,
 )
-from short_term.sqlite_store import save_memory_to_sqlite  # noqa: E402
-from short_term.staging_store import load_staged_candidates  # noqa: E402
-from short_term.transcript_store import import_transcript_to_sqlite  # noqa: E402
-from short_term.verifier import verify_candidates  # noqa: E402
+from short_term.storage.sqlite_store import save_memory_to_sqlite  # noqa: E402
+from short_term.storage.staging_store import load_staged_candidates  # noqa: E402
+from short_term.storage.transcript_store import import_transcript_to_sqlite  # noqa: E402
+from short_term.core.verifier import verify_candidates  # noqa: E402
 
 
 class ShortTermLangGraphPipelineTests(unittest.TestCase):
@@ -273,6 +273,73 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(verified, [])
         self.assertEqual(len(rejected), 1)
         self.assertEqual(counts["duplicate_create"], 1)
+
+    def test_verifier_rejects_completed_experiment_create(self) -> None:
+        candidates = [
+            {
+                "agent": "experiment_todo_agent",
+                "section": "experiment_todos",
+                "candidate_id": "done",
+                "payload": {
+                    "todo_id": "",
+                    "description": "Adam reads the digit list on headset two.",
+                    "status": "completed",
+                    "owner": "me011",
+                    "related_action_item_ids": [],
+                    "evidence": "L1-L3",
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={
+                "action_items": [],
+                "method_changes": [],
+                "experiment_todos": [],
+            },
+            allowed_line_numbers={1, 2, 3},
+        )
+
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(counts["completed_create_not_allowed"], 1)
+
+    def test_verifier_rejects_inventory_only_method_change(self) -> None:
+        candidates = [
+            {
+                "agent": "method_change_agent",
+                "section": "method_changes",
+                "candidate_id": "inventory",
+                "payload": {
+                    "change_id": "M001",
+                    "topic": "Microphone setup for recording",
+                    "before": "Not specified",
+                    "after": "Multiple microphones were used for recording.",
+                    "reason": "To document the recording setup for the experiment.",
+                    "status": "active",
+                    "evidence": "L1-L5",
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={
+                "action_items": [],
+                "method_changes": [],
+                "experiment_todos": [],
+            },
+            allowed_line_numbers={1, 2, 3, 4, 5},
+        )
+
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(counts["inventory_not_method_change"], 1)
 
     def test_graph_event_jsonl_is_valid_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

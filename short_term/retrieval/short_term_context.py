@@ -12,13 +12,13 @@ from typing import Any
 from google import genai
 
 try:
-    from .genai_client import create_genai_client, load_genai_config
-    from .genai_retry import call_with_retry
-    from .sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
+    from ..runtime.genai_client import create_genai_client, load_genai_config
+    from ..runtime.genai_retry import call_with_retry
+    from ..storage.sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 except ImportError:  # pragma: no cover - script execution fallback
-    from genai_client import create_genai_client, load_genai_config
-    from genai_retry import call_with_retry
-    from sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
+    from short_term.runtime.genai_client import create_genai_client, load_genai_config
+    from short_term.runtime.genai_retry import call_with_retry
+    from short_term.storage.sqlite_store import DEFAULT_DB_PATH, load_memory_with_fallback
 
 
 DEFAULT_EMBEDDING_MODEL_NAME = "gemini-embedding-001"

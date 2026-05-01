@@ -8,16 +8,16 @@ from typing import Any, Callable
 from google import genai
 from google.genai import types
 
-from genai_client import (
+from short_term.runtime.genai_client import (
     GenAIConfig,
     create_genai_client,
     describe_genai_config,
     load_genai_config,
 )
-from genai_retry import call_with_retry as _call_with_retry
-from genai_retry import _is_retryable_genai_error
-from normalizer import normalize_memory
-from schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
+from short_term.runtime.genai_retry import call_with_retry as _call_with_retry
+from short_term.runtime.genai_retry import _is_retryable_genai_error
+from short_term.core.normalizer import normalize_memory
+from short_term.core.schema import RESPONSE_JSON_SCHEMA, SCHEMA_DESCRIPTION
 
 MAX_GENERATION_ATTEMPTS = 5
 MAX_TOOL_ROUNDS: int | None = None
