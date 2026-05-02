@@ -77,12 +77,41 @@ GEMINI_API_KEYS=key_1,key_2,key_3
 
 ### 1. 單場 Bridge
 
-預設是既有 full-transcript 模式：一次把整份逐字稿送給 Gemini，輸出 L1 記憶物件後寫回 `tree.json`。
+預設是既有 full-transcript 模式：一次把整份逐字稿送給 Gemini，輸出 L1 記憶物件後寫回 `tree.json`。這條路徑保留作為研究 baseline；`--mode full` 與 `--mode monolithic` 等價。
 
 ```bash
 uv run long_term/cli.py bridge \
   --transcript ICSI_original_transcripts/transcripts/Bmr001.mrt
 ```
+
+研究用 multi-agent L1 模式會把每個主要步驟都落成 JSON artifact，再把通過驗證的 L1 patch 寫回同一個 `tree.json` meeting node：
+
+```bash
+uv run long_term/cli.py bridge \
+  --transcript meeting_recording/transcript/grace/0422.txt \
+  --mode multi-agent \
+  --research-log-dir long_term/research_logs
+```
+
+每次 run 會建立 `long_term/research_logs/<run_id>/`，至少包含：
+
+- `run_meta.json`
+- `graph_events.jsonl`
+- `window_plans.json`
+- `segments.json`
+- `continuation_merges.json`
+- `extraction_batches.json`
+- `idea_units.json`
+- `raw_candidates.json`
+- `grounded_candidates.json`
+- `conflict_resolution.json`
+- `verified_candidates.json`
+- `rejected_candidates.json`
+- `final_patch.json`
+- `final_meeting_node.json`
+- `prompts/` 與 `responses/`
+
+multi-agent 第一版完整實作 L1：`context_planner -> segmentation_agent -> continuation_merge -> idea_unit_agent -> bounded l1_decision/todo/method_change/result_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`。type agents 只吃單一 bounded extraction batch 的 idea units；candidate 會保留 `extraction_scope` 與 `segment_ids` 供追責。grounding acceptance 只使用本地 evidence/content 對齊訊號，不使用模型自評 confidence。`open_question` 與 `argument` 仍保留在正式 schema 中，但專屬 agent 暫時延後，之後可沿用同一個 candidate schema 加進 `l1_type_agent` 迴圈。L2/L3 不另建新 schema；multi-agent 寫入的 meeting node 與既有 `summarize phase` / `summarize profile` 相容。
 
 常見補充參數：
 
@@ -108,7 +137,8 @@ uv run long_term/cli.py bridge \
 
 補充：
 
-- `--mode full` 是預設值，保留原本 full-transcript bridge 行為。
+- `--mode full` / `--mode monolithic` 是 baseline，保留原本 full-transcript bridge 行為。
+- `--mode multi-agent` 需要可用的 GenAI 認證，會額外輸出可逐步檢查與評估的 research logs。可用 `--multi-agent-window-size`、`--multi-agent-lookback-lines`、`--multi-agent-lookahead-lines` 控制 context planner 的 deterministic window。
 - `--mode incremental` 需要可用的 GenAI 認證。支援 Vertex AI（`GOOGLE_GENAI_USE_VERTEXAI=true`，搭配 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_APPLICATION_CREDENTIALS`，或 `GOOGLE_API_KEY`）以及舊的 Gemini API key。若是多把 API key 模式，會自動輪替使用。
 - incremental 會把進度印到 stderr，例如目前 round、掃到第幾行、issues / raw L1 數量；`--max-tool-rounds 0` 代表依逐字稿長度自動估算上限。長會議會定期從 SQLite 工作狀態重建 Gemini context，避免 input token 歷史持續膨脹。
 - `--incremental-db` 是工作日誌，不是 canonical long-term store；正式輸出仍是 `long_term/tree.json` 和 snapshots。
@@ -177,6 +207,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py eval-injection \
 ## 需要更細節時
 
 - 系統設計與資料流：`long_term/ARCHITECTURE.md`
+- multi-agent L1 詳解：`long_term/docs/MULTI_AGENT_L1_ARCHITECTURE.md`
 - retrieve redesign 筆記：`long_term/docs/RETRIEVE_IMPLEMENTATION_PLAN.md`
 - L2 / L3 redesign 筆記：`long_term/docs/L2_L3_REDESIGN_PLAN.md`
 

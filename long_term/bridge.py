@@ -709,9 +709,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["full", "incremental"],
+        choices=["full", "monolithic", "incremental", "multi-agent"],
         default="full",
-        help="Extraction mode: full keeps the existing full-transcript bridge; incremental uses Gemini function calling.",
+        help=(
+            "Extraction mode: full/monolithic keeps the existing full-transcript "
+            "bridge; incremental uses Gemini function calling; multi-agent writes "
+            "explicit research artifacts before persisting L1."
+        ),
     )
     parser.add_argument(
         "--incremental-db",
@@ -734,6 +738,29 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--research-log-dir",
+        default="long_term/research_logs",
+        help="Directory for --mode multi-agent stage artifacts.",
+    )
+    parser.add_argument(
+        "--multi-agent-window-size",
+        type=int,
+        default=80,
+        help="Primary transcript lines per context-planner window in --mode multi-agent.",
+    )
+    parser.add_argument(
+        "--multi-agent-lookback-lines",
+        type=int,
+        default=6,
+        help="Context lookback lines for segmentation prompts in --mode multi-agent.",
+    )
+    parser.add_argument(
+        "--multi-agent-lookahead-lines",
+        type=int,
+        default=6,
+        help="Context lookahead lines for segmentation prompts in --mode multi-agent.",
+    )
+    parser.add_argument(
         "--timestamp",
         default="",
         help="Meeting timestamp (ISO 8601). Auto-generated if empty.",
@@ -753,6 +780,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    mode = "full" if args.mode == "monolithic" else args.mode
     transcript_path = Path(args.transcript).resolve()
     tree_path = Path(args.tree).resolve()
     snapshot_dir = Path(args.snapshot_dir).resolve()
@@ -770,7 +798,26 @@ def main() -> None:
     api_keys = load_api_keys()
     existing_topics = collect_existing_topics(tree)
 
-    if args.mode == "incremental":
+    multi_agent_result = None
+    if mode == "multi-agent":
+        from multi_agent_pipeline import run_multi_agent_l1_pipeline
+
+        multi_agent_result = run_multi_agent_l1_pipeline(
+            model_name=args.model,
+            api_key=api_keys,
+            transcript=transcript,
+            meeting_id=meeting_id,
+            source_file=source_file,
+            timestamp=timestamp,
+            meeting_date=meeting_date,
+            existing_topics=existing_topics,
+            research_log_dir=Path(args.research_log_dir).resolve(),
+            window_size=args.multi_agent_window_size,
+            lookback_lines=args.multi_agent_lookback_lines,
+            lookahead_lines=args.multi_agent_lookahead_lines,
+        )
+        memory_objects = multi_agent_result.memory_objects
+    elif mode == "incremental":
         # New mode plugs into the existing pipeline here: Gemini tool-calling
         # produces raw L1 candidates, then the current normalizer/tree writer run.
         from gemini_incremental_extractor import extract_incremental_l1_objects
@@ -802,6 +849,8 @@ def main() -> None:
             reviewed_raw_objects,
             incremental_result.issues,
         )
+        memory_objects = normalize_memory_objects(raw_objects, meeting_id)
+        memory_objects = apply_incremental_final_importance_caps(memory_objects)
     else:
         llm_output = call_gemini_bridge(
             model_name=args.model,
@@ -811,10 +860,7 @@ def main() -> None:
             existing_topics=existing_topics,
         )
         raw_objects = llm_output.get("memory_objects", [])
-
-    memory_objects = normalize_memory_objects(raw_objects, meeting_id)
-    if args.mode == "incremental":
-        memory_objects = apply_incremental_final_importance_caps(memory_objects)
+        memory_objects = normalize_memory_objects(raw_objects, meeting_id)
 
     insert_meeting_into_tree(
         tree=tree,
@@ -824,6 +870,16 @@ def main() -> None:
         memory_objects=memory_objects,
         meeting_date=meeting_date,
     )
+    if multi_agent_result is not None:
+        persisted_node = next(
+            (
+                meeting
+                for meeting in tree.get("meetings", [])
+                if meeting.get("meeting_id") == meeting_id
+            ),
+            multi_agent_result.final_meeting_node,
+        )
+        save_json(multi_agent_result.run_dir / "final_meeting_node.json", persisted_node)
 
     if args.dry_run:
         print_json_safe(tree)
@@ -835,7 +891,12 @@ def main() -> None:
     )
     save_json(snapshot_dir / snapshot_name, tree)
 
-    if args.mode == "incremental":
+    if mode == "multi-agent" and multi_agent_result is not None:
+        print(
+            f"Multi-agent bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
+        )
+        print(f"Research log: {multi_agent_result.run_dir}")
+    elif mode == "incremental":
         print(
             f"Incremental bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
         )

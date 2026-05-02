@@ -62,6 +62,10 @@ def _print_help() -> None:
         "ICSI_original_transcripts/transcripts/Bmr001.mrt"
     )
     print(
+        "  uv run long_term/cli.py bridge --transcript "
+        "meeting_recording/transcript/grace/0422.txt --mode multi-agent"
+    )
+    print(
         "  uv run long_term/cli.py summarize phase "
         "--phase-id P-007 --time-start Bmr027 --time-end Bmr030 "
         "--meetings Bmr027 Bmr028 Bmr029 Bmr030"
