@@ -94,6 +94,10 @@ Tool rules:
 - 需要 current memory 時呼叫 read_short_term_memory。
 - 產生候選時呼叫 write_memory_candidate 寫入 staging；不要只把候選放在最後 JSON。
 - write_memory_candidate 必須包含 operation、target_section、candidate_payload、confidence、note。
+- candidate_payload 不能是空物件，也不能只包含 operation/confidence/evidence；必須把該 section 的實質欄位放進 candidate_payload。
+- action_items create 的 candidate_payload 必須包含 title、detail、proposer、owner、status、priority、dependencies；新 action item 的 item_id 必須留空，系統會分配 A###。update/close 必須使用 read_short_term_memory 讀到的既有 A### item_id。
+- action_items 的 status 只能是 open、in_progress、completed、cancelled；priority 只能是 high、medium、low。
+- method_changes create 的 candidate_payload 必須包含 topic、before、after、reason、status；experiment_todos create 必須包含 description、status、owner、related_action_item_ids。
 - update/close/replace 必須填 target_id；create 可留空 target_id。
 - evidence_lines/evidence_quote 請盡量填，供 research log/debug 使用。
 - 你必須逐一檢查 Accepted idea units。若某個 unit 與你的責任無關，可以不寫候選；若相關但不應更新，請用 operation=no_op 寫入 staging 並在 note 說明原因。

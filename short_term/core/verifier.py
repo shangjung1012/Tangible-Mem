@@ -22,6 +22,7 @@ except ImportError:  # pragma: no cover
 
 CONFIDENCE_THRESHOLD = 0.45
 _EVIDENCE_RE = re.compile(r"L(?P<start>\d+)(?:\s*-\s*L?(?P<end>\d+))?")
+_ACTION_ID_RE = re.compile(r"^A\d{3}$")
 
 SECTION_AGENT_ALLOWLIST = {
     "meeting_window": {"meeting_summary_agent"},
@@ -137,6 +138,8 @@ def _verify_action(
     reasons: list[str],
 ) -> None:
     item_id = str(payload.get("item_id", "")).strip()
+    if item_id and not _ACTION_ID_RE.fullmatch(item_id):
+        reasons.append("invalid_action_item_id")
     if operation not in {"create", "update", "close", "no_op"}:
         reasons.append("invalid_operation")
     if operation in {"update", "close"} and item_id not in existing_ids:

@@ -20,7 +20,10 @@ for module_name in (
 
 from short_term.core.reducer import reduce_candidates  # noqa: E402
 from short_term.runtime.research_logger import ResearchLogger  # noqa: E402
-from short_term.workflow.langgraph_update import _build_graph  # noqa: E402
+from short_term.workflow.langgraph_update import (  # noqa: E402
+    _build_graph,
+    _candidate_payload_is_sparse,
+)
 from short_term.runtime.genai_retry import call_with_retry  # noqa: E402
 from short_term.storage.memory_tools import (  # noqa: E402
     AgentToolContext,
@@ -192,6 +195,62 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(verified[0]["warnings"], ["missing_evidence"])
         self.assertEqual(len(rejected), 1)
         self.assertEqual(counts["update_unknown_id"], 1)
+
+    def test_verifier_rejects_non_canonical_action_item_id(self) -> None:
+        candidates = [
+            {
+                "agent": "action_item_agent",
+                "section": "action_items",
+                "candidate_id": "temp-id",
+                "payload": {
+                    "item_id": "Bmr009-temp-1",
+                    "title": "Simplify analysis",
+                    "detail": "Start with 1D distributions.",
+                    "proposer": "me013",
+                    "owner": "unknown",
+                    "status": "open",
+                    "priority": "low",
+                    "dependencies": [],
+                    "evidence": "L1",
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={"action_items": [], "method_changes": [], "experiment_todos": []},
+            allowed_line_numbers={1},
+        )
+
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(counts["invalid_action_item_id"], 1)
+
+    def test_sparse_candidate_payload_detection(self) -> None:
+        self.assertTrue(
+            _candidate_payload_is_sparse(
+                {
+                    "payload": {
+                        "operation": "create",
+                        "confidence": 0.9,
+                        "evidence": "L1",
+                    }
+                }
+            )
+        )
+        self.assertFalse(
+            _candidate_payload_is_sparse(
+                {
+                    "payload": {
+                        "operation": "create",
+                        "confidence": 0.9,
+                        "title": "Prepare data",
+                    }
+                }
+            )
+        )
 
     def test_verifier_accepts_valid_candidates_and_reducer_builds_patch(self) -> None:
         candidates = [

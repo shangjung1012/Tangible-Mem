@@ -380,6 +380,8 @@ def _build_graph(
                     target_section=section,
                 )
                 for candidate in staged:
+                    if _candidate_payload_is_sparse(candidate):
+                        continue
                     candidate_id = str(candidate.get("candidate_id", ""))
                     if not candidate_id or candidate_id in existing_ids:
                         continue
@@ -606,13 +608,14 @@ def _extract_candidates(
         candidate
         for candidate in staged
         if str(candidate.get("candidate_id", "")) not in existing_ids
+        and not _candidate_payload_is_sparse(candidate)
     ]
 
     # Gemini tool-calling sometimes writes staging rows with an empty or nearly
     # empty candidate_payload, while the final JSON response still contains the
     # full structured candidate. Keep the parsed JSON candidates as a fallback
     # so verifier/reducer can still operate on complete payloads.
-    if not staged or any(_candidate_payload_is_sparse(row) for row in staged):
+    if not output or any(_candidate_payload_is_sparse(row) for row in staged):
         output.extend(parsed_candidates)
         return output
 

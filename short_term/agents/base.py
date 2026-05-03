@@ -154,6 +154,12 @@ class GeminiJsonAgent:
             evidence_lines: list[int] | None = None,
             evidence_quote: str = "",
         ) -> dict[str, Any]:
+            """Stage a complete memory candidate for deterministic validation.
+
+            candidate_payload must contain the real section fields, not only
+            operation/confidence/evidence. For action_items create, leave
+            item_id empty; existing action item IDs must use A###.
+            """
             return write_memory_candidate_tool(
                 tool_context,
                 operation=operation,
