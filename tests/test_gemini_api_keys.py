@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from google.genai import types
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
@@ -27,11 +29,19 @@ class _FakeModels:
 
 
 class _FakeClient:
-    def __init__(self, api_key: str | None = None, vertexai: bool | None = None, project: str | None = None, location: str | None = None) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+        vertexai: bool | None = None,
+        project: str | None = None,
+        location: str | None = None,
+        http_options: types.HttpOptions | None = None,
+    ) -> None:
         self.api_key = api_key
         self.vertexai = bool(vertexai)
         self.project = project
         self.location = location
+        self.http_options = http_options
         self.models = _FakeModels(self)
 
 
@@ -145,6 +155,22 @@ class GeminiApiKeyTests(unittest.TestCase):
         ):
             self.assertTrue(is_vertex_ai_enabled())
             self.assertEqual(get_configured_client_count([]), 1)
+
+    def test_client_uses_configured_http_timeout(self) -> None:
+        with (
+            patch("gemini_clients.ensure_env_loaded"),
+            patch("gemini_clients.genai.Client", _FakeClient),
+            patch.dict(
+                os.environ,
+                {
+                    "GEMINI_HTTP_TIMEOUT_S": "77",
+                },
+                clear=True,
+            ),
+        ):
+            client = create_gemini_client(["timeout_key"])
+
+        self.assertEqual(client.http_options.timeout, 77000)
 
     def test_round_robin_client_reuses_pool_for_same_key_set(self) -> None:
         keys = ["pool_key_a", "pool_key_b", "pool_key_c"]

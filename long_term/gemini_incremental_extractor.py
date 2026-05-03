@@ -16,6 +16,7 @@ from google.genai import types
 from embedder import EmbedCache
 from gemini_clients import create_gemini_client, get_configured_client_count
 from incremental_store import (
+    ISSUE_EPISODE_GAP_LINES,
     READ_PURPOSES,
     get_max_line_id,
     load_issues,
@@ -37,7 +38,7 @@ MAX_ISSUE_EVIDENCE_LINES_PER_UPDATE = 8
 CONTEXT_RESET_INTERVAL_ROUNDS = 18
 MAX_CONTENT_ITEMS_BEFORE_RESET = 36
 SINGLE_KEY_MIN_REQUEST_INTERVAL_S = 12.5
-SINGLE_KEY_MAX_RETRIES = 6
+SINGLE_KEY_MAX_RETRIES = 30
 _RETRY_DELAY_RE = re.compile(r"retry in ([0-9]+(?:\.[0-9]+)?)s", re.IGNORECASE)
 
 
@@ -404,6 +405,7 @@ def _build_system_instruction(
     transcript_id: str,
     existing_topics: list[str],
     chunk_size: int,
+    dataset_prompt_hint: str = "",
     request_constrained: bool = False,
 ) -> str:
     topics = ", ".join(existing_topics) if existing_topics else "(none)"
@@ -439,6 +441,9 @@ Rules:
 
 Known related topics: {topics}
 """.strip()
+    if dataset_prompt_hint.strip():
+        return f"{base_prompt}\n\nDataset-specific guidance: {dataset_prompt_hint.strip()}"
+    return base_prompt
 
 
 def _build_initial_prompt(
@@ -518,6 +523,7 @@ def _build_config(
     transcript_id: str,
     existing_topics: list[str],
     chunk_size: int,
+    dataset_prompt_hint: str = "",
     request_constrained: bool = False,
 ) -> types.GenerateContentConfig:
     return types.GenerateContentConfig(
@@ -525,6 +531,7 @@ def _build_config(
             transcript_id=transcript_id,
             existing_topics=existing_topics,
             chunk_size=chunk_size,
+            dataset_prompt_hint=dataset_prompt_hint,
             request_constrained=request_constrained,
         ),
         temperature=0.15,
@@ -546,13 +553,15 @@ def _max_retry_attempts_for_key_count(key_count: int) -> int:
 
 def _is_retryable_error(exc: Exception) -> bool:
     status_code = getattr(exc, "status_code", None) or getattr(exc, "status", None)
-    if status_code in {429, 500, 502, 503, 504}:
+    if status_code in {429, 499, 500, 502, 503, 504}:
         return True
     msg = str(exc).upper()
     return any(
         token in msg
         for token in (
             "429",
+            "499",
+            "CANCELLED",
             "500",
             "502",
             "503",
@@ -560,6 +569,9 @@ def _is_retryable_error(exc: Exception) -> bool:
             "RESOURCE_EXHAUSTED",
             "UNAVAILABLE",
             "RATE LIMIT",
+            "READTIMEOUT",
+            "TIMEOUT",
+            "TIMED OUT",
         )
     )
 
@@ -640,7 +652,9 @@ def _generate_with_retry(
                 wait_s = max(wait_s, min_request_interval_s)
             print(
                 f"  API busy ({type(exc).__name__}), "
-                f"retry {attempt}/{max_retries} in {wait_s:.1f}s..."
+                f"retry {attempt}/{max_retries} in {wait_s:.1f}s...",
+                file=sys.stderr,
+                flush=True,
             )
             time.sleep(wait_s)
     raise RuntimeError("Unexpected retry loop exit.")
@@ -762,6 +776,7 @@ def _execute_tool_call(
     tool_state: ToolLoopState | None = None,
     api_key: str | list[str] | None = None,
     embed_cache: EmbedCache | None = None,
+    issue_episode_gap_lines: int = ISSUE_EPISODE_GAP_LINES,
 ) -> tuple[dict[str, Any], int]:
     name = function_call.name or ""
     args = function_call.args or {}
@@ -872,6 +887,7 @@ def _execute_tool_call(
                 summary=str(args.get("summary") or ""),
                 api_key=api_key,
                 embed_cache=embed_cache,
+                issue_episode_gap_lines=issue_episode_gap_lines,
             )
             mention_ids: list[int] = []
             for line_id in line_ids:
@@ -883,12 +899,17 @@ def _execute_tool_call(
                         line_id=line_id,
                         purpose=purpose,
                         note=str(args.get("note") or ""),
+                        issue_episode_gap_lines=issue_episode_gap_lines,
                     )
                 )
             refreshed_issue = next(
                 (
                     item
-                    for item in load_issues(db_path, transcript_id)
+                    for item in load_issues(
+                        db_path,
+                        transcript_id,
+                        issue_episode_gap_lines=issue_episode_gap_lines,
+                    )
                     if item.get("issue_id") == issue["issue_id"]
                 ),
                 issue,
@@ -1087,12 +1108,16 @@ def extract_incremental_l1_objects(
     db_path: Path,
     existing_topics: list[str],
     chunk_size: int = 40,
+    issue_episode_gap_lines: int = ISSUE_EPISODE_GAP_LINES,
+    dataset_profile_name: str = "generic",
+    dataset_prompt_hint: str = "",
     max_tool_rounds: int = 0,
     progress: bool = True,
     client: Any | None = None,
 ) -> IncrementalExtractionResult:
     db_path = Path(db_path)
     chunk_size = max(1, int(chunk_size))
+    issue_episode_gap_lines = max(1, int(issue_episode_gap_lines))
     requested_tool_rounds = int(max_tool_rounds or 0)
 
     seed_transcript_lines(db_path, transcript_id, transcript, replace=True)
@@ -1117,7 +1142,9 @@ def extract_incremental_l1_objects(
         progress,
         (
             f"[incremental] {transcript_id}: {max_line} transcript lines, "
-            f"chunk_size={chunk_size}, max_tool_rounds={max_tool_rounds} ({round_source})"
+            f"profile={dataset_profile_name}, chunk_size={chunk_size}, "
+            f"issue_episode_gap_lines={issue_episode_gap_lines}, "
+            f"max_tool_rounds={max_tool_rounds} ({round_source})"
         ),
     )
 
@@ -1138,6 +1165,7 @@ def extract_incremental_l1_objects(
         transcript_id=transcript_id,
         existing_topics=existing_topics,
         chunk_size=chunk_size,
+        dataset_prompt_hint=dataset_prompt_hint,
         request_constrained=request_constrained,
     )
     contents: list[types.Content] = [
@@ -1204,6 +1232,7 @@ def extract_incremental_l1_objects(
                         tool_state=tool_state,
                         api_key=api_key,
                         embed_cache=issue_embed_cache,
+                        issue_episode_gap_lines=issue_episode_gap_lines,
                     )
                     had_tool_errors = had_tool_errors or ("error" in payload)
                     had_forward_read = had_forward_read or (
@@ -1229,7 +1258,7 @@ def extract_incremental_l1_objects(
                         f"{'; '.join(summaries)}; "
                         f"progress={max_forward_line}/{max_line} "
                         f"({_progress_percent(max_forward_line, max_line):.1f}%), "
-                        f"issues={len(load_issues(db_path, transcript_id))}, "
+                        f"issues={len(load_issues(db_path, transcript_id, issue_episode_gap_lines=issue_episode_gap_lines))}, "
                         f"raw_l1={len(load_l1_objects(db_path, transcript_id))}"
                     ),
                 )
@@ -1279,7 +1308,11 @@ def extract_incremental_l1_objects(
                     round_index % CONTEXT_RESET_INTERVAL_ROUNDS == 0
                     or len(contents) >= MAX_CONTENT_ITEMS_BEFORE_RESET
                 ):
-                    known_issues = load_issues(db_path, transcript_id)
+                    known_issues = load_issues(
+                        db_path,
+                        transcript_id,
+                        issue_episode_gap_lines=issue_episode_gap_lines,
+                    )
                     contents = _reset_contents(
                         transcript_id=transcript_id,
                         max_forward_line=max_forward_line,
@@ -1327,7 +1360,11 @@ def extract_incremental_l1_objects(
                                 max_forward_line,
                                 max_line,
                                 chunk_size,
-                                load_issues(db_path, transcript_id),
+                                load_issues(
+                                    db_path,
+                                    transcript_id,
+                                    issue_episode_gap_lines=issue_episode_gap_lines,
+                                ),
                             )
                         )
                     ],
@@ -1355,7 +1392,11 @@ def extract_incremental_l1_objects(
         transcript_id,
         include_issue_metadata=True,
     )
-    issues = load_issues(db_path, transcript_id)
+    issues = load_issues(
+        db_path,
+        transcript_id,
+        issue_episode_gap_lines=issue_episode_gap_lines,
+    )
     _progress_log(
         progress,
         (

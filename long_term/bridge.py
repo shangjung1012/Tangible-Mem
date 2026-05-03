@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from dataset_profiles import dataset_profile_choices, resolve_incremental_settings
 from gemini_clients import create_gemini_client
 from importance import (
     IMPORTANCE_SCALE,
@@ -139,16 +140,18 @@ def call_gemini_bridge(
     transcript: str,
     meeting_id: str,
     existing_topics: list[str],
-    max_retries: int = 6,
+    max_retries: int = 30,
 ) -> dict[str, Any]:
     def _is_retryable_error(exc: Exception) -> bool:
         status_code = getattr(exc, "status_code", None)
-        if status_code in {429, 500, 502, 503, 504}:
+        if status_code in {429, 499, 500, 502, 503, 504}:
             return True
 
         msg = str(exc).upper()
         retry_tokens = (
             "429",
+            "499",
+            "CANCELLED",
             "500",
             "502",
             "503",
@@ -156,6 +159,9 @@ def call_gemini_bridge(
             "RESOURCE_EXHAUSTED",
             "UNAVAILABLE",
             "RATE LIMIT",
+            "READTIMEOUT",
+            "TIMEOUT",
+            "TIMED OUT",
         )
         return any(token in msg for token in retry_tokens)
 
@@ -183,7 +189,9 @@ def call_gemini_bridge(
             wait_s = backoff + random.uniform(0.0, 1.5)
             print(
                 f"  API busy ({type(exc).__name__}) for {meeting_id}, "
-                f"retry {attempt}/{max_retries} in {wait_s:.1f}s..."
+                f"retry {attempt}/{max_retries} in {wait_s:.1f}s...",
+                file=sys.stderr,
+                flush=True,
             )
             time.sleep(wait_s)
 
@@ -725,8 +733,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--chunk-size",
         type=int,
-        default=40,
-        help="Approximate transcript lines per forward_scan read in --mode incremental.",
+        default=None,
+        help=(
+            "Approximate transcript lines per forward_scan read in --mode incremental. "
+            "If omitted, use the dataset-profile default."
+        ),
+    )
+    parser.add_argument(
+        "--dataset-profile",
+        choices=dataset_profile_choices(),
+        default="auto",
+        help=(
+            "Incremental transcript preset. auto infers from the transcript path; "
+            "ISCI keeps the current defaults, while Grace uses a narrower scan preset."
+        ),
+    )
+    parser.add_argument(
+        "--issue-episode-gap-lines",
+        type=int,
+        default=None,
+        help=(
+            "Line-gap threshold for counting a repeated issue as a new episode in "
+            "--mode incremental. If omitted, use the dataset-profile default."
+        ),
     )
     parser.add_argument(
         "--max-tool-rounds",
@@ -818,6 +847,28 @@ def main() -> None:
         )
         memory_objects = multi_agent_result.memory_objects
     elif mode == "incremental":
+        incremental_settings = resolve_incremental_settings(
+            transcript_path,
+            requested_profile=args.dataset_profile,
+            chunk_size=args.chunk_size,
+            issue_episode_gap_lines=args.issue_episode_gap_lines,
+        )
+        profile = incremental_settings["profile"]
+        chunk_size = int(incremental_settings["chunk_size"])
+        issue_episode_gap_lines = int(
+            incremental_settings["issue_episode_gap_lines"]
+        )
+        print(
+            (
+                f"[incremental] dataset_profile={profile.name}, "
+                f"chunk_size={chunk_size} ({incremental_settings['chunk_size_source']}), "
+                "issue_episode_gap_lines="
+                f"{issue_episode_gap_lines} "
+                f"({incremental_settings['issue_episode_gap_lines_source']})"
+            ),
+            file=sys.stderr,
+            flush=True,
+        )
         # New mode plugs into the existing pipeline here: Gemini tool-calling
         # produces raw L1 candidates, then the current normalizer/tree writer run.
         from gemini_incremental_extractor import extract_incremental_l1_objects
@@ -829,7 +880,10 @@ def main() -> None:
             transcript_id=meeting_id,
             db_path=Path(args.incremental_db).resolve(),
             existing_topics=existing_topics,
-            chunk_size=args.chunk_size,
+            chunk_size=chunk_size,
+            issue_episode_gap_lines=issue_episode_gap_lines,
+            dataset_profile_name=profile.name,
+            dataset_prompt_hint=profile.prompt_hint,
             max_tool_rounds=args.max_tool_rounds,
         )
         reviewed_raw_objects, review_stats = review_incremental_candidates(

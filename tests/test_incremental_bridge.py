@@ -12,6 +12,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
 
+from dataset_profiles import (  # noqa: E402
+    infer_dataset_profile_name,
+    resolve_incremental_settings,
+)
 from bridge import (  # noqa: E402
     apply_incremental_final_importance_caps,
     normalize_memory_objects,
@@ -27,6 +31,7 @@ from gemini_incremental_extractor import (  # noqa: E402
     _compact_issue_line_ids,
     _execute_tool_call,
     _extract_retry_delay_seconds,
+    _is_retryable_error,
     _infer_issue_purpose,
     _max_retry_attempts_for_key_count,
     _min_request_interval_for_key_count,
@@ -275,6 +280,52 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(count_issue_episodes([10, 11, 20, 21, 40]), 2)
         self.assertEqual(count_issue_episodes([10, 11, 30, 31, 60]), 3)
 
+    def test_dataset_profiles_infer_isci_and_grace_defaults(self) -> None:
+        self.assertEqual(
+            infer_dataset_profile_name(
+                "meeting_recording/transcript/ISCI/Bdb001.txt"
+            ),
+            "isci",
+        )
+        self.assertEqual(
+            infer_dataset_profile_name(
+                "meeting_recording/transcript/grace/0422.txt"
+            ),
+            "grace",
+        )
+
+        isci_settings = resolve_incremental_settings(
+            "meeting_recording/transcript/ISCI/Bdb001.txt"
+        )
+        grace_settings = resolve_incremental_settings(
+            "meeting_recording/transcript/grace/0422.txt"
+        )
+
+        self.assertEqual(isci_settings["profile"].name, "isci")
+        self.assertEqual(isci_settings["chunk_size"], 40)
+        self.assertEqual(isci_settings["issue_episode_gap_lines"], 15)
+        self.assertEqual(grace_settings["profile"].name, "grace")
+        self.assertEqual(grace_settings["chunk_size"], 24)
+        self.assertEqual(grace_settings["issue_episode_gap_lines"], 10)
+
+    def test_cli_overrides_dataset_profile_defaults(self) -> None:
+        settings = resolve_incremental_settings(
+            "meeting_recording/transcript/grace/0422.txt",
+            requested_profile="grace",
+            chunk_size=30,
+            issue_episode_gap_lines=7,
+        )
+
+        self.assertEqual(settings["profile"].name, "grace")
+        self.assertEqual(settings["chunk_size"], 30)
+        self.assertEqual(settings["chunk_size_source"], "cli")
+        self.assertEqual(settings["issue_episode_gap_lines"], 7)
+        self.assertEqual(settings["issue_episode_gap_lines_source"], "cli")
+
+    def test_timeout_errors_are_retryable(self) -> None:
+        self.assertTrue(_is_retryable_error(RuntimeError("httpx.ReadTimeout: timed out")))
+        self.assertTrue(_is_retryable_error(RuntimeError("The read operation timed out")))
+
     def test_consecutive_issue_mentions_do_not_raise_importance_as_recurrence(self) -> None:
         issue = upsert_issue(
             self.db_path,
@@ -322,6 +373,36 @@ class IncrementalBridgeTests(unittest.TestCase):
         issues = load_issues(self.db_path, self.transcript_id)
 
         self.assertEqual(issues[0]["mention_count"], 5)
+        self.assertEqual(issues[0]["episode_count"], 3)
+        self.assertEqual(issues[0]["importance"], 0.76)
+
+    def test_custom_issue_episode_gap_lines_affect_recurrence(self) -> None:
+        issue = upsert_issue(
+            self.db_path,
+            self.transcript_id,
+            title="Grace recurring concern",
+            status="open",
+            importance=0.2,
+            summary="A long-turn dataset issue comes back in separated lines.",
+            issue_episode_gap_lines=10,
+        )
+
+        for line_id in [1, 12, 23]:
+            record_issue_mention(
+                self.db_path,
+                self.transcript_id,
+                issue["issue_id"],
+                line_id=line_id,
+                purpose="forward_scan",
+                issue_episode_gap_lines=10,
+            )
+
+        issues = load_issues(
+            self.db_path,
+            self.transcript_id,
+            issue_episode_gap_lines=10,
+        )
+
         self.assertEqual(issues[0]["episode_count"], 3)
         self.assertEqual(issues[0]["importance"], 0.76)
 
@@ -734,7 +815,7 @@ class IncrementalBridgeTests(unittest.TestCase):
         self.assertEqual(_min_request_interval_for_key_count(2), 0.0)
 
     def test_single_key_mode_uses_higher_retry_budget(self) -> None:
-        self.assertEqual(_max_retry_attempts_for_key_count(1), 6)
+        self.assertEqual(_max_retry_attempts_for_key_count(1), 30)
         self.assertEqual(_max_retry_attempts_for_key_count(2), 4)
 
     def test_single_key_initial_prompt_mentions_request_budgeting(self) -> None:

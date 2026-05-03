@@ -112,6 +112,14 @@ _ISSUE_NEGATIVE_DIRECTION_MARKERS = (
 )
 
 
+def _resolve_gap_lines(gap_lines: int | None) -> int:
+    try:
+        clean = int(gap_lines or 0)
+    except (TypeError, ValueError):
+        clean = 0
+    return max(1, clean or ISSUE_EPISODE_GAP_LINES)
+
+
 def utc_now_iso() -> str:
     return (
         datetime.now(timezone.utc)
@@ -613,7 +621,11 @@ def resolve_issue_reference(
     }
 
 
-def count_issue_episodes(line_ids: list[int], gap_lines: int = ISSUE_EPISODE_GAP_LINES) -> int:
+def count_issue_episodes(
+    line_ids: list[int],
+    gap_lines: int = ISSUE_EPISODE_GAP_LINES,
+) -> int:
+    gap_lines = _resolve_gap_lines(gap_lines)
     unique_lines = sorted({int(line_id) for line_id in line_ids})
     if not unique_lines:
         return 0
@@ -631,6 +643,7 @@ def get_issue_episode_count(
     issue_id: str,
     gap_lines: int = ISSUE_EPISODE_GAP_LINES,
 ) -> int:
+    gap_lines = _resolve_gap_lines(gap_lines)
     rows = conn.execute(
         "SELECT line_id FROM issue_mentions WHERE issue_id = ? ORDER BY line_id ASC",
         (issue_id,),
@@ -650,8 +663,10 @@ def upsert_issue(
     summary: str = "",
     api_key: str | list[str] | None = None,
     embed_cache: EmbedCache | None = None,
+    issue_episode_gap_lines: int = ISSUE_EPISODE_GAP_LINES,
 ) -> dict[str, Any]:
     ensure_schema(db_path)
+    issue_episode_gap_lines = _resolve_gap_lines(issue_episode_gap_lines)
     clean_title = str(title).strip()
     if not clean_title:
         raise ValueError("Issue title is required.")
@@ -682,7 +697,11 @@ def upsert_issue(
         )
         if existing is not None and not str(issue_key).strip():
             clean_issue_key = str(existing["issue_key"] or clean_issue_key)
-        episode_count = get_issue_episode_count(conn, clean_issue_id)
+        episode_count = get_issue_episode_count(
+            conn,
+            clean_issue_id,
+            gap_lines=issue_episode_gap_lines,
+        )
         calibrated_score = calibrate_issue_importance(
             score,
             episode_count=episode_count,
@@ -737,9 +756,11 @@ def record_issue_mention(
     purpose: str,
     *,
     note: str = "",
+    issue_episode_gap_lines: int = ISSUE_EPISODE_GAP_LINES,
 ) -> int:
     if purpose not in READ_PURPOSES:
         raise ValueError(f"Invalid mention purpose: {purpose}")
+    issue_episode_gap_lines = _resolve_gap_lines(issue_episode_gap_lines)
     ensure_schema(db_path)
     with _connect(db_path) as conn:
         existing = conn.execute(
@@ -765,7 +786,11 @@ def record_issue_mention(
             (issue_id,),
         ).fetchone()
         if issue_row:
-            episode_count = get_issue_episode_count(conn, issue_id)
+            episode_count = get_issue_episode_count(
+                conn,
+                issue_id,
+                gap_lines=issue_episode_gap_lines,
+            )
             new_importance = calibrate_issue_importance(
                 issue_row["importance"],
                 episode_count=episode_count,
@@ -785,8 +810,14 @@ def record_issue_mention(
     return int(cursor.lastrowid)
 
 
-def load_issues(db_path: Path, transcript_id: str) -> list[dict[str, Any]]:
+def load_issues(
+    db_path: Path,
+    transcript_id: str,
+    *,
+    issue_episode_gap_lines: int = ISSUE_EPISODE_GAP_LINES,
+) -> list[dict[str, Any]]:
     ensure_schema(db_path)
+    issue_episode_gap_lines = _resolve_gap_lines(issue_episode_gap_lines)
     with _connect(db_path) as conn:
         rows = conn.execute(
             """
@@ -826,7 +857,10 @@ def load_issues(db_path: Path, transcript_id: str) -> list[dict[str, Any]]:
             for value in raw_line_ids.split(",")
             if value.strip().isdigit()
         ]
-        item["episode_count"] = count_issue_episodes(line_ids)
+        item["episode_count"] = count_issue_episodes(
+            line_ids,
+            gap_lines=issue_episode_gap_lines,
+        )
         issues.append(item)
     return issues
 

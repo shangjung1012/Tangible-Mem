@@ -8,10 +8,12 @@ from threading import Lock
 from typing import Any
 
 from google import genai
+from google.genai import types
 from io_utils import ensure_env_loaded, is_vertex_ai_enabled, parse_gemini_api_keys_from_env
 
 _CLIENT_CACHE: dict[tuple[str, ...], Any] = {}
 _CLIENT_CACHE_LOCK = Lock()
+DEFAULT_HTTP_TIMEOUT_S = 500
 
 
 def normalize_api_keys(api_key_or_keys: str | Sequence[str]) -> list[str]:
@@ -63,6 +65,22 @@ def get_configured_client_count(api_key_or_keys: str | Sequence[str] | None = No
     return 1 if is_vertex_ai_enabled() else 0
 
 
+def _resolve_http_timeout_s() -> int:
+    raw_value = str(os.getenv("GEMINI_HTTP_TIMEOUT_S", "")).strip()
+    if not raw_value:
+        return DEFAULT_HTTP_TIMEOUT_S
+    try:
+        timeout_s = int(raw_value)
+    except ValueError:
+        return DEFAULT_HTTP_TIMEOUT_S
+    return max(1, timeout_s)
+
+
+def _build_http_options() -> types.HttpOptions:
+    # HttpOptions.timeout is in milliseconds; _resolve_http_timeout_s() returns seconds
+    return types.HttpOptions(timeout=_resolve_http_timeout_s() * 1000)
+
+
 class _RoundRobinModels:
     def __init__(self, pool: "RoundRobinGeminiClient") -> None:
         self._pool = pool
@@ -104,10 +122,12 @@ def create_gemini_client(api_key_or_keys: str | Sequence[str] | None = None) -> 
     project = os.getenv("GOOGLE_CLOUD_PROJECT", "").strip()
     location = os.getenv("GOOGLE_CLOUD_LOCATION", "").strip()
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+    http_options = _build_http_options()
+    timeout_s = _resolve_http_timeout_s()
 
     if use_vertex:
         if project or credentials_path:
-            client_kwargs = {"vertexai": True}
+            client_kwargs = {"vertexai": True, "http_options": http_options}
             if project:
                 client_kwargs["project"] = project
             if location:
@@ -118,19 +138,27 @@ def create_gemini_client(api_key_or_keys: str | Sequence[str] | None = None) -> 
                 project,
                 location,
                 credentials_path,
+                str(timeout_s),
             )
             client_kwargs_pool = [client_kwargs]
         elif keys:
-            cache_key = ("vertex", "api_key", *keys)
+            cache_key = ("vertex", "api_key", str(timeout_s), *keys)
             client_kwargs_pool = [
-                {"vertexai": True, "api_key": key}
+                {"vertexai": True, "api_key": key, "http_options": http_options}
                 for key in keys
             ]
         else:
-            client_kwargs = {"vertexai": True}
+            client_kwargs = {"vertexai": True, "http_options": http_options}
             if location:
                 client_kwargs["location"] = location
-            cache_key = ("vertex", "auto", project, location, credentials_path)
+            cache_key = (
+                "vertex",
+                "auto",
+                project,
+                location,
+                credentials_path,
+                str(timeout_s),
+            )
             client_kwargs_pool = [client_kwargs]
     else:
         if not keys:
@@ -138,8 +166,10 @@ def create_gemini_client(api_key_or_keys: str | Sequence[str] | None = None) -> 
                 "Gemini API key is missing. Set GEMINI_API_KEY / GEMINI_API_KEYS, "
                 "or enable Vertex AI with GOOGLE_GENAI_USE_VERTEXAI=true."
             )
-        cache_key = ("gemini", *keys)
-        client_kwargs_pool = [{"api_key": key} for key in keys]
+        cache_key = ("gemini", str(timeout_s), *keys)
+        client_kwargs_pool = [
+            {"api_key": key, "http_options": http_options} for key in keys
+        ]
 
     with _CLIENT_CACHE_LOCK:
         cached = _CLIENT_CACHE.get(cache_key)

@@ -132,7 +132,7 @@ uv run long_term/cli.py bridge \
   --transcript meeting_recording/transcript/grace/16.txt \
   --mode incremental \
   --incremental-db long_term/incremental_bridge.db \
-  --chunk-size 40
+  --dataset-profile grace
 ```
 
 補充：
@@ -140,7 +140,12 @@ uv run long_term/cli.py bridge \
 - `--mode full` / `--mode monolithic` 是 baseline，保留原本 full-transcript bridge 行為。
 - `--mode multi-agent` 需要可用的 GenAI 認證，會額外輸出可逐步檢查與評估的 research logs。可用 `--multi-agent-window-size`、`--multi-agent-lookback-lines`、`--multi-agent-lookahead-lines` 控制 context planner 的 deterministic window。
 - `--mode incremental` 需要可用的 GenAI 認證。支援 Vertex AI（`GOOGLE_GENAI_USE_VERTEXAI=true`，搭配 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_APPLICATION_CREDENTIALS`，或 `GOOGLE_API_KEY`）以及舊的 Gemini API key。若是多把 API key 模式，會自動輪替使用。
+- `--dataset-profile auto` 會從 transcript 路徑推斷 preset；目前內建：
+  - `isci`：保留目前 ISCI/ICSI 逐字稿的穩定設定（`chunk_size=40`, `issue_episode_gap_lines=15`）
+  - `grace`：針對較長的中文 turn-level transcript 使用較窄的掃描設定（`chunk_size=24`, `issue_episode_gap_lines=10`）
+  - 也可用 `--chunk-size` 或 `--issue-episode-gap-lines` 手動覆寫
 - incremental 會把進度印到 stderr，例如目前 round、掃到第幾行、issues / raw L1 數量；`--max-tool-rounds 0` 代表依逐字稿長度自動估算上限。長會議會定期從 SQLite 工作狀態重建 Gemini context，避免 input token 歷史持續膨脹。
+- Gemini client 預設會使用 `500s` HTTP timeout；若想在 Vertex / Gemini API 上更保守或更寬鬆，可用 `GEMINI_HTTP_TIMEOUT_S` 覆寫。
 - `--incremental-db` 是工作日誌，不是 canonical long-term store；正式輸出仍是 `long_term/tree.json` 和 snapshots。
 - incremental 的 raw L1 candidate 不是直接進 `tree.json`：會先做一層 deterministic review，包含近似重複候選合併、同 issue checklist fragment 合併、缺少 evidence 的 speculative object 降權或丟棄、以及 linked issue 語意對齊的小幅加減分。這一層只作用在 incremental working objects，不改 final L1 schema。
 - `update_issue` 會優先記錄 `forward_scan` 的代表性 evidence 行，而不是把長段落的每一行都塞進 `issue_mentions`；`create_l1_object` 會優先使用 `update_issue` 回傳的 exact `issue_id`，若模型只傳 `issue_key` 也會在儲存時解析成 canonical issue。
