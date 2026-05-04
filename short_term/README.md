@@ -1,9 +1,45 @@
 # Short-Term Memory
 
-這個資料夾負責「一次輸入一次會議逐字稿」，先把逐字稿轉成 SQLite，再更新短期記憶。
+這個資料夾負責「一次輸入一次會議逐字稿」，把逐字稿匯入 SQLite，再透過 LangGraph pipeline 更新短期記憶。
 
-目前以 SQLite 為唯一 canonical 儲存（`short_term/short_term_memory.db`）。JSON 只由 DB 匯出給人檢視，程式流程不再讀 JSON 作為 memory source。
-逐字稿會匯入 `short_term/transcripts.db`。更新流程使用 LangGraph local-first orchestration，讓多個受限 Gemini sub-agent 產生候選，再由 deterministic verifier / reducer / normalizer 控制寫入。
+目前以 SQLite 為唯一 canonical memory store，程式預設路徑是 `short_term/storage/short_term_memory.db`。JSON snapshot 只由 DB 匯出給人檢視，程式更新流程不再讀 JSON 作為 memory source。
+
+逐字稿會匯入 transcript SQLite，程式預設路徑是 `short_term/storage/transcripts.db`。更新流程使用 LangGraph local-first orchestration：Gemini sub-agent 只負責產生候選；正式寫入前一律經過 deterministic verifier、reducer、normalizer 控制。
+
+## 架構總覽
+
+```text
+transcript file
+  -> update_memory.py
+  -> transcript_store.py
+  -> transcripts SQLite
+  -> langgraph_update.py
+       -> context planner
+       -> transcript window reader
+       -> segment agent
+       -> parallel extraction agents
+            -> meeting summary
+            -> action items
+            -> method changes
+            -> experiment todos
+            -> next meeting focus
+       -> staging candidates
+       -> verifier
+       -> reducer
+       -> normalizer
+  -> short_term_memory SQLite
+  -> JSON snapshot / DB snapshot / research logs
+```
+
+主要分層：
+
+- CLI entrypoint：`update_memory.py` 負責參數、逐字稿匯入、讀取目前 memory、呼叫 LangGraph、最後輸出 snapshot。
+- Workflow orchestration：`workflow/langgraph_update.py` 定義完整 LangGraph node 與 edge。
+- Agents：`agents/` 內有 context planner、segment、meeting summary、action item、method change、experiment todo、next focus agent。
+- Core deterministic logic：`core/verifier.py`、`core/reducer.py`、`core/normalizer.py` 決定候選是否可接受、如何合併、如何維持 schema 與最近三次會議窗口。
+- Storage：`storage/sqlite_store.py` 是 official memory SQLite；`storage/transcript_store.py` 是逐字稿 SQLite；`storage/staging_store.py` 是 agent 候選暫存表。
+- Retrieval：`retrieval/short_term_context.py` 和 `retrieve_qa.py` 將 structured memory 切成 chunks，支援 lexical、semantic、hybrid 檢索。
+- Runtime logging：`runtime/research_logger.py` 保存 prompts、responses、candidates、final patch、final memory 和 report。
 
 ## 記憶結構
 
@@ -19,39 +55,76 @@
 - `experiment_todos`
 - `next_meeting_focus`
 
+ID 與狀態約定：
+
+- action item 使用 `A###`，狀態為 `open|in_progress|completed|cancelled`。
+- method change 使用 `M###`，狀態為 `active|reverted|superseded`。
+- experiment todo 使用 `E###`，狀態為 `open|in_progress|completed|blocked`。
+- priority 使用 `high|medium|low`。
+
 ## 檔案拆分
 
 - `update_memory.py`: CLI 入口與 LangGraph orchestration（Vertex Gemini sub-agents + SQLite）
-- `langgraph_update.py`: LangGraph workflow（window planning、segmentation、extraction、verify、reduce、persist）
-- `agents.py`: Context Planner / Segment / Summary / Action / Method / Experiment / Focus sub-agent prompt、JSON schema 與 read/write tool loop
-- `memory_tools.py`: sub-agent read-only memory tool 與 staging candidate write tool
-- `staging_store.py`: staging candidates SQLite table；agent write tool 只寫這裡，不直接寫 official memory
-- `verifier.py`: deterministic candidate validation（ID、enum、confidence、section ownership、duplicate create；evidence 主要作為 warning/debug）
-- `reducer.py`: verified candidates → partial memory patch
-- `research_logger.py`: 每次更新的 prompt / raw response / parsed JSON / graph event / report log
-- `schema.py`: 短期記憶 schema、狀態常數、`response_json_schema`
-- `genai_client.py`: Google Gen AI client 設定，預設使用 Vertex AI + ADC
+- `workflow/langgraph_update.py`: LangGraph workflow（window planning、segmentation、extraction、verify、reduce、persist）
+- `agents/`: Context Planner / Segment / Summary / Action / Method / Experiment / Focus sub-agent prompt 與 JSON schema
+- `storage/memory_tools.py`: sub-agent read-only memory tool 與 staging candidate write tool
+- `storage/staging_store.py`: staging candidates SQLite table；agent write tool 只寫這裡，不直接寫 official memory
+- `core/verifier.py`: deterministic candidate validation（ID、enum、confidence、section ownership、duplicate create；evidence 主要作為 warning/debug）
+- `core/reducer.py`: verified candidates -> partial memory patch
+- `runtime/research_logger.py`: 每次更新的 prompt / raw response / parsed JSON / graph event / report log
+- `core/schema.py`: 短期記憶 schema、狀態常數、`response_json_schema`
+- `runtime/genai_client.py`: Google Gen AI client 設定，預設使用 Vertex AI + ADC
 - `llm_client.py`: legacy tool-calling helper（目前 CLI 不再使用）
-- `normalizer.py`: 記憶資料正規化與 merge
-- `io_utils.py`: `.env`、JSON 讀寫與安全輸出
-- `sqlite_store.py`: official memory SQLite schema、讀寫與 snapshot
-- `transcript_store.py`: 逐字稿 SQLite 匯入、overview、行範圍讀取
+- `core/normalizer.py`: 記憶資料正規化與 merge
+- `storage/io_utils.py`: `.env`、JSON 讀寫與安全輸出
+- `storage/sqlite_store.py`: official memory SQLite schema、讀寫與 snapshot
+- `storage/transcript_store.py`: 逐字稿 SQLite 匯入、overview、行範圍讀取
 
-## 更新流程
+## 整體更新 Pipeline
 
 1. 讀取單一會議逐字稿（例如 `meeting_recording/transcript/49.txt`）
-2. 將逐字稿逐行匯入 transcript SQLite（預設 `short_term/transcripts.db`）
+2. 將逐字稿逐行匯入 transcript SQLite（預設 `short_term/storage/transcripts.db`）
 3. 只從 SQLite 讀取目前記憶；DB 為空時使用預設空記憶，不再從 JSON bootstrap
-4. LangGraph 依序執行：
-   - `ContextPlannerAgent` 規劃下一段 forward window 與 lookback/lookahead
-   - `SegmentAgent` 判斷 idea units；若需要更多上下文，回到 planner 補讀
-   - Summary / Action / Method / Experiment / Focus sub-agent 透過 tool calling 讀 official memory，並把候選寫入 staging table
-   - `verifier.py` deterministic 拒絕非法 ID/enum、低 confidence、越權 section、未知 update target、疑似 duplicate create 的候選
-   - `reducer.py` 合併通過候選為 partial patch
-5. partial patch 交給本地 `normalizer.py`，維持既有邏輯（含最近 3 次會議裁切），再寫入 SQLite
-6. 更新完成後，系統會重新從 SQLite 載入最新記憶，並在 DB 內記錄 snapshot
-7. 每次更新都會從 SQLite 匯出 `short_term/snapshots/` 的 JSON snapshot，並在 `short_term/db_snapshots/` 產生 SQLite DB snapshot
-8. 每次更新會建立 `short_term/research_logs/<run_id>/`，保存 prompts、raw responses、parsed JSON、graph events、候選與 final report，方便研究與調 prompt
+4. 建立 research log run，清掉同一個 run 的 staging candidates
+5. `ContextPlannerAgent` 規劃下一段 forward window，以及可用的 lookback/lookahead
+6. 從 transcript SQLite 讀取 planner 指定的 line range
+7. `SegmentAgent` 將該 window 切成 idea units；如果需要更多上下文，會回到 planner 補讀，最多重試有限次
+8. 進入 extraction fan-out，同一個 window 內會同時送出五個 section agent：
+   - `meeting_summary_agent`
+   - `action_item_agent`
+   - `method_change_agent`
+   - `experiment_todo_agent`
+   - `next_focus_agent`
+9. LangGraph 會等五個 extraction branch 都完成後，才進入 `collect_window_candidates`。也就是同一個 window 內是平行送出，但會等待所有分支回來再收集候選。
+10. `collect_window_candidates` 合併 agent parsed JSON 與 staging table 內的候選；如果 transcript 還沒處理完，回到 planner 處理下一個 window
+11. 全部 window 處理完後，`core/verifier.py` deterministic 拒絕非法 ID/enum、低 confidence、越權 section、未知 update target、疑似 duplicate create 的候選
+12. `core/reducer.py` 將 verified candidates 合併為 partial memory patch
+13. `core/normalizer.py` 將 patch merge 回 previous memory，遞增 `memory_version`，更新 `last_updated_utc` / `last_updated_meeting_id`，維護 `meeting_history_ids`，並裁切 `meeting_window` 到最近 3 次
+14. 非 dry-run 時，將 final memory 寫回 official memory SQLite
+15. CLI 重新從 SQLite 載入 persisted memory，寫入 DB 內的 `memory_snapshots`，並輸出 JSON snapshot 與 DB file snapshot
+16. 每次更新會建立 `short_term/research_logs/<run_id>/`，保存 prompts、raw responses、parsed JSON、graph events、候選、final patch、final memory 與 final report
+
+簡化 graph：
+
+```text
+load_inputs
+  -> plan_next_window
+  -> read_window
+  -> segment_window
+       -> more_context? plan_next_window
+       -> start_extraction
+            -> extract_meeting_summary
+            -> extract_action_items
+            -> extract_method_changes
+            -> extract_experiment_todos
+            -> extract_next_focus
+          -> collect_window_candidates
+               -> next_window? plan_next_window
+               -> verify_candidates
+  -> reduce_patch
+  -> normalize_and_persist
+  -> final_report
+```
 
 ## 使用方式
 
@@ -64,8 +137,8 @@ uv run short_term/update_memory.py --transcript ./ICSI_original_transcripts/tran
 ```bash
 uv run short_term/update_memory.py \
   --transcript meeting_recording/transcript/49.txt \
-  --db short_term/short_term_memory.db \
-  --transcript-db short_term/transcripts.db \
+  --db short_term/storage/short_term_memory.db \
+  --transcript-db short_term/storage/transcripts.db \
   --snapshot-dir short_term/snapshots \
   --db-snapshot-dir short_term/db_snapshots \
   --model gemini-2.5-pro \
@@ -94,7 +167,7 @@ uv run short_term/update_memory.py \
 
 ## 測試 Retrieval QA
 
-可以直接對短期記憶提問（預設讀 SQLite，DB 空時可由 JSON bootstrap），流程會先從結構化記憶中找出最相關片段，再交給 Gemini 生成回答。
+可以直接對短期記憶提問。Retrieval 預設讀 SQLite；如果 DB 空且有 JSON fallback 設定，舊 helper 仍保留 bootstrap fallback。主要更新流程本身不使用 JSON bootstrap。
 
 目前支援三種檢索模式：
 
@@ -106,7 +179,7 @@ uv run short_term/update_memory.py \
 
 ```bash
 uv run short_term/retrieve_qa.py \
-  --db short_term/short_term_memory.db \
+  --db short_term/storage/short_term_memory.db \
   --question "目前有哪些高優先的 action items？" \
   --show-context
 ```
@@ -115,7 +188,7 @@ uv run short_term/retrieve_qa.py \
 
 ```bash
 uv run short_term/retrieve_qa.py \
-  --db short_term/short_term_memory.db \
+  --db short_term/storage/short_term_memory.db \
   --question "最近大家卡住的研究工作是什麼？" \
   --retrieval-mode semantic \
   --show-context
@@ -125,7 +198,7 @@ uv run short_term/retrieve_qa.py \
 
 ```bash
 uv run short_term/retrieve_qa.py \
-  --db short_term/short_term_memory.db \
+  --db short_term/storage/short_term_memory.db \
   --question "哪一些事情是 Adam 在負責而且還沒完成？" \
   --retrieval-mode hybrid \
   --show-context
