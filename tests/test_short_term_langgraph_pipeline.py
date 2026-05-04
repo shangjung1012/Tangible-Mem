@@ -465,7 +465,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(patch["action_items"][0]["title"], "整理實驗資料")
         self.assertNotIn("operation", patch["action_items"][0])
         self.assertNotIn("confidence", patch["action_items"][0])
-        self.assertNotIn("evidence", patch["action_items"][0])
+        self.assertEqual(patch["action_items"][0]["evidence"], "L1-L2")
         self.assertEqual(patch["next_meeting_focus"], ["追蹤實驗資料格式"])
 
     def test_verifier_rejects_duplicate_create(self) -> None:

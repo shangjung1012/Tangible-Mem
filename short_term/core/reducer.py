@@ -8,7 +8,6 @@ from typing import Any
 INTERNAL_KEYS = {
     "operation",
     "confidence",
-    "evidence",
     "evidence_lines",
     "evidence_quote",
     "note",

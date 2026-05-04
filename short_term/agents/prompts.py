@@ -15,7 +15,7 @@ COMMON_RULES = """
 你是 Virtual Mentor short-term memory pipeline 的受限子代理。
 你不能直接更新 official memory，不能輸出完整 memory。
 若可使用工具，需要讀 current memory 時只能呼叫 read_short_term_memory。
-若要提出記憶候選，必須呼叫 write_memory_candidate 寫入 staging DB；最後 JSON 只作為 summary。
+若要提出記憶候選，必須依照指定 JSON schema 輸出候選；後續 pipeline 會驗證、合併並寫入 DB。
 evidence_lines/evidence_quote 用於 research log/debug，盡量填寫，但不是所有候選的硬性判斷條件。
 你必須逐一處理輸入中的所有 idea units；不能因為資訊不完整就忽略，應使用 no_op 或 uncertainty 說明。
 不得臆測 owner、status、priority、決策結果；不確定時填 unknown 或輸出 uncertainty。
@@ -90,22 +90,17 @@ def build_extraction_prompt(
 Agent responsibility:
 {instructions}
 
-Tool rules:
-- 需要 current memory 時呼叫 read_short_term_memory。
-- 產生候選時呼叫 write_memory_candidate 寫入 staging；不要只把候選放在最後 JSON。
-- write_memory_candidate 必須包含 operation、target_section、candidate_payload、confidence、note。
-- candidate_payload 不能是空物件，也不能只包含 operation/confidence/evidence；必須把該 section 的實質欄位放進 candidate_payload。
-- action_items create 的 candidate_payload 必須包含 title、detail、proposer、owner、status、priority、dependencies；新 action item 的 item_id 必須留空，系統會分配 A###。update/close 必須使用 read_short_term_memory 讀到的既有 A### item_id。
+Candidate rules:
+- 直接回傳符合 response schema 的 JSON；不要呼叫工具，也不要輸出 markdown。
+- 只輸出你負責 section 的候選陣列；沒有候選時回傳空陣列。
+- action_items create 必須包含 title、detail、proposer、owner、status、priority、dependencies；新 action item 的 item_id 必須留空，系統會分配 A###。update/close 必須使用 current memory 中既有 A### item_id。
 - action_items 的 status 只能是 open、in_progress、completed、cancelled；priority 只能是 high、medium、low。
-- method_changes create 的 candidate_payload 必須包含 topic、before、after、reason、status；新 method change 的 change_id 必須留空，系統會分配 M###。
+- method_changes create 必須包含 topic、before、after、reason、status；新 method change 的 change_id 必須留空，系統會分配 M###。
 - experiment_todos create 必須包含 description、status、owner、related_action_item_ids；新 experiment todo 的 todo_id 必須留空，系統會分配 E###。
-- method_changes update 必須使用 read_short_term_memory 讀到的既有 M### change_id；experiment_todos update/close 必須使用既有 E### todo_id。
-- update/close/replace 必須填 target_id；create 可留空 target_id。
-- evidence_lines/evidence_quote 請盡量填，供 research log/debug 使用。
-- 你必須逐一檢查 Accepted idea units。若某個 unit 與你的責任無關，可以不寫候選；若相關但不應更新，請用 operation=no_op 寫入 staging 並在 note 說明原因。
-- 若需要比對既有項目，必須先 read_short_term_memory 讀你的 section，再決定 create/update/close/replace/no_op。
-- 不要只因欄位不完整就跳過：可用 unknown、空陣列或 no_op 表達不確定，但要讓 log 看得出你處理過。
-- 最後 JSON summary 必須反映已寫入 staging 的候選；不要在 JSON 中新增未透過 tool 寫入的候選。
+- method_changes update 必須使用 current memory 中既有 M### change_id；experiment_todos update/close 必須使用既有 E### todo_id。
+- evidence 請使用 Lx 或 Lx-Ly。
+- 你必須逐一檢查 Accepted idea units。若某個 unit 與你的責任無關，可以不輸出候選；若相關但不應更新，請輸出 operation=no_op 並用欄位內容簡短說明。
+- 不要只因欄位不完整就跳過：可用 unknown、空陣列或 no_op 表達不確定。
 
 Meeting metadata:
 - meeting_id: {state.get('meeting_id')}

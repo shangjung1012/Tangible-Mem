@@ -571,26 +571,11 @@ def _extract_candidates(
         state=filtered_state,
         instructions=instructions,
     )
-    policy = _agent_tool_policy(str(agent.name), section)
-    tool_context = AgentToolContext(
-        db_path=Path(str(state["db_path"])),
-        run_id=str(state["run_id"]),
-        meeting_id=str(state["meeting_id"]),
-        policy=policy,
+    result = agent.run(
+        prompt=prompt,
+        logger=logger,
+        input_summary=_input_summary(filtered_state),
     )
-    try:
-        result = agent.run(
-            prompt=prompt,
-            logger=logger,
-            input_summary=_input_summary(filtered_state),
-            tool_context=tool_context,
-        )
-    except TypeError:
-        result = agent.run(
-            prompt=prompt,
-            logger=logger,
-            input_summary=_input_summary(filtered_state),
-        )
     staged = load_staged_candidates(
         Path(str(state["db_path"])),
         run_id=str(state["run_id"]),
