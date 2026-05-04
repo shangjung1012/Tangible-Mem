@@ -46,6 +46,11 @@ def reduce_candidates(candidates: list[dict[str, Any]]) -> dict[str, Any]:
                 if str(row["payload"].get("text", "")).strip()
             )
             continue
+        if section == "meeting_window":
+            patch[section] = _merge_meeting_window_rows(
+                [_clean_payload(row["payload"]) for row in rows]
+            )
+            continue
         patch[section] = _dedupe_rows([_clean_payload(row["payload"]) for row in rows])
 
     return patch
@@ -78,6 +83,50 @@ def _dedupe_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return output
 
 
+def _merge_meeting_window_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    index_by_meeting_id: dict[str, int] = {}
+
+    for row in rows:
+        if _is_no_op_meeting_summary(row):
+            continue
+        meeting_id = str(row.get("meeting_id", "")).strip()
+        if not meeting_id:
+            key = json.dumps(row, ensure_ascii=False, sort_keys=True)
+        else:
+            key = meeting_id
+
+        if key not in index_by_meeting_id:
+            index_by_meeting_id[key] = len(merged)
+            clean = dict(row)
+            clean["key_points"] = _dedupe_strings(clean.get("key_points", []))
+            clean["open_questions"] = _dedupe_strings(clean.get("open_questions", []))
+            merged.append(clean)
+            continue
+
+        existing = merged[index_by_meeting_id[key]]
+        existing["summary"] = _join_distinct_texts(
+            existing.get("summary"),
+            row.get("summary"),
+        )
+        existing["key_points"] = _dedupe_strings(
+            list(existing.get("key_points", [])) + list(row.get("key_points", []))
+            if isinstance(row.get("key_points"), list)
+            else list(existing.get("key_points", []))
+        )
+        existing["open_questions"] = _dedupe_strings(
+            list(existing.get("open_questions", []))
+            + list(row.get("open_questions", []))
+            if isinstance(row.get("open_questions"), list)
+            else list(existing.get("open_questions", []))
+        )
+        existing["evidence"] = _join_evidence(existing.get("evidence"), row.get("evidence"))
+        if not str(existing.get("source_file", "")).strip() and row.get("source_file"):
+            existing["source_file"] = row.get("source_file")
+
+    return merged
+
+
 def _dedupe_strings(values: Any) -> list[str]:
     output: list[str] = []
     seen: set[str] = set()
@@ -88,6 +137,25 @@ def _dedupe_strings(values: Any) -> list[str]:
         seen.add(clean)
         output.append(clean)
     return output
+
+
+def _join_distinct_texts(*values: Any) -> str:
+    return " ".join(_dedupe_strings(str(value).strip() for value in values if value))
+
+
+def _join_evidence(*values: Any) -> str:
+    parts: list[str] = []
+    for value in values:
+        for part in str(value or "").split(","):
+            clean = part.strip()
+            if clean:
+                parts.append(clean)
+    return ", ".join(_dedupe_strings(parts))
+
+
+def _is_no_op_meeting_summary(row: dict[str, Any]) -> bool:
+    summary = str(row.get("summary", "")).strip().casefold()
+    return summary.startswith("no_op") or summary.startswith("no update")
 
 
 def _row_key(row: dict[str, Any]) -> str:

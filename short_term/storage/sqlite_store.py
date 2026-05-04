@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover - script execution fallback
     from short_term.core.schema import DEFAULT_MEMORY
 
 
-DEFAULT_DB_PATH = Path(__file__).resolve().parent / "short_term_memory.db"
+DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / "short_term_memory.db"
 
 
 def _utc_now_iso() -> str:

@@ -468,6 +468,73 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(patch["action_items"][0]["evidence"], "L1-L2")
         self.assertEqual(patch["next_meeting_focus"], ["追蹤實驗資料格式"])
 
+    def test_reducer_merges_multiple_meeting_window_candidates(self) -> None:
+        candidates = [
+            {
+                "agent": "meeting_summary_agent",
+                "section": "meeting_window",
+                "candidate_id": "meeting-early",
+                "payload": {
+                    "meeting_id": "Bmr002",
+                    "source_file": "Bmr002.txt",
+                    "summary": "The meeting started with microphone setup.",
+                    "key_points": ["Microphone channels were mapped."],
+                    "open_questions": [],
+                    "evidence": "L1-L80",
+                    "confidence": 0.98,
+                },
+            },
+            {
+                "agent": "meeting_summary_agent",
+                "section": "meeting_window",
+                "candidate_id": "meeting-later",
+                "payload": {
+                    "meeting_id": "Bmr002",
+                    "source_file": "Bmr002.txt",
+                    "summary": "Later discussion covered transcript alignment and data formats.",
+                    "key_points": ["Transcript alignment was considered feasible."],
+                    "open_questions": ["Which transcription data format should be used?"],
+                    "evidence": "L985-L1030",
+                    "confidence": 1.0,
+                },
+            },
+            {
+                "agent": "meeting_summary_agent",
+                "section": "meeting_window",
+                "candidate_id": "meeting-no-op",
+                "payload": {
+                    "meeting_id": "Bmr002",
+                    "source_file": "Bmr002.txt",
+                    "summary": "no_op: procedural aside with no substantive summary update.",
+                    "key_points": [],
+                    "open_questions": [],
+                    "evidence": "L1200",
+                    "confidence": 0.9,
+                },
+            },
+        ]
+
+        patch = reduce_candidates(candidates)
+
+        self.assertEqual(len(patch["meeting_window"]), 1)
+        meeting = patch["meeting_window"][0]
+        self.assertEqual(meeting["meeting_id"], "Bmr002")
+        self.assertIn("microphone setup", meeting["summary"])
+        self.assertIn("transcript alignment", meeting["summary"])
+        self.assertNotIn("no_op", meeting["summary"])
+        self.assertEqual(
+            meeting["key_points"],
+            [
+                "Microphone channels were mapped.",
+                "Transcript alignment was considered feasible.",
+            ],
+        )
+        self.assertEqual(
+            meeting["open_questions"],
+            ["Which transcription data format should be used?"],
+        )
+        self.assertEqual(meeting["evidence"], "L1-L80, L985-L1030")
+
     def test_verifier_rejects_duplicate_create(self) -> None:
         candidates = [
             {
