@@ -16,6 +16,7 @@ VALID_SECTIONS = {
     "experiment_todos",
     "next_meeting_focus",
 }
+INTERNAL_PAYLOAD_KEYS = {"operation", "confidence", "evidence"}
 
 
 @contextmanager
@@ -98,6 +99,15 @@ def write_staged_candidate(
         return {"ok": False, "error": "candidate_payload_must_be_object"}
     if clean_operation in {"update", "close", "replace"} and not clean_target_id:
         return {"ok": False, "error": "missing_target_id"}
+    if _candidate_payload_is_sparse(candidate_payload):
+        return {
+            "ok": False,
+            "error": "sparse_candidate_payload",
+            "message": (
+                "candidate_payload must include section content fields, not only "
+                "operation/confidence/evidence."
+            ),
+        }
     if not evidence_lines:
         clean_warnings.append("missing_evidence_lines")
     if not str(evidence_quote or "").strip():
@@ -241,6 +251,17 @@ def _safe_float(value: Any, fallback: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return fallback
+
+
+def _candidate_payload_is_sparse(payload: dict[str, Any]) -> bool:
+    content_keys = {
+        str(key).strip()
+        for key, value in payload.items()
+        if str(key).strip()
+        and key not in INTERNAL_PAYLOAD_KEYS
+        and value not in (None, "", [], {})
+    }
+    return not content_keys
 
 
 def _utc_now_iso() -> str:

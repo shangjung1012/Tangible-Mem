@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 
@@ -12,6 +13,11 @@ INTERNAL_KEYS = {
     "evidence_quote",
     "note",
     "warnings",
+}
+ID_PATTERNS = {
+    "item_id": re.compile(r"^A\d{3}$"),
+    "change_id": re.compile(r"^M\d{3}$"),
+    "todo_id": re.compile(r"^E\d{3}$"),
 }
 
 
@@ -52,8 +58,11 @@ def _clean_payload(payload: dict[str, Any]) -> dict[str, Any]:
         for key, value in payload.items()
         if key not in INTERNAL_KEYS and value is not None
     }
-    for id_key in ("item_id", "change_id", "todo_id"):
-        if id_key in cleaned and not str(cleaned[id_key]).strip():
+    for id_key, pattern in ID_PATTERNS.items():
+        if id_key not in cleaned:
+            continue
+        value = str(cleaned[id_key]).strip()
+        if not value or not pattern.fullmatch(value):
             cleaned.pop(id_key, None)
     return cleaned
 

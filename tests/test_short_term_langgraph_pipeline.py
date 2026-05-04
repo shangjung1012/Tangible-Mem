@@ -33,6 +33,7 @@ from short_term.storage.memory_tools import (  # noqa: E402
 )
 from short_term.storage.sqlite_store import save_memory_to_sqlite  # noqa: E402
 from short_term.storage.staging_store import load_staged_candidates  # noqa: E402
+from short_term.storage.staging_store import write_staged_candidate  # noqa: E402
 from short_term.storage.transcript_store import import_transcript_to_sqlite  # noqa: E402
 from short_term.core.verifier import verify_candidates  # noqa: E402
 
@@ -196,7 +197,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(len(rejected), 1)
         self.assertEqual(counts["update_unknown_id"], 1)
 
-    def test_verifier_rejects_non_canonical_action_item_id(self) -> None:
+    def test_verifier_strips_non_canonical_create_ids(self) -> None:
         candidates = [
             {
                 "agent": "action_item_agent",
@@ -223,10 +224,59 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             current_memory={"action_items": [], "method_changes": [], "experiment_todos": []},
             allowed_line_numbers={1},
         )
+        patch = reduce_candidates(verified)
+
+        self.assertEqual(rejected, [])
+        self.assertEqual(counts, {})
+        self.assertEqual(len(verified), 1)
+        self.assertNotIn("item_id", patch["action_items"][0])
+
+    def test_verifier_rejects_non_canonical_update_ids(self) -> None:
+        candidates = [
+            {
+                "agent": "method_change_agent",
+                "section": "method_changes",
+                "candidate_id": "bad-method-update",
+                "payload": {
+                    "change_id": "Bmr003-MC-4",
+                    "topic": "format",
+                    "status": "active",
+                    "evidence": "L1",
+                    "operation": "update",
+                    "confidence": 0.9,
+                },
+            },
+            {
+                "agent": "experiment_todo_agent",
+                "section": "experiment_todos",
+                "candidate_id": "bad-todo-update",
+                "payload": {
+                    "todo_id": "Bmr005-TODO-1",
+                    "description": "Run experiment",
+                    "status": "open",
+                    "owner": "unknown",
+                    "related_action_item_ids": [],
+                    "evidence": "L1",
+                    "operation": "update",
+                    "confidence": 0.9,
+                },
+            },
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={
+                "action_items": [],
+                "method_changes": [{"change_id": "M001"}],
+                "experiment_todos": [{"todo_id": "E001"}],
+            },
+            allowed_line_numbers={1},
+        )
 
         self.assertEqual(verified, [])
-        self.assertEqual(len(rejected), 1)
-        self.assertEqual(counts["invalid_action_item_id"], 1)
+        self.assertEqual(len(rejected), 2)
+        self.assertEqual(counts["invalid_method_change_id"], 1)
+        self.assertEqual(counts["invalid_experiment_todo_id"], 1)
 
     def test_sparse_candidate_payload_detection(self) -> None:
         self.assertTrue(
@@ -251,6 +301,30 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                 }
             )
         )
+
+    def test_staging_rejects_sparse_candidate_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "memory.db"
+            result = write_staged_candidate(
+                db_path,
+                run_id="run",
+                meeting_id="Bmr001",
+                agent_name="action_item_agent",
+                target_section="action_items",
+                operation="create",
+                candidate_payload={},
+                confidence=0.9,
+            )
+            staged = load_staged_candidates(
+                db_path,
+                run_id="run",
+                agent_name="action_item_agent",
+                target_section="action_items",
+            )
+
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["error"], "sparse_candidate_payload")
+            self.assertEqual(staged, [])
 
     def test_verifier_accepts_valid_candidates_and_reducer_builds_patch(self) -> None:
         candidates = [

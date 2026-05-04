@@ -23,6 +23,8 @@ except ImportError:  # pragma: no cover
 CONFIDENCE_THRESHOLD = 0.45
 _EVIDENCE_RE = re.compile(r"L(?P<start>\d+)(?:\s*-\s*L?(?P<end>\d+))?")
 _ACTION_ID_RE = re.compile(r"^A\d{3}$")
+_METHOD_ID_RE = re.compile(r"^M\d{3}$")
+_TODO_ID_RE = re.compile(r"^E\d{3}$")
 
 SECTION_AGENT_ALLOWLIST = {
     "meeting_window": {"meeting_summary_agent"},
@@ -139,7 +141,10 @@ def _verify_action(
 ) -> None:
     item_id = str(payload.get("item_id", "")).strip()
     if item_id and not _ACTION_ID_RE.fullmatch(item_id):
-        reasons.append("invalid_action_item_id")
+        if operation == "create":
+            payload.pop("item_id", None)
+        elif operation != "no_op":
+            reasons.append("invalid_action_item_id")
     if operation not in {"create", "update", "close", "no_op"}:
         reasons.append("invalid_operation")
     if operation in {"update", "close"} and item_id not in existing_ids:
@@ -167,6 +172,12 @@ def _verify_method(
     reasons: list[str],
 ) -> None:
     change_id = str(payload.get("change_id", "")).strip()
+    if change_id and not _METHOD_ID_RE.fullmatch(change_id):
+        if operation == "create":
+            payload.pop("change_id", None)
+            change_id = ""
+        elif operation != "no_op":
+            reasons.append("invalid_method_change_id")
     if operation not in {"create", "update", "no_op"}:
         reasons.append("invalid_operation")
     if operation == "update" and change_id not in existing_ids:
@@ -193,6 +204,12 @@ def _verify_experiment(
     reasons: list[str],
 ) -> None:
     todo_id = str(payload.get("todo_id", "")).strip()
+    if todo_id and not _TODO_ID_RE.fullmatch(todo_id):
+        if operation == "create":
+            payload.pop("todo_id", None)
+            todo_id = ""
+        elif operation != "no_op":
+            reasons.append("invalid_experiment_todo_id")
     if operation not in {"create", "update", "close", "no_op"}:
         reasons.append("invalid_operation")
     if operation in {"update", "close"} and todo_id not in existing_ids:
