@@ -363,7 +363,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(len(staged), 1)
             self.assertEqual(staged[0]["operation"], "no_op")
 
-    def test_extract_candidates_raises_when_agent_errors_without_usable_output(self) -> None:
+    def test_extract_candidates_recovers_when_agent_errors_without_usable_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
             logger = ResearchLogger(tmp / "logs", "Bmr001", run_id="run_Bmr001")
@@ -412,15 +412,110 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                 errors=["LLM returned an empty response."],
             )
 
-            with self.assertRaisesRegex(RuntimeError, "failed without usable action_items"):
-                _extract_candidates(
-                    state,  # type: ignore[arg-type]
-                    logger,
-                    agent,
-                    "action_items",
-                    "action_items",
-                    "Extract action items.",
+            candidates = _extract_candidates(
+                state,  # type: ignore[arg-type]
+                logger,
+                agent,
+                "action_items",
+                "action_items",
+                "Extract action items.",
+            )
+
+            self.assertEqual(candidates, [])
+            events = [
+                json.loads(line)
+                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
+            ]
+            self.assertTrue(
+                any(
+                    event.get("event") == "recover"
+                    and event.get("status") == "warning"
+                    and event.get("node") == "extract_action_items"
+                    for event in events
                 )
+            )
+
+    def test_extract_candidates_retries_after_agent_parse_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            logger = ResearchLogger(tmp / "logs", "Bmr001", run_id="run_Bmr001")
+            state = {
+                "run_id": "run_Bmr001",
+                "meeting_id": "Bmr001",
+                "source_file": "Bmr001.txt",
+                "model_name": "gemini-2.5-pro",
+                "db_path": str(tmp / "memory.db"),
+                "transcript_db_path": str(tmp / "transcripts.db"),
+                "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                "research_log_dir": str(tmp / "logs"),
+                "log_level": "debug",
+                "keep_full_prompts": True,
+                "dry_run": True,
+                "transcript_line_count": 1,
+                "transcript_overview": {"line_count": 1},
+                "current_memory": {
+                    "action_items": [],
+                    "method_changes": [],
+                    "experiment_todos": [],
+                },
+                "current_window": {
+                    "context_start_line": 1,
+                    "context_end_line": 1,
+                    "forward_start_line": 1,
+                    "forward_end_line": 1,
+                    "items": [{"line_number": 1, "text": "We should prepare the data."}],
+                },
+                "current_units": [
+                    {
+                        "unit_id": "U001",
+                        "line_start": 1,
+                        "line_end": 1,
+                        "topic": "prepare data",
+                        "kind_hint": ["action_item"],
+                        "needs_more_context": False,
+                    }
+                ],
+                "raw_candidates": [],
+                "tool_reads": {},
+            }
+            agent = _FakeAgent(
+                "action_item_agent",
+                [
+                    ({}, ["Expecting ',' delimiter"]),
+                    (
+                        {
+                            "action_items": [
+                                {
+                                    "operation": "create",
+                                    "title": "Prepare data",
+                                    "detail": "Prepare the data.",
+                                    "proposer": "unknown",
+                                    "owner": "unknown",
+                                    "status": "open",
+                                    "priority": "medium",
+                                    "dependencies": [],
+                                    "evidence": "L1",
+                                    "confidence": 0.9,
+                                }
+                            ]
+                        },
+                        [],
+                    ),
+                ],
+            )
+
+            candidates = _extract_candidates(
+                state,  # type: ignore[arg-type]
+                logger,
+                agent,
+                "action_items",
+                "action_items",
+                "Extract action items.",
+            )
+
+            self.assertEqual(agent.call_count, 2)
+            self.assertEqual(len(candidates), 1)
+            self.assertEqual(candidates[0]["payload"]["title"], "Prepare data")
 
     def test_verifier_accepts_valid_candidates_and_reducer_builds_patch(self) -> None:
         candidates = [
@@ -780,22 +875,29 @@ class _FakeAgent:
     def __init__(
         self,
         name: str,
-        parsed: dict[str, object],
+        parsed: dict[str, object] | list[tuple[dict[str, object], list[str]]],
         errors: list[str] | None = None,
     ) -> None:
         self.name = name
         self.parsed = parsed
         self.errors = errors or []
+        self.call_count = 0
 
     def run(self, **kwargs: object) -> object:
+        self.call_count += 1
+        parsed = self.parsed
+        errors = self.errors
+        if isinstance(parsed, list):
+            index = min(self.call_count - 1, len(parsed) - 1)
+            parsed, errors = parsed[index]
         return type(
             "Result",
             (),
             {
                 "agent_name": self.name,
-                "parsed": self.parsed,
-                "raw_text": json.dumps(self.parsed),
-                "errors": self.errors,
+                "parsed": parsed,
+                "raw_text": json.dumps(parsed),
+                "errors": errors,
             },
         )()
 

@@ -45,6 +45,9 @@ except ImportError:  # pragma: no cover - script execution fallback
     from short_term.core.verifier import verify_candidates
 
 
+EXTRACTION_RESULT_RETRIES = 2
+
+
 def run_short_term_langgraph_update(
     *,
     model_name: str,
@@ -571,18 +574,65 @@ def _extract_candidates(
         state=filtered_state,
         instructions=instructions,
     )
-    result = agent.run(
-        prompt=prompt,
-        logger=logger,
-        input_summary=_input_summary(filtered_state),
-    )
+    last_errors: list[str] = []
+    for attempt in range(EXTRACTION_RESULT_RETRIES + 1):
+        retry_prompt = prompt
+        if attempt:
+            retry_prompt = (
+                prompt
+                + "\n\nPrevious response was not usable. Return only valid JSON "
+                "matching the schema. If there is no update for this section, "
+                "return an empty array or no_op rows instead of prose."
+            )
+        result = agent.run(
+            prompt=retry_prompt,
+            logger=logger,
+            input_summary={
+                **_input_summary(filtered_state),
+                "extraction_attempt": attempt + 1,
+            },
+        )
+        output = _collect_agent_output(
+            state=state,
+            agent=agent,
+            section=section,
+            parsed=result.parsed,
+        )
+        if output or not result.errors:
+            return output
+        last_errors = [str(error) for error in result.errors if str(error).strip()]
+
+    # A single extraction branch should not abort the whole meeting update.
+    # Other section agents may still have useful candidates for this window.
+    if last_errors:
+        logger.graph_event(
+            node=f"extract_{section}",
+            event="recover",
+            status="warning",
+            summary={
+                "agent": str(agent.name),
+                "section": section,
+                "attempts": EXTRACTION_RESULT_RETRIES + 1,
+                "error": "; ".join(last_errors),
+            },
+        )
+    return []
+
+
+def _collect_agent_output(
+    *,
+    state: ShortTermGraphState,
+    agent: Any,
+    section: str,
+    parsed: dict[str, Any],
+) -> list[dict[str, Any]]:
     staged = load_staged_candidates(
         Path(str(state["db_path"])),
         run_id=str(state["run_id"]),
         agent_name=str(agent.name),
         target_section=section,
     )
-    parsed_candidates = flatten_agent_candidates(agent.name, section, result.parsed)
+    parsed_candidates = flatten_agent_candidates(agent.name, section, parsed)
     existing_ids = {
         str(candidate.get("candidate_id", ""))
         for candidate in state.get("raw_candidates", [])
@@ -595,13 +645,6 @@ def _extract_candidates(
         if str(candidate.get("candidate_id", "")) not in existing_ids
         and not _candidate_payload_is_sparse(candidate)
     ]
-
-    if result.errors and not output and not parsed_candidates:
-        error_text = "; ".join(str(error) for error in result.errors if str(error).strip())
-        raise RuntimeError(
-            f"{agent.name} failed without usable {section} candidates: "
-            f"{error_text or 'unknown extraction error'}"
-        )
 
     # Gemini tool-calling sometimes writes staging rows with an empty or nearly
     # empty candidate_payload, while the final JSON response still contains the
