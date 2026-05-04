@@ -611,6 +611,13 @@ def _extract_candidates(
         and not _candidate_payload_is_sparse(candidate)
     ]
 
+    if result.errors and not output and not parsed_candidates:
+        error_text = "; ".join(str(error) for error in result.errors if str(error).strip())
+        raise RuntimeError(
+            f"{agent.name} failed without usable {section} candidates: "
+            f"{error_text or 'unknown extraction error'}"
+        )
+
     # Gemini tool-calling sometimes writes staging rows with an empty or nearly
     # empty candidate_payload, while the final JSON response still contains the
     # full structured candidate. Keep the parsed JSON candidates as a fallback
@@ -632,6 +639,9 @@ def _candidate_payload_is_sparse(candidate: dict[str, Any]) -> bool:
     payload = candidate.get("payload")
     if not isinstance(payload, dict):
         return True
+    operation = str(candidate.get("operation") or payload.get("operation") or "").strip()
+    if operation == "no_op":
+        return False
     content_keys = {
         str(key).strip()
         for key, value in payload.items()
@@ -782,25 +792,25 @@ def _agent_tool_policy(agent_name: str, section: str) -> AgentToolPolicy:
         "meeting_summary_agent": AgentToolPolicy(
             agent_name=agent_name,
             read_sections={"overview", "meeting_window"},
-            required_read_sections={"meeting_window"},
+            required_read_sections=set(),
             write_sections={"meeting_window"},
         ),
         "action_item_agent": AgentToolPolicy(
             agent_name=agent_name,
             read_sections={"overview", "action_items"},
-            required_read_sections={"action_items"},
+            required_read_sections=set(),
             write_sections={"action_items"},
         ),
         "method_change_agent": AgentToolPolicy(
             agent_name=agent_name,
             read_sections={"overview", "method_changes"},
-            required_read_sections={"method_changes"},
+            required_read_sections=set(),
             write_sections={"method_changes"},
         ),
         "experiment_todo_agent": AgentToolPolicy(
             agent_name=agent_name,
             read_sections={"overview", "experiment_todos", "action_items"},
-            required_read_sections={"experiment_todos"},
+            required_read_sections=set(),
             write_sections={"experiment_todos"},
         ),
         "next_focus_agent": AgentToolPolicy(
@@ -812,7 +822,7 @@ def _agent_tool_policy(agent_name: str, section: str) -> AgentToolPolicy:
                 "experiment_todos",
                 "next_meeting_focus",
             },
-            required_read_sections={"next_meeting_focus"},
+            required_read_sections=set(),
             write_sections={"next_meeting_focus"},
         ),
     }

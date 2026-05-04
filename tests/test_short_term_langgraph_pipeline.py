@@ -23,6 +23,7 @@ from short_term.runtime.research_logger import ResearchLogger  # noqa: E402
 from short_term.workflow.langgraph_update import (  # noqa: E402
     _build_graph,
     _candidate_payload_is_sparse,
+    _extract_candidates,
 )
 from short_term.runtime.genai_retry import call_with_retry  # noqa: E402
 from short_term.storage.memory_tools import (  # noqa: E402
@@ -301,6 +302,18 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                 }
             )
         )
+        self.assertFalse(
+            _candidate_payload_is_sparse(
+                {
+                    "operation": "no_op",
+                    "payload": {
+                        "operation": "no_op",
+                        "confidence": 0.9,
+                        "evidence": "L1",
+                    },
+                }
+            )
+        )
 
     def test_staging_rejects_sparse_candidate_payload(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -325,6 +338,89 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertFalse(result["ok"])
             self.assertEqual(result["error"], "sparse_candidate_payload")
             self.assertEqual(staged, [])
+
+    def test_staging_accepts_sparse_no_op_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "memory.db"
+            result = write_staged_candidate(
+                db_path,
+                run_id="run",
+                meeting_id="Bmr001",
+                agent_name="action_item_agent",
+                target_section="action_items",
+                operation="no_op",
+                candidate_payload={},
+                confidence=0.9,
+            )
+            staged = load_staged_candidates(
+                db_path,
+                run_id="run",
+                agent_name="action_item_agent",
+                target_section="action_items",
+            )
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(len(staged), 1)
+            self.assertEqual(staged[0]["operation"], "no_op")
+
+    def test_extract_candidates_raises_when_agent_errors_without_usable_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            logger = ResearchLogger(tmp / "logs", "Bmr001", run_id="run_Bmr001")
+            state = {
+                "run_id": "run_Bmr001",
+                "meeting_id": "Bmr001",
+                "source_file": "Bmr001.txt",
+                "model_name": "gemini-2.5-pro",
+                "db_path": str(tmp / "memory.db"),
+                "transcript_db_path": str(tmp / "transcripts.db"),
+                "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                "research_log_dir": str(tmp / "logs"),
+                "log_level": "debug",
+                "keep_full_prompts": True,
+                "dry_run": True,
+                "transcript_line_count": 1,
+                "transcript_overview": {"line_count": 1},
+                "current_memory": {
+                    "action_items": [],
+                    "method_changes": [],
+                    "experiment_todos": [],
+                },
+                "current_window": {
+                    "context_start_line": 1,
+                    "context_end_line": 1,
+                    "forward_start_line": 1,
+                    "forward_end_line": 1,
+                    "items": [{"line_number": 1, "text": "We should prepare the data."}],
+                },
+                "current_units": [
+                    {
+                        "unit_id": "U001",
+                        "line_start": 1,
+                        "line_end": 1,
+                        "topic": "prepare data",
+                        "kind_hint": ["action_item"],
+                        "needs_more_context": False,
+                    }
+                ],
+                "raw_candidates": [],
+                "tool_reads": {},
+            }
+            agent = _FakeAgent(
+                "action_item_agent",
+                {},
+                errors=["LLM returned an empty response."],
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "failed without usable action_items"):
+                _extract_candidates(
+                    state,  # type: ignore[arg-type]
+                    logger,
+                    agent,
+                    "action_items",
+                    "action_items",
+                    "Extract action items.",
+                )
 
     def test_verifier_accepts_valid_candidates_and_reducer_builds_patch(self) -> None:
         candidates = [
@@ -614,9 +710,15 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
 
 
 class _FakeAgent:
-    def __init__(self, name: str, parsed: dict[str, object]) -> None:
+    def __init__(
+        self,
+        name: str,
+        parsed: dict[str, object],
+        errors: list[str] | None = None,
+    ) -> None:
         self.name = name
         self.parsed = parsed
+        self.errors = errors or []
 
     def run(self, **kwargs: object) -> object:
         return type(
@@ -626,7 +728,7 @@ class _FakeAgent:
                 "agent_name": self.name,
                 "parsed": self.parsed,
                 "raw_text": json.dumps(self.parsed),
-                "errors": [],
+                "errors": self.errors,
             },
         )()
 

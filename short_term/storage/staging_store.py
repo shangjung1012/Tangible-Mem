@@ -99,7 +99,7 @@ def write_staged_candidate(
         return {"ok": False, "error": "candidate_payload_must_be_object"}
     if clean_operation in {"update", "close", "replace"} and not clean_target_id:
         return {"ok": False, "error": "missing_target_id"}
-    if _candidate_payload_is_sparse(candidate_payload):
+    if clean_operation != "no_op" and _candidate_payload_is_sparse(candidate_payload):
         return {
             "ok": False,
             "error": "sparse_candidate_payload",
