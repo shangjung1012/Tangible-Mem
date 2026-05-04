@@ -103,7 +103,7 @@ def verify_l1_candidates(
             row["evidence_lines"] = sorted(set(clean_lines))
             if not row["evidence_lines"]:
                 reasons.append("evidence_out_of_bounds")
-        if float(row.get("support_score", 0.0) or 0.0) < 0.08:
+        if float(row.get("support_score", 0.0) or 0.0) < 0.18:
             reasons.append("weak_grounding")
 
         duplicate_of = ""

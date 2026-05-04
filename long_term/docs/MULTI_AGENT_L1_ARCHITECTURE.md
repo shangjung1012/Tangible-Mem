@@ -29,7 +29,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前 `multi_agent` 的 L1 主流程是：
 
-`context_planner -> segmentation_agent -> continuation_merge -> idea_unit_agent -> bounded l1_decision/todo/method_change/result_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`
+`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> continuation_merge -> idea_unit_agent -> idea_unit_quality_validator/repair/compaction -> bounded l1_decision/todo/method_change/result_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`
 
 入口在 `long_term/bridge.py`。當 `--mode multi-agent` 被指定時，bridge 會呼叫 `run_multi_agent_l1_pipeline()`，最後仍把結果寫回同一個 `tree.json` meeting node。
 
@@ -112,8 +112,33 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 目前限制：
 
 - segment 會被 clamp 回 primary window
-- 沒有 coverage validator 保證 primary window 內每行都被覆蓋
-- 沒有 overlap / underspan / overspan 的 deterministic 檢查
+- 語義切段本身仍由 LLM 決定，因此仍可能切得太粗或太碎
+
+### 3.3.1 Segment Coverage Validator / Repair
+
+檔案：`long_term/multi_agent_validators.py`
+
+函式：`repair_segment_coverage(...)`、`coarsen_segments_for_window(...)`
+
+責任：
+
+- 檢查每個 primary window 內哪些 transcript lines 被 segment 覆蓋
+- 記錄 uncovered ranges / overlap ranges
+- 對 uncovered ranges 補 deterministic fallback segment
+- repair segment 會借用鄰近 segment topic，並標記 `needs_more_context`
+- 將過碎的相鄰 segments 合併成 durable segments，避免 80 行內容被切成十幾個 micro-batches
+
+設計理由：
+
+- 防止 segmentation 漏行後，下游 idea unit / L1 agent 完全看不到內容
+- repair segment 仍使用原始 line range，不改動 canonical transcript 座標
+- repair segment 後續仍可被 continuation merge 接回相鄰語意 batch
+- coarsening 讓 downstream idea unit / L1 agents 看到較完整的討論範圍
+
+輸出 artifact：
+
+- `segment_coverage_validation.json`
+- `segment_coarsening.json`
 
 ### 3.4 Continuation Merge
 
@@ -130,8 +155,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 目前 merge 條件：
 
 - 相鄰
-- 至少一側 `needs_more_context`
-- topic 相似，或左側已明確要求延續
+- 至少一側 `needs_more_context`，且 topic 相似，或左側已明確要求延續
+- 或者跨 primary window 邊界且 topic 相似度足夠高
 
 輸出 artifact：
 
@@ -145,8 +170,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前限制：
 
-- 只做 merge policy，還不是 repair policy
-- 如果 segmentation 階段就漏掉某些行，continuation merge 無法補救
+- merge 只負責把相鄰 segment 變成 extraction batch
+- 漏行補救由前一層 segment coverage validator 負責
 
 ### 3.5 Idea Unit Agent
 
@@ -186,9 +211,31 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前限制：
 
-- 沒有 deterministic quality validator
-- 沒有檢查 unit 是否過胖、過碎、過度重疊
 - `completeness` / `uncertainty_note` 目前只記錄，不影響 acceptance
+
+### 3.5.1 Idea Unit Quality Validator / Repair
+
+檔案：`long_term/multi_agent_validators.py`
+
+函式：`repair_idea_units_for_segment(...)`
+
+責任：
+
+- 檢查 idea unit 是否空白、超出 segment、過胖、過短、過長、或高度重疊
+- 對超出 segment 的 unit 做 line bound clamp
+- 對過胖 unit 用原 transcript lines 拆成 bounded fallback chunks
+- 如果某個 segment 完全沒有可用 unit，補 fallback idea unit
+- 如果一個 segment 產生太多 units，壓縮成最多 6 個 durable units
+
+設計理由：
+
+- 避免 type agents 吃到過胖或重複的中介表示
+- 讓 representation 問題在進入 L1 typed extraction 前就被記錄與補救
+- 防止逐句 idea unit 被逐一升級成 L1 objects
+
+輸出 artifact：
+
+- `idea_unit_quality_validation.json`
 
 ### 3.6 Typed L1 Agents
 
@@ -215,6 +262,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - candidate 保存 `extraction_scope`
 - candidate 保存 `segment_ids`
 - 程式端用 `allowed_unit_ids` 白名單過濾 `source_unit_ids`
+- 每個 batch/type 最多保留 2 個候選，並依 importance / confidence 排序取前段
 
 設計理由：
 
@@ -224,7 +272,28 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 目前限制：
 
 - `open_question` / `argument` 尚未接進 multi-agent loop
-- 還沒有 batch-level rejection / retry policy
+- 目前只在「整個 batch 沒有任何 typed candidate」時跑一次 general fallback
+
+### 3.6.1 Fallback L1 Agent
+
+檔案：`long_term/multi_agent_agents.py`
+
+函式：`l1_fallback_agent(...)`
+
+責任：
+
+- 當 decision / todo / method_change / result 四個 typed agents 對同一 batch 都沒有產出時，做一次保守的 general L1 檢查
+- 只允許輸出既有四個 multi-agent L1 類型
+- 仍受 `source_unit_ids` 白名單限制，不能引用 batch 外內容
+
+設計理由：
+
+- 避免「有內容但剛好每個 typed agent 都沒抓到」造成重要 L1 漏失
+- fallback 是 bounded 且 optional，不取代 typed agents
+
+輸出 artifact：
+
+- `batch_fallbacks.json`
 
 ### 3.7 Evidence Grounding Agent
 
@@ -308,7 +377,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前限制：
 
-- verifier 只驗證 candidate correctness，不驗證 upstream segmentation / idea-unit 品質
+- verifier 只驗證 candidate correctness；upstream segmentation / idea-unit 品質由前面的 validator / repair stages 處理
 
 ### 3.10 Reducer / Persist
 
@@ -320,6 +389,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - 把 verified candidates 轉成 canonical L1 objects
 - 套用共用 importance calibration
+- 套用 multi-agent 專用 importance cap，避免 model 自評把普通細節全部推到高分
+- 對同 evidence / 高相似內容做 final dedupe
 - 產出 `final_patch.json`
 - 產出 `final_meeting_node.json`
 
@@ -336,10 +407,14 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `graph_events.jsonl`
 - `window_plans.json`
 - `segments.json`
+- `segment_coverage_validation.json`
+- `segment_coarsening.json`
 - `continuation_merges.json`
 - `extraction_batches.json`
 - `idea_units.json`
+- `idea_unit_quality_validation.json`
 - `raw_candidates.json`
+- `batch_fallbacks.json`
 - `grounded_candidates.json`
 - `conflict_resolution.json`
 - `verified_candidates.json`
@@ -365,44 +440,20 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 3. continuation merge 真正消費 `needs_more_context`
 4. grounding acceptance 不再依賴 model self-confidence
 5. candidate 保留 `extraction_scope` 與 `segment_ids`
-6. focused tests 覆蓋核心行為
-7. 與既有 `tree.json` / summarize 流程相容
+6. segment coverage validator 會補 uncovered transcript lines
+7. idea unit quality validator 會修補空白、過胖、重複或越界 unit
+8. over-fragmented segments / idea units 會被壓縮，避免逐句展開
+9. typed L1 agents 每個 batch/type 有 candidate 上限
+10. reducer 會做 multi-agent 專用 dedupe 與 importance cap
+11. batch empty-yield 時有 bounded fallback L1 agent
+12. focused tests 覆蓋核心行為
+13. 與既有 `tree.json` / summarize 流程相容
 
 ## 6. 現在還缺的設計
 
 以下是目前距離「完整研究型 multi-agent L1 系統」還缺的關鍵部分。
 
-### 6.1 Segment Coverage Validator
-
-目前沒有檢查 primary window 內每一行是否至少被一個 segment 覆蓋。
-
-缺少後果：
-
-- 邊界內容可能兩邊 window 都不收
-- continuation merge 無法補救已經漏掉的行
-
-建議補上：
-
-- 每個 primary window 的 covered lines
-- uncovered line ratio
-- gap spans artifact
-- 高缺口時的 warning 或 fallback
-
-### 6.2 Idea Unit Quality Validator
-
-目前沒有檢查：
-
-- unit 是否過胖
-- unit 是否過碎
-- unit 是否完整落在 segment 內
-- units 是否高度重疊
-
-缺少後果：
-
-- downstream type extraction 容易被過大或過碎的 unit 影響
-- verifier 很難分辨是 candidate 問題還是 representation 問題
-
-### 6.3 Ontology Completion
+### 6.1 Ontology Completion
 
 目前 multi-agent loop 只實作四類：
 
@@ -421,18 +472,21 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - multi-agent L1 還不是 full-schema extraction
 - 一部分現有 long-term ontology 仍未被顯式多 agent 化
 
-### 6.4 Repair / Fallback Loop
+### 6.2 Repair / Fallback Loop
 
-目前 continuation 是 merge policy，不是 repair policy。
+目前已補上最小 repair / fallback：
 
-還缺：
+- segmentation uncovered lines 會補 fallback segment
+- idea units 空白、越界、過胖、重複時會被修補或丟棄
+- over-fragmented segments / idea units 會被 deterministic compaction
+- batch 完全無 candidate 時會跑一次 bounded fallback L1 agent
 
-- segmentation coverage 不足時重切
-- idea units 過少或過胖時重抽
-- batch 完全無 candidate 時的 fallback extraction
+還未補的是更昂貴的 model retry 類閉環：
+
 - grounding rejection rate 異常時的 upstream retry signal
+- segmentation / idea unit repair 後重新要求 LLM 改寫，而不是只做 deterministic fallback
 
-### 6.5 Evaluation Harness
+### 6.3 Evaluation Harness
 
 目前有單元測試，但還缺 run-level evaluation metrics。
 
@@ -448,7 +502,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - final L1 count stability across reruns
 - 與 monolithic baseline 的差異比較
 
-### 6.6 Operational Guardrails
+### 6.4 Operational Guardrails
 
 目前 artifacts 很完整，但 operation 資訊還不夠。
 
@@ -460,7 +514,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - artifact schema version
 - partial rerun support
 
-### 6.7 L2 / L3 Multi-Agent 化
+### 6.5 L2 / L3 Multi-Agent 化
 
 目前 multi-agent 真正完成的是 L1 extraction。L2 / L3 仍是舊 summarize pipeline。
 
@@ -470,7 +524,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 比較精確的描述方式：
 
-> 目前已完成 long-term L1 的 explicit multi-agent extraction pipeline，具備 bounded extraction、artifact traceability、local grounding 與 deterministic verification；但 segmentation / idea-unit upstream validation、ontology completeness、repair loop 與 evaluation harness 尚未補齊。
+> 目前已完成 long-term L1 的 explicit multi-agent extraction pipeline，具備 bounded extraction、artifact traceability、segment/idea-unit upstream validation、bounded fallback、local grounding 與 deterministic verification；但 full ontology coverage、model-based repair retry、evaluation harness 與 operational telemetry 尚未補齊。
 
 這個描述比直接說「long-term multi-agent 已完成」更準確。
 
@@ -480,10 +534,10 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 ### Must Have
 
-- [ ] 實作 `segment_coverage_validator`
-- [ ] 實作 `idea_unit_quality_validator`
-- [ ] 將 validator 結果寫入 artifact
-- [ ] 為 uncovered / invalid spans 增加 focused tests
+- [x] 實作 `segment_coverage_validator`
+- [x] 實作 `idea_unit_quality_validator`
+- [x] 將 validator 結果寫入 artifact
+- [x] 為 uncovered / invalid spans 增加 focused tests
 - [ ] 建立 stage-level metrics summary
 
 ### Should Have
@@ -491,8 +545,9 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - [ ] 將 `open_question` 接進 multi-agent loop
 - [ ] 將 `argument` 接進 multi-agent loop
 - [ ] 定義完整 cross-type ontology overlap policy
-- [ ] 增加 fallback / retry 策略
-- [ ] 增加 batch-level empty-yield diagnostics
+- [x] 增加 bounded fallback 策略
+- [x] 增加 batch-level empty-yield diagnostics
+- [ ] 增加 model-based retry 策略
 
 ### Nice to Have
 
@@ -508,8 +563,15 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 1. mismatch grounding 不會因為高 confidence 被誤收
 2. type agent 只會吃指定 bounded units
 3. cross-window continuation merge 真的會形成 batch
+4. segment coverage 漏行會補 fallback segment
+5. idea unit 過胖會被拆成 bounded chunks
+6. fallback L1 agent 仍受 bounded unit IDs 限制
+7. over-fragmented segments 會被 coarsen
+8. over-fragmented idea units 會被 compact
+9. typed L1 agent 每個 batch/type 會限制候選數
+10. reducer 會 dedupe 並校準 multi-agent importance
 
-此外 full suite 目前也應能通過。這表示後段控制邏輯已有基本穩定性，但 upstream representation quality 仍缺 explicit validator。
+此外 full suite 目前也應能通過。這表示後段控制邏輯已有基本穩定性，且 upstream representation quality 已有第一版 deterministic validator / repair。
 
 ## 10. 建議提交範圍
 
@@ -524,6 +586,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `long_term/multi_agent_reducer.py`
 - `long_term/multi_agent_state.py`
 - `long_term/multi_agent_tools.py`
+- `long_term/multi_agent_validators.py`
 - `long_term/multi_agent_verifier.py`
 - `long_term/docs/MULTI_AGENT_L1_ARCHITECTURE.md`
 - `tests/test_multi_agent_pipeline.py`

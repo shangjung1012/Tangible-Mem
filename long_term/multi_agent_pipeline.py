@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from io_utils import utc_now_iso
 from multi_agent_agents import (
     MultiAgentLLMRunner,
     idea_unit_agent,
+    l1_fallback_agent,
     l1_type_agent,
     plan_context_windows,
     segmentation_agent,
@@ -18,7 +20,15 @@ from multi_agent_logger import ResearchLogger
 from multi_agent_reducer import reduce_l1_patch, resolve_cross_type_conflicts
 from multi_agent_state import IdeaUnit, L1_MULTI_AGENT_TYPES, SegmentProposal, parse_transcript_lines
 from multi_agent_tools import jaccard
+from multi_agent_validators import (
+    coarsen_segments_for_window,
+    repair_idea_units_for_segment,
+    repair_segment_coverage,
+)
 from multi_agent_verifier import ground_candidates, verify_l1_candidates
+
+CROSS_WINDOW_TOPIC_MERGE_THRESHOLD = 0.30
+SEGMENT_WINDOW_ID_RE = re.compile(r"^S-(\d+)-")
 
 
 @dataclass(frozen=True)
@@ -34,7 +44,7 @@ class MultiAgentPipelineResult:
 def build_continuation_batches(
     segments: list[SegmentProposal],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Merge adjacent needs_more_context segments into bounded extraction batches."""
+    """Merge bounded segment continuations into extraction batches."""
     sorted_segments = sorted(
         segments,
         key=lambda segment: (segment.line_start, segment.line_end, segment.segment_id),
@@ -43,19 +53,42 @@ def build_continuation_batches(
     decisions: list[dict[str, Any]] = []
     current: list[SegmentProposal] = []
 
+    def segment_window_start(segment: SegmentProposal) -> int | None:
+        match = SEGMENT_WINDOW_ID_RE.match(segment.segment_id)
+        if not match:
+            return None
+        return int(match.group(1))
+
+    def is_cross_window_boundary(left: SegmentProposal, right: SegmentProposal) -> bool:
+        left_window = segment_window_start(left)
+        right_window = segment_window_start(right)
+        return (
+            left_window is not None
+            and right_window is not None
+            and left_window != right_window
+        )
+
     def should_merge(left: SegmentProposal, right: SegmentProposal) -> tuple[bool, str]:
         adjacent = right.line_start <= left.line_end + 1
         if not adjacent:
             return False, "non_adjacent_segments"
-        if not (left.needs_more_context or right.needs_more_context):
-            return False, "no_continuation_flag"
         topic_score = jaccard(left.topic_label, right.topic_label)
-        if topic_score >= 0.18 or left.needs_more_context:
+        if left.needs_more_context or right.needs_more_context:
+            if topic_score >= 0.18 or left.needs_more_context:
+                return True, (
+                    "needs_more_context with adjacent segment; "
+                    f"topic_similarity={topic_score:.3f}"
+                )
+            return False, f"weak_topic_similarity={topic_score:.3f}"
+        if (
+            is_cross_window_boundary(left, right)
+            and topic_score >= CROSS_WINDOW_TOPIC_MERGE_THRESHOLD
+        ):
             return True, (
-                "needs_more_context with adjacent segment; "
+                "cross_window_topic_continuity without continuation flag; "
                 f"topic_similarity={topic_score:.3f}"
             )
-        return False, f"weak_topic_similarity={topic_score:.3f}"
+        return False, f"no_continuation_flag; topic_similarity={topic_score:.3f}"
 
     def flush_group(group: list[SegmentProposal]) -> None:
         if not group:
@@ -176,6 +209,8 @@ def run_multi_agent_l1_pipeline(
     logger.append_event("context_planner:done", {"windows": len(window_plans)})
 
     all_segments = []
+    coverage_reports = []
+    coarsening_reports = []
     for plan in window_plans:
         logger.append_event(
             "segmentation_agent:start",
@@ -187,15 +222,34 @@ def run_multi_agent_l1_pipeline(
             plan=plan,
             transcript_lines=lines,
         )
-        all_segments.extend(segments)
-        logger.append_event("segmentation_agent:done", {"segments": len(segments)})
+        repaired_segments, coverage_report = repair_segment_coverage(plan, segments)
+        coarsened_segments, coarsening_report = coarsen_segments_for_window(
+            plan,
+            repaired_segments,
+        )
+        coverage_reports.append(coverage_report)
+        coarsening_reports.append(coarsening_report)
+        all_segments.extend(coarsened_segments)
+        logger.append_event(
+            "segmentation_agent:done",
+            {
+                "segments": len(segments),
+                "output_segments": len(repaired_segments),
+                "coarsened_segments": len(coarsened_segments),
+                "coverage_rate": coverage_report["coverage_rate"],
+                "repairs": len(coverage_report["repair_segment_ids"]),
+            },
+        )
     logger.write_json("segments.json", all_segments)
+    logger.write_json("segment_coverage_validation.json", coverage_reports)
+    logger.write_json("segment_coarsening.json", coarsening_reports)
 
     extraction_batches, continuation_decisions = build_continuation_batches(all_segments)
     logger.write_json("continuation_merges.json", continuation_decisions)
     logger.write_json("extraction_batches.json", extraction_batches)
 
     all_idea_units = []
+    idea_unit_quality_reports = []
     for segment in all_segments:
         logger.append_event("idea_unit_agent:start", {"segment_id": segment.segment_id})
         units = idea_unit_agent(
@@ -203,15 +257,33 @@ def run_multi_agent_l1_pipeline(
             segment=segment,
             transcript_lines=lines,
         )
-        all_idea_units.extend(units)
-        logger.append_event("idea_unit_agent:done", {"units": len(units)})
+        repaired_units, quality_report = repair_idea_units_for_segment(
+            segment=segment,
+            units=units,
+            transcript_lines=lines,
+        )
+        idea_unit_quality_reports.append(quality_report)
+        all_idea_units.extend(repaired_units)
+        logger.append_event(
+            "idea_unit_agent:done",
+            {
+                "segment_id": segment.segment_id,
+                "units": len(units),
+                "output_units": len(repaired_units),
+                "issues": len(quality_report["issues"]),
+                "repairs": len(quality_report["repairs"]),
+            },
+        )
     logger.write_json("idea_units.json", all_idea_units)
+    logger.write_json("idea_unit_quality_validation.json", idea_unit_quality_reports)
 
     raw_candidates = []
+    batch_fallback_reports = []
     for batch in extraction_batches:
         batch_units = idea_units_for_batch(all_idea_units, batch)
         if not batch_units:
             continue
+        batch_candidates = []
         for obj_type in ["decision", "todo", "method_change", "result"]:
             logger.append_event(
                 f"l1_{obj_type}_agent:start",
@@ -229,7 +301,7 @@ def run_multi_agent_l1_pipeline(
                 extraction_scope=str(batch["batch_id"]),
                 segment_ids=list(batch["segment_ids"]),
             )
-            raw_candidates.extend(candidates)
+            batch_candidates.extend(candidates)
             logger.append_event(
                 f"l1_{obj_type}_agent:done",
                 {
@@ -237,7 +309,42 @@ def run_multi_agent_l1_pipeline(
                     "candidates": len(candidates),
                 },
             )
+        if not batch_candidates:
+            logger.append_event(
+                "l1_fallback_agent:start",
+                {
+                    "extraction_scope": batch["batch_id"],
+                    "segment_ids": batch["segment_ids"],
+                    "idea_units": len(batch_units),
+                },
+            )
+            fallback_candidates = l1_fallback_agent(
+                runner,
+                idea_units=batch_units,
+                existing_topics=existing_topics,
+                extraction_scope=str(batch["batch_id"]),
+                segment_ids=list(batch["segment_ids"]),
+            )
+            batch_candidates.extend(fallback_candidates)
+            batch_fallback_reports.append(
+                {
+                    "batch_id": batch["batch_id"],
+                    "segment_ids": batch["segment_ids"],
+                    "idea_units": len(batch_units),
+                    "fallback_candidates": len(fallback_candidates),
+                    "reason": "typed_l1_agents_returned_no_candidates",
+                }
+            )
+            logger.append_event(
+                "l1_fallback_agent:done",
+                {
+                    "extraction_scope": batch["batch_id"],
+                    "candidates": len(fallback_candidates),
+                },
+            )
+        raw_candidates.extend(batch_candidates)
     logger.write_json("raw_candidates.json", raw_candidates)
+    logger.write_json("batch_fallbacks.json", batch_fallback_reports)
 
     logger.append_event("evidence_grounding_agent:start", {"candidates": len(raw_candidates)})
     grounded_candidates = ground_candidates(
