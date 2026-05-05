@@ -1,0 +1,385 @@
+{
+  "memory_version": 4,
+  "last_updated_utc": "2026-05-05T16:29:26Z",
+  "last_updated_meeting_id": "0408",
+  "meeting_history_ids": [
+    "0307",
+    "0318",
+    "0325",
+    "0408"
+  ],
+  "meeting_window": [
+    {
+      "meeting_id": "0318",
+      "source_file": "/home/tsj/virtual-mentor/meeting_recording/transcript/grace/0318.txt",
+      "summary": "團隊回顧了兩篇關於長文本情境下記憶模型的最新論文（MAM-0 和 MAREX），重點分析了它們的評估方法。MAM-0 的主要優勢在於 token 效率，而 MAREX 則引入了基於螢幕截圖的圖像記憶評估。此外，會議中提出了一個名為「永續 AI (Sustainable AI)」的新合作專案構想，旨在量化並管理大型語言模型（LLM）請求的能源與計算成本，並從使用者角度探索節能的可能性。",
+      "key_points": [
+        "回顧了一篇 2024 年的論文，該論文提出一種用於長文本的循序代理人摘要方法，並指出了其中存在的問題，如幻覺傳播和缺乏共享的全局理解板。",
+        "討論了 MAM-0 論文使用的 Locomo 評估資料集，該資料集包含單跳（single-hop）、多跳（multi-hop）和時序推理（temporal reasoning）等不同類型的問題。",
+        "MAM-0 論文的主要結論是其模型在 token 使用效率上優於基線（如 RAG），但在多跳問題的表現上並無顯著優勢。",
+        "MAREX 論文在其評估中引入了基於螢幕截圖的圖像記憶，使用 Visual RAG 等技術直接處理圖片。",
+        "會議中誕生了一個新的專案構想「永續 AI」，目標是計算和管理 LLM 的能源消耗，並讓使用者能依需求選擇更節能的模型或模式。"
+      ],
+      "open_questions": [
+        "在 MAREX 論文的評估中，為何其主要模型運行了三次，而基線模型只運行一次？"
+      ]
+    },
+    {
+      "meeting_id": "0325",
+      "source_file": "/home/tsj/virtual-mentor/meeting_recording/transcript/grace/0325.txt",
+      "summary": "本次會議深入探討了專案的記憶體架構，決定將長期記憶體從複雜的樹狀結構改為按會議組織的物件列表。團隊向新加入的顏老師概述了工作、短期和長期記憶體的三層架構。會議中腦力激盪了新的檢索模型，例如結合語意相似度和時間衰退的檢索方法，並探討了如 \"Web-CAG\" 的快取機制如何融入現有架構。核心技術挑戰被定義為如何有效地從多層記憶體中檢索資訊並進行評估，其中一個關鍵評估指標是追蹤「已死主題」（dead topics）的能力。此外，團隊也回顧了數篇相關研究論文，並處理了有關 API 成本和雲端額度的行政後勤問題。",
+      "key_points": [
+        "將長期記憶體結構從樹狀重新設計為每個會議的物件列表，並可連結回原始文本或音檔。(證據: L1-L15)",
+        "向顏老師介紹了專案的記憶體架構，包含工作（Working）、短期（Short-term）和長期（Long-term）三個層次。(證據: L110-L126)",
+        "提出了一種新的時間衰退檢索模型（time-decay retrieval model）用於長期記憶體，以平衡語意相似性與資訊的新近度。(證據: L127-L137)",
+        "將核心技術挑戰定義為如何從多層記憶體系統中進行有效檢索，以及如何評估其成效。(證據: L171-L177)",
+        "確立了一個關鍵的評估用例：追蹤在多次會議中被討論但最終被放棄的「已死主題」。(證據: L213-L216)",
+        "討論了數篇研究論文，包括 \"Web-CAG\"、\"Digital Meme\" 以及其他關於會議摘要和非線性討論追蹤的論文。(證據: L96-L106, L138-L160, L217-L223)",
+        "確定了有關 API 使用成本和 Google Cloud 免費額度的管理策略。(證據: L231-L251)"
+      ],
+      "open_questions": [
+        "如何最好地實現和評估所提出的時間衰退檢索模型？(證據: L132-L137)",
+        "像 \"Web-CAG\" 這樣的快取機制應如何整合到當前的記憶體架構中？是為了提升效率還是作為一種新的記憶體模型？(證據: L138-L160)",
+        "從工作、短期和長期三個記憶體層次檢索出的結果，最佳的組合與加權方式是什麼？(證據: L171-L173)",
+        "如何創建有效的綜合數據（synthetic data）來測試系統追蹤「已死主題」的能力？(證據: L228-L230)"
+      ]
+    },
+    {
+      "meeting_id": "0408",
+      "source_file": "/home/tsj/virtual-mentor/meeting_recording/transcript/grace/0408.txt",
+      "summary": "本次會議為一場深度技術討論，聚焦於虛擬導師的記憶架構。團隊首先回顧了現有的分層記憶結構（L1, L2, L3）及其生成過程，並指出現有處理方式（將完整逐字稿一次性輸入）的局限性。會議的核心部分在於辯論短期與長期記憶之間的關係與更新機制，探討了平行更新與序列式流動兩種模式。此外，團隊提出了一個重要的新方案：使用大型語言模型（LLM）的函式呼叫（function calling）功能來進行記憶檢索，讓模型能動態決定要查詢哪個記憶庫。會議最後達成共識，決定將逐字稿改為以句子為單位進行處理，以實現更細緻的記憶更新，並將未來的工作重點放在如何評估與證明新架構的有效性上。",
+      "key_points": [
+        "回顧了現有的分層記憶架構（L1細粒度筆記、L2跨會議摘要、L3高層次概覽）及其從逐字稿生成物件的過程。(證據: L12-L21)",
+        "指出現有逐字稿處理方法的局限性，特別是缺乏預先分塊策略，並探討了按句子或語意單元分塊的替代方案以提高準確性。(證據: L27-L30, L38-L46)",
+        "提出一個新的檢索模型，利用LLM的函式呼叫功能，讓模型能根據問題動態決定查詢短期或長期記憶。(證據: L47-L53, L66-L78)",
+        "深入辯論了短期與長期記憶的核心更新邏輯，比較了「序列式（短期記憶淡化後轉入長期）」與「平行式（兩者獨立從來源更新）」的架構。(證據: L81-L94)",
+        "會議結束時，短期與長期記憶之間的確切關係和資料流動方式仍是一個待解決的問題。(證據: L105-L107)",
+        "達成一項關鍵技術決策：未來將以句子為單位處理逐字稿，以實現更精細的記憶更新和更好地處理重新討論的主題。(證據: L113)",
+        "確定下一個主要目標：定義一個方法來證明所提出的記憶架構相較於其他方案的有效性。(證據: L108)"
+      ],
+      "open_questions": [
+        "在生成記憶之前，預處理逐字稿的最佳策略是什麼（例如，按語意單元、句子或發言輪次分塊）？(證據: L27-L30, L38-L46)",
+        "短期和長期記憶之間的最終更新機制和關係應該是什麼？（例如，平行更新或序列流動）(證據: L105-L107)",
+        "如何量化評估並證明記憶架構（特別是新的函式呼叫檢索模型）的有效性？(證據: L108)",
+        "當前L1記憶物件的本體（ontology，如決策、待辦事項等）是否足以捕捉會議中的所有關鍵資訊？(證據: L31-L38)"
+      ]
+    }
+  ],
+  "action_items": [
+    {
+      "item_id": "A002",
+      "title": "Manage Google Cloud free credits and billing accounts sequentially",
+      "detail": "The team decided to use SPEAKER_01's current account's free credits until they expire (around April 26). Only after that, the shared lab Google account will be activated to start its 3-month free credit period, in order to maximize the free tiers.",
+      "proposer": "SPEAKER_01, SPEAKER_02",
+      "owner": "SPEAKER_01, SPEAKER_02",
+      "created_meeting_id": "0307",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "L249-L250",
+      "last_updated_meeting_id": "0325",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0307",
+          "change": "imported or created"
+        },
+        {
+          "version": 1,
+          "meeting_id": "0325",
+          "change": "updated fields: detail, evidence, owner, proposer, title"
+        }
+      ]
+    },
+    {
+      "item_id": "A007",
+      "title": "Review the 'Digital Meme' paper",
+      "detail": "Review the 'Digital Meme' paper to understand their methods for evaluation, relevancy, and handling time-decay in memory, as suggested as a next step.",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_02",
+      "created_meeting_id": "0325",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "L224-L226",
+      "last_updated_meeting_id": "0325",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0325",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A008",
+      "title": "Create synthetic data to evaluate memory of 'dead topics'",
+      "detail": "Design and create a synthetic dataset containing 'dead topics'—topics that were discussed and then explicitly or implicitly dropped. This will be used to test the system's ability to track the latest consensus and not retrieve outdated information.",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_02",
+      "created_meeting_id": "0325",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "L228-L230",
+      "last_updated_meeting_id": "0325",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0325",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A009",
+      "title": "Share current Google Cloud account details",
+      "detail": "SPEAKER_01 to share the details of the Google Cloud account currently being used, so the team can utilize its free credits before they expire.",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01",
+      "created_meeting_id": "0325",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "L251",
+      "last_updated_meeting_id": "0325",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0325",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A010",
+      "title": "Devise a method to prove the effectiveness of the memory architecture",
+      "detail": "Define a clear plan and methodology to prove the effectiveness of the proposed memory architecture compared to alternatives, as this was identified as the immediate next step.",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_02",
+      "created_meeting_id": "0408",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "L108",
+      "last_updated_meeting_id": "0408",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0408",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A011",
+      "title": "Implement sentence-based segmentation for transcription processing",
+      "detail": "Based on the conclusion that fine-grained analysis is needed, change the data processing pipeline to segment transcriptions by sentences before feeding them into the memory system.",
+      "proposer": "SPEAKER_01",
+      "owner": "SPEAKER_01, SPEAKER_02",
+      "created_meeting_id": "0408",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "L113",
+      "last_updated_meeting_id": "0408",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0408",
+          "change": "imported or created"
+        }
+      ]
+    }
+  ],
+  "method_changes": [
+    {
+      "change_id": "M001",
+      "topic": "Speaker Diarization Strategy for Experiments",
+      "before": "Handling complex speaker diarization from physical meeting recordings.",
+      "after": "For experimental purposes, simplify by assuming the data source is from online meetings (e.g., Zoom) where speaker identities are pre-tagged with the transcript.",
+      "reason": "To simplify the experimental setup and bypass the difficult step of speaker diarization, especially if the diarization model (e.g., WhisperX) is not perfectly accurate.",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L1-L3"
+    },
+    {
+      "change_id": "M002",
+      "topic": "Time Representation in Memory",
+      "before": "Using absolute Meeting IDs (e.g., 16, 17) to timestamp information.",
+      "after": "Incorporate relative time concepts (e.g., 'one week ago') that dynamically update as new meetings occur.",
+      "reason": "To make the time context of stored memories more natural and intuitive, reflecting the passage of time relative to the current meeting.",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L14-L16"
+    },
+    {
+      "change_id": "M003",
+      "topic": "Definition of Short-Term Memory Scope",
+      "before": "The scope of short-term memory was not explicitly defined.",
+      "after": "Short-term memory is defined as retaining important information from the last three meetings. Information not discussed within three meetings may be removed.",
+      "reason": "To formally define the operational scope and retention policy of the short-term memory component.",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L16-L18"
+    },
+    {
+      "change_id": "M004",
+      "topic": "Memory System Architecture Definition",
+      "before": "A three-part architecture (Working, Short-Term, Long-Term) with an implicitly sequential update flow, where information might move from short-term to long-term memory over time.",
+      "after": "A parallel update architecture is proposed where Short-Term and Long-Term memories are updated independently and in parallel from the source transcript, rather than in a sequential flow.",
+      "reason": "To avoid information loss or distortion from a multi-layered summarization process and to treat the memory stores as separate, parallel databases, each updated from the primary source (transcript).",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L91-L94"
+    },
+    {
+      "change_id": "M005",
+      "topic": "Evaluation Strategy for Memory Architecture",
+      "before": "No specific evaluation strategy was defined.",
+      "after": "Adopt an evaluation strategy based on methods from existing literature, likely using standardized tests or benchmarks to prove the model's performance against a baseline. This involves designing specific questions to test the functionality of short-term and long-term memory.",
+      "reason": "To objectively demonstrate the value and effectiveness of the proposed memory architecture.",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L33-L39"
+    },
+    {
+      "change_id": "M006",
+      "topic": "Development Workflow and Collaboration",
+      "before": "Individual development with potentially unaligned data folder structures.",
+      "after": "Standardize the data folder structure and collaboratively modify a forked open-source repository to ensure code and data compatibility.",
+      "reason": "To streamline collaborative development and prevent inconsistencies in the project structure.",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L57-L59"
+    },
+    {
+      "change_id": "M007",
+      "topic": "Immediate Research Strategy for Model Improvement",
+      "before": "Considering finding a new, less fragmented dataset to improve model output.",
+      "after": "Decided to first study the source papers of the current models more closely before making decisions about changing datasets.",
+      "reason": "To better understand the underlying methods and their limitations before attempting fixes, as the issue might be with the model's application rather than the data itself.",
+      "status": "active",
+      "meeting_id": "0307",
+      "evidence": "L60-L62"
+    },
+    {
+      "change_id": "M008",
+      "topic": "Long-term memory structure",
+      "before": "A complex, tree-based structure was previously considered for long-term memory.",
+      "after": "Adopt a time-ordered list of objects for each meeting, categorized by type (e.g., decision, to-do, method change). Retrieval will be based on semantic similarity combined with a recency score that includes a floor for important items.",
+      "reason": "The tree structure makes it difficult to implement time-based importance decay. A linear, time-ordered structure with a retrieval formula incorporating recency is proposed to better manage long-term information relevance and prevent important old information from being lost.",
+      "status": "active",
+      "meeting_id": "0325",
+      "evidence": "L1-L8, L132-L135"
+    },
+    {
+      "change_id": "M009",
+      "topic": "Agent output format",
+      "before": "Agent output is text-based, derived from transcripts.",
+      "after": "The agent should be able to retrieve and play back specific audio segments from past meetings, leveraging timestamps stored with memory items.",
+      "reason": "Audio playback is considered a more direct and effective way to recall the context of past discussions compared to reading text summaries.",
+      "status": "active",
+      "meeting_id": "0325",
+      "evidence": "L14-L25"
+    },
+    {
+      "change_id": "M010",
+      "topic": "Implementation method for 'Personality' feature",
+      "before": "Undefined.",
+      "after": "A two-step process is proposed: 1) The memory system generates the core content. 2) The generated content is then processed by a separate 'Persona' module to adjust the wording and style.",
+      "reason": "This approach separates the concerns of factual memory recall from stylistic presentation, as outlined in the original project plan.",
+      "status": "active",
+      "meeting_id": "0325",
+      "evidence": "L76-L78"
+    },
+    {
+      "change_id": "M011",
+      "topic": "Modeling conversational interruptions",
+      "before": "Conversational style, including interruptions, was not explicitly modeled.",
+      "after": "A proposed experimental approach is to fine-tune a model to output both text and a separate flag indicating whether an interruption is appropriate.",
+      "reason": "To explicitly model a key aspect of natural meeting dynamics (interruptions) that is difficult to capture with standard text generation.",
+      "status": "active",
+      "meeting_id": "0325",
+      "evidence": "L206-L210"
+    },
+    {
+      "change_id": "M012",
+      "topic": "Memory Update and Retrieval Mechanism",
+      "before": "Memory update and retrieval logic is pre-defined and follows a fixed process (e.g., semantic search on ST and LT).",
+      "after": "Use an agent with function calling to dynamically decide how to update memory (e.g., which store to update) and retrieve information. The agent can process input sentence-by-sentence and decide to call functions for ST retrieval, LT retrieval, or context loading.",
+      "reason": "To allow for more flexible, context-aware memory operations, especially for handling revisited topics by dynamically loading old context from long-term memory into the short-term context.",
+      "status": "active",
+      "meeting_id": "0408",
+      "evidence": "L109-L113"
+    },
+    {
+      "change_id": "M013",
+      "topic": "Transcript Pre-processing for Memory Update",
+      "before": "The entire transcript is processed as a single block by the LLM.",
+      "after": "The transcript will be segmented by sentences before being fed into the memory update process.",
+      "reason": "To enable fine-grained, sentence-level judgment and processing, which is key for handling revisited topics and dynamically loading context from long-term memory.",
+      "status": "active",
+      "meeting_id": "0408",
+      "evidence": "L113"
+    }
+  ],
+  "experiment_todos": [
+    {
+      "todo_id": "E001",
+      "description": "研究如何評估和證明記憶架構的性能，參考現有論文的評估和基準測試方法，並設計實驗來展示短期和長期記憶能力。",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0307",
+      "evidence": "L32-L39"
+    },
+    {
+      "todo_id": "E002",
+      "description": "找出能夠突顯長期記憶系統獨特能力的方法，例如透過可視化記憶拓撲來證明其價值。",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0307",
+      "evidence": "L44-L46"
+    },
+    {
+      "todo_id": "E003",
+      "description": "Calculate and estimate the token consumption and computational/energy cost of LLM requests for the new 'Sustainable AI' project. [Update: Initial usage reported, ~37 API calls cost ~75 TWD].",
+      "status": "in_progress",
+      "owner": "SPEAKER_01",
+      "related_action_item_ids": [],
+      "meeting_id": "0325",
+      "evidence": "L231-L234"
+    },
+    {
+      "todo_id": "E004",
+      "description": "Explore modeling conversational interruptions, possibly with a two-step model (content generation then style application) or a dedicated model flag.",
+      "status": "open",
+      "owner": "SPEAKER_01",
+      "related_action_item_ids": [],
+      "meeting_id": "0325",
+      "evidence": "L206-L210"
+    },
+    {
+      "todo_id": "E005",
+      "description": "Review the 'Digital Meme' paper and create synthetic data with 'dead topics' to evaluate the model's ability to track abandoned topics.",
+      "status": "open",
+      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_02",
+      "related_action_item_ids": [],
+      "meeting_id": "0325",
+      "evidence": "L224-L230"
+    }
+  ],
+  "next_meeting_focus": [
+    "Define a clear methodology to evaluate and prove the effectiveness of the proposed memory architecture against other alternatives.",
+    "Finalize the design for how short-term and long-term memories interact, specifically defining the update logic and how information transitions between them.",
+    "Investigate the proposed approach of processing transcripts sentence-by-sentence to enable fine-grained memory updates, potentially using a function-calling agent."
+  ]
+}
