@@ -57,6 +57,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - canonical storage 仍是 `tree.json`。
 - 舊記憶只作為 disambiguation context，不可成為新 L1 evidence。
 - `memory_relations_index.json` 與 `memory_activity_index.json` 是可審計 sidecar，不污染 L1 schema。
+- relation linker 先用 viewpoint / concept identity keys、related topics、local similarity 縮小候選，再判斷 continues / resolves / supersedes / reactivates 等 relation type。
+- relation sidecar 會保存 source / target content/evidence hash；若同一 obj_id 重跑後內容改變，summarize / recall 會忽略 stale relation。
 
 ### 3.2 Context Planner
 
