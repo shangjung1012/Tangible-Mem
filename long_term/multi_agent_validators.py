@@ -11,7 +11,7 @@ from multi_agent_tools import evidence_quote, jaccard, tokenize
 MAX_IDEA_UNIT_LINE_SPAN = 8
 MAX_IDEA_UNIT_TEXT_CHARS = 420
 MIN_IDEA_UNIT_TEXT_CHARS = 6
-MAX_IDEA_UNITS_PER_SEGMENT = 6
+MAX_IDEA_UNITS_PER_SEGMENT = 12
 DUPLICATE_IDEA_UNIT_THRESHOLD = 0.82
 MIN_DURABLE_SEGMENT_LINES = 8
 MAX_DURABLE_SEGMENT_LINES = 24
@@ -251,6 +251,34 @@ def _fallback_units_for_span(
     return units
 
 
+def _compact_unit_groups(sorted_units: list[IdeaUnit]) -> list[list[IdeaUnit]]:
+    groups: list[list[IdeaUnit]] = []
+    current: list[IdeaUnit] = []
+    for unit in sorted_units:
+        if not current:
+            current = [unit]
+            continue
+        proposed_start = min(row.line_start for row in current)
+        proposed_end = max(max(row.line_end for row in current), unit.line_end)
+        if _line_count(proposed_start, proposed_end) > MAX_IDEA_UNIT_LINE_SPAN:
+            groups.append(current)
+            current = [unit]
+            continue
+        current.append(unit)
+    if current:
+        groups.append(current)
+    if len(groups) <= MAX_IDEA_UNITS_PER_SEGMENT:
+        return groups
+    chunk_size = max(
+        1,
+        (len(sorted_units) + MAX_IDEA_UNITS_PER_SEGMENT - 1) // MAX_IDEA_UNITS_PER_SEGMENT,
+    )
+    return [
+        sorted_units[index : index + chunk_size]
+        for index in range(0, len(sorted_units), chunk_size)
+    ]
+
+
 def repair_idea_units_for_segment(
     *,
     segment: SegmentProposal,
@@ -379,15 +407,46 @@ def repair_idea_units_for_segment(
             }
         )
 
+    coverage_counts = _covered_lines(segment.line_start, segment.line_end, repaired)
+    uncovered_lines = sorted(
+        set(range(segment.line_start, segment.line_end + 1)) - set(coverage_counts)
+    )
+    uncovered_ranges = compact_ranges(uncovered_lines)
+    if uncovered_ranges:
+        added_ids: list[str] = []
+        for missing_range in uncovered_ranges:
+            fallback_units = _fallback_units_for_span(
+                segment=segment,
+                transcript_lines=transcript_lines,
+                start_line=missing_range["start_line"],
+                end_line=missing_range["end_line"],
+                reason="validator fallback for idea-unit coverage gap",
+                start_index=repair_index,
+            )
+            repaired.extend(fallback_units)
+            repair_index += len(fallback_units)
+            added_ids.extend(fallback.unit_id for fallback in fallback_units)
+        issues.append(
+            {
+                "issue": "uncovered_line_ranges",
+                "uncovered_ranges": uncovered_ranges,
+            }
+        )
+        repairs.append(
+            {
+                "action": "add_fallback_for_uncovered_lines",
+                "replacement_unit_ids": added_ids,
+            }
+        )
+
     if len(repaired) > MAX_IDEA_UNITS_PER_SEGMENT:
         sorted_units = sorted(
             repaired,
             key=lambda unit: (unit.line_start, unit.line_end, unit.unit_id),
         )
         compacted: list[IdeaUnit] = []
-        chunk_size = max(1, (len(sorted_units) + MAX_IDEA_UNITS_PER_SEGMENT - 1) // MAX_IDEA_UNITS_PER_SEGMENT)
-        for index in range(0, len(sorted_units), chunk_size):
-            group = sorted_units[index : index + chunk_size]
+        groups = _compact_unit_groups(sorted_units)
+        for group in groups:
             group_index = len(compacted) + 1
             line_start = min(unit.line_start for unit in group)
             line_end = max(unit.line_end for unit in group)
@@ -422,6 +481,10 @@ def repair_idea_units_for_segment(
         )
         repaired = compacted
 
+    repaired = sorted(
+        repaired,
+        key=lambda unit: (unit.line_start, unit.line_end, unit.unit_id),
+    )
     segment_lines = set(range(segment.line_start, segment.line_end + 1))
     coverage_counts = _covered_lines(segment.line_start, segment.line_end, repaired)
     uncovered_lines = sorted(segment_lines - set(coverage_counts))

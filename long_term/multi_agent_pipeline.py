@@ -18,8 +18,14 @@ from multi_agent_agents import (
 )
 from multi_agent_logger import ResearchLogger
 from multi_agent_reducer import reduce_l1_patch, resolve_cross_type_conflicts
-from multi_agent_state import IdeaUnit, L1_MULTI_AGENT_TYPES, SegmentProposal, parse_transcript_lines
-from multi_agent_tools import jaccard
+from multi_agent_state import (
+    IdeaUnit,
+    L1_MULTI_AGENT_TYPES,
+    SegmentProposal,
+    TranscriptLine,
+    parse_transcript_lines,
+)
+from multi_agent_tools import evidence_quote, jaccard
 from multi_agent_validators import (
     coarsen_segments_for_window,
     repair_idea_units_for_segment,
@@ -28,6 +34,9 @@ from multi_agent_validators import (
 from multi_agent_verifier import ground_candidates, verify_l1_candidates
 
 CROSS_WINDOW_TOPIC_MERGE_THRESHOLD = 0.30
+CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD = 0.20
+CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD = 0.20
+BOUNDARY_LINE_WINDOW = 6
 SEGMENT_WINDOW_ID_RE = re.compile(r"^S-(\d+)-")
 
 
@@ -43,6 +52,9 @@ class MultiAgentPipelineResult:
 
 def build_continuation_batches(
     segments: list[SegmentProposal],
+    *,
+    transcript_lines: list[TranscriptLine] | None = None,
+    idea_units: list[IdeaUnit] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Merge bounded segment continuations into extraction batches."""
     sorted_segments = sorted(
@@ -68,27 +80,89 @@ def build_continuation_batches(
             and left_window != right_window
         )
 
+    def boundary_transcript_similarity(
+        left: SegmentProposal,
+        right: SegmentProposal,
+    ) -> float:
+        if not transcript_lines:
+            return 0.0
+        left_start = max(left.line_start, left.line_end - BOUNDARY_LINE_WINDOW + 1)
+        right_end = min(right.line_end, right.line_start + BOUNDARY_LINE_WINDOW - 1)
+        left_text = evidence_quote(
+            transcript_lines,
+            list(range(left_start, left.line_end + 1)),
+            max_chars=1200,
+        )
+        right_text = evidence_quote(
+            transcript_lines,
+            list(range(right.line_start, right_end + 1)),
+            max_chars=1200,
+        )
+        return jaccard(left_text, right_text)
+
+    def boundary_idea_unit_similarity(
+        left: SegmentProposal,
+        right: SegmentProposal,
+    ) -> float:
+        if not idea_units:
+            return 0.0
+        left_units = sorted(
+            [unit for unit in idea_units if unit.segment_id == left.segment_id],
+            key=lambda unit: (unit.line_end, unit.line_start, unit.unit_id),
+            reverse=True,
+        )[:2]
+        right_units = sorted(
+            [unit for unit in idea_units if unit.segment_id == right.segment_id],
+            key=lambda unit: (unit.line_start, unit.line_end, unit.unit_id),
+        )[:2]
+        left_text = " ".join(unit.text for unit in reversed(left_units))
+        right_text = " ".join(unit.text for unit in right_units)
+        return jaccard(left_text, right_text)
+
     def should_merge(left: SegmentProposal, right: SegmentProposal) -> tuple[bool, str]:
         adjacent = right.line_start <= left.line_end + 1
         if not adjacent:
             return False, "non_adjacent_segments"
         topic_score = jaccard(left.topic_label, right.topic_label)
+        boundary_score = boundary_transcript_similarity(left, right)
+        unit_score = boundary_idea_unit_similarity(left, right)
         if left.needs_more_context or right.needs_more_context:
-            if topic_score >= 0.18 or left.needs_more_context:
+            if (
+                topic_score >= 0.18
+                or boundary_score >= CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD
+                or unit_score >= CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD
+                or left.needs_more_context
+            ):
                 return True, (
                     "needs_more_context with adjacent segment; "
-                    f"topic_similarity={topic_score:.3f}"
+                    f"topic_similarity={topic_score:.3f}; "
+                    f"boundary_similarity={boundary_score:.3f}; "
+                    f"idea_unit_similarity={unit_score:.3f}"
                 )
-            return False, f"weak_topic_similarity={topic_score:.3f}"
+            return False, (
+                f"weak_continuation_similarity; topic_similarity={topic_score:.3f}; "
+                f"boundary_similarity={boundary_score:.3f}; "
+                f"idea_unit_similarity={unit_score:.3f}"
+            )
         if (
             is_cross_window_boundary(left, right)
-            and topic_score >= CROSS_WINDOW_TOPIC_MERGE_THRESHOLD
+            and (
+                topic_score >= CROSS_WINDOW_TOPIC_MERGE_THRESHOLD
+                or boundary_score >= CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD
+                or unit_score >= CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD
+            )
         ):
             return True, (
                 "cross_window_topic_continuity without continuation flag; "
-                f"topic_similarity={topic_score:.3f}"
+                f"topic_similarity={topic_score:.3f}; "
+                f"boundary_similarity={boundary_score:.3f}; "
+                f"idea_unit_similarity={unit_score:.3f}"
             )
-        return False, f"no_continuation_flag; topic_similarity={topic_score:.3f}"
+        return False, (
+            f"no_continuation_flag; topic_similarity={topic_score:.3f}; "
+            f"boundary_similarity={boundary_score:.3f}; "
+            f"idea_unit_similarity={unit_score:.3f}"
+        )
 
     def flush_group(group: list[SegmentProposal]) -> None:
         if not group:
@@ -244,10 +318,6 @@ def run_multi_agent_l1_pipeline(
     logger.write_json("segment_coverage_validation.json", coverage_reports)
     logger.write_json("segment_coarsening.json", coarsening_reports)
 
-    extraction_batches, continuation_decisions = build_continuation_batches(all_segments)
-    logger.write_json("continuation_merges.json", continuation_decisions)
-    logger.write_json("extraction_batches.json", extraction_batches)
-
     all_idea_units = []
     idea_unit_quality_reports = []
     for segment in all_segments:
@@ -276,6 +346,14 @@ def run_multi_agent_l1_pipeline(
         )
     logger.write_json("idea_units.json", all_idea_units)
     logger.write_json("idea_unit_quality_validation.json", idea_unit_quality_reports)
+
+    extraction_batches, continuation_decisions = build_continuation_batches(
+        all_segments,
+        transcript_lines=lines,
+        idea_units=all_idea_units,
+    )
+    logger.write_json("continuation_merges.json", continuation_decisions)
+    logger.write_json("extraction_batches.json", extraction_batches)
 
     raw_candidates = []
     batch_fallback_reports = []
@@ -390,7 +468,15 @@ def run_multi_agent_l1_pipeline(
         meeting_id=meeting_id,
     )
     logger.write_json("final_patch.json", final_patch)
-    logger.append_event("reduce_l1_patch:done", {"memory_objects": len(memory_objects)})
+    viewpoint_recurrence = final_patch.get("viewpoint_recurrence", [])
+    logger.write_json("viewpoint_recurrence.json", viewpoint_recurrence)
+    logger.append_event(
+        "reduce_l1_patch:done",
+        {
+            "memory_objects": len(memory_objects),
+            "viewpoint_recurrence": len(viewpoint_recurrence),
+        },
+    )
 
     final_meeting_node = {
         "meeting_id": meeting_id,

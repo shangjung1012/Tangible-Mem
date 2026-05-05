@@ -29,7 +29,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前 `multi_agent` 的 L1 主流程是：
 
-`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> continuation_merge -> idea_unit_agent -> idea_unit_quality_validator/repair/compaction -> bounded l1_decision/todo/method_change/result_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`
+`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> idea_unit_agent -> idea_unit_quality_validator/repair/coverage-fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1`
 
 入口在 `long_term/bridge.py`。當 `--mode multi-agent` 被指定時，bridge 會呼叫 `run_multi_agent_l1_pipeline()`，最後仍把結果寫回同一個 `tree.json` meeting node。
 
@@ -156,7 +156,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - 相鄰
 - 至少一側 `needs_more_context`，且 topic 相似，或左側已明確要求延續
-- 或者跨 primary window 邊界且 topic 相似度足夠高
+- 或者跨 primary window 邊界且 topic、邊界 transcript text、或相鄰 idea units 的相似度足夠高
 
 輸出 artifact：
 
@@ -167,6 +167,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - 把跨窗補救明確化，而不是讓 segmentation 直接輸出跨窗 segment
 - 保留固定窗口的穩定性，同時補償邊界語意截斷
+- 對 topic label 不一致但邊界內容仍連續的情況，仍可合併成同一個 extraction batch
 
 目前限制：
 
@@ -225,13 +226,17 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 對超出 segment 的 unit 做 line bound clamp
 - 對過胖 unit 用原 transcript lines 拆成 bounded fallback chunks
 - 如果某個 segment 完全沒有可用 unit，補 fallback idea unit
-- 如果一個 segment 產生太多 units，壓縮成最多 6 個 durable units
+- 如果某些 segment lines 沒被任何 idea unit 覆蓋，補 transcript-based fallback unit
+- idea-unit agent 仍被要求最多輸出 8 個 units，但 validator 補漏後允許最多 12 個 units
+- 只有超過 validator 上限時才做 deterministic compaction，避免把不同觀點硬壓進同一個 unit
+- compaction 會優先維持每個 idea unit 不超過 8 行，避免補漏後又產生過胖 unit
 
 設計理由：
 
 - 避免 type agents 吃到過胖或重複的中介表示
 - 讓 representation 問題在進入 L1 typed extraction 前就被記錄與補救
 - 防止逐句 idea unit 被逐一升級成 L1 objects
+- 防止重要 transcript lines 在 segment 已覆蓋的情況下，仍因 idea-unit abstraction 被下游看不見
 
 輸出 artifact：
 
@@ -390,14 +395,33 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 把 verified candidates 轉成 canonical L1 objects
 - 套用共用 importance calibration
 - 套用 multi-agent 專用 importance cap，避免 model 自評把普通細節全部推到高分
+- 將「研究 / 比較 / 評估 / 確認」這類 follow-up suggestion 從誤判的 `decision` / `method_change` 校正回 `todo`
+- 將純描述性結構定義（例如 object schema / memory hierarchy）從誤判的 `decision` / `method_change` / `todo` 校正回 `result`
+- 將尚未採用的 proposed method / proposed decision 校正為 `result`，避免把討論中的方案誤當成已落地的流程變更
+- 對 goal statement 和低 grounding support 的 candidate 加上 importance cap
 - 對同 evidence / 高相似內容做 final dedupe
+- 對同 evidence、相鄰 evidence、或同概念鍵的 decision / method_change 中英重複做保守合併
+- 合併 tool-calling 候選時保留 `Read` / `Write` 這類具體函式細節
+- 計算同一嚴格 viewpoint key 是否在分離 transcript episodes 中反覆出現，並給予有上限的小幅 importance bonus
 - 產出 `final_patch.json`
+- 產出 `viewpoint_recurrence.json`
 - 產出 `final_meeting_node.json`
 
 設計理由：
 
 - 讓 multi-agent 輸出仍符合既有 `tree.json` schema
 - 保持與 L2 / L3 summarize 相容
+- 將「同一觀點被會議反覆提到」變成可檢查的 importance 訊號，而不是只停留在中介 candidate
+
+Viewpoint recurrence 規則：
+
+- reducer 會分開使用 `concept_keys` 和 `viewpoint_keys`：`concept_keys` 可用於保守去重，`viewpoint_keys` 才能觸發 recurrence importance bonus
+- `viewpoint_keys` 比 `concept_keys` 嚴格，例如 `compare_memory_architecture_with_rag`、`long_term_forgetting_decay`；單純同屬 RAG / memory / demo 大主題不會自動視為同一觀點
+- evidence lines 排序後，行號間隔大於 10 行才算新的 episode；連續幾行反覆講同一件事只算同一 episode
+- 2 個 episodes 給 `+0.02`、3 個 episodes 給 `+0.04`、4 個以上 episodes 給 `+0.06`
+- bonus 只小幅調整既有 importance，並受 type cap 限制：`decision` / `method_change` 最高 `0.93`，`result` / `todo` 最高 `0.84`
+- `viewpoint_recurrence.json` 會列出 affected objects 的 `base_importance` / `adjusted_importance` / `actual_bonus`，以及已達 type cap 的 `capped_objects` 或被更強 recurrence key 蓋過的 `superseded_by_stronger_viewpoint_count`
+- canonical memory object 不新增欄位；recurrence 細節寫在 artifact，方便檢查但不改既有 schema
 
 ## 4. Artifact 設計
 
@@ -420,6 +444,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `verified_candidates.json`
 - `rejected_candidates.json`
 - `final_patch.json`
+- `viewpoint_recurrence.json`
 - `final_meeting_node.json`
 - `prompts/`
 - `responses/`
@@ -442,12 +467,13 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 5. candidate 保留 `extraction_scope` 與 `segment_ids`
 6. segment coverage validator 會補 uncovered transcript lines
 7. idea unit quality validator 會修補空白、過胖、重複或越界 unit
-8. over-fragmented segments / idea units 會被壓縮，避免逐句展開
+8. over-fragmented segments / idea units 會先保留語意邊界，只有超過 validator 上限才壓縮
 9. typed L1 agents 每個 batch/type 有 candidate 上限
 10. reducer 會做 multi-agent 專用 dedupe 與 importance cap
-11. batch empty-yield 時有 bounded fallback L1 agent
-12. focused tests 覆蓋核心行為
-13. 與既有 `tree.json` / summarize 流程相容
+11. reducer 會把跨 episode 反覆出現的同一觀點轉成小幅、有上限的 importance bonus
+12. batch empty-yield 時有 bounded fallback L1 agent
+13. focused tests 覆蓋核心行為
+14. 與既有 `tree.json` / summarize 流程相容
 
 ## 6. 現在還缺的設計
 
@@ -478,7 +504,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - segmentation uncovered lines 會補 fallback segment
 - idea units 空白、越界、過胖、重複時會被修補或丟棄
-- over-fragmented segments / idea units 會被 deterministic compaction
+- over-fragmented segments 會被 deterministic coarsening；idea units 會先補 coverage gap，只有超過 validator 上限才 compact
 - batch 完全無 candidate 時會跑一次 bounded fallback L1 agent
 
 還未補的是更昂貴的 model retry 類閉環：
@@ -567,9 +593,10 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 5. idea unit 過胖會被拆成 bounded chunks
 6. fallback L1 agent 仍受 bounded unit IDs 限制
 7. over-fragmented segments 會被 coarsen
-8. over-fragmented idea units 會被 compact
+8. idea-unit validator 會補 coverage gap，並避免過早把不同觀點 compact 在一起
 9. typed L1 agent 每個 batch/type 會限制候選數
-10. reducer 會 dedupe 並校準 multi-agent importance
+10. reducer 會 dedupe、校正 type，並校準 multi-agent importance
+11. reducer 只會因為分離 episodes 提高 importance，連續行號 evidence 不會灌高分
 
 此外 full suite 目前也應能通過。這表示後段控制邏輯已有基本穩定性，且 upstream representation quality 已有第一版 deterministic validator / repair。
 

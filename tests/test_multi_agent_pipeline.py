@@ -8,7 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
 
-from multi_agent_agents import l1_fallback_agent, l1_type_agent  # noqa: E402
+from multi_agent_agents import IDEA_SCHEMA, l1_fallback_agent, l1_type_agent  # noqa: E402
 from multi_agent_pipeline import build_continuation_batches, idea_units_for_batch  # noqa: E402
 from multi_agent_reducer import (  # noqa: E402
     reduce_l1_patch,
@@ -109,6 +109,13 @@ class FakeFallbackRunner:
 
 
 class MultiAgentPipelineTests(unittest.TestCase):
+    def test_idea_unit_schema_matches_validator_unit_limit(self) -> None:
+        self.assertEqual(IDEA_SCHEMA["properties"]["idea_units"]["maxItems"], 8)
+        self.assertGreaterEqual(
+            MAX_IDEA_UNITS_PER_SEGMENT,
+            IDEA_SCHEMA["properties"]["idea_units"]["maxItems"],
+        )
+
     def test_grounding_uses_shared_idea_unit_spans(self) -> None:
         lines = parse_transcript_lines(
             "A: We switched evaluation to per-student recall.\n"
@@ -272,6 +279,39 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(decisions[0]["action"], "merge")
         self.assertIn("cross_window_topic_continuity", decisions[0]["reason"])
 
+    def test_cross_window_boundary_text_merges_without_matching_topic_labels(self) -> None:
+        transcript_lines = parse_transcript_lines(
+            "A: Gemini reads five lines and decides whether the answer is complete.\n"
+            "B: If the answer is incomplete, Function Calling can extend the read range.\n"
+            "A: The next read range and chunk still discuss whether the answer is complete.\n"
+            "B: Reading one sentence at a time would create too many Function Calling calls.\n"
+        )
+        segments = [
+            SegmentProposal(
+                segment_id="S-0001-01",
+                line_start=1,
+                line_end=2,
+                topic_label="read function parameters",
+                needs_more_context=False,
+            ),
+            SegmentProposal(
+                segment_id="S-0003-01",
+                line_start=3,
+                line_end=4,
+                topic_label="compute tradeoff",
+                needs_more_context=False,
+            ),
+        ]
+
+        batches, decisions = build_continuation_batches(
+            segments,
+            transcript_lines=transcript_lines,
+        )
+
+        self.assertEqual(len(batches), 1)
+        self.assertEqual(decisions[0]["action"], "merge")
+        self.assertIn("boundary_similarity", decisions[0]["reason"])
+
     def test_same_window_similar_segments_without_flag_stay_separate(self) -> None:
         segments = [
             SegmentProposal(
@@ -394,12 +434,12 @@ class MultiAgentPipelineTests(unittest.TestCase):
 
     def test_idea_unit_validator_compacts_overfragmented_units(self) -> None:
         transcript_lines = parse_transcript_lines(
-            "\n".join(f"Speaker: detail {index}" for index in range(1, 13))
+            "\n".join(f"Speaker: detail {index}" for index in range(1, 17))
         )
         segment = SegmentProposal(
             segment_id="S-0001-01",
             line_start=1,
-            line_end=12,
+            line_end=16,
             topic_label="tool calling flow",
             needs_more_context=False,
         )
@@ -412,7 +452,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
                 text=f"Durable detail {index}",
                 completeness="complete",
             )
-            for index in range(1, 13)
+            for index in range(1, 17)
         ]
 
         repaired, report = repair_idea_units_for_segment(
@@ -424,6 +464,90 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertLessEqual(len(repaired), MAX_IDEA_UNITS_PER_SEGMENT)
         self.assertTrue(any(issue["issue"] == "too_many_units" for issue in report["issues"]))
         self.assertTrue(any(unit.completeness == "compacted" for unit in repaired))
+
+    def test_idea_unit_validator_adds_fallback_for_uncovered_lines(self) -> None:
+        transcript_lines = parse_transcript_lines(
+            "\n".join(f"Speaker: durable detail {index}" for index in range(1, 7))
+        )
+        segment = SegmentProposal(
+            segment_id="S-0001-01",
+            line_start=1,
+            line_end=6,
+            topic_label="tool calling flow",
+            needs_more_context=False,
+        )
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-0001-01",
+                line_start=1,
+                line_end=2,
+                text="Opening durable detail.",
+                completeness="complete",
+            ),
+            IdeaUnit(
+                unit_id="U-2",
+                segment_id="S-0001-01",
+                line_start=5,
+                line_end=6,
+                text="Closing durable detail.",
+                completeness="complete",
+            ),
+        ]
+
+        repaired, report = repair_idea_units_for_segment(
+            segment=segment,
+            units=units,
+            transcript_lines=transcript_lines,
+        )
+
+        self.assertEqual(report["coverage_rate"], 1.0)
+        self.assertTrue(
+            any(repair["action"] == "add_fallback_for_uncovered_lines" for repair in report["repairs"])
+        )
+        self.assertTrue(any(unit.line_start == 3 and unit.line_end == 4 for unit in repaired))
+
+    def test_idea_unit_validator_sorts_units_after_repairs(self) -> None:
+        transcript_lines = parse_transcript_lines(
+            "\n".join(f"Speaker: durable detail {index}" for index in range(1, 6))
+        )
+        segment = SegmentProposal(
+            segment_id="S-0001-01",
+            line_start=1,
+            line_end=5,
+            topic_label="tool calling flow",
+            needs_more_context=False,
+        )
+        units = [
+            IdeaUnit(
+                unit_id="U-late",
+                segment_id="S-0001-01",
+                line_start=4,
+                line_end=5,
+                text="Closing durable detail.",
+                completeness="complete",
+            ),
+            IdeaUnit(
+                unit_id="U-early",
+                segment_id="S-0001-01",
+                line_start=1,
+                line_end=1,
+                text="Opening durable detail.",
+                completeness="complete",
+            ),
+        ]
+
+        repaired, report = repair_idea_units_for_segment(
+            segment=segment,
+            units=units,
+            transcript_lines=transcript_lines,
+        )
+
+        self.assertEqual(report["coverage_rate"], 1.0)
+        self.assertEqual(
+            [(unit.line_start, unit.line_end) for unit in repaired],
+            [(1, 1), (2, 3), (4, 5)],
+        )
 
     def test_type_agent_caps_candidates_per_batch(self) -> None:
         runner = NoisyTypeRunner()
@@ -517,6 +641,588 @@ class MultiAgentPipelineTests(unittest.TestCase):
 
         self.assertEqual(len(memory_objects), 1)
         self.assertLessEqual(memory_objects[0]["importance"], 0.68)
+
+    def test_reducer_reclassifies_evaluation_suggestion_as_todo(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "method_change",
+                "source_unit_ids": ["U-1"],
+                "content": "It is suggested to evaluate fixed-size versus sentence-by-sentence unit generation methods.",
+                "importance": 1.0,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["evaluation"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "You should compare fixed-size and sentence-by-sentence methods.",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "todo")
+        self.assertLessEqual(memory_objects[0]["importance"], 0.88)
+
+    def test_reducer_keeps_structure_description_as_result_not_todo(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "The long-term memory object has a defined structure containing Type, Content, Evidence, and Related Topics.",
+                "importance": 0.9,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["memory"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2, 3],
+                "evidence_quote": "The object has Type, Content, Evidence, and Related Topics. Later we should compare baselines.",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+
+    def test_reducer_reclassifies_dataset_decision_as_decision(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "method_change",
+                "source_unit_ids": ["U-1"],
+                "content": "The team decided to use its own dataset for evaluation.",
+                "importance": 0.85,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["evaluation"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "We can use our own dataset because it contains relevant method changes.",
+                "support_score": 0.8,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "decision")
+
+    def test_reducer_reclassifies_uncommitted_method_proposal_as_result(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "method_change",
+                "source_unit_ids": ["U-1"],
+                "content": "A proposed method uses information entropy to predict the next chunk size.",
+                "importance": 0.85,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["segmentation"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "One possible method is to use information entropy.",
+                "support_score": 0.8,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+
+    def test_reducer_treats_chinese_adding_sentence_as_uncommitted_proposal(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "method_change",
+                "source_unit_ids": ["U-1"],
+                "content": "提出一種基於資訊熵的動態分段方法；新句子的加入若提高熵值，代表主題切換。",
+                "importance": 0.95,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["segmentation"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "可以考慮用資訊熵看新句子的加入是否造成主題變化。",
+                "support_score": 0.8,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+        self.assertLessEqual(memory_objects[0]["importance"], 0.86)
+
+    def test_reducer_reclassifies_final_output_format_as_result(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "method_change",
+                "source_unit_ids": ["U-1"],
+                "content": "The final output of processing a transcription will be a collection of memory objects as defined in the long-term memory system.",
+                "importance": 0.95,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["memory object"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "The final output is memory objects with Type, Content, Evidence, and Related Topics.",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+        self.assertLessEqual(memory_objects[0]["importance"], 0.88)
+
+    def test_reducer_reclassifies_chinese_final_output_as_result(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "處理轉錄稿的最終產出將是一組為長期記憶定義的 memory object。",
+                "importance": 0.95,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["memory object"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "最後產出就是 long-term memory object。",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+
+    def test_reducer_reclassifies_descriptive_todo_as_result(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "todo",
+                "source_unit_ids": ["U-1"],
+                "content": "長期記憶被組織成 L1、L2、L3 三層級結構，並在命中 L1 時一併提供 L2 和 L3 摘要。",
+                "importance": 0.9,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["long-term memory"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "Long-term memory has L1, L2, and L3.",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+
+    def test_reducer_reclassifies_uncommitted_decision_proposal_as_result(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "提議一個新的記憶更新流程：先將傳入的想法分類為短期或長期。",
+                "importance": 0.9,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["memory update"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "Could first classify ideas as short-term or long-term.",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "result")
+
+    def test_reducer_merges_concept_duplicate_across_languages(self) -> None:
+        base = {
+            "source_unit_ids": ["U-1"],
+            "importance": 0.95,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_quote": "Gemini uses Read and Write functions for the memory database.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "decision",
+                "content": "專案採用 Tool Calling，讓 Gemini 動態讀取逐字稿行數。",
+                "evidence_lines": [1, 2],
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "method_change",
+                "content": "The project uses Tool Calling with `Read` and `Write` functions to update the memory database.",
+                "evidence_lines": [1, 2, 11, 12, 13],
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "method_change")
+
+    def test_reducer_caps_low_support_high_model_importance(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "決定採用新的長期記憶展示策略。",
+                "importance": 1.0,
+                "confidence": 1.0,
+                "rationale": "",
+                "related_topics": ["demo"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2, 3],
+                "evidence_quote": "我們可以考慮展示策略。",
+                "support_score": 0.2,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertLessEqual(memory_objects[0]["importance"], 0.86)
+
+    def test_reducer_caps_goal_statement_importance(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "The current goal for the long-term memory tree is to make it as flat as possible.",
+                "importance": 1.0,
+                "confidence": 1.0,
+                "rationale": "",
+                "related_topics": ["long-term memory"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2, 3],
+                "evidence_quote": "We want the tree to stay flat.",
+                "support_score": 1.0,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertLessEqual(memory_objects[0]["importance"], 0.87)
+
+    def test_reducer_does_not_boost_consecutive_viewpoint_mentions(self) -> None:
+        patch, memory_objects = reduce_l1_patch(
+            [
+                {
+                    "candidate_id": "C-1",
+                    "type": "method_change",
+                    "source_unit_ids": ["U-1"],
+                    "content": "The memory architecture will implement a forgetting mechanism where relevance decays over time if not revisited.",
+                    "importance": 0.65,
+                    "confidence": 0.9,
+                    "rationale": "",
+                    "related_topics": ["forgetting mechanism"],
+                    "extraction_scope": "B-001",
+                    "segment_ids": ["S-1"],
+                    "evidence_lines": [10, 11, 12, 13, 14],
+                    "evidence_quote": "The same forgetting mechanism is discussed in consecutive lines.",
+                    "support_score": 0.9,
+                    "grounding_note": "grounded",
+                }
+            ],
+            meeting_id="T",
+        )
+
+        self.assertEqual(patch["viewpoint_recurrence"], [])
+        self.assertNotIn("viewpoint_recurrence", memory_objects[0])
+
+    def test_reducer_boosts_separated_viewpoint_episodes(self) -> None:
+        base_candidate = {
+            "candidate_id": "C-1",
+            "type": "method_change",
+            "source_unit_ids": ["U-1"],
+            "content": "The memory architecture will implement a forgetting mechanism where relevance decays over time if not revisited.",
+            "importance": 0.65,
+            "confidence": 0.9,
+            "rationale": "",
+            "related_topics": ["forgetting mechanism"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_quote": "The forgetting mechanism returns in separated meeting moments.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        _, consecutive_objects = reduce_l1_patch(
+            [{**base_candidate, "evidence_lines": [10, 11, 12, 13, 14]}],
+            meeting_id="T",
+        )
+        separated_patch, separated_objects = reduce_l1_patch(
+            [{**base_candidate, "evidence_lines": [10, 11, 30, 31, 50]}],
+            meeting_id="T",
+        )
+
+        self.assertGreater(
+            separated_objects[0]["importance"],
+            consecutive_objects[0]["importance"],
+        )
+        self.assertEqual(
+            separated_patch["viewpoint_recurrence"][0]["viewpoint_key"],
+            "long_term_forgetting_decay",
+        )
+        self.assertEqual(separated_patch["viewpoint_recurrence"][0]["episode_count"], 3)
+        self.assertEqual(separated_patch["viewpoint_recurrence"][0]["bonus"], 0.04)
+        self.assertEqual(
+            separated_patch["viewpoint_recurrence"][0]["affected_objects"][0]["base_importance"],
+            consecutive_objects[0]["importance"],
+        )
+        self.assertEqual(
+            separated_patch["viewpoint_recurrence"][0]["affected_objects"][0]["adjusted_importance"],
+            separated_objects[0]["importance"],
+        )
+
+    def test_reducer_merges_demo_dataset_synonyms(self) -> None:
+        base = {
+            "type": "decision",
+            "source_unit_ids": ["U-1"],
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["demo"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_quote": "Use our meeting transcripts for the project demo.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "content": "團隊決定使用自身的會議紀錄作為評估和專案演示的資料集。",
+                "evidence_lines": [157, 158],
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "content": "The evaluation and demonstration strategy will use the team's own meeting transcripts as the primary dataset.",
+                "evidence_lines": [169, 170, 171],
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+
+    def test_reducer_merges_hyphenated_tool_calling_concept(self) -> None:
+        base = {
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_quote": "Tool-calling dynamically adjusts chunk size.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "method_change",
+                "source_unit_ids": ["U-1"],
+                "content": "The transcript analysis method changed to an iterative, non-sequential tool-calling process that dynamically determines chunk size.",
+                "evidence_lines": [45, 46, 47],
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "decision",
+                "source_unit_ids": ["U-2"],
+                "content": "系統將採用動態分塊機制，透過 Function Calling 的 Read 函式自行決定逐字稿行數。",
+                "evidence_lines": [55, 56, 57],
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "method_change")
+
+    def test_reducer_preserves_read_write_content_when_merging(self) -> None:
+        base = {
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "The memory update architecture uses Tool Calling with `Read` and `Write` functions for transcript line chunks and the memory database.",
+                "evidence_lines": [1, 2],
+                "evidence_quote": "Gemini has Read and Write functions.",
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "method_change",
+                "source_unit_ids": ["U-2"],
+                "content": "The transcript analysis method changed to an iterative tool-calling process that adjusts chunk size.",
+                "evidence_lines": [3, 4],
+                "evidence_quote": "Tool calling is iterative.",
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertIn("Read", memory_objects[0]["content"])
+        self.assertIn("Write", memory_objects[0]["content"])
+
+    def test_reducer_merges_flat_memory_tree_goal(self) -> None:
+        base = {
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["long-term memory"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_quote": "The long-term memory tree should stay flat.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "當前長期記憶樹的目標是使其盡可能扁平化。",
+                "evidence_lines": [140, 141],
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "result",
+                "source_unit_ids": ["U-2"],
+                "content": "The current goal for the long-term memory tree is to make it as flat as possible.",
+                "evidence_lines": [141],
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertLessEqual(memory_objects[0]["importance"], 0.87)
+
+    def test_reducer_merges_same_type_high_evidence_overlap(self) -> None:
+        base = {
+            "type": "todo",
+            "source_unit_ids": ["U-1"],
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["evaluation"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [1, 2, 3, 4],
+            "evidence_quote": "Compare fixed-size and sentence-by-sentence baselines.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "content": "Compare the new unit generation method against fixed-size and sentence-by-sentence baselines.",
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "content": "在截止日前，應將新的單元生成方法與固定大小分塊和逐句分塊進行比較。",
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "todo")
+
+    def test_reducer_merges_decision_method_change_same_evidence(self) -> None:
+        base = {
+            "source_unit_ids": ["U-1"],
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [1, 2, 3, 4],
+            "evidence_quote": "The project will adopt dynamic tool calling.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "decision",
+                "content": "The project will adopt dynamic tool calling.",
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "method_change",
+                "content": "專案採用動態 tool calling 方法。",
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "method_change")
 
     def test_conflict_resolver_merges_redundant_cross_type_candidate(self) -> None:
         base = {

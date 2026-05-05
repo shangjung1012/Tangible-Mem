@@ -57,7 +57,7 @@ IDEA_SCHEMA: dict[str, Any] = {
     "properties": {
         "idea_units": {
             "type": "array",
-            "maxItems": 6,
+            "maxItems": 8,
             "items": {
                 "type": "object",
                 "properties": {
@@ -273,7 +273,7 @@ You are idea_unit_agent. Convert this segment into compact idea units.
 Each unit should express one checkable idea that downstream L1 agents can share.
 Do not classify memory types here. Return JSON only.
 
-Return at most 6 idea units. Do not split every sentence into a separate unit.
+Return at most 8 idea units. Do not split every sentence into a separate unit.
 Prefer durable, self-contained units that combine related details across several
 lines. Ignore filler, acknowledgements, and local wording clarifications unless
 they change the project method, decision, result, or todo.
