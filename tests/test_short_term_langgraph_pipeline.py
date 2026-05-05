@@ -39,6 +39,7 @@ from short_term.storage.staging_store import update_staged_candidate_statuses  #
 from short_term.storage.staging_store import write_staged_candidate  # noqa: E402
 from short_term.storage.transcript_store import import_transcript_to_sqlite  # noqa: E402
 from short_term.core.verifier import verify_candidates  # noqa: E402
+from short_term.agents.base import GeminiJsonAgent  # noqa: E402
 
 
 class ShortTermLangGraphPipelineTests(unittest.TestCase):
@@ -144,6 +145,50 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["attempt"], 1)
         self.assertEqual(events[0]["operation_name"], "test operation")
+
+    def test_tool_agent_repairs_empty_final_json_response(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            logger = ResearchLogger(Path(tmpdir), "Bmr001", run_id="run_Bmr001")
+            chat = _FakeChat(
+                [
+                    _FakeResponse(""),
+                    _FakeResponse('{"experiment_todos": []}'),
+                ]
+            )
+            agent = GeminiJsonAgent(
+                name="experiment_todo_agent",
+                client=_FakeClient(chat),
+                model_name="gemini-2.5-pro",
+                schema={"type": "object", "properties": {"experiment_todos": {"type": "array"}}},
+            )
+
+            result = agent.run(
+                prompt="Extract experiment todos.",
+                logger=logger,
+                input_summary={},
+                tool_context=AgentToolContext(
+                    db_path=Path(tmpdir) / "memory.db",
+                    run_id="run_Bmr001",
+                    meeting_id="Bmr001",
+                    policy=AgentToolPolicy(
+                        agent_name="experiment_todo_agent",
+                        write_sections={"experiment_todos"},
+                    ),
+                ),
+            )
+            meta_path = (
+                Path(tmpdir)
+                / "run_Bmr001"
+                / "responses"
+                / "001_experiment_todo_agent.meta.json"
+            )
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(result.errors, [])
+            self.assertEqual(result.parsed, {"experiment_todos": []})
+            self.assertEqual(chat.messages_sent, 2)
+            self.assertEqual(meta["retry_count"], 1)
+            self.assertEqual(meta["retry_events"][0]["error_type"], "EmptyModelResponse")
 
     def test_verifier_rejects_missing_evidence_and_unknown_update_id(self) -> None:
         current_memory = {
@@ -1371,6 +1416,55 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
 
             self.assertEqual(statuses[good["candidate_id"]], "verified")
             self.assertEqual(statuses[bad["candidate_id"]], "rejected")
+
+
+class _FakePart:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.function_call = None
+
+
+class _FakeContent:
+    def __init__(self, text: str) -> None:
+        self.parts = [_FakePart(text)] if text else []
+
+
+class _FakeCandidate:
+    def __init__(self, text: str) -> None:
+        self.content = _FakeContent(text)
+
+
+class _FakeResponse:
+    def __init__(self, text: str) -> None:
+        self.candidates = [_FakeCandidate(text)] if text else []
+        self.function_calls = []
+        self.text = text
+        self.parsed = None
+        self.usage_metadata = {}
+
+
+class _FakeChat:
+    def __init__(self, responses: list[_FakeResponse]) -> None:
+        self.responses = responses
+        self.messages_sent = 0
+
+    def send_message(self, message: object) -> _FakeResponse:
+        self.messages_sent += 1
+        index = min(self.messages_sent - 1, len(self.responses) - 1)
+        return self.responses[index]
+
+
+class _FakeChats:
+    def __init__(self, chat: _FakeChat) -> None:
+        self.chat = chat
+
+    def create(self, **kwargs: object) -> _FakeChat:
+        return self.chat
+
+
+class _FakeClient:
+    def __init__(self, chat: _FakeChat) -> None:
+        self.chats = _FakeChats(chat)
 
 
 class _FakeAgent:

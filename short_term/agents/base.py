@@ -29,6 +29,7 @@ from .prompts import DEFAULT_TEMPERATURE, PROMPT_VERSION
 MAX_FUNCTION_CALLS_PER_RESPONSE = 40
 MAX_FUNCTION_CALLS_PER_AGENT_RUN = 120
 MAX_TOOL_ROUNDS_PER_AGENT_RUN = 12
+MAX_EMPTY_RESPONSE_RETRIES = 2
 
 
 @dataclass(slots=True)
@@ -207,10 +208,39 @@ class GeminiJsonAgent:
         )
 
         total_function_calls = 0
+        empty_response_retries = 0
         for round_index in range(1, max_tool_rounds + 1):
             function_calls = list(getattr(response, "function_calls", None) or [])
             if not function_calls:
-                return response
+                if _response_text(response).strip() or _has_parsed_json_object(response):
+                    return response
+                if empty_response_retries >= MAX_EMPTY_RESPONSE_RETRIES:
+                    return response
+                empty_response_retries += 1
+                retry_events.append(
+                    {
+                        "operation_name": f"{self.name} tool final JSON repair",
+                        "attempt": empty_response_retries,
+                        "max_retries": MAX_EMPTY_RESPONSE_RETRIES,
+                        "delay_seconds": 0.0,
+                        "error_type": "EmptyModelResponse",
+                        "error": "LLM returned an empty final response after tool use.",
+                    }
+                )
+                response = call_with_retry(
+                    lambda: chat.send_message(
+                        "Previous response was empty. Return only the final JSON "
+                        "object matching the response schema. If there is no update "
+                        "for this section, return an empty array."
+                    ),
+                    operation_name=(
+                        f"{self.name} tool send_message empty-response repair "
+                        f"{empty_response_retries}"
+                    ),
+                    on_retry=retry_events.append,
+                )
+                continue
+            empty_response_retries = 0
             if len(function_calls) > MAX_FUNCTION_CALLS_PER_RESPONSE:
                 raise RuntimeError(
                     f"{self.name} requested {len(function_calls)} function calls in "
@@ -328,6 +358,15 @@ def _function_call_names(response: Any) -> list[str]:
         name = str(getattr(function_call, "name", "") or "").strip()
         names.append(name or "unknown")
     return names
+
+
+def _has_parsed_json_object(response: Any) -> bool:
+    parsed = getattr(response, "parsed", None)
+    if isinstance(parsed, dict):
+        return True
+    if hasattr(parsed, "model_dump"):
+        return isinstance(parsed.model_dump(), dict)
+    return False
 
 
 def _response_text(response: Any) -> str:

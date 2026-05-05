@@ -20,21 +20,23 @@ INTERNAL_PAYLOAD_KEYS = {"operation", "confidence", "evidence"}
 
 
 @contextmanager
-def _connect(db_path: Path) -> Iterator[sqlite3.Connection]:
+def _connect(db_path: Path, *, configure_wal: bool = False) -> Iterator[sqlite3.Connection]:
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
     try:
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout = 30000")
         conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA journal_mode = WAL").fetchone()
-        conn.execute("PRAGMA synchronous = NORMAL")
+        if configure_wal:
+            conn.execute("PRAGMA journal_mode = WAL").fetchone()
+            conn.execute("PRAGMA synchronous = NORMAL")
         yield conn
     finally:
         conn.close()
 
 
 def ensure_staging_schema(db_path: Path) -> None:
-    with _connect(db_path) as conn:
+    with _connect(db_path, configure_wal=True) as conn:
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS memory_candidate_staging (
