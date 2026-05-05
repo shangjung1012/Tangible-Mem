@@ -86,7 +86,22 @@ def build_bridge_prompt(
     prior_context_pack: dict[str, Any] | None = None,
 ) -> str:
     topics_str = ", ".join(existing_topics) if existing_topics else "(尚無)"
-    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
+    prior_items = (prior_context_pack or {}).get("items", [])
+    prior_context_block = ""
+    prior_rules = ""
+    if isinstance(prior_items, list) and prior_items:
+        prior_rules = """
+7) 舊會議背景只能用來理解指涉、延續脈絡、topic 命名；不可作為新 L1 evidence。
+8) 每個新 L1 的 evidence 必須只引用本次逐字稿。
+""".strip()
+        completion_rule_number = 9
+        prior_context_block = f"""
+
+舊會議背景：
+{format_prior_context_for_prompt(prior_context_pack)}
+""".rstrip()
+    else:
+        completion_rule_number = 7
     return f"""
 你是一個「長期記憶擷取器」。
 任務：從單次會議逐字稿中，擷取所有重要的記憶物件，分類為
@@ -118,15 +133,12 @@ decision / todo / method_change / result / open_question / argument。
 5) evidence 請引用逐字稿中的關鍵句子（簡短即可）。
 6) related_topics 列出相關主題關鍵字，用於後續跨會議的因果鏈追蹤。
    已知主題關鍵字（供參考，可新增）：{topics_str}
-7) 舊會議背景只能用來理解指涉、延續脈絡、topic 命名；不可作為新 L1 evidence。
-8) 每個新 L1 的 evidence 必須只引用本次逐字稿。
-9) 請盡量完整擷取，不要遺漏重要內容，但也不要重複。
-10) 文字欄位請優先使用繁體中文。
+{prior_rules}
+{completion_rule_number}) 請盡量完整擷取，不要遺漏重要內容，但也不要重複。
+{completion_rule_number + 1}) 文字欄位請優先使用繁體中文。
 
 會議 ID：{meeting_id}
-
-舊會議背景：
-{prior_context_text}
+{prior_context_block}
 
 逐字稿：
 {transcript}
@@ -882,15 +894,19 @@ def main() -> None:
     quality_path = quality_index_default_path(tree_path)
     relations_path = memory_relations_default_path(tree_path)
     activity_path = memory_activity_default_path(tree_path)
-    existing_quality_index = load_l1_quality_index(quality_path)
-    existing_activity_index = load_memory_activity_index(activity_path)
+    existing_quality_index = load_l1_quality_index(quality_path) if mode == "multi-agent" else {}
+    existing_activity_index = load_memory_activity_index(activity_path) if mode == "multi-agent" else {}
     existing_relations_index = {}
-    prior_context_pack = build_prior_context_pack(
-        tree=tree,
-        meeting_id=meeting_id,
-        transcript=transcript,
-        quality_index=existing_quality_index,
-        activity_index=existing_activity_index,
+    prior_context_pack = (
+        build_prior_context_pack(
+            tree=tree,
+            meeting_id=meeting_id,
+            transcript=transcript,
+            quality_index=existing_quality_index,
+            activity_index=existing_activity_index,
+        )
+        if mode == "multi-agent"
+        else {}
     )
 
     multi_agent_result = None
@@ -950,7 +966,6 @@ def main() -> None:
             transcript_id=meeting_id,
             db_path=Path(args.incremental_db).resolve(),
             existing_topics=existing_topics,
-            prior_context_pack=prior_context_pack,
             chunk_size=chunk_size,
             issue_episode_gap_lines=issue_episode_gap_lines,
             dataset_profile_name=profile.name,
@@ -983,7 +998,6 @@ def main() -> None:
             transcript=transcript,
             meeting_id=meeting_id,
             existing_topics=existing_topics,
-            prior_context_pack=prior_context_pack,
         )
         raw_objects = llm_output.get("memory_objects", [])
         memory_objects = normalize_memory_objects(raw_objects, meeting_id)
