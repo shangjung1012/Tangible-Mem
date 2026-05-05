@@ -36,6 +36,15 @@ VIEWPOINT_RECURRENCE_TYPE_CAPS = {
     "open_question": 0.80,
     "argument": 0.78,
 }
+NEAR_THRESHOLD_GROUNDING_WARNING = "near_threshold_grounding"
+NEAR_THRESHOLD_GROUNDING_TYPE_CAPS = {
+    "decision": 0.62,
+    "method_change": 0.62,
+    "result": 0.58,
+    "todo": 0.58,
+    "open_question": 0.58,
+    "argument": 0.56,
+}
 
 _FOLLOWUP_TASK_MARKERS = (
     "assess",
@@ -758,6 +767,11 @@ def _multi_agent_importance(
         score = min(score - 0.03, 0.82)
     if "source_unit_uncertainty_note" in unit_quality_warnings:
         score = min(score - 0.02, 0.82)
+    if NEAR_THRESHOLD_GROUNDING_WARNING in unit_quality_warnings:
+        score = min(
+            score - 0.04,
+            NEAR_THRESHOLD_GROUNDING_TYPE_CAPS.get(obj_type, 0.58),
+        )
 
     return round(clamp_float(score), 2)
 

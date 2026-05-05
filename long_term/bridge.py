@@ -27,10 +27,25 @@ from importance import (
 )
 from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
 from l1_quality import (
+    load_l1_quality_index,
     merge_l1_quality_index,
     quality_index_default_path,
     remove_l1_quality_for_meeting,
 )
+from memory_activity import (
+    build_memory_activity_update,
+    load_memory_activity_index,
+    memory_activity_default_path,
+    merge_memory_activity_index,
+    remove_memory_activity_for_meeting,
+)
+from memory_relations import (
+    build_cross_meeting_relations,
+    memory_relations_default_path,
+    merge_memory_relations_index,
+    remove_memory_relations_for_meeting,
+)
+from prior_context import build_prior_context_pack, format_prior_context_for_prompt
 from schema import BRIDGE_RESPONSE_SCHEMA, DEFAULT_MODEL_NAME, MEMORY_OBJ_TYPES
 
 TODO_PREFIXES = ("需要", "待辦", "應", "計劃", "必須")
@@ -68,8 +83,10 @@ def build_bridge_prompt(
     transcript: str,
     meeting_id: str,
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
 ) -> str:
     topics_str = ", ".join(existing_topics) if existing_topics else "(尚無)"
+    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
     return f"""
 你是一個「長期記憶擷取器」。
 任務：從單次會議逐字稿中，擷取所有重要的記憶物件，分類為
@@ -101,10 +118,15 @@ decision / todo / method_change / result / open_question / argument。
 5) evidence 請引用逐字稿中的關鍵句子（簡短即可）。
 6) related_topics 列出相關主題關鍵字，用於後續跨會議的因果鏈追蹤。
    已知主題關鍵字（供參考，可新增）：{topics_str}
-7) 請盡量完整擷取，不要遺漏重要內容，但也不要重複。
-8) 文字欄位請優先使用繁體中文。
+7) 舊會議背景只能用來理解指涉、延續脈絡、topic 命名；不可作為新 L1 evidence。
+8) 每個新 L1 的 evidence 必須只引用本次逐字稿。
+9) 請盡量完整擷取，不要遺漏重要內容，但也不要重複。
+10) 文字欄位請優先使用繁體中文。
 
 會議 ID：{meeting_id}
+
+舊會議背景：
+{prior_context_text}
 
 逐字稿：
 {transcript}
@@ -145,6 +167,7 @@ def call_gemini_bridge(
     transcript: str,
     meeting_id: str,
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
     max_retries: int = 30,
 ) -> dict[str, Any]:
     def _is_retryable_error(exc: Exception) -> bool:
@@ -171,7 +194,12 @@ def call_gemini_bridge(
         return any(token in msg for token in retry_tokens)
 
     client = create_gemini_client(api_key)
-    prompt = build_bridge_prompt(transcript, meeting_id, existing_topics)
+    prompt = build_bridge_prompt(
+        transcript,
+        meeting_id,
+        existing_topics,
+        prior_context_pack=prior_context_pack,
+    )
     config = {
         "temperature": 0.15,
         "response_mime_type": "application/json",
@@ -806,6 +834,14 @@ def parse_args() -> argparse.Namespace:
         help="Context lookahead lines for segmentation prompts in --mode multi-agent.",
     )
     parser.add_argument(
+        "--multi-agent-previous-context",
+        action="store_true",
+        help=(
+            "Experimental: pass compact read-only summaries from previous "
+            "extraction batches into multi-agent typed L1 agents."
+        ),
+    )
+    parser.add_argument(
         "--timestamp",
         default="",
         help="Meeting timestamp (ISO 8601). Auto-generated if empty.",
@@ -843,8 +879,23 @@ def main() -> None:
     api_keys = load_api_keys()
     model_name = resolve_model_name(args.model)
     existing_topics = collect_existing_topics(tree)
+    quality_path = quality_index_default_path(tree_path)
+    relations_path = memory_relations_default_path(tree_path)
+    activity_path = memory_activity_default_path(tree_path)
+    existing_quality_index = load_l1_quality_index(quality_path)
+    existing_activity_index = load_memory_activity_index(activity_path)
+    existing_relations_index = {}
+    prior_context_pack = build_prior_context_pack(
+        tree=tree,
+        meeting_id=meeting_id,
+        transcript=transcript,
+        quality_index=existing_quality_index,
+        activity_index=existing_activity_index,
+    )
 
     multi_agent_result = None
+    relation_updates: dict[str, list[dict[str, Any]]] = {}
+    activity_update: dict[str, Any] = {}
     if mode == "multi-agent":
         from multi_agent_pipeline import run_multi_agent_l1_pipeline
 
@@ -857,10 +908,12 @@ def main() -> None:
             timestamp=timestamp,
             meeting_date=meeting_date,
             existing_topics=existing_topics,
+            prior_context_pack=prior_context_pack,
             research_log_dir=Path(args.research_log_dir).resolve(),
             window_size=args.multi_agent_window_size,
             lookback_lines=args.multi_agent_lookback_lines,
             lookahead_lines=args.multi_agent_lookahead_lines,
+            previous_context_enabled=args.multi_agent_previous_context,
         )
         memory_objects = multi_agent_result.memory_objects
     elif mode == "incremental":
@@ -897,6 +950,7 @@ def main() -> None:
             transcript_id=meeting_id,
             db_path=Path(args.incremental_db).resolve(),
             existing_topics=existing_topics,
+            prior_context_pack=prior_context_pack,
             chunk_size=chunk_size,
             issue_episode_gap_lines=issue_episode_gap_lines,
             dataset_profile_name=profile.name,
@@ -929,6 +983,7 @@ def main() -> None:
             transcript=transcript,
             meeting_id=meeting_id,
             existing_topics=existing_topics,
+            prior_context_pack=prior_context_pack,
         )
         raw_objects = llm_output.get("memory_objects", [])
         memory_objects = normalize_memory_objects(raw_objects, meeting_id)
@@ -951,6 +1006,31 @@ def main() -> None:
             multi_agent_result.final_meeting_node,
         )
         save_json(multi_agent_result.run_dir / "final_meeting_node.json", persisted_node)
+        combined_quality_index = {
+            **existing_quality_index,
+            **multi_agent_result.quality_index,
+        }
+        relation_updates = build_cross_meeting_relations(
+            tree=tree,
+            source_meeting=persisted_node,
+            quality_index=combined_quality_index,
+        )
+        activity_update = build_memory_activity_update(
+            tree=tree,
+            meeting_id=meeting_id,
+            existing_index=existing_activity_index,
+            relation_updates=relation_updates,
+        )
+        save_json(multi_agent_result.run_dir / "cross_meeting_relations.json", relation_updates)
+        save_json(
+            multi_agent_result.run_dir / "memory_activity_update.json",
+            {
+                obj_id: meta
+                for obj_id, meta in activity_update.items()
+                if meta.get("meeting_id") == meeting_id
+                or meta.get("last_touched_meeting_id") == meeting_id
+            },
+        )
 
     if args.dry_run:
         print_json_safe(tree)
@@ -962,8 +1042,13 @@ def main() -> None:
     )
     save_json(snapshot_dir / snapshot_name, tree)
 
-    quality_path = quality_index_default_path(tree_path)
     if mode == "multi-agent" and multi_agent_result is not None:
+        remove_l1_quality_for_meeting(quality_path, meeting_id)
+        existing_relations_index = remove_memory_relations_for_meeting(
+            relations_path,
+            meeting_id,
+        )
+        remove_memory_activity_for_meeting(activity_path, meeting_id)
         if multi_agent_result.quality_index:
             merged_quality = merge_l1_quality_index(
                 quality_path,
@@ -976,6 +1061,14 @@ def main() -> None:
             f"Multi-agent bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
         )
         print(f"Research log: {multi_agent_result.run_dir}")
+        merged_relations = merge_memory_relations_index(relations_path, relation_updates)
+        if not relation_updates:
+            merged_relations = existing_relations_index
+        merged_activity = (
+            merge_memory_activity_index(activity_path, activity_update)
+            if activity_update
+            else load_memory_activity_index(activity_path)
+        )
         if quality_path is not None:
             print(
                 "L1 quality index: "
@@ -983,14 +1076,29 @@ def main() -> None:
                 f"({len(multi_agent_result.quality_index)} updated, "
                 f"{len(merged_quality)} total)"
             )
+        print(
+            "Memory relations index: "
+            f"{relations_path} "
+            f"({sum(len(v) for v in relation_updates.values())} new, "
+            f"{sum(len(v) for v in merged_relations.values() if isinstance(v, list))} total)"
+        )
+        print(
+            "Memory activity index: "
+            f"{activity_path} "
+            f"({len(merged_activity)} objects tracked)"
+        )
     elif mode == "incremental":
         remove_l1_quality_for_meeting(quality_path, meeting_id)
+        remove_memory_relations_for_meeting(relations_path, meeting_id)
+        remove_memory_activity_for_meeting(activity_path, meeting_id)
         print(
             f"Incremental bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
         )
         print(f"Incremental DB: {Path(args.incremental_db).resolve()}")
     else:
         remove_l1_quality_for_meeting(quality_path, meeting_id)
+        remove_memory_relations_for_meeting(relations_path, meeting_id)
+        remove_memory_activity_for_meeting(activity_path, meeting_id)
         print(f"Bridge: inserted {len(memory_objects)} memory objects for {meeting_id}")
     print(f"Tree version: {tree['tree_version']}")
     print(f"Tree saved: {tree_path}")

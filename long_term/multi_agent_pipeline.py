@@ -12,6 +12,7 @@ from io_utils import utc_now_iso
 from multi_agent_agents import (
     MultiAgentLLMRunner,
     idea_unit_agent,
+    idea_unit_repair_agent,
     l1_fallback_agent,
     l1_type_agent,
     plan_context_windows,
@@ -41,8 +42,19 @@ CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD = 0.20
 CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD = 0.20
 BOUNDARY_LINE_WINDOW = 6
 BOUNDARY_REFINEMENT_CONTEXT_LINES = 16
-MAX_IDEA_UNITS_PER_EXTRACTION_BATCH = 18
+MAX_IDEA_UNITS_PER_EXTRACTION_BATCH = 10
+PREVIOUS_CONTEXT_LOOKBACK_BATCHES = 2
+PREVIOUS_CONTEXT_MAX_ITEMS_PER_TYPE = 3
+PREVIOUS_CONTEXT_MAX_TOTAL_ITEMS = 12
+PREVIOUS_CONTEXT_MAX_CONTENT_CHARS = 160
+PREVIOUS_CONTEXT_MIN_CONFIDENCE = 0.75
 SEGMENT_WINDOW_ID_RE = re.compile(r"^S-(\d+)-")
+SEMANTIC_IDEA_REPAIR_ISSUES = {
+    "empty_or_unusable_idea_units",
+    "too_fat_line_span",
+    "too_many_units",
+    "uncovered_line_ranges",
+}
 
 
 @dataclass(frozen=True)
@@ -564,6 +576,126 @@ def _candidate_quality_warnings(candidate: Any) -> list[str]:
     return [str(value) for value in values if str(value or "").strip()]
 
 
+def _candidate_confidence(candidate: Any) -> float:
+    if isinstance(candidate, dict):
+        value = candidate.get("confidence", 0.0)
+    else:
+        value = getattr(candidate, "confidence", 0.0)
+    try:
+        return float(value or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _candidate_content(candidate: Any) -> str:
+    if isinstance(candidate, dict):
+        return str(candidate.get("content", "") or "").strip()
+    return str(getattr(candidate, "content", "") or "").strip()
+
+
+def _candidate_scope(candidate: Any) -> str:
+    if isinstance(candidate, dict):
+        return str(candidate.get("extraction_scope", "") or "").strip()
+    return str(getattr(candidate, "extraction_scope", "") or "").strip()
+
+
+def _trim_previous_context_content(content: str) -> str:
+    clean = " ".join(str(content or "").split())
+    if len(clean) <= PREVIOUS_CONTEXT_MAX_CONTENT_CHARS:
+        return clean
+    return clean[: PREVIOUS_CONTEXT_MAX_CONTENT_CHARS - 3].rstrip() + "..."
+
+
+def build_previous_batch_context(
+    completed_batch_records: list[dict[str, Any]],
+    *,
+    current_batch_id: str,
+    enabled: bool,
+    lookback_batches: int = PREVIOUS_CONTEXT_LOOKBACK_BATCHES,
+    max_items_per_type: int = PREVIOUS_CONTEXT_MAX_ITEMS_PER_TYPE,
+    max_total_items: int = PREVIOUS_CONTEXT_MAX_TOTAL_ITEMS,
+) -> dict[str, Any]:
+    context: dict[str, Any] = {
+        "enabled": bool(enabled),
+        "current_batch_id": current_batch_id,
+        "lookback_batches": lookback_batches,
+        "source_batch_ids": [],
+        "items": [],
+    }
+    if not enabled:
+        return context
+
+    if lookback_batches <= 0:
+        return context
+    recent_records = completed_batch_records[-lookback_batches:]
+    source_batch_ids = [
+        str(record.get("batch_id", "") or "")
+        for record in recent_records
+        if str(record.get("batch_id", "") or "").strip()
+    ]
+    context["source_batch_ids"] = source_batch_ids
+
+    type_counts: Counter[str] = Counter()
+    items: list[dict[str, Any]] = []
+    for record in recent_records:
+        source_batch_id = str(record.get("batch_id", "") or "")
+        candidates = record.get("candidates", [])
+        if not isinstance(candidates, list):
+            continue
+        for candidate in candidates:
+            if len(items) >= max_total_items:
+                break
+            if _candidate_confidence(candidate) < PREVIOUS_CONTEXT_MIN_CONFIDENCE:
+                continue
+            obj_type = _candidate_type(candidate)
+            if obj_type not in L1_MULTI_AGENT_TYPES:
+                continue
+            if type_counts[obj_type] >= max_items_per_type:
+                continue
+            content = _trim_previous_context_content(_candidate_content(candidate))
+            if not content:
+                continue
+            items.append(
+                {
+                    "type": obj_type,
+                    "source_batch_id": source_batch_id or _candidate_scope(candidate),
+                    "content": content,
+                }
+            )
+            type_counts[obj_type] += 1
+    context["items"] = items
+    return context
+
+
+def _previous_context_item_counts(
+    previous_context_by_batch: dict[str, dict[str, Any]],
+) -> list[float]:
+    return [
+        float(len(context.get("items", [])))
+        for context in previous_context_by_batch.values()
+        if context.get("enabled")
+    ]
+
+
+def _needs_semantic_idea_repair(report: dict[str, Any]) -> bool:
+    for issue in report.get("issues", []):
+        issue_name = str(issue.get("issue", "")).strip()
+        if issue_name in SEMANTIC_IDEA_REPAIR_ISSUES:
+            return True
+    return False
+
+
+def _deterministic_idea_fallback_count(repair_actions: Counter[str]) -> int:
+    return sum(
+        repair_actions.get(action, 0)
+        for action in (
+            "add_fallback_for_uncovered_lines",
+            "fallback_for_empty_segment",
+            "replace_with_line_chunks",
+        )
+    )
+
+
 def _rejection_reason_counts(rejected_candidates: list[dict[str, Any]]) -> dict[str, int]:
     counts: Counter[str] = Counter()
     for candidate in rejected_candidates:
@@ -579,6 +711,8 @@ def _rejection_reason_counts(rejected_candidates: list[dict[str, Any]]) -> dict[
 def _llm_stage_family(stage: str) -> str:
     if stage.startswith("segmentation_"):
         return "segmentation_agent"
+    if stage.startswith("idea_unit_repair_agent_"):
+        return "idea_unit_repair_agent"
     if stage.startswith("idea_units_"):
         return "idea_unit_agent"
     if stage.startswith("l1_fallback_agent_"):
@@ -644,6 +778,7 @@ def build_metrics_summary(
     idea_unit_quality_reports: list[dict[str, Any]],
     extraction_batches: list[dict[str, Any]],
     continuation_decisions: list[dict[str, Any]],
+    previous_context_by_batch: dict[str, dict[str, Any]],
     raw_candidates: list[Any],
     batch_fallback_reports: list[dict[str, Any]],
     grounded_candidates: list[Any],
@@ -665,7 +800,30 @@ def build_metrics_summary(
     ]
     idea_repair_actions: Counter[str] = Counter()
     idea_issue_types: Counter[str] = Counter()
+    semantic_repair_count = 0
+    semantic_repair_success_count = 0
+    semantic_repair_error_count = 0
+    non_memory_context_range_count = 0
+    non_memory_context_line_count = 0
     for report in idea_unit_quality_reports:
+        semantic_repair = report.get("semantic_repair", {})
+        if isinstance(semantic_repair, dict) and semantic_repair.get("attempted"):
+            semantic_repair_count += 1
+            if semantic_repair.get("used_semantic_output"):
+                semantic_repair_success_count += 1
+            if semantic_repair.get("error"):
+                semantic_repair_error_count += 1
+        non_memory_ranges = report.get("non_memory_context_ranges", [])
+        if isinstance(non_memory_ranges, list):
+            non_memory_context_range_count += len(non_memory_ranges)
+            for row in non_memory_ranges:
+                try:
+                    start_line = int(row.get("start_line"))
+                    end_line = int(row.get("end_line"))
+                except (AttributeError, TypeError, ValueError):
+                    continue
+                if end_line >= start_line:
+                    non_memory_context_line_count += end_line - start_line + 1
         for repair in report.get("repairs", []):
             action = str(repair.get("action", "")).strip()
             if action:
@@ -691,6 +849,8 @@ def build_metrics_summary(
         len(idea_units_for_batch(idea_units, batch))
         for batch in extraction_batches
     ]
+    previous_context_by_batch = previous_context_by_batch or {}
+    previous_context_item_counts = _previous_context_item_counts(previous_context_by_batch)
 
     return {
         "line_count": line_count,
@@ -730,6 +890,18 @@ def build_metrics_summary(
             ),
             "quality_issue_counts": _counter_dict(idea_issue_types),
             "repair_action_counts": _counter_dict(idea_repair_actions),
+            "semantic_repair_count": semantic_repair_count,
+            "semantic_repair_success_count": semantic_repair_success_count,
+            "semantic_repair_error_count": semantic_repair_error_count,
+            "non_memory_context_ranges": non_memory_context_range_count,
+            "non_memory_context_lines": non_memory_context_line_count,
+            "deterministic_fallback_count": _deterministic_idea_fallback_count(
+                idea_repair_actions
+            ),
+            "compaction_fallback_count": idea_repair_actions.get(
+                "compact_overfragmented_units",
+                0,
+            ),
         },
         "extraction_batches": {
             "count": len(extraction_batches),
@@ -748,6 +920,18 @@ def build_metrics_summary(
                 )
             ),
             "fallback_batch_count": len(batch_fallback_reports),
+        },
+        "previous_context": {
+            "enabled": any(
+                context.get("enabled") for context in previous_context_by_batch.values()
+            ),
+            "batch_count": len(previous_context_by_batch),
+            "batches_with_items": sum(
+                1
+                for context in previous_context_by_batch.values()
+                if context.get("enabled") and context.get("items")
+            ),
+            "items_per_batch": _score_summary(previous_context_item_counts),
         },
         "candidates": {
             "raw_count": len(raw_candidates),
@@ -784,10 +968,12 @@ def run_multi_agent_l1_pipeline(
     timestamp: str,
     meeting_date: str,
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
     research_log_dir: Path,
     window_size: int = 80,
     lookback_lines: int = 6,
     lookahead_lines: int = 6,
+    previous_context_enabled: bool = False,
 ) -> MultiAgentPipelineResult:
     run_id = build_run_id(meeting_id)
     logger = ResearchLogger(research_log_dir, run_id)
@@ -813,6 +999,7 @@ def run_multi_agent_l1_pipeline(
     idea_unit_quality_reports: list[dict[str, Any]] = []
     extraction_batches: list[dict[str, Any]] = []
     continuation_decisions: list[dict[str, Any]] = []
+    previous_context_by_batch: dict[str, dict[str, Any]] = {}
     raw_candidates: list[Any] = []
     batch_fallback_reports: list[dict[str, Any]] = []
     grounded_candidates: list[Any] = []
@@ -838,6 +1025,7 @@ def run_multi_agent_l1_pipeline(
             idea_unit_quality_reports=idea_unit_quality_reports,
             extraction_batches=extraction_batches,
             continuation_decisions=continuation_decisions,
+            previous_context_by_batch=previous_context_by_batch,
             raw_candidates=raw_candidates,
             batch_fallback_reports=batch_fallback_reports,
             grounded_candidates=grounded_candidates,
@@ -915,6 +1103,7 @@ def run_multi_agent_l1_pipeline(
                 "deferred_l1_agent_types": [],
             },
         )
+        logger.write_json("prior_context_pack.json", prior_context_pack or {})
         mark_completed("run_meta:written")
         mark_started("context_planner:start")
         logger.append_event("context_planner:start", {"line_count": len(lines)})
@@ -1033,11 +1222,88 @@ def run_multi_agent_l1_pipeline(
                 segment=segment,
                 transcript_lines=lines,
             )
-            repaired_units, quality_report = repair_idea_units_for_segment(
+            diagnostic_units, diagnostic_report = repair_idea_units_for_segment(
                 segment=segment,
                 units=units,
                 transcript_lines=lines,
+                deterministic_fallback=False,
             )
+            semantic_repair = {
+                "attempted": False,
+                "used_semantic_output": False,
+                "input_units": len(units),
+                "output_units": 0,
+                "non_memory_context_ranges": 0,
+            }
+            repair_source_units = units
+            non_memory_ranges: list[dict[str, Any]] = []
+            if _needs_semantic_idea_repair(diagnostic_report):
+                semantic_repair["attempted"] = True
+                mark_started(f"idea_unit_repair_agent:{segment.segment_id}")
+                logger.append_event(
+                    "idea_unit_repair_agent:start",
+                    {
+                        "segment_id": segment.segment_id,
+                        "issues": len(diagnostic_report["issues"]),
+                        "diagnostic_output_units": len(diagnostic_units),
+                    },
+                )
+                try:
+                    semantic_units, non_memory_ranges = idea_unit_repair_agent(
+                        runner,
+                        segment=segment,
+                        transcript_lines=lines,
+                        current_units=units,
+                        validation_report=diagnostic_report,
+                    )
+                    if semantic_units or non_memory_ranges:
+                        repair_source_units = semantic_units
+                        semantic_repair["used_semantic_output"] = True
+                    semantic_repair["output_units"] = len(semantic_units)
+                    semantic_repair["non_memory_context_ranges"] = len(non_memory_ranges)
+                    logger.append_event(
+                        "idea_unit_repair_agent:done",
+                        {
+                            "segment_id": segment.segment_id,
+                            "output_units": len(semantic_units),
+                            "non_memory_context_ranges": len(non_memory_ranges),
+                        },
+                    )
+                    mark_completed(f"idea_unit_repair_agent:{segment.segment_id}:done")
+                except Exception as exc:
+                    semantic_repair["error"] = str(exc)
+                    logger.append_event(
+                        "idea_unit_repair_agent:error",
+                        {
+                            "segment_id": segment.segment_id,
+                            "error": str(exc),
+                            "fallback": "deterministic_validator_repair",
+                        },
+                    )
+                    mark_completed(
+                        f"idea_unit_repair_agent:{segment.segment_id}:fallback_after_error"
+                    )
+            repaired_units, quality_report = repair_idea_units_for_segment(
+                segment=segment,
+                units=repair_source_units,
+                transcript_lines=lines,
+                non_memory_ranges=non_memory_ranges,
+                deterministic_fallback=True,
+            )
+            if semantic_repair["attempted"]:
+                semantic_repair["final_output_units"] = len(repaired_units)
+                semantic_repair["deterministic_fallback_after_repair"] = any(
+                    repair.get("action")
+                    in {
+                        "add_fallback_for_uncovered_lines",
+                        "fallback_for_empty_segment",
+                        "replace_with_line_chunks",
+                        "compact_overfragmented_units",
+                    }
+                    for repair in quality_report.get("repairs", [])
+                )
+                quality_report["initial_validation_report"] = diagnostic_report
+            quality_report["semantic_repair"] = semantic_repair
             idea_unit_quality_reports.append(quality_report)
             all_idea_units.extend(repaired_units)
             logger.append_event(
@@ -1066,10 +1332,18 @@ def run_multi_agent_l1_pipeline(
 
         raw_candidates = []
         batch_fallback_reports = []
+        completed_batch_records: list[dict[str, Any]] = []
         for batch in extraction_batches:
             batch_units = idea_units_for_batch(all_idea_units, batch)
             if not batch_units:
                 continue
+            previous_context = build_previous_batch_context(
+                completed_batch_records,
+                current_batch_id=str(batch["batch_id"]),
+                enabled=previous_context_enabled,
+            )
+            if previous_context_enabled:
+                previous_context_by_batch[str(batch["batch_id"])] = previous_context
             batch_candidates = []
             for obj_type in L1_MULTI_AGENT_TYPE_ORDER:
                 mark_started(f"l1_{obj_type}_agent:{batch['batch_id']}")
@@ -1079,6 +1353,7 @@ def run_multi_agent_l1_pipeline(
                         "extraction_scope": batch["batch_id"],
                         "segment_ids": batch["segment_ids"],
                         "idea_units": len(batch_units),
+                        "previous_context_items": len(previous_context.get("items", [])),
                     },
                 )
                 candidates = l1_type_agent(
@@ -1086,6 +1361,8 @@ def run_multi_agent_l1_pipeline(
                     obj_type=obj_type,
                     idea_units=batch_units,
                     existing_topics=existing_topics,
+                    prior_context_pack=prior_context_pack,
+                    previous_context=previous_context,
                     extraction_scope=str(batch["batch_id"]),
                     segment_ids=list(batch["segment_ids"]),
                 )
@@ -1112,6 +1389,8 @@ def run_multi_agent_l1_pipeline(
                     runner,
                     idea_units=batch_units,
                     existing_topics=existing_topics,
+                    prior_context_pack=prior_context_pack,
+                    previous_context=previous_context,
                     extraction_scope=str(batch["batch_id"]),
                     segment_ids=list(batch["segment_ids"]),
                 )
@@ -1134,8 +1413,18 @@ def run_multi_agent_l1_pipeline(
                 )
                 mark_completed(f"l1_fallback_agent:{batch['batch_id']}:done")
             raw_candidates.extend(batch_candidates)
+            completed_batch_records.append(
+                {
+                    "batch_id": str(batch["batch_id"]),
+                    "segment_ids": list(batch["segment_ids"]),
+                    "candidate_count": len(batch_candidates),
+                    "candidates": [candidate.__dict__ for candidate in batch_candidates],
+                }
+            )
         logger.write_json("raw_candidates.json", raw_candidates)
         logger.write_json("batch_fallbacks.json", batch_fallback_reports)
+        if previous_context_enabled:
+            logger.write_json("previous_context_by_batch.json", previous_context_by_batch)
         mark_completed("raw_candidates:written")
 
         mark_started("evidence_grounding_agent:start")
@@ -1206,6 +1495,7 @@ def run_multi_agent_l1_pipeline(
             idea_unit_quality_reports=idea_unit_quality_reports,
             extraction_batches=extraction_batches,
             continuation_decisions=continuation_decisions,
+            previous_context_by_batch=previous_context_by_batch,
             raw_candidates=raw_candidates,
             batch_fallback_reports=batch_fallback_reports,
             grounded_candidates=grounded_candidates,

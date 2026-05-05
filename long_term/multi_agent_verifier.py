@@ -22,6 +22,10 @@ UNCERTAIN_COMPLETENESS_VALUES = {
     "fallback",
     "compacted",
 }
+WEAK_GROUNDING_REJECT_THRESHOLD = 0.18
+NEAR_THRESHOLD_GROUNDING_MIN_SUPPORT = 0.14
+NEAR_THRESHOLD_GROUNDING_MIN_CONFIDENCE = 0.85
+NEAR_THRESHOLD_GROUNDING_WARNING = "near_threshold_grounding"
 
 
 def _unique_clean_strings(values: list[str]) -> list[str]:
@@ -47,6 +51,39 @@ def _unit_quality_warnings(candidate: dict[str, Any]) -> list[str]:
     if candidate.get("source_unit_uncertainty_notes"):
         warnings.append("source_unit_uncertainty_note")
     return warnings
+
+
+def _has_only_complete_source_units(candidate: dict[str, Any]) -> bool:
+    completeness_values = {
+        str(value or "").strip().lower()
+        for value in candidate.get("source_unit_completeness", [])
+        if str(value or "").strip()
+    }
+    return bool(completeness_values) and completeness_values <= {"complete"}
+
+
+def _can_keep_near_threshold_grounding(
+    candidate: dict[str, Any],
+    *,
+    support_score: float,
+) -> bool:
+    if not (
+        NEAR_THRESHOLD_GROUNDING_MIN_SUPPORT
+        <= support_score
+        < WEAK_GROUNDING_REJECT_THRESHOLD
+    ):
+        return False
+    if clamp_float(candidate.get("confidence", 0.0), fallback=0.0) < (
+        NEAR_THRESHOLD_GROUNDING_MIN_CONFIDENCE
+    ):
+        return False
+    if not candidate.get("evidence_lines"):
+        return False
+    if not _has_only_complete_source_units(candidate):
+        return False
+    if candidate.get("source_unit_uncertainty_notes"):
+        return False
+    return not _unit_quality_warnings(candidate)
 
 
 def ground_candidates(
@@ -150,9 +187,15 @@ def verify_l1_candidates(
             row["evidence_lines"] = sorted(set(clean_lines))
             if not row["evidence_lines"]:
                 reasons.append("evidence_out_of_bounds")
-        if float(row.get("support_score", 0.0) or 0.0) < 0.18:
-            reasons.append("weak_grounding")
         row["unit_quality_warnings"] = _unit_quality_warnings(row)
+        support_score = clamp_float(row.get("support_score", 0.0), fallback=0.0)
+        if support_score < WEAK_GROUNDING_REJECT_THRESHOLD:
+            if _can_keep_near_threshold_grounding(row, support_score=support_score):
+                row["unit_quality_warnings"] = _unique_clean_strings(
+                    row["unit_quality_warnings"] + [NEAR_THRESHOLD_GROUNDING_WARNING]
+                )
+            else:
+                reasons.append("weak_grounding")
 
         duplicate_of = ""
         for existing in seen:

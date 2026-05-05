@@ -14,6 +14,7 @@ from l1_quality import (  # noqa: E402
     merge_l1_quality_index,
     remove_l1_quality_for_meeting,
 )
+from memory_activity import build_memory_activity_update  # noqa: E402
 from summarize import _build_phase_summary_prompt  # noqa: E402
 
 
@@ -86,13 +87,35 @@ class L1QualitySidecarTests(unittest.TestCase):
                 "quality_warnings": ["source_unit_uncertainty_note"],
             }
         }
+        activity_index = build_memory_activity_update(
+            tree={"meetings": [{"meeting_id": "M1", "meeting_date": "2026-05-01", "memory_objects": [obj]}]},
+            meeting_id="M1",
+        )
+        relations_index = {
+            "L1-M1-001": [
+                {
+                    "target_obj_id": "L1-M0-001",
+                    "relation": "continues",
+                    "confidence": 0.76,
+                }
+            ]
+        }
 
-        prompt = _build_phase_summary_prompt("P-001", meetings, quality_index)
+        prompt = _build_phase_summary_prompt(
+            "P-001",
+            meetings,
+            quality_index,
+            activity_index,
+            relations_index,
+        )
 
         self.assertIn("quality=tentative", prompt)
         self.assertIn("support=0.42", prompt)
+        self.assertIn("activity=active", prompt)
+        self.assertIn("relations=continues:L1-M0-001", prompt)
         self.assertIn("recurrence=3 episodes", prompt)
         self.assertIn("quality=tentative 的 L1 只能當背景", prompt)
+        self.assertIn("relations=supersedes:*", prompt)
         self.assertIn("argument 不要直接升級成 change", prompt)
 
     def test_l2_prompt_ignores_stale_quality_metadata(self) -> None:
@@ -121,7 +144,10 @@ class L1QualitySidecarTests(unittest.TestCase):
             },
         )
 
-        self.assertIn("(quality=unknown; support=unknown) New content after rerun", prompt)
+        self.assertIn(
+            "(quality=unknown; support=unknown; activity=unknown; relations=none) New content after rerun",
+            prompt,
+        )
         self.assertNotIn("(quality=strong", prompt)
 
 

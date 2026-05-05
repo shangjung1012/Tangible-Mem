@@ -25,6 +25,8 @@ from typing import Any
 from embedder import EmbedCache
 from gemini_clients import create_gemini_client
 from io_utils import load_api_keys, load_tree
+from memory_activity import memory_activity_default_path
+from memory_relations import memory_relations_default_path
 from recall import format_recall_for_prompt, recall
 from recall_planner import plan_recall
 
@@ -118,6 +120,8 @@ def main() -> None:
         api_key=api_keys,
         model_name=model_name,
         embed_cache=cache,
+        activity_index_path=memory_activity_default_path(Path(args.tree)),
+        relations_index_path=memory_relations_default_path(Path(args.tree)),
     )
     cache.save()
 

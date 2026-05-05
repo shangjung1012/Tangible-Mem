@@ -31,7 +31,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前 `multi_agent` 的 L1 主流程是：
 
-`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> cross-window boundary refinement -> idea_unit_agent -> idea_unit_quality_validator/repair/coverage-fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result/argument/open_question_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1`
+`prior_context_pack -> context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> cross-window boundary refinement -> idea_unit_agent -> idea_unit_quality_validator -> semantic idea_unit_repair_agent -> final idea_unit_validator/fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result/argument/open_question_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1 -> cross_meeting_relations/activity_update`
 
 入口在 `long_term/bridge.py`。當 `--mode multi-agent` 被指定時，bridge 會呼叫 `run_multi_agent_l1_pipeline()`，最後仍把結果寫回同一個 `tree.json` meeting node。
 
@@ -47,12 +47,16 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 解析 transcript / meeting metadata
 - 呼叫 `run_multi_agent_l1_pipeline()`
 - 把 final meeting node 插入既有 `tree.json`
+- 在 L1 prompt 前產生 compact `prior_context_pack`
+- 在 L1 寫入後產生 cross-meeting relation / activity sidecars
 - 保留和既有 L2 / L3 summarize 相容
 
 設計重點：
 
 - multi-agent 不是獨立儲存系統，而是新的 L1 producer。
 - canonical storage 仍是 `tree.json`。
+- 舊記憶只作為 disambiguation context，不可成為新 L1 evidence。
+- `memory_relations_index.json` 與 `memory_activity_index.json` 是可審計 sidecar，不污染 L1 schema。
 
 ### 3.2 Context Planner
 
@@ -199,7 +203,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 保留固定窗口的穩定性，同時補償邊界語意截斷
 - 對 topic label 不一致但邊界內容仍連續的情況，仍可合併成同一個 extraction batch
 - 這一層不改 `segments.json`，只決定哪些 refined segments 要一起餵給下游 typed L1 agents
-- 若 continuation chain 形成過胖 batch，會依 idea-unit 上限 deterministic split，避免 type agents 在過大的 scope 中只保留前幾個候選而漏掉細節
+- 若 continuation chain 形成過胖 batch，會依 idea-unit 上限 deterministic split；目前 cap 是 10 個 idea units，避免 type agents 在過大的 scope 中只保留前幾個候選而漏掉細節
 
 目前限制：
 
@@ -246,6 +250,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 目前限制：
 
 - `completeness` / `uncertainty_note` 會被保留到 grounded / verified candidate artifacts
+- `completeness` 會正規化成 `complete` / `partial` / `incomplete` / `uncertain`；`fallback` / `compacted` 只由 validator 內部產生
 - 這些訊號目前只做保守降權或 importance cap，不直接作為 rejection reason，避免補漏 unit 意外丟掉重要內容
 
 ### 3.6.1 Idea Unit Quality Validator / Repair
@@ -258,12 +263,12 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - 檢查 idea unit 是否空白、超出 segment、過胖、過短、過長、或高度重疊
 - 對超出 segment 的 unit 做 line bound clamp
-- 對過胖 unit 用原 transcript lines 拆成 bounded fallback chunks
-- 如果某個 segment 完全沒有可用 unit，補 fallback idea unit
-- 如果某些 segment lines 沒被任何 idea unit 覆蓋，補 transcript-based fallback unit
+- 第一輪只診斷過胖、漏行、過碎或不可用輸出，不立即使用 transcript fallback
+- 有診斷問題時呼叫 `idea_unit_repair_agent`，要求 LLM 產生語義修補 units 或標記真正的 `non_memory_context_ranges`
+- repair 後仍有漏行或不可用輸出時，才補 transcript-based fallback unit
 - idea-unit prompt 採 bounded adaptive 設計：通常鼓勵 3-8 個 units，但在同一 segment 有多個 distinct durable claims 時 schema 允許最多 12 個
-- validator 補漏後仍以 12 個 units 作為 segment-level 上限
-- 只有超過 validator 上限時才做 deterministic compaction，避免把不同觀點硬壓進同一個 unit
+- validator / semantic repair 後仍以 12 個 units 作為 segment-level 上限
+- 只有 semantic repair 後仍超過 validator 上限時才做 deterministic compaction，避免把不同觀點硬壓進同一個 unit
 - compaction 會優先維持每個 idea unit 不超過 8 行，避免補漏後又產生過胖 unit
 
 設計理由：
@@ -276,6 +281,14 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 輸出 artifact：
 
 - `idea_unit_quality_validation.json`
+
+metrics：
+
+- `semantic_repair_count`
+- `semantic_repair_success_count`
+- `non_memory_context_ranges`
+- `deterministic_fallback_count`
+- `compaction_fallback_count`
 
 ### 3.7 Typed L1 Agents
 
@@ -304,6 +317,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - candidate 保存 `extraction_scope`
 - candidate 保存 `segment_ids`
 - 程式端用 `allowed_unit_ids` 白名單過濾 `source_unit_ids`
+- 每個 extraction batch 目前最多容納 10 個 idea units；單一大 segment 也會被拆成多個 unit chunks
 - 每個 batch/type 最多保留 2 個候選，並依 importance / confidence 排序取前段
 
 設計理由：
@@ -316,7 +330,33 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `argument` / `open_question` 已接進 typed loop，但 reducer 會使用較保守的 importance cap，避免一般討論理由或暫時疑問分數過高
 - 目前只在「整個 batch 沒有任何 typed candidate」時跑一次 general fallback
 
-### 3.7.1 Fallback L1 Agent
+### 3.7.1 Optional Previous-Batch Context
+
+檔案：`long_term/multi_agent_pipeline.py`
+
+CLI：`--multi-agent-previous-context`
+
+責任：
+
+- 在處理 batch N 時，從前 2 個已完成 extraction batches 建立 compact context
+- 每個 type 最多保留 3 條、總數最多 12 條、每條最多 160 chars
+- 只保留 confidence 足夠高且已有 current-batch source units 的候選摘要
+- 寫出 `previous_context_by_batch.json`
+
+prompt 規則：
+
+- previous context 是 read-only
+- 只能用於理解代名詞、延續關係與避免重複
+- 不能當作 evidence
+- `source_unit_ids` 仍只能來自 current bounded idea units，程式端也會用白名單過濾
+
+設計理由：
+
+- 讓 typed agents 在不污染 evidence 的前提下，獲得少量前文脈絡
+- 保持 typed calls 可審計；每個 batch 看到的前文會落 artifact
+- 預設關閉，方便和 stateless baseline 比較
+
+### 3.7.2 Fallback L1 Agent
 
 檔案：`long_term/multi_agent_agents.py`
 
@@ -402,6 +442,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 檢查空 content
 - 檢查 evidence lines 是否存在且在範圍內
 - 檢查 `support_score` 是否太低
+- 對 `0.14 <= support_score < 0.18` 的灰區 candidate，若 source unit 全部 `complete`、有合法 evidence lines、沒有 uncertainty note、confidence 足夠高，保留為 `near_threshold_grounding`
 - 檢查 duplicate
 
 可能 rejection reasons：
@@ -416,6 +457,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 設計理由：
 
 - 在寫回 canonical schema 前加 deterministic gate
+- near-threshold 保留只是一個灰區例外，不等於放寬整體 weak grounding；reducer 會把這類 candidate 壓成低 importance，quality sidecar 會標成 weak / warning
 
 目前限制：
 
@@ -488,6 +530,7 @@ L1 quality sidecar：
 - `extraction_batches.json`
 - `idea_units.json`
 - `idea_unit_quality_validation.json`
+- `previous_context_by_batch.json`（啟用 `--multi-agent-previous-context` 時）
 - `raw_candidates.json`
 - `batch_fallbacks.json`
 - `grounded_candidates.json`
@@ -519,20 +562,21 @@ L1 quality sidecar：
 1. 明確的多階段責任邊界
 2. bounded type extraction，而不是全 transcript typed prompting
 3. continuation merge 真正消費 `needs_more_context`
-4. grounding acceptance 不再依賴 model self-confidence
+4. grounding acceptance 主要依賴 local support；只有 near-threshold 灰區會把 high confidence 當作輔助保留條件，並降權標記
 5. candidate 保留 `extraction_scope` 與 `segment_ids`
 6. segment coverage validator 會補 uncovered transcript lines
-7. idea unit quality validator 會修補空白、過胖、重複或越界 unit
-8. over-fragmented segments / idea units 會先保留語意邊界，只有超過 validator 上限才壓縮
+7. idea unit quality validator 會先診斷空白、過胖、重複、越界或漏行 unit，並優先交給 semantic repair agent 重寫
+8. over-fragmented segments / idea units 會先保留語意邊界；只有 semantic repair 後仍超過 validator 上限才壓縮
 9. typed L1 agents 每個 batch/type 有 candidate 上限
 10. reducer 會做 multi-agent 專用 dedupe 與 importance cap
 11. reducer 會把跨 episode 反覆出現的同一觀點轉成小幅、有上限的 importance bonus
 12. batch empty-yield 時有 bounded fallback L1 agent
 13. idea-unit `completeness` / `uncertainty_note` 會進入 grounding / verifier artifact，並在 reducer 端保守降權而非直接拒絕
 14. continuation merge 產生過胖 extraction batch 時，會依 idea-unit cap 拆小，降低漏細節風險
-15. `metrics_summary.json` 彙整 coverage、fallback、rejection、support score、final object count、batch size、LLM call count、stage latency 與粗略 token proxy 等 run-level 訊號
-16. focused tests 覆蓋核心行為
-17. 與既有 `tree.json` / summarize 流程相容
+15. optional previous-batch context 以 read-only 形式輔助 typed agents，且保留 artifact / metrics 供比較
+16. `metrics_summary.json` 彙整 coverage、semantic repair、fallback、compaction、previous context、rejection、support score、final object count、batch size、LLM call count、stage latency 與粗略 token proxy 等 run-level 訊號
+17. focused tests 覆蓋核心行為
+18. 與既有 `tree.json` / summarize 流程相容
 
 ## 6. 現在還缺的設計
 
@@ -560,14 +604,12 @@ L1 quality sidecar：
 目前已補上最小 repair / fallback：
 
 - segmentation uncovered lines 會補 fallback segment
-- idea units 空白、越界、過胖、重複時會被修補或丟棄
-- over-fragmented segments 會被 deterministic coarsening；idea units 會先補 coverage gap，只有超過 validator 上限才 compact
+- idea units 空白、越界、過胖、漏行、重複時會先被診斷，並在必要時交給 semantic repair agent 改寫
+- repair agent 可把真正 filler / acknowledgement 標記成 `non_memory_context_ranges`，避免為無記憶價值行硬補 fallback
+- over-fragmented segments 會被 deterministic coarsening；idea units 會先走 semantic repair，只有 repair 後仍超過 validator 上限才 compact
 - batch 完全無 candidate 時會跑一次 bounded fallback L1 agent
 
-還未補的是更昂貴的 model retry 類閉環：
-
-- grounding rejection rate 異常時的 upstream retry signal
-- segmentation / idea unit repair 後重新要求 LLM 改寫，而不是只做 deterministic fallback
+仍未補的是 grounding rejection rate 異常時的 upstream retry signal。
 
 ### 6.3 Evaluation Harness
 

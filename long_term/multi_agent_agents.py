@@ -6,6 +6,7 @@ import time
 import os
 import signal
 import threading
+import json
 from collections import Counter
 from contextlib import contextmanager
 from typing import Any
@@ -26,6 +27,8 @@ from multi_agent_tools import (
     slice_lines,
     unique_strings,
 )
+from multi_agent_validators import normalize_idea_completeness
+from prior_context import format_prior_context_for_prompt
 
 MAX_SEGMENTS_PER_WINDOW = 10
 MAX_IDEA_UNITS_PER_AGENT = 12
@@ -72,7 +75,10 @@ IDEA_SCHEMA: dict[str, Any] = {
                     "line_start": {"type": "integer"},
                     "line_end": {"type": "integer"},
                     "text": {"type": "string"},
-                    "completeness": {"type": "string"},
+                    "completeness": {
+                        "type": "string",
+                        "enum": ["complete", "partial", "incomplete", "uncertain"],
+                    },
                     "uncertainty_note": {"type": "string"},
                 },
                 "required": [
@@ -87,6 +93,53 @@ IDEA_SCHEMA: dict[str, Any] = {
         }
     },
     "required": ["idea_units"],
+    "additionalProperties": False,
+}
+
+IDEA_REPAIR_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "idea_units": {
+            "type": "array",
+            "maxItems": MAX_IDEA_UNITS_PER_AGENT,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "line_start": {"type": "integer"},
+                    "line_end": {"type": "integer"},
+                    "text": {"type": "string"},
+                    "completeness": {
+                        "type": "string",
+                        "enum": ["complete", "partial", "incomplete", "uncertain"],
+                    },
+                    "uncertainty_note": {"type": "string"},
+                },
+                "required": [
+                    "line_start",
+                    "line_end",
+                    "text",
+                    "completeness",
+                    "uncertainty_note",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        "non_memory_context_ranges": {
+            "type": "array",
+            "maxItems": MAX_IDEA_UNITS_PER_AGENT,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "line_start": {"type": "integer"},
+                    "line_end": {"type": "integer"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["line_start", "line_end", "reason"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["idea_units", "non_memory_context_ranges"],
     "additionalProperties": False,
 }
 
@@ -445,8 +498,14 @@ Normally return 3-8 idea units. You may return up to {MAX_IDEA_UNITS_PER_AGENT}
 only when the segment contains many distinct durable claims.
 Do not split every sentence into a separate unit.
 Prefer durable, self-contained units that combine related details across several
-lines. Ignore filler, acknowledgements, and local wording clarifications unless
-they change the project method, decision, result, or todo.
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Do not use fallback or compacted; those are reserved for deterministic validators.
 
 Segment: {segment.segment_id}
 Topic: {segment.topic_label}
@@ -455,8 +514,21 @@ Transcript lines:
 {format_lines(lines)}
 """.strip()
     data = runner.call_json(f"idea_units_{segment.segment_id}", prompt, IDEA_SCHEMA)
+    return _idea_units_from_rows(
+        data.get("idea_units", []),
+        segment=segment,
+        unit_id_prefix=f"U-{segment.segment_id}",
+    )
+
+
+def _idea_units_from_rows(
+    rows: list[dict[str, Any]],
+    *,
+    segment: SegmentProposal,
+    unit_id_prefix: str,
+) -> list[IdeaUnit]:
     units: list[IdeaUnit] = []
-    for index, row in enumerate(data.get("idea_units", []), start=1):
+    for index, row in enumerate(rows, start=1):
         line_start = max(segment.line_start, int(row.get("line_start", segment.line_start)))
         line_end = min(segment.line_end, int(row.get("line_end", line_start)))
         text = str(row.get("text", "")).strip()
@@ -464,16 +536,127 @@ Transcript lines:
             continue
         units.append(
             IdeaUnit(
-                unit_id=f"U-{segment.segment_id}-{index:02d}",
+                unit_id=f"{unit_id_prefix}-{index:02d}",
                 segment_id=segment.segment_id,
                 line_start=line_start,
                 line_end=line_end,
                 text=text,
-                completeness=str(row.get("completeness", "")).strip() or "unknown",
+                completeness=normalize_idea_completeness(
+                    str(row.get("completeness", "")).strip()
+                ),
                 uncertainty_note=str(row.get("uncertainty_note", "")).strip(),
             )
         )
     return units
+
+
+def idea_unit_repair_agent(
+    runner: MultiAgentLLMRunner,
+    *,
+    segment: SegmentProposal,
+    transcript_lines: list[TranscriptLine],
+    current_units: list[IdeaUnit],
+    validation_report: dict[str, Any],
+) -> tuple[list[IdeaUnit], list[dict[str, Any]]]:
+    """Ask the model to semantically repair idea-unit coverage before fallback."""
+    lines = slice_lines(transcript_lines, segment.line_start, segment.line_end)
+    current_units_json = [
+        {
+            "unit_id": unit.unit_id,
+            "line_start": unit.line_start,
+            "line_end": unit.line_end,
+            "text": unit.text,
+            "completeness": unit.completeness,
+            "uncertainty_note": unit.uncertainty_note,
+        }
+        for unit in current_units
+    ]
+    prompt = f"""
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior. Do not dismiss these as
+filler.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Do not use fallback or compacted.
+
+For non_memory_context_ranges, include only lines that are purely filler,
+acknowledgements, local wording clarification, or social closing with no memory
+value.
+
+Segment: {segment.segment_id}
+Topic: {segment.topic_label}
+
+Transcript lines:
+{format_lines(lines)}
+
+Current idea units:
+{json.dumps(current_units_json, ensure_ascii=False, indent=2)}
+
+Validator report:
+{json.dumps(validation_report, ensure_ascii=False, indent=2)}
+""".strip()
+    data = runner.call_json(
+        f"idea_unit_repair_agent_{segment.segment_id}",
+        prompt,
+        IDEA_REPAIR_SCHEMA,
+    )
+    repaired_units = _idea_units_from_rows(
+        data.get("idea_units", []),
+        segment=segment,
+        unit_id_prefix=f"U-{segment.segment_id}-SR",
+    )
+    non_memory_ranges: list[dict[str, Any]] = []
+    for row in data.get("non_memory_context_ranges", []):
+        try:
+            line_start = max(segment.line_start, int(row.get("line_start", segment.line_start)))
+            line_end = min(segment.line_end, int(row.get("line_end", line_start)))
+        except (TypeError, ValueError):
+            continue
+        reason = str(row.get("reason", "")).strip()
+        if line_end < line_start:
+            continue
+        non_memory_ranges.append(
+            {
+                "start_line": line_start,
+                "end_line": line_end,
+                "reason": reason or "model marked as non-memory context",
+            }
+        )
+    return repaired_units, non_memory_ranges
+
+
+def format_previous_context_for_prompt(previous_context: dict[str, Any] | None) -> str:
+    """Render compact previous-batch hints for typed agents."""
+    if not previous_context or not previous_context.get("enabled"):
+        return ""
+    items = previous_context.get("items", [])
+    if not items:
+        return (
+            "Previous batch context: enabled, but no prior durable candidate "
+            "summaries are available yet."
+        )
+    lines = [
+        "Previous batch context (read-only; not evidence):",
+        "- Use only to resolve pronouns, understand continuation, and avoid duplicates.",
+        "- Do not cite previous context or use it as support.",
+        "- Every source_unit_id must still come from the current bounded idea units.",
+    ]
+    for item in items:
+        obj_type = str(item.get("type", "unknown") or "unknown")
+        source_batch_id = str(item.get("source_batch_id", "previous") or "previous")
+        content = str(item.get("content", "") or "").strip()
+        if content:
+            lines.append(f"- [{source_batch_id} {obj_type}] {content}")
+    return "\n".join(lines)
 
 
 def l1_type_agent(
@@ -482,6 +665,8 @@ def l1_type_agent(
     obj_type: str,
     idea_units: list[IdeaUnit],
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
+    previous_context: dict[str, Any] | None = None,
     extraction_scope: str = "",
     segment_ids: list[str] | None = None,
 ) -> list[L1Candidate]:
@@ -491,12 +676,16 @@ def l1_type_agent(
         f"{unit.unit_id} ({unit.line_start}-{unit.line_end}): {unit.text}"
         for unit in idea_units
     )
+    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
+    previous_context_text = format_previous_context_for_prompt(previous_context)
     prompt = f"""
 You are l1_{obj_type}_agent in a multi-agent long-term memory pipeline.
 Your operational type definition: {TYPE_DEFINITIONS[obj_type]}.
 
 Read only the bounded idea units below and propose only {obj_type} candidates.
 Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
 The same idea unit may support other memory types; do not suppress valid {obj_type} objects for that reason.
 Return at most {MAX_L1_CANDIDATES_PER_TYPE} candidates. Return an empty list when the
 batch has no durable {obj_type}.
@@ -515,6 +704,10 @@ Return JSON only. Text fields should prefer Traditional Chinese when the transcr
 Extraction scope: {extraction_scope or "(single bounded batch)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
 Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "(none)"}
+
+{prior_context_text}
+
+{previous_context_text}
 
 Bounded idea units:
 {units_text}
@@ -559,6 +752,8 @@ def l1_fallback_agent(
     *,
     idea_units: list[IdeaUnit],
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
+    previous_context: dict[str, Any] | None = None,
     extraction_scope: str = "",
     segment_ids: list[str] | None = None,
 ) -> list[L1Candidate]:
@@ -570,6 +765,8 @@ def l1_fallback_agent(
         for unit in idea_units
     )
     allowed_types = ", ".join(sorted(TYPE_DEFINITIONS))
+    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
+    previous_context_text = format_previous_context_for_prompt(previous_context)
     prompt = f"""
 You are general_l1_fallback_agent in a multi-agent long-term memory pipeline.
 This fallback runs only because the typed L1 agents produced no candidates for this bounded batch.
@@ -578,12 +775,17 @@ Read only the bounded idea units below. Propose a small number of durable L1 can
 the batch clearly contains one of these types: {allowed_types}.
 Return an empty candidates list if the batch is purely filler, logistics, acknowledgements, or unclear.
 Do not invent information outside the supplied unit IDs.
+Prior context may help disambiguate references, but it is never evidence.
 Return at most {MAX_FALLBACK_CANDIDATES} candidates.
 Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
 
 Extraction scope: {extraction_scope or "(single bounded batch)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
 Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "(none)"}
+
+{prior_context_text}
+
+{previous_context_text}
 
 Bounded idea units:
 {units_text}

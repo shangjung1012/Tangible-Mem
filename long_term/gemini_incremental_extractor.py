@@ -29,6 +29,7 @@ from incremental_store import (
     upsert_issue,
 )
 from importance import IMPORTANCE_SCALE
+from prior_context import format_prior_context_for_prompt
 from schema import MEMORY_OBJ_TYPES
 
 AUTO_TOOL_ROUND_BUFFER = 40
@@ -407,15 +408,17 @@ def _build_system_instruction(
     chunk_size: int,
     dataset_prompt_hint: str = "",
     request_constrained: bool = False,
+    prior_context_pack: dict[str, Any] | None = None,
 ) -> str:
     topics = ", ".join(existing_topics) if existing_topics else "(none)"
+    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
     request_constrained_rules = ""
     if request_constrained:
         request_constrained_rules = """
-13. You are in request-constrained single-key mode. Minimize generate_content turns and avoid one-call responses when more actions from the same span are already clear.
-14. For a typical forward_scan span, prefer to batch all necessary update_issue and create_l1_object calls, then request the next forward_scan span in the same response.
+15. You are in request-constrained single-key mode. Minimize generate_content turns and avoid one-call responses when more actions from the same span are already clear.
+16. For a typical forward_scan span, prefer to batch all necessary update_issue and create_l1_object calls, then request the next forward_scan span in the same response.
 """.rstrip()
-    return f"""
+    base_prompt = f"""
 You are the incremental long-term memory bridge for transcript {transcript_id}.
 
 Use the existing L1 schema exactly:
@@ -437,9 +440,14 @@ Rules:
 10. When create_l1_object is linked to an existing issue, prefer the exact issue_id returned by update_issue over issue_key.
 11. Batch related update_issue and create_l1_object calls for the same read_transcript span in one response whenever possible.
 12. Continue until forward_scan has reached the final transcript line reported by read_transcript.
+13. Prior cross-meeting context is for disambiguation only; never use it as evidence for new L1 objects.
+14. Every issue mention and L1 evidence line must come from current transcript lines returned by read_transcript.
 {request_constrained_rules}
 
 Known related topics: {topics}
+
+Prior context:
+{prior_context_text}
 """.strip()
     if dataset_prompt_hint.strip():
         return f"{base_prompt}\n\nDataset-specific guidance: {dataset_prompt_hint.strip()}"
@@ -525,6 +533,7 @@ def _build_config(
     chunk_size: int,
     dataset_prompt_hint: str = "",
     request_constrained: bool = False,
+    prior_context_pack: dict[str, Any] | None = None,
 ) -> types.GenerateContentConfig:
     return types.GenerateContentConfig(
         system_instruction=_build_system_instruction(
@@ -533,6 +542,7 @@ def _build_config(
             chunk_size=chunk_size,
             dataset_prompt_hint=dataset_prompt_hint,
             request_constrained=request_constrained,
+            prior_context_pack=prior_context_pack,
         ),
         temperature=0.15,
         tools=[_tool_declarations()],
@@ -1107,6 +1117,7 @@ def extract_incremental_l1_objects(
     transcript_id: str,
     db_path: Path,
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
     chunk_size: int = 40,
     issue_episode_gap_lines: int = ISSUE_EPISODE_GAP_LINES,
     dataset_profile_name: str = "generic",
@@ -1167,6 +1178,7 @@ def extract_incremental_l1_objects(
         chunk_size=chunk_size,
         dataset_prompt_hint=dataset_prompt_hint,
         request_constrained=request_constrained,
+        prior_context_pack=prior_context_pack,
     )
     contents: list[types.Content] = [
         types.Content(

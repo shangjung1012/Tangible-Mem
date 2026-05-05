@@ -17,6 +17,16 @@ from l1_quality import (
     load_l1_quality_index,
     quality_index_default_path,
 )
+from memory_activity import (
+    format_memory_activity_tag,
+    load_memory_activity_index,
+    memory_activity_default_path,
+)
+from memory_relations import (
+    format_memory_relations_tag,
+    load_memory_relations_index,
+    memory_relations_default_path,
+)
 from schema import (
     DEFAULT_MODEL_NAME,
     PHASE_SUMMARY_SCHEMA,
@@ -59,6 +69,8 @@ def _build_phase_summary_prompt(
     phase_id: str,
     meetings: list[dict[str, Any]],
     quality_index: dict[str, Any] | None = None,
+    activity_index: dict[str, Any] | None = None,
+    relations_index: dict[str, Any] | None = None,
 ) -> str:
     meetings_text = ""
     for m in meetings:
@@ -70,7 +82,9 @@ def _build_phase_summary_prompt(
             meetings_text += (
                 f"  [{obj.get('obj_id', '?')}] "
                 f"type={obj['type']} importance={obj['importance']} "
-                f"({format_l1_quality_tag(obj, quality_index)}) "
+                f"({format_l1_quality_tag(obj, quality_index)}; "
+                f"{format_memory_activity_tag(obj, activity_index)}; "
+                f"{format_memory_relations_tag(obj, relations_index)}) "
                 f"{obj['content']}\n"
             )
             if evidence:
@@ -89,6 +103,13 @@ def _build_phase_summary_prompt(
 - quality=unknown 表示舊流程或沒有 sidecar，請回到既有標準，根據 type、importance、content、evidence 判斷。
 - open_question 只有在仍阻礙下一步時才放入 open_to_next。
 - argument 不要直接升級成 change，只能作為 decision/method_change 的理由背景。
+
+跨會議互動訊號使用規則：
+- activity=active/reactivated 的 strong/normal L1 更容易升級成 phase-level change。
+- activity=dormant 的 todo/open_question 不要直接放入 open_to_next，除非本 phase 有新 L1 重新提到。
+- relations=resolves:* 代表本期可能解決舊問題，changes 或 summary 應反映這個轉折。
+- relations=supersedes:* 代表方法演進或取代，不要把新舊方法並列成同時採用。
+- relations=continues/reactivates/repeats 代表同一 thread 跨會議延續，可作為升級依據。
 
 欄位規則：
 1) summary：本階段的主軸是什麼？1-2 句，60 字以內。只寫大方向，不要列舉。
@@ -116,6 +137,8 @@ def summarize_phase(
     time_end: str,
     meeting_ids: list[str] | None = None,
     quality_index: dict[str, Any] | None = None,
+    activity_index: dict[str, Any] | None = None,
+    relations_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create or update an L2 phase summary from L1 meetings."""
     client = create_gemini_client(api_key)
@@ -134,7 +157,13 @@ def summarize_phase(
             "Use --meetings to specify meeting IDs."
         )
 
-    prompt = _build_phase_summary_prompt(phase_id, meetings, quality_index)
+    prompt = _build_phase_summary_prompt(
+        phase_id,
+        meetings,
+        quality_index,
+        activity_index,
+        relations_index,
+    )
     config = {
         "temperature": 0.15,
         "response_mime_type": "application/json",
@@ -372,6 +401,8 @@ def main() -> None:
 
     if args.command == "phase":
         quality_index = load_l1_quality_index(quality_index_default_path(tree_path))
+        activity_index = load_memory_activity_index(memory_activity_default_path(tree_path))
+        relations_index = load_memory_relations_index(memory_relations_default_path(tree_path))
         phase_node = summarize_phase(
             model_name=model_name,
             api_key=api_keys,
@@ -381,6 +412,8 @@ def main() -> None:
             time_end=args.time_end,
             meeting_ids=args.meetings,
             quality_index=quality_index,
+            activity_index=activity_index,
+            relations_index=relations_index,
         )
         if args.dry_run:
             print_json_safe(phase_node)
