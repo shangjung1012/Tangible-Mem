@@ -36,7 +36,7 @@ _CONCEPT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     ("memory_object_schema", ("memory object", "memory objects", "記憶物件"), ("type", "content", "evidence", "related topics", "欄位", "證據")),
     ("l123_hierarchy", ("l1", "l2", "l3"), ("hierarchy", "tree", "summary", "層級", "樹", "摘要")),
     ("memory_separation", ("short-term", "long-term", "短期", "長期"), ("separate", "separation", "distinguish", "區分", "分開")),
-    ("forgetting_mechanism", ("forgetting", "forgotten", "forget", "遺忘"), ("relevancy", "relevance", "importance", "decay", "衰減", "重要性", "相關性")),
+    ("forgetting_mechanism", ("forgetting", "forgotten", "forget", "fade", "decay", "遺忘", "衰減"), ("relevancy", "relevance", "importance", "decay", "衰減", "重要性", "相關性")),
     ("demo_dataset_strategy", ("dataset", "資料集", "simulate", "生成", "模擬"), ("demo", "demonstration", "展示", "示範", "演示")),
 )
 
@@ -44,7 +44,7 @@ _VIEWPOINT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     ("compare_unit_generation_baselines", ("fixed-size", "fixed size", "sentence-by-sentence", "逐句", "固定大小"), ("baseline", "baselines", "compare", "comparison", "評估", "比較")),
     ("compare_memory_architecture_with_rag", ("rag",), ("compare", "comparison", "contrast", "baseline", "比較", "展示", "demo")),
     ("short_long_memory_storage_distinction", ("short-term", "long-term", "短期", "長期"), ("separate", "separation", "differentiate", "distinguish", "儲存", "詳細", "精簡")),
-    ("long_term_forgetting_decay", ("forgetting", "forgotten", "forget", "fade out", "decay", "遺忘", "忘記"), ("relevancy", "relevance", "importance", "threshold", "weight", "重要性", "相關性", "權重", "衰減")),
+    ("long_term_forgetting_decay", ("forgetting", "forgotten", "forget", "fade", "fade out", "decay", "遺忘", "忘記", "衰減"), ("relevancy", "relevance", "importance", "threshold", "weight", "重要性", "相關性", "權重", "衰減")),
     ("demo_own_meeting_dataset", ("own meeting", "meeting transcripts", "primary dataset", "我們自己的dataset", "自己的會議", "會議資料集"), ("demo", "demonstration", "evaluate", "evaluation", "展示", "示範", "評估")),
     ("idea_unit_cross_span_merging", ("idea unit", "idea units", "想法單元"), ("pack", "merge", "higher-level", "overlap", "打包", "合併", "重疊")),
     ("idea_unit_demo_scope", ("idea unit", "idea units", "想法單元"), ("demo", "demonstration", "exhibition", "五月", "專題展", "展示")),
