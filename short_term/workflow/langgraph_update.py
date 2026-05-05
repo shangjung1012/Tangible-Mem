@@ -210,6 +210,13 @@ def _build_graph(
             processed = int(state.get("processed_until_line", 0) or 0)
             total = int(state.get("transcript_line_count", 0) or 0)
             chunk_size = int(state.get("chunk_size", 80) or 80)
+            min_start = processed + 1
+            current_window = state.get("current_window", {})
+            if state.get("needs_more_context") and isinstance(current_window, dict):
+                min_start = max(
+                    min_start,
+                    _safe_int(current_window.get("forward_end_line"), 0) + 1,
+                )
             plan = _sanitize_plan(
                 parsed,
                 processed_until=processed,
@@ -217,6 +224,7 @@ def _build_graph(
                 chunk_size=chunk_size,
                 max_lookback=int(state.get("max_lookback_lines", 20) or 20),
                 max_lookahead=int(state.get("max_lookahead_lines", 40) or 40),
+                min_start_line=min_start,
             )
             history = list(state.get("planner_history", []))
             history.append(plan)
@@ -996,13 +1004,17 @@ def _sanitize_plan(
     chunk_size: int,
     max_lookback: int,
     max_lookahead: int,
+    min_start_line: int | None = None,
 ) -> dict[str, Any]:
-    default_start = min(total_lines, processed_until + 1) if total_lines else 1
+    min_start = max(processed_until + 1, int(min_start_line or 0))
+    default_start = min(total_lines, min_start) if total_lines else 1
     start = _safe_int(raw.get("start_line"), default_start)
-    if start <= processed_until:
+    if start < default_start:
         start = default_start
     start = max(1, min(total_lines or 1, start))
     end = _safe_int(raw.get("end_line"), start + chunk_size - 1)
+    if end < start:
+        end = start + chunk_size - 1
     end = max(start, min(total_lines or start, end))
     if end - start + 1 > chunk_size:
         end = min(total_lines or end, start + chunk_size - 1)

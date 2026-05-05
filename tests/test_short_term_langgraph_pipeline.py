@@ -1361,7 +1361,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(state["context_units_buffer"], [])
             self.assertEqual(state["context_items_buffer"], [])
 
-    def test_langgraph_stops_context_retry_when_planner_repeats_same_range(self) -> None:
+    def test_langgraph_forces_forward_progress_when_planner_repeats_same_range(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
             transcript_db = tmp / "transcripts.db"
@@ -1423,23 +1423,28 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                 }
             )
 
-            self.assertEqual(len(state["unresolved_context"]), 1)
-            self.assertEqual(
-                state["unresolved_context"][0]["reason"],
-                "segment_requested_more_context_but_planner_repeated_same_range",
-            )
             events = [
                 json.loads(line)
                 for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
             ]
-            repeated_window_reads = [
+            first_window_reads = [
                 event
                 for event in events
                 if event["node"] == "read_window"
                 and event["event"] == "end"
                 and event["line_range"] == "L1-L80"
             ]
-            self.assertEqual(len(repeated_window_reads), 2)
+            next_window_reads = [
+                event
+                for event in events
+                if event["node"] == "read_window"
+                and event["event"] == "end"
+                and event["line_range"] == "L81-L100"
+            ]
+            self.assertEqual(len(first_window_reads), 1)
+            self.assertEqual(len(next_window_reads), 1)
+            self.assertEqual(state["processed_until_line"], 100)
+            self.assertEqual(state["unresolved_context"], [])
 
     def test_memory_tools_read_sqlite_and_write_staging(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
