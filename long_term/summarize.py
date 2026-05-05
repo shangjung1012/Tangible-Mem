@@ -283,6 +283,13 @@ def update_project_profile(
 # CLI
 # ===================================================================
 
+def resolve_model_name(requested_model: str | None) -> str:
+    clean = str(requested_model or "").strip()
+    if clean:
+        return clean
+    return os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Summarize L1→L2 phase or L2→L3 project profile."
@@ -306,7 +313,12 @@ def parse_args() -> argparse.Namespace:
     phase_p.add_argument("--tree", default="long_term/tree.json")
     phase_p.add_argument("--snapshot-dir", default="long_term/snapshots")
     phase_p.add_argument(
-        "--model", default=os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+        "--model",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     phase_p.add_argument("--dry-run", action="store_true")
 
@@ -316,7 +328,12 @@ def parse_args() -> argparse.Namespace:
     prof_p.add_argument("--tree", default="long_term/tree.json")
     prof_p.add_argument("--snapshot-dir", default="long_term/snapshots")
     prof_p.add_argument(
-        "--model", default=os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+        "--model",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     prof_p.add_argument("--dry-run", action="store_true")
 
@@ -329,10 +346,11 @@ def main() -> None:
     snapshot_dir = Path(args.snapshot_dir).resolve()
     tree = load_tree(tree_path)
     api_keys = load_api_keys()
+    model_name = resolve_model_name(args.model)
 
     if args.command == "phase":
         phase_node = summarize_phase(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             tree=tree,
             phase_id=args.phase_id,
@@ -351,7 +369,7 @@ def main() -> None:
 
     elif args.command == "profile":
         profile = update_project_profile(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             tree=tree,
             project_id=args.project_id,

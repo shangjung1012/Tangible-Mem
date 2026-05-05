@@ -693,6 +693,14 @@ def insert_meeting_into_tree(
 # CLI
 # ---------------------------------------------------------------------------
 
+def resolve_model_name(requested_model: str | None) -> str:
+    """Resolve CLI model after .env has been loaded by credential setup."""
+    clean = str(requested_model or "").strip()
+    if clean:
+        return clean
+    return os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Bridge: extract L1 memory objects from a meeting transcript."
@@ -712,8 +720,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        default=os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME),
-        help=f"Gemini model name (default: {DEFAULT_MODEL_NAME}).",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     parser.add_argument(
         "--mode",
@@ -825,6 +836,7 @@ def main() -> None:
 
     tree = load_tree(tree_path)
     api_keys = load_api_keys()
+    model_name = resolve_model_name(args.model)
     existing_topics = collect_existing_topics(tree)
 
     multi_agent_result = None
@@ -832,7 +844,7 @@ def main() -> None:
         from multi_agent_pipeline import run_multi_agent_l1_pipeline
 
         multi_agent_result = run_multi_agent_l1_pipeline(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             transcript=transcript,
             meeting_id=meeting_id,
@@ -874,7 +886,7 @@ def main() -> None:
         from gemini_incremental_extractor import extract_incremental_l1_objects
 
         incremental_result = extract_incremental_l1_objects(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             transcript=transcript,
             transcript_id=meeting_id,
@@ -907,7 +919,7 @@ def main() -> None:
         memory_objects = apply_incremental_final_importance_caps(memory_objects)
     else:
         llm_output = call_gemini_bridge(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             transcript=transcript,
             meeting_id=meeting_id,

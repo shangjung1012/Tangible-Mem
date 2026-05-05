@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -20,6 +21,7 @@ from multi_agent_logger import ResearchLogger
 from multi_agent_reducer import reduce_l1_patch, resolve_cross_type_conflicts
 from multi_agent_state import (
     IdeaUnit,
+    L1_MULTI_AGENT_TYPE_ORDER,
     L1_MULTI_AGENT_TYPES,
     SegmentProposal,
     TranscriptLine,
@@ -39,6 +41,7 @@ CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD = 0.20
 CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD = 0.20
 BOUNDARY_LINE_WINDOW = 6
 BOUNDARY_REFINEMENT_CONTEXT_LINES = 16
+MAX_IDEA_UNITS_PER_EXTRACTION_BATCH = 18
 SEGMENT_WINDOW_ID_RE = re.compile(r"^S-(\d+)-")
 
 
@@ -349,7 +352,26 @@ def build_continuation_batches(
             f"idea_unit_similarity={unit_score:.3f}"
         )
 
-    def flush_group(group: list[SegmentProposal]) -> None:
+    unit_counts_by_segment: dict[str, int] = {}
+    unit_ids_by_segment: dict[str, list[str]] = {}
+    if idea_units:
+        for unit in idea_units:
+            unit_counts_by_segment[unit.segment_id] = (
+                unit_counts_by_segment.get(unit.segment_id, 0) + 1
+            )
+            unit_ids_by_segment.setdefault(unit.segment_id, []).append(unit.unit_id)
+
+    def group_unit_count(group: list[SegmentProposal]) -> int:
+        if not unit_counts_by_segment:
+            return 0
+        return sum(unit_counts_by_segment.get(segment.segment_id, 0) for segment in group)
+
+    def append_batch(
+        group: list[SegmentProposal],
+        *,
+        reason: str,
+        unit_ids: list[str] | None = None,
+    ) -> None:
         if not group:
             return
         batch_id = f"B-{len(batches) + 1:03d}"
@@ -357,21 +379,99 @@ def build_continuation_batches(
         for segment in group:
             if segment.topic_label not in topic_labels:
                 topic_labels.append(segment.topic_label)
-        batches.append(
-            {
-                "batch_id": batch_id,
-                "segment_ids": [segment.segment_id for segment in group],
-                "line_start": min(segment.line_start for segment in group),
-                "line_end": max(segment.line_end for segment in group),
-                "topic_label": " / ".join(topic_labels),
-                "needs_more_context": any(segment.needs_more_context for segment in group),
-                "reason": (
-                    "continuation merge batch"
-                    if len(group) > 1
-                    else "single segment extraction batch"
-                ),
-            }
+        batch = {
+            "batch_id": batch_id,
+            "segment_ids": [segment.segment_id for segment in group],
+            "line_start": min(segment.line_start for segment in group),
+            "line_end": max(segment.line_end for segment in group),
+            "topic_label": " / ".join(topic_labels),
+            "needs_more_context": any(segment.needs_more_context for segment in group),
+            "reason": reason,
+            "idea_unit_count": len(unit_ids) if unit_ids is not None else group_unit_count(group),
+        }
+        if unit_ids is not None:
+            batch["unit_ids"] = unit_ids
+        batches.append(batch)
+
+    def flush_group(group: list[SegmentProposal]) -> None:
+        if not group:
+            return
+        base_reason = (
+            "continuation merge batch"
+            if len(group) > 1
+            else "single segment extraction batch"
         )
+        if not unit_counts_by_segment or group_unit_count(group) <= MAX_IDEA_UNITS_PER_EXTRACTION_BATCH:
+            append_batch(group, reason=base_reason)
+            return
+
+        current_chunk: list[SegmentProposal] = []
+        current_units = 0
+        for segment in group:
+            segment_unit_count = unit_counts_by_segment.get(segment.segment_id, 0)
+            if segment_unit_count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH:
+                if current_chunk:
+                    append_batch(
+                        current_chunk,
+                        reason=f"{base_reason}; split_by_idea_unit_cap",
+                    )
+                    decisions.append(
+                        {
+                            "action": "split_large_batch",
+                            "segment_ids": [item.segment_id for item in current_chunk],
+                            "reason": (
+                                f"idea_unit_count exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH}"
+                            ),
+                        }
+                    )
+                    current_chunk = []
+                    current_units = 0
+                segment_unit_ids = unit_ids_by_segment.get(segment.segment_id, [])
+                for start in range(0, len(segment_unit_ids), MAX_IDEA_UNITS_PER_EXTRACTION_BATCH):
+                    chunk_ids = segment_unit_ids[start : start + MAX_IDEA_UNITS_PER_EXTRACTION_BATCH]
+                    append_batch(
+                        [segment],
+                        reason=f"{base_reason}; split_large_segment_by_idea_unit_cap",
+                        unit_ids=chunk_ids,
+                    )
+                    decisions.append(
+                        {
+                            "action": "split_large_batch",
+                            "segment_ids": [segment.segment_id],
+                            "unit_ids": chunk_ids,
+                            "reason": (
+                                f"single segment exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH} idea units"
+                            ),
+                        }
+                    )
+                continue
+
+            if (
+                current_chunk
+                and current_units + segment_unit_count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH
+            ):
+                append_batch(
+                    current_chunk,
+                    reason=f"{base_reason}; split_by_idea_unit_cap",
+                )
+                decisions.append(
+                    {
+                        "action": "split_large_batch",
+                        "segment_ids": [item.segment_id for item in current_chunk],
+                        "reason": (
+                            f"idea_unit_count exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH}"
+                        ),
+                    }
+                )
+                current_chunk = []
+                current_units = 0
+            current_chunk.append(segment)
+            current_units += segment_unit_count
+        if current_chunk:
+            append_batch(
+                current_chunk,
+                reason=f"{base_reason}; split_by_idea_unit_cap",
+            )
 
     for segment in sorted_segments:
         if not current:
@@ -407,6 +507,10 @@ def idea_units_for_batch(
     idea_units: list[IdeaUnit],
     batch: dict[str, Any],
 ) -> list[IdeaUnit]:
+    unit_ids = batch.get("unit_ids")
+    if isinstance(unit_ids, list) and unit_ids:
+        allowed_unit_ids = set(str(unit_id) for unit_id in unit_ids)
+        return [unit for unit in idea_units if unit.unit_id in allowed_unit_ids]
     segment_ids = set(batch.get("segment_ids", []))
     return [unit for unit in idea_units if unit.segment_id in segment_ids]
 
@@ -414,6 +518,259 @@ def idea_units_for_batch(
 def build_run_id(meeting_id: str) -> str:
     clean_time = utc_now_iso().replace(":", "").replace("-", "")
     return f"{clean_time}_{meeting_id}_multi_agent"
+
+
+def _avg(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), 3)
+
+
+def _score_summary(values: list[float]) -> dict[str, Any]:
+    if not values:
+        return {"count": 0, "min": 0.0, "max": 0.0, "avg": 0.0}
+    return {
+        "count": len(values),
+        "min": round(min(values), 3),
+        "max": round(max(values), 3),
+        "avg": _avg(values),
+    }
+
+
+def _counter_dict(counter: Counter[str]) -> dict[str, int]:
+    return dict(sorted(counter.items()))
+
+
+def _candidate_type(candidate: Any) -> str:
+    if isinstance(candidate, dict):
+        return str(candidate.get("type", "unknown") or "unknown")
+    return str(getattr(candidate, "type", "unknown") or "unknown")
+
+
+def _candidate_support_score(candidate: Any) -> float:
+    if isinstance(candidate, dict):
+        return float(candidate.get("support_score", 0.0) or 0.0)
+    return float(getattr(candidate, "support_score", 0.0) or 0.0)
+
+
+def _candidate_quality_warnings(candidate: Any) -> list[str]:
+    if isinstance(candidate, dict):
+        values = candidate.get("unit_quality_warnings", [])
+    else:
+        values = getattr(candidate, "unit_quality_warnings", [])
+    if not isinstance(values, list):
+        return []
+    return [str(value) for value in values if str(value or "").strip()]
+
+
+def _rejection_reason_counts(rejected_candidates: list[dict[str, Any]]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for candidate in rejected_candidates:
+        for reason in candidate.get("verification_reasons", []):
+            clean = str(reason or "").strip()
+            if clean.startswith("duplicate_of:"):
+                clean = "duplicate_of"
+            if clean:
+                counts[clean] += 1
+    return _counter_dict(counts)
+
+
+def _llm_stage_family(stage: str) -> str:
+    if stage.startswith("segmentation_"):
+        return "segmentation_agent"
+    if stage.startswith("idea_units_"):
+        return "idea_unit_agent"
+    if stage.startswith("l1_fallback_agent_"):
+        return "l1_fallback_agent"
+    if stage.startswith("l1_") and "_agent_" in stage:
+        return stage.split("_agent_", 1)[0] + "_agent"
+    return stage.split("_", 1)[0] or "unknown"
+
+
+def _char_token_proxy(char_count: int) -> int:
+    return max(0, int((char_count + 3) // 4))
+
+
+def _llm_metrics(call_records: list[dict[str, Any]] | None) -> dict[str, Any]:
+    records = call_records or []
+    latencies = [
+        float(record.get("latency_sec", 0.0) or 0.0)
+        for record in records
+    ]
+    prompt_chars = [int(record.get("prompt_chars", 0) or 0) for record in records]
+    response_chars = [int(record.get("response_chars", 0) or 0) for record in records]
+    stage_counts: Counter[str] = Counter()
+    stage_latencies: dict[str, list[float]] = {}
+    for record in records:
+        family = _llm_stage_family(str(record.get("stage", "unknown") or "unknown"))
+        stage_counts[family] += 1
+        stage_latencies.setdefault(family, []).append(
+            float(record.get("latency_sec", 0.0) or 0.0)
+        )
+
+    prompt_char_total = sum(prompt_chars)
+    response_char_total = sum(response_chars)
+    return {
+        "call_count": len(records),
+        "error_count": sum(1 for record in records if not record.get("success", True)),
+        "calls_by_stage": _counter_dict(stage_counts),
+        "latency_sec": _score_summary(latencies),
+        "latency_sec_by_stage": {
+            stage: _score_summary(values)
+            for stage, values in sorted(stage_latencies.items())
+        },
+        "prompt_chars": _score_summary([float(value) for value in prompt_chars]),
+        "response_chars": _score_summary([float(value) for value in response_chars]),
+        "estimated_text_tokens": {
+            "prompt": _char_token_proxy(prompt_char_total),
+            "response": _char_token_proxy(response_char_total),
+            "total": _char_token_proxy(prompt_char_total + response_char_total),
+            "note": "rough chars/4 proxy for diagnostics, not provider billing",
+        },
+    }
+
+
+def build_metrics_summary(
+    *,
+    line_count: int,
+    window_plans: list[WindowPlan],
+    initial_segments: list[SegmentProposal],
+    final_segments: list[SegmentProposal],
+    coverage_reports: list[dict[str, Any]],
+    coarsening_reports: list[dict[str, Any]],
+    boundary_refinement_reports: list[dict[str, Any]],
+    idea_units: list[IdeaUnit],
+    idea_unit_quality_reports: list[dict[str, Any]],
+    extraction_batches: list[dict[str, Any]],
+    continuation_decisions: list[dict[str, Any]],
+    raw_candidates: list[Any],
+    batch_fallback_reports: list[dict[str, Any]],
+    grounded_candidates: list[Any],
+    conflict_decisions: list[Any],
+    verified_candidates: list[dict[str, Any]],
+    rejected_candidates: list[dict[str, Any]],
+    memory_objects: list[dict[str, Any]],
+    viewpoint_recurrence: list[dict[str, Any]],
+    llm_call_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Summarize run-level quality signals without changing extraction behavior."""
+    segment_coverage_rates = [
+        float(report.get("coverage_rate", 0.0) or 0.0)
+        for report in coverage_reports
+    ]
+    idea_unit_coverage_rates = [
+        float(report.get("coverage_rate", 0.0) or 0.0)
+        for report in idea_unit_quality_reports
+    ]
+    idea_repair_actions: Counter[str] = Counter()
+    idea_issue_types: Counter[str] = Counter()
+    for report in idea_unit_quality_reports:
+        for repair in report.get("repairs", []):
+            action = str(repair.get("action", "")).strip()
+            if action:
+                idea_repair_actions[action] += 1
+        for issue in report.get("issues", []):
+            issue_name = str(issue.get("issue", "")).strip()
+            if issue_name:
+                idea_issue_types[issue_name] += 1
+
+    warning_counts: Counter[str] = Counter()
+    for candidate in verified_candidates:
+        warning_counts.update(_candidate_quality_warnings(candidate))
+
+    final_importance_values = [
+        float(obj.get("importance", 0.0) or 0.0)
+        for obj in memory_objects
+    ]
+    support_scores = [
+        _candidate_support_score(candidate)
+        for candidate in grounded_candidates
+    ]
+    batch_unit_counts = [
+        len(idea_units_for_batch(idea_units, batch))
+        for batch in extraction_batches
+    ]
+
+    return {
+        "line_count": line_count,
+        "windows": {
+            "count": len(window_plans),
+            "configured_primary_window_sizes": [
+                plan.end_line - plan.start_line + 1 for plan in window_plans
+            ],
+        },
+        "segments": {
+            "initial_count": len(initial_segments),
+            "final_count": len(final_segments),
+            "coverage_rate": _score_summary(segment_coverage_rates),
+            "coverage_repair_count": sum(
+                len(report.get("repair_segment_ids", []))
+                for report in coverage_reports
+            ),
+            "coarsened_group_count": sum(
+                len(report.get("merged_groups", []))
+                for report in coarsening_reports
+            ),
+            "boundary_refinement_actions": _counter_dict(
+                Counter(
+                    str(report.get("action", "unknown") or "unknown")
+                    for report in boundary_refinement_reports
+                )
+            ),
+        },
+        "idea_units": {
+            "count": len(idea_units),
+            "coverage_rate": _score_summary(idea_unit_coverage_rates),
+            "completeness_counts": _counter_dict(
+                Counter(str(unit.completeness or "unknown") for unit in idea_units)
+            ),
+            "units_with_uncertainty_note": sum(
+                1 for unit in idea_units if str(unit.uncertainty_note or "").strip()
+            ),
+            "quality_issue_counts": _counter_dict(idea_issue_types),
+            "repair_action_counts": _counter_dict(idea_repair_actions),
+        },
+        "extraction_batches": {
+            "count": len(extraction_batches),
+            "idea_units_per_batch": _score_summary(
+                [float(count) for count in batch_unit_counts]
+            ),
+            "oversized_batch_count": sum(
+                count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH
+                for count in batch_unit_counts
+            ),
+            "max_idea_units_per_batch": MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+            "continuation_actions": _counter_dict(
+                Counter(
+                    str(decision.get("action", "unknown") or "unknown")
+                    for decision in continuation_decisions
+                )
+            ),
+            "fallback_batch_count": len(batch_fallback_reports),
+        },
+        "candidates": {
+            "raw_count": len(raw_candidates),
+            "raw_by_type": _counter_dict(
+                Counter(_candidate_type(candidate) for candidate in raw_candidates)
+            ),
+            "grounded_count": len(grounded_candidates),
+            "support_score": _score_summary(support_scores),
+            "conflict_decision_count": len(conflict_decisions),
+            "verified_count": len(verified_candidates),
+            "rejected_count": len(rejected_candidates),
+            "rejection_reasons": _rejection_reason_counts(rejected_candidates),
+            "unit_quality_warning_counts": _counter_dict(warning_counts),
+        },
+        "final_l1": {
+            "object_count": len(memory_objects),
+            "object_count_by_type": _counter_dict(
+                Counter(str(obj.get("type", "unknown")) for obj in memory_objects)
+            ),
+            "importance": _score_summary(final_importance_values),
+            "viewpoint_recurrence_count": len(viewpoint_recurrence),
+        },
+        "llm": _llm_metrics(llm_call_records),
+    }
 
 
 def run_multi_agent_l1_pipeline(
@@ -453,7 +810,7 @@ def run_multi_agent_l1_pipeline(
             "model": model_name,
             "line_count": len(lines),
             "implemented_l1_agent_types": sorted(L1_MULTI_AGENT_TYPES),
-            "deferred_l1_agent_types": ["argument", "open_question"],
+            "deferred_l1_agent_types": [],
         },
     )
     logger.append_event("context_planner:start", {"line_count": len(lines)})
@@ -600,7 +957,7 @@ def run_multi_agent_l1_pipeline(
         if not batch_units:
             continue
         batch_candidates = []
-        for obj_type in ["decision", "todo", "method_change", "result"]:
+        for obj_type in L1_MULTI_AGENT_TYPE_ORDER:
             logger.append_event(
                 f"l1_{obj_type}_agent:start",
                 {
@@ -708,11 +1065,42 @@ def run_multi_agent_l1_pipeline(
     logger.write_json("final_patch.json", final_patch)
     viewpoint_recurrence = final_patch.get("viewpoint_recurrence", [])
     logger.write_json("viewpoint_recurrence.json", viewpoint_recurrence)
+    metrics_summary = build_metrics_summary(
+        line_count=len(lines),
+        window_plans=window_plans,
+        initial_segments=initial_segments,
+        final_segments=all_segments,
+        coverage_reports=coverage_reports,
+        coarsening_reports=coarsening_reports,
+        boundary_refinement_reports=boundary_refinement_reports,
+        idea_units=all_idea_units,
+        idea_unit_quality_reports=idea_unit_quality_reports,
+        extraction_batches=extraction_batches,
+        continuation_decisions=continuation_decisions,
+        raw_candidates=raw_candidates,
+        batch_fallback_reports=batch_fallback_reports,
+        grounded_candidates=grounded_candidates,
+        conflict_decisions=conflict_decisions,
+        verified_candidates=verification.verified_candidates,
+        rejected_candidates=verification.rejected_candidates,
+        memory_objects=memory_objects,
+        viewpoint_recurrence=viewpoint_recurrence,
+        llm_call_records=runner.call_records,
+    )
+    logger.write_json("metrics_summary.json", metrics_summary)
     logger.append_event(
         "reduce_l1_patch:done",
         {
             "memory_objects": len(memory_objects),
             "viewpoint_recurrence": len(viewpoint_recurrence),
+        },
+    )
+    logger.append_event(
+        "metrics_summary:done",
+        {
+            "final_l1_objects": metrics_summary["final_l1"]["object_count"],
+            "verified_candidates": metrics_summary["candidates"]["verified_count"],
+            "rejected_candidates": metrics_summary["candidates"]["rejected_count"],
         },
     )
 

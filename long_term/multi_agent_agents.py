@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import time
+import os
+import signal
+import threading
+from collections import Counter
+from contextlib import contextmanager
 from typing import Any
 
-from gemini_clients import create_gemini_client
+from gemini_clients import DEFAULT_HTTP_TIMEOUT_S, create_gemini_client
 from multi_agent_logger import ResearchLogger
 from multi_agent_state import (
     IdeaUnit,
@@ -155,7 +161,92 @@ TYPE_DEFINITIONS = {
     "todo": "explicit next step, assigned follow-up, pending action, or unresolved work item with execution expectation",
     "method_change": "change in method, process, procedure, strategy, data handling, or evaluation approach",
     "result": "observation, outcome, finding, experiment result, failure mode, comparison, or evidence report",
+    "argument": "reasoning, tradeoff, constraint, or justification that explains why a decision or method direction is preferred",
+    "open_question": "unresolved research question, blocker, uncertainty, or decision point that still needs clarification",
 }
+
+
+class LLMCallTimeoutError(TimeoutError):
+    """Raised when a multi-agent Gemini call exceeds the local hard timeout."""
+
+
+def _resolve_call_timeout_s() -> int:
+    raw_value = (
+        os.getenv("GEMINI_MULTI_AGENT_CALL_TIMEOUT_S", "").strip()
+        or os.getenv("GEMINI_HTTP_TIMEOUT_S", "").strip()
+    )
+    if not raw_value:
+        return DEFAULT_HTTP_TIMEOUT_S
+    try:
+        timeout_s = int(raw_value)
+    except ValueError:
+        return DEFAULT_HTTP_TIMEOUT_S
+    return max(1, timeout_s)
+
+
+def _resolve_max_attempts() -> int:
+    raw_value = os.getenv("GEMINI_MULTI_AGENT_MAX_ATTEMPTS", "").strip()
+    if not raw_value:
+        return 2
+    try:
+        attempts = int(raw_value)
+    except ValueError:
+        return 2
+    return max(1, attempts)
+
+
+def _is_retryable_llm_error(exc: Exception) -> bool:
+    if isinstance(exc, LLMCallTimeoutError):
+        return True
+    status_code = getattr(exc, "status_code", None)
+    if status_code in {429, 499, 500, 502, 503, 504}:
+        return True
+    message = str(exc).upper()
+    return any(
+        token in message
+        for token in (
+            "429",
+            "499",
+            "500",
+            "502",
+            "503",
+            "504",
+            "RESOURCE_EXHAUSTED",
+            "UNAVAILABLE",
+            "TIMEOUT",
+            "TIMED OUT",
+            "READTIMEOUT",
+        )
+    )
+
+
+@contextmanager
+def _hard_timeout(stage: str, timeout_s: int):
+    if (
+        timeout_s <= 0
+        or threading.current_thread() is not threading.main_thread()
+        or not hasattr(signal, "setitimer")
+    ):
+        yield
+        return
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+
+    def _raise_timeout(_signum: int, _frame: Any) -> None:
+        raise LLMCallTimeoutError(
+            f"Gemini call timed out after {timeout_s}s at stage {stage}."
+        )
+
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    signal.setitimer(signal.ITIMER_REAL, timeout_s)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
 
 
 class MultiAgentLLMRunner:
@@ -169,21 +260,82 @@ class MultiAgentLLMRunner:
         self.model_name = model_name
         self.client = create_gemini_client(api_key)
         self.logger = logger
+        self.call_records: list[dict[str, Any]] = []
+        self.call_counts: Counter[str] = Counter()
 
     def call_json(self, stage: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         self.logger.write_prompt(stage, prompt)
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config={
-                "temperature": 0.1,
-                "response_mime_type": "application/json",
-                "response_json_schema": schema,
-            },
-        )
-        raw_text = response.text or ""
-        self.logger.write_response(stage, raw_text)
-        return extract_json_object(raw_text)
+        timeout_s = _resolve_call_timeout_s()
+        max_attempts = _resolve_max_attempts()
+        last_error: Exception | None = None
+        for attempt in range(1, max_attempts + 1):
+            started_at = time.monotonic()
+            raw_text = ""
+            try:
+                with _hard_timeout(stage, timeout_s):
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=prompt,
+                        config={
+                            "temperature": 0.1,
+                            "response_mime_type": "application/json",
+                            "response_json_schema": schema,
+                        },
+                    )
+                raw_text = response.text or ""
+                self.logger.write_response(stage, raw_text)
+                data = extract_json_object(raw_text)
+            except Exception as exc:
+                latency_sec = round(time.monotonic() - started_at, 3)
+                record = {
+                    "stage": stage,
+                    "success": False,
+                    "attempt": attempt,
+                    "max_attempts": max_attempts,
+                    "latency_sec": latency_sec,
+                    "timeout_s": timeout_s,
+                    "prompt_chars": len(prompt),
+                    "response_chars": len(raw_text),
+                    "error_type": type(exc).__name__,
+                }
+                self.call_records.append(record)
+                self.call_counts[stage] += 1
+                self.logger.append_event("llm_call:error", record)
+                last_error = exc
+                if attempt < max_attempts and _is_retryable_llm_error(exc):
+                    wait_s = min(10.0, 2.0 * attempt)
+                    self.logger.append_event(
+                        "llm_call:retry",
+                        {
+                            "stage": stage,
+                            "attempt": attempt + 1,
+                            "max_attempts": max_attempts,
+                            "wait_s": wait_s,
+                            "previous_error_type": type(exc).__name__,
+                        },
+                    )
+                    time.sleep(wait_s)
+                    continue
+                raise
+
+            latency_sec = round(time.monotonic() - started_at, 3)
+            record = {
+                "stage": stage,
+                "success": True,
+                "attempt": attempt,
+                "max_attempts": max_attempts,
+                "latency_sec": latency_sec,
+                "timeout_s": timeout_s,
+                "prompt_chars": len(prompt),
+                "response_chars": len(raw_text),
+            }
+            self.call_records.append(record)
+            self.call_counts[stage] += 1
+            self.logger.append_event("llm_call:done", record)
+            return data
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError(f"Gemini call failed without an error at stage {stage}.")
 
 
 def plan_context_windows(
@@ -337,9 +489,12 @@ Return at most {MAX_L1_CANDIDATES_PER_TYPE} candidates. Return an empty list whe
 batch has no durable {obj_type}.
 
 Only output durable long-term memory:
-- keep project-level decisions, method changes, concrete follow-ups, or stable findings
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
 - do not restate each idea unit as a candidate
 - do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
 - use importance >= 0.90 only for project-level or future-steering items
 - use 0.50-0.70 for useful but local meeting-level context
 Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.

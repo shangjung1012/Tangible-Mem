@@ -5,7 +5,15 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
-L1_MULTI_AGENT_TYPES = {"decision", "todo", "method_change", "result"}
+L1_MULTI_AGENT_TYPE_ORDER = (
+    "decision",
+    "todo",
+    "method_change",
+    "result",
+    "argument",
+    "open_question",
+)
+L1_MULTI_AGENT_TYPES = set(L1_MULTI_AGENT_TYPE_ORDER)
 ConflictAction = Literal["keep", "merge", "rewrite", "drop"]
 
 
@@ -74,6 +82,8 @@ class GroundedCandidate:
     evidence_quote: str
     support_score: float
     grounding_note: str
+    source_unit_completeness: list[str] = field(default_factory=list)
+    source_unit_uncertainty_notes: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

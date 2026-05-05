@@ -98,25 +98,36 @@ uv run long_term/cli.py bridge \
   --research-log-dir long_term/research_logs
 ```
 
+如果沒有明確傳 `--model`，bridge / summarize 會在載入 `.env` 後使用
+`GEMINI_MODEL`，未設定時才退回 `gemini-2.5-flash`。
+
 每次 run 會建立 `long_term/research_logs/<run_id>/`，至少包含：
 
 - `run_meta.json`
 - `graph_events.jsonl`
 - `window_plans.json`
+- `initial_segments.json`
+- `boundary_refinement.json`
 - `segments.json`
+- `segment_coverage_validation.json`
+- `segment_coarsening.json`
 - `continuation_merges.json`
 - `extraction_batches.json`
 - `idea_units.json`
+- `idea_unit_quality_validation.json`
 - `raw_candidates.json`
+- `batch_fallbacks.json`
 - `grounded_candidates.json`
 - `conflict_resolution.json`
 - `verified_candidates.json`
 - `rejected_candidates.json`
 - `final_patch.json`
+- `viewpoint_recurrence.json`
+- `metrics_summary.json`
 - `final_meeting_node.json`
 - `prompts/` 與 `responses/`
 
-multi-agent 第一版完整實作 L1：`context_planner -> segmentation_agent -> continuation_merge -> idea_unit_agent -> bounded l1_decision/todo/method_change/result_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`。type agents 只吃單一 bounded extraction batch 的 idea units；candidate 會保留 `extraction_scope` 與 `segment_ids` 供追責。grounding acceptance 只使用本地 evidence/content 對齊訊號，不使用模型自評 confidence。`open_question` 與 `argument` 仍保留在正式 schema 中，但專屬 agent 暫時延後，之後可沿用同一個 candidate schema 加進 `l1_type_agent` 迴圈。L2/L3 不另建新 schema；multi-agent 寫入的 meeting node 與既有 `summarize phase` / `summarize profile` 相容。
+multi-agent 第一版完整實作 L1：`context_planner -> segmentation_agent -> segment repair/coarsening -> boundary_refinement -> idea_unit_agent -> idea_unit repair -> continuation_merge -> bounded l1_decision/todo/method_change/result/argument/open_question_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`。boundary refinement 會修 `segments.json` 的語義邊界；continuation merge 則只決定下游 extraction batch，不改 segment，且過大的 batch 會依 idea-unit 上限再切小，避免 type agents 在太胖的 scope 裡只取前幾個候選。type agents 只吃單一 bounded extraction batch 的 idea units；candidate 會保留 `extraction_scope` 與 `segment_ids` 供追責。grounding acceptance 只使用本地 evidence/content 對齊訊號，不使用模型自評 confidence。idea unit 的 `completeness` / `uncertainty_note` 會保留到 grounded / verified artifacts，並在 reducer 端保守降權，不直接作為 rejection reason。`argument` 與 `open_question` 已接進同一個 bounded type-agent loop，但 reducer 會對這兩類使用較保守的 importance cap，避免把一般討論理由或暫時疑問灌得過高。`metrics_summary.json` 會記錄 LLM call count、stage latency 與粗略 text-token proxy，方便看單次 run 的成本與瓶頸。L2/L3 不另建新 schema；multi-agent 寫入的 meeting node 與既有 `summarize phase` / `summarize profile` 相容。
 
 常見補充參數：
 

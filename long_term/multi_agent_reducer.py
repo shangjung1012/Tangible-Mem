@@ -11,6 +11,8 @@ from multi_agent_tools import clamp_float, jaccard, tokenize, unique_strings
 TYPE_PRIORITY = {
     "method_change": 3,
     "decision": 2,
+    "argument": 1,
+    "open_question": 1,
     "result": 1,
     "todo": 1,
 }
@@ -26,6 +28,8 @@ VIEWPOINT_RECURRENCE_TYPE_CAPS = {
     "method_change": 0.93,
     "result": 0.84,
     "todo": 0.84,
+    "open_question": 0.80,
+    "argument": 0.78,
 }
 
 _FOLLOWUP_TASK_MARKERS = (
@@ -163,6 +167,26 @@ _GOAL_STATEMENT_MARKERS = (
     "目的在於",
 )
 
+_UNRESOLVED_TASK_MARKERS = (
+    "unresolved task",
+    "unresolved question",
+    "open task",
+    "needs to be defined",
+    "needs to define",
+    "needs to decide",
+    "need to define",
+    "need to decide",
+    "still needs clarification",
+    "has not been decided",
+    "尚未確定",
+    "尚未決定",
+    "待解決",
+    "待釐清",
+    "需要定義",
+    "需要決定",
+    "需要釐清",
+)
+
 _DURABLE_MARKERS = (
     "adopt",
     "decide",
@@ -214,6 +238,8 @@ def _as_candidate_dict(candidate: GroundedCandidate | dict[str, Any]) -> dict[st
         "evidence_quote": candidate.evidence_quote,
         "support_score": candidate.support_score,
         "grounding_note": candidate.grounding_note,
+        "source_unit_completeness": candidate.source_unit_completeness,
+        "source_unit_uncertainty_notes": candidate.source_unit_uncertainty_notes,
     }
 
 
@@ -247,6 +273,14 @@ def _merge_candidate(left: dict[str, Any], right: dict[str, Any]) -> dict[str, A
     )
     merged["source_unit_ids"] = unique_strings(
         list(preferred.get("source_unit_ids", [])) + list(other.get("source_unit_ids", []))
+    )
+    merged["source_unit_completeness"] = unique_strings(
+        list(preferred.get("source_unit_completeness", []))
+        + list(other.get("source_unit_completeness", []))
+    )
+    merged["source_unit_uncertainty_notes"] = unique_strings(
+        list(preferred.get("source_unit_uncertainty_notes", []))
+        + list(other.get("source_unit_uncertainty_notes", []))
     )
     merged["segment_ids"] = unique_strings(
         list(preferred.get("segment_ids", [])) + list(other.get("segment_ids", []))
@@ -300,6 +334,11 @@ def _looks_like_proposal(text: str) -> bool:
 def _looks_like_goal_statement(text: str) -> bool:
     lowered = str(text or "").lower()
     return any(marker.lower() in lowered for marker in _GOAL_STATEMENT_MARKERS)
+
+
+def _looks_like_unresolved_task(text: str) -> bool:
+    lowered = str(text or "").lower()
+    return any(marker.lower() in lowered for marker in _UNRESOLVED_TASK_MARKERS)
 
 
 def _has_any(text: str, markers: tuple[str, ...] | list[str] | set[str]) -> bool:
@@ -547,6 +586,10 @@ def _normalize_candidate_type(
     evidence: str,
 ) -> str:
     del evidence
+    if obj_type in {"decision", "method_change", "argument", "result"} and _looks_like_unresolved_task(
+        content
+    ):
+        return "todo"
     if (
         obj_type in {"decision", "method_change"}
         and _looks_like_followup_task(content)
@@ -588,6 +631,33 @@ def _normalize_candidate_type(
     return obj_type
 
 
+def _source_unit_quality_warnings(candidate: dict[str, Any]) -> set[str]:
+    warnings = {
+        str(value or "").strip()
+        for value in candidate.get("unit_quality_warnings", [])
+        if str(value or "").strip()
+    }
+    completeness_values = {
+        str(value or "").strip().lower()
+        for value in candidate.get("source_unit_completeness", [])
+        if str(value or "").strip()
+    }
+    if completeness_values & {"fallback", "compacted"}:
+        warnings.add("validator_repaired_source_unit")
+    if completeness_values & {
+        "partial",
+        "incomplete",
+        "uncertain",
+        "unknown",
+        "fallback",
+        "compacted",
+    }:
+        warnings.add("uncertain_source_unit")
+    if candidate.get("source_unit_uncertainty_notes"):
+        warnings.add("source_unit_uncertainty_note")
+    return warnings
+
+
 def _multi_agent_importance(
     candidate: dict[str, Any],
     *,
@@ -615,6 +685,7 @@ def _multi_agent_importance(
     descriptive_structure = _looks_like_descriptive_structure(content)
     uncommitted_proposal = _looks_like_proposal(content) and not committed_change
     goal_statement = _looks_like_goal_statement(content)
+    unit_quality_warnings = _source_unit_quality_warnings(candidate)
 
     weighted_cap = (
         0.28
@@ -622,7 +693,7 @@ def _multi_agent_importance(
         + 0.12 * confidence
         + 0.20 * support_score
     )
-    if durable_marker and obj_type in {"decision", "method_change"}:
+    if durable_marker and obj_type in {"decision", "method_change", "argument"}:
         weighted_cap += 0.03
     if (
         obj_type in {"decision", "method_change"}
@@ -637,6 +708,10 @@ def _multi_agent_importance(
         weighted_cap -= 0.04
     elif obj_type == "result":
         weighted_cap -= 0.06
+    elif obj_type == "argument":
+        weighted_cap -= 0.04
+    elif obj_type == "open_question":
+        weighted_cap -= 0.05
     score = min(score, weighted_cap)
 
     if token_count <= 3:
@@ -660,6 +735,10 @@ def _multi_agent_importance(
         score = min(score, 0.82)
     elif obj_type == "result" and support_score < 0.70:
         score = min(score, 0.80)
+    elif obj_type == "argument":
+        score = min(score, 0.78)
+    elif obj_type == "open_question":
+        score = min(score, 0.80)
     if obj_type in {"decision", "method_change"} and followup_task and not committed_change:
         score = min(score, 0.72)
     if descriptive_structure and obj_type == "result":
@@ -668,6 +747,12 @@ def _multi_agent_importance(
         score = min(score, 0.78)
     if goal_statement:
         score = min(score, 0.78)
+    if "validator_repaired_source_unit" in unit_quality_warnings:
+        score = min(score - 0.02, 0.84 if obj_type in {"decision", "method_change"} else 0.78)
+    if "uncertain_source_unit" in unit_quality_warnings:
+        score = min(score - 0.03, 0.82)
+    if "source_unit_uncertainty_note" in unit_quality_warnings:
+        score = min(score - 0.02, 0.82)
 
     return round(clamp_float(score), 2)
 
@@ -707,6 +792,13 @@ def _duplicate_index(rows: list[dict[str, Any]], candidate: dict[str, Any]) -> i
     obj_type = str(candidate.get("type", ""))
     evidence_lines = candidate.get("evidence_lines", [])
     candidate_keys = set(candidate.get("_concept_keys", [])) or _concept_keys(candidate)
+    best_match: tuple[float, int] | None = None
+
+    def consider(index: int, priority: float) -> None:
+        nonlocal best_match
+        if best_match is None or priority > best_match[0]:
+            best_match = (priority, index)
+
     for index, row in enumerate(rows):
         row_type = str(row.get("type", ""))
         similarity = jaccard(str(row.get("content", "")), content)
@@ -722,39 +814,48 @@ def _duplicate_index(rows: list[dict[str, Any]], candidate: dict[str, Any]) -> i
                 frozenset({"result", "method_change"}),
             }
         )
-        if row_type == obj_type and similarity >= 0.62:
-            return index
+        if row_type == obj_type and similarity >= 0.52:
+            consider(index, 100.0 + similarity + overlap_score)
         if row_type == obj_type and overlap_score >= 0.80:
-            return index
+            consider(index, 95.0 + overlap_score + similarity)
+        if (
+            frozenset({row_type, obj_type}) == frozenset({"todo", "open_question"})
+            and (
+                similarity >= 0.35
+                or overlap_score >= 0.50
+                or (shared_keys and gap is not None and gap <= 10)
+            )
+        ):
+            consider(index, 90.0 + similarity + overlap_score)
         if (
             frozenset({row_type, obj_type}) == frozenset({"decision", "method_change"})
             and overlap_score >= 0.85
         ):
-            return index
+            consider(index, 85.0 + overlap_score + similarity)
         if shared_keys and same_or_colliding_type:
             if overlap_score >= 0.25:
-                return index
+                consider(index, 80.0 + overlap_score + similarity)
             if gap is not None and gap <= 20 and row_type == obj_type:
-                return index
+                consider(index, 75.0 + similarity - (gap / 100.0))
             if gap is not None and gap <= 4 and frozenset({row_type, obj_type}) in {
                 frozenset({"decision", "method_change"}),
                 frozenset({"decision", "result"}),
                 frozenset({"result", "method_change"}),
             }:
-                return index
+                consider(index, 70.0 + similarity - (gap / 100.0))
             if (
                 gap is not None
                 and gap <= 12
                 and frozenset({row_type, obj_type}) == frozenset({"decision", "method_change"})
             ):
-                return index
+                consider(index, 65.0 + similarity - (gap / 100.0))
         if (
             same_or_colliding_type
             and _line_overlap(row.get("_evidence_lines", []), evidence_lines)
             and similarity >= 0.28
         ):
-            return index
-    return None
+            consider(index, 60.0 + similarity + overlap_score)
+    return best_match[1] if best_match is not None else None
 
 
 def _row_rank(row: dict[str, Any]) -> tuple[int, float, int, int]:
@@ -787,6 +888,10 @@ def _merge_memory_rows(preferred: dict[str, Any], other: dict[str, Any]) -> dict
     )
     merged["_viewpoint_keys"] = sorted(
         set(preferred.get("_viewpoint_keys", [])) | set(other.get("_viewpoint_keys", []))
+    )
+    merged["_unit_quality_warnings"] = sorted(
+        set(preferred.get("_unit_quality_warnings", []))
+        | set(other.get("_unit_quality_warnings", []))
     )
     if "read_write_memory_update" in merged["_concept_keys"]:
         preferred_has_functions = _has_any(
@@ -1079,6 +1184,7 @@ def reduce_l1_patch(
                     }
                 )
             ),
+            "_unit_quality_warnings": sorted(_source_unit_quality_warnings(candidate)),
         }
         duplicate_at = _duplicate_index(rows, {**candidate, **row})
         if duplicate_at is None:

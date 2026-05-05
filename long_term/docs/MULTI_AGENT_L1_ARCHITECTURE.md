@@ -29,7 +29,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前 `multi_agent` 的 L1 主流程是：
 
-`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> cross-window boundary refinement -> idea_unit_agent -> idea_unit_quality_validator/repair/coverage-fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1`
+`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> cross-window boundary refinement -> idea_unit_agent -> idea_unit_quality_validator/repair/coverage-fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result/argument/open_question_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1`
 
 入口在 `long_term/bridge.py`。當 `--mode multi-agent` 被指定時，bridge 會呼叫 `run_multi_agent_l1_pipeline()`，最後仍把結果寫回同一個 `tree.json` meeting node。
 
@@ -160,6 +160,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - boundary refinement 讓 `160/161` 這類人工 window 邊界不只是事後合併，而是先在完整 span 內重新判斷 segment 邊界
 - 對 `80/81` 這類需要看前一段尾巴或後一段開頭才能判斷的情況，context-aware refinement 可以避免只看兩段核心 span 太窄
 - 只有 cross-window 且有足夠 continuity signal 的相鄰 span 會重切，避免對所有 segments 額外打 API
+- 這一層改的是 `segments.json`，責任是修語義邊界，不負責決定 type-agent 的最終 extraction scope
 
 輸出 artifact：
 
@@ -195,11 +196,14 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 把跨窗補救明確化，而不是讓 segmentation 直接輸出跨窗 segment
 - 保留固定窗口的穩定性，同時補償邊界語意截斷
 - 對 topic label 不一致但邊界內容仍連續的情況，仍可合併成同一個 extraction batch
+- 這一層不改 `segments.json`，只決定哪些 refined segments 要一起餵給下游 typed L1 agents
+- 若 continuation chain 形成過胖 batch，會依 idea-unit 上限 deterministic split，避免 type agents 在過大的 scope 中只保留前幾個候選而漏掉細節
 
 目前限制：
 
 - merge 只負責把相鄰 segment 變成 extraction batch
 - 漏行補救由前一層 segment coverage validator 負責
+- oversized split 是 bounded extraction 保護，不代表語義上否定原本的 continuation 關係
 
 ### 3.6 Idea Unit Agent
 
@@ -239,7 +243,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前限制：
 
-- `completeness` / `uncertainty_note` 目前只記錄，不影響 acceptance
+- `completeness` / `uncertainty_note` 會被保留到 grounded / verified candidate artifacts
+- 這些訊號目前只做保守降權或 importance cap，不直接作為 rejection reason，避免補漏 unit 意外丟掉重要內容
 
 ### 3.6.1 Idea Unit Quality Validator / Repair
 
@@ -282,6 +287,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `todo`
 - `method_change`
 - `result`
+- `argument`
+- `open_question`
 
 責任：
 
@@ -304,7 +311,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前限制：
 
-- `open_question` / `argument` 尚未接進 multi-agent loop
+- `argument` / `open_question` 已接進 typed loop，但 reducer 會使用較保守的 importance cap，避免一般討論理由或暫時疑問分數過高
 - 目前只在「整個 batch 沒有任何 typed candidate」時跑一次 general fallback
 
 ### 3.7.1 Fallback L1 Agent
@@ -315,8 +322,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 責任：
 
-- 當 decision / todo / method_change / result 四個 typed agents 對同一 batch 都沒有產出時，做一次保守的 general L1 檢查
-- 只允許輸出既有四個 multi-agent L1 類型
+- 當所有 typed agents 對同一 batch 都沒有產出時，做一次保守的 general L1 檢查
+- 只允許輸出正式 L1 schema 內的六個類型
 - 仍受 `source_unit_ids` 白名單限制，不能引用 batch 外內容
 
 設計理由：
@@ -475,6 +482,7 @@ Viewpoint recurrence 規則：
 - `rejected_candidates.json`
 - `final_patch.json`
 - `viewpoint_recurrence.json`
+- `metrics_summary.json`
 - `final_meeting_node.json`
 - `prompts/`
 - `responses/`
@@ -502,31 +510,32 @@ Viewpoint recurrence 規則：
 10. reducer 會做 multi-agent 專用 dedupe 與 importance cap
 11. reducer 會把跨 episode 反覆出現的同一觀點轉成小幅、有上限的 importance bonus
 12. batch empty-yield 時有 bounded fallback L1 agent
-13. focused tests 覆蓋核心行為
-14. 與既有 `tree.json` / summarize 流程相容
+13. idea-unit `completeness` / `uncertainty_note` 會進入 grounding / verifier artifact，並在 reducer 端保守降權而非直接拒絕
+14. continuation merge 產生過胖 extraction batch 時，會依 idea-unit cap 拆小，降低漏細節風險
+15. `metrics_summary.json` 彙整 coverage、fallback、rejection、support score、final object count、batch size、LLM call count、stage latency 與粗略 token proxy 等 run-level 訊號
+16. focused tests 覆蓋核心行為
+17. 與既有 `tree.json` / summarize 流程相容
 
 ## 6. 現在還缺的設計
 
 以下是目前距離「完整研究型 multi-agent L1 系統」還缺的關鍵部分。
 
-### 6.1 Ontology Completion
+### 6.1 Ontology Policy
 
-目前 multi-agent loop 只實作四類：
+目前 multi-agent loop 已接進正式 L1 schema 六類：
 
 - `decision`
 - `todo`
 - `method_change`
 - `result`
-
-還沒完整納入：
-
-- `open_question`
 - `argument`
+- `open_question`
 
-缺少後果：
+仍需要繼續觀察的是 ontology overlap policy：
 
-- multi-agent L1 還不是 full-schema extraction
-- 一部分現有 long-term ontology 仍未被顯式多 agent 化
+- `argument` 很容易和 `decision` / `method_change` 共用 evidence，需要避免把「為什麼」和「做什麼」重複寫成多條高分 L1
+- `open_question` 很容易把老師追問或暫時確認誤存成長期問題，因此 reducer 目前使用較保守的 importance cap
+- cross-type conflict resolver 目前仍優先處理 `decision` / `method_change` / `result` 的重疊，`argument` / `open_question` 先保守保留給 verifier 與 reducer 控制
 
 ### 6.2 Repair / Fallback Loop
 
@@ -544,28 +553,36 @@ Viewpoint recurrence 規則：
 
 ### 6.3 Evaluation Harness
 
-目前有單元測試，但還缺 run-level evaluation metrics。
+目前有單元測試，並已輸出 `metrics_summary.json` 作為單次 run 的品質摘要。
 
-建議至少補：
+已涵蓋：
 
 - segment coverage rate
-- uncovered line ratio
+- segment / idea-unit repair counts
 - continuation merge rate
-- batch candidate yield
 - verifier rejection breakdown
 - support score distribution
 - cross-type collision rate
+- final object count / type distribution
+- LLM call count / stage latency / rough text-token proxy
+
+還缺的是跨 run / 跨版本 evaluation harness：
+
 - final L1 count stability across reruns
 - 與 monolithic baseline 的差異比較
+- 與人工標註或手動 review checklist 的差異比較
 
 ### 6.4 Operational Guardrails
 
-目前 artifacts 很完整，但 operation 資訊還不夠。
+目前 artifacts 已包含基本 operation telemetry。
 
-建議補：
+已涵蓋：
 
 - per-stage latency
-- token / cost usage
+- rough text-token proxy
+
+還缺的是更完整的 production guardrails：
+
 - stage-level retry telemetry
 - artifact schema version
 - partial rerun support
@@ -594,12 +611,12 @@ Viewpoint recurrence 規則：
 - [x] 實作 `idea_unit_quality_validator`
 - [x] 將 validator 結果寫入 artifact
 - [x] 為 uncovered / invalid spans 增加 focused tests
-- [ ] 建立 stage-level metrics summary
+- [x] 建立 stage-level metrics summary
 
 ### Should Have
 
-- [ ] 將 `open_question` 接進 multi-agent loop
-- [ ] 將 `argument` 接進 multi-agent loop
+- [x] 將 `open_question` 接進 multi-agent loop
+- [x] 將 `argument` 接進 multi-agent loop
 - [ ] 定義完整 cross-type ontology overlap policy
 - [x] 增加 bounded fallback 策略
 - [x] 增加 batch-level empty-yield diagnostics
@@ -607,7 +624,7 @@ Viewpoint recurrence 規則：
 
 ### Nice to Have
 
-- [ ] 加入 per-stage latency / token telemetry
+- [x] 加入 per-stage latency / token telemetry
 - [ ] 支援 stage rerun / partial rerun
 - [ ] 做 L1 monolithic vs multi-agent 的系統性比較報表
 - [ ] 規劃 L2 / L3 multi-agent 化路線

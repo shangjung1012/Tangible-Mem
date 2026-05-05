@@ -14,6 +14,41 @@ from multi_agent_state import (
 from multi_agent_tools import clamp_float, evidence_quote, jaccard, local_alignment_score, tokenize
 
 
+UNCERTAIN_COMPLETENESS_VALUES = {
+    "partial",
+    "incomplete",
+    "uncertain",
+    "unknown",
+    "fallback",
+    "compacted",
+}
+
+
+def _unique_clean_strings(values: list[str]) -> list[str]:
+    output: list[str] = []
+    for value in values:
+        clean = str(value or "").strip()
+        if clean and clean not in output:
+            output.append(clean)
+    return output
+
+
+def _unit_quality_warnings(candidate: dict[str, Any]) -> list[str]:
+    completeness_values = {
+        str(value or "").strip().lower()
+        for value in candidate.get("source_unit_completeness", [])
+        if str(value or "").strip()
+    }
+    warnings: list[str] = []
+    if completeness_values & {"fallback", "compacted"}:
+        warnings.append("validator_repaired_source_unit")
+    if completeness_values & UNCERTAIN_COMPLETENESS_VALUES:
+        warnings.append("uncertain_source_unit")
+    if candidate.get("source_unit_uncertainty_notes"):
+        warnings.append("source_unit_uncertainty_note")
+    return warnings
+
+
 def ground_candidates(
     candidates: list[L1Candidate],
     *,
@@ -36,6 +71,12 @@ def ground_candidates(
             }
         )
         unit_text = " ".join(unit.text for unit in source_units)
+        source_unit_completeness = _unique_clean_strings(
+            [unit.completeness for unit in source_units]
+        )
+        source_unit_uncertainty_notes = _unique_clean_strings(
+            [unit.uncertainty_note for unit in source_units if unit.uncertainty_note]
+        )
         quote = evidence_quote(transcript_lines, evidence_lines)
         evidence_text = f"{unit_text}\n{quote}".strip()
         support_score, alignment_signals = local_alignment_score(
@@ -46,6 +87,10 @@ def ground_candidates(
             "local evidence-content alignment from source idea unit spans"
             if evidence_lines
             else "missing source idea unit"
+        )
+        quality_note = (
+            f"; source_unit_completeness={source_unit_completeness or ['unknown']}; "
+            f"source_unit_uncertainty_notes={len(source_unit_uncertainty_notes)}"
         )
         grounded.append(
             GroundedCandidate(
@@ -62,7 +107,9 @@ def ground_candidates(
                 evidence_lines=evidence_lines,
                 evidence_quote=quote,
                 support_score=support_score,
-                grounding_note=f"{note}; signals={alignment_signals}",
+                grounding_note=f"{note}; signals={alignment_signals}{quality_note}",
+                source_unit_completeness=source_unit_completeness,
+                source_unit_uncertainty_notes=source_unit_uncertainty_notes,
             )
         )
     return grounded
@@ -105,6 +152,7 @@ def verify_l1_candidates(
                 reasons.append("evidence_out_of_bounds")
         if float(row.get("support_score", 0.0) or 0.0) < 0.18:
             reasons.append("weak_grounding")
+        row["unit_quality_warnings"] = _unit_quality_warnings(row)
 
         duplicate_of = ""
         for existing in seen:

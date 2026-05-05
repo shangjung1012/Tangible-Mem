@@ -17,6 +17,8 @@ from multi_agent_agents import (  # noqa: E402
     l1_type_agent,
 )
 from multi_agent_pipeline import (  # noqa: E402
+    MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+    build_metrics_summary,
     build_continuation_batches,
     idea_units_for_batch,
     refine_cross_window_boundaries,
@@ -29,6 +31,7 @@ from multi_agent_state import (  # noqa: E402
     GroundedCandidate,
     IdeaUnit,
     L1Candidate,
+    L1_MULTI_AGENT_TYPE_ORDER,
     SegmentProposal,
     TranscriptLine,
     WindowPlan,
@@ -169,6 +172,160 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertIn("per-student recall", grounded[0].evidence_quote)
         self.assertGreater(grounded[0].support_score, 0.0)
 
+    def test_grounding_preserves_idea_unit_quality_metadata(self) -> None:
+        lines = parse_transcript_lines(
+            "A: We may need more context before locking the retrieval design.\n"
+            "B: The current evidence is incomplete."
+        )
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=1,
+                line_end=2,
+                text="retrieval design may need more context before being locked",
+                completeness="partial",
+                uncertainty_note="segment boundary may omit earlier rationale",
+            )
+        ]
+        candidates = [
+            L1Candidate(
+                candidate_id="C-result-001",
+                type="result",
+                source_unit_ids=["U-1"],
+                content="retrieval design may need more context before being locked",
+                importance=0.7,
+                confidence=0.8,
+                rationale="The unit explicitly marks uncertainty.",
+                related_topics=["retrieval"],
+            )
+        ]
+
+        grounded = ground_candidates(candidates, idea_units=units, transcript_lines=lines)
+        result = verify_l1_candidates([grounded[0].__dict__], max_line=2)
+
+        self.assertEqual(grounded[0].source_unit_completeness, ["partial"])
+        self.assertEqual(
+            grounded[0].source_unit_uncertainty_notes,
+            ["segment boundary may omit earlier rationale"],
+        )
+        self.assertEqual(len(result.verified_candidates), 1)
+        self.assertIn(
+            "uncertain_source_unit",
+            result.verified_candidates[0]["unit_quality_warnings"],
+        )
+        self.assertIn(
+            "source_unit_uncertainty_note",
+            result.verified_candidates[0]["unit_quality_warnings"],
+        )
+
+    def test_metrics_summary_reports_run_level_quality_signals(self) -> None:
+        plan = WindowPlan(
+            start_line=1,
+            end_line=3,
+            lookback_lines=0,
+            lookahead_lines=0,
+            reason="test",
+        )
+        segment = SegmentProposal(
+            segment_id="S-0001-01",
+            line_start=1,
+            line_end=3,
+            topic_label="test topic",
+            needs_more_context=True,
+        )
+        unit = IdeaUnit(
+            unit_id="U-1",
+            segment_id="S-0001-01",
+            line_start=1,
+            line_end=3,
+            text="uncertain but useful unit",
+            completeness="fallback",
+            uncertainty_note="validator fallback",
+        )
+        raw_candidate = L1Candidate(
+            candidate_id="C-result-001",
+            type="result",
+            source_unit_ids=["U-1"],
+            content="uncertain but useful unit",
+            importance=0.6,
+            confidence=0.7,
+            rationale="",
+        )
+
+        metrics = build_metrics_summary(
+            line_count=3,
+            window_plans=[plan],
+            initial_segments=[segment],
+            final_segments=[segment],
+            coverage_reports=[
+                {
+                    "coverage_rate": 1.0,
+                    "repair_segment_ids": ["S-0001-R01"],
+                }
+            ],
+            coarsening_reports=[{"merged_groups": [{"output_segment_id": "S-0001-C01"}]}],
+            boundary_refinement_reports=[{"action": "refine"}],
+            idea_units=[unit],
+            idea_unit_quality_reports=[
+                {
+                    "coverage_rate": 1.0,
+                    "issues": [{"issue": "too_fat_line_span"}],
+                    "repairs": [{"action": "replace_with_line_chunks"}],
+                }
+            ],
+            extraction_batches=[{"batch_id": "B-001", "segment_ids": ["S-0001-01"]}],
+            continuation_decisions=[{"action": "merge"}],
+            raw_candidates=[raw_candidate],
+            batch_fallback_reports=[{"batch_id": "B-001"}],
+            grounded_candidates=[{"support_score": 0.64}],
+            conflict_decisions=[{"action": "keep"}],
+            verified_candidates=[
+                {
+                    "type": "result",
+                    "unit_quality_warnings": ["validator_repaired_source_unit"],
+                }
+            ],
+            rejected_candidates=[
+                {"verification_reasons": ["weak_grounding", "duplicate_of:C-1"]}
+            ],
+            memory_objects=[
+                {
+                    "type": "result",
+                    "importance": 0.58,
+                }
+            ],
+            viewpoint_recurrence=[{"viewpoint_key": "x"}],
+            llm_call_records=[
+                {
+                    "stage": "segmentation_1_3",
+                    "success": True,
+                    "latency_sec": 1.2,
+                    "prompt_chars": 400,
+                    "response_chars": 80,
+                },
+                {
+                    "stage": "l1_argument_agent_B-001",
+                    "success": True,
+                    "latency_sec": 2.0,
+                    "prompt_chars": 600,
+                    "response_chars": 120,
+                },
+            ],
+        )
+
+        self.assertEqual(metrics["segments"]["boundary_refinement_actions"]["refine"], 1)
+        self.assertEqual(metrics["idea_units"]["completeness_counts"]["fallback"], 1)
+        self.assertEqual(metrics["extraction_batches"]["continuation_actions"]["merge"], 1)
+        self.assertEqual(metrics["extraction_batches"]["idea_units_per_batch"]["max"], 1.0)
+        self.assertEqual(metrics["extraction_batches"]["oversized_batch_count"], 0)
+        self.assertEqual(metrics["candidates"]["raw_by_type"]["result"], 1)
+        self.assertEqual(metrics["candidates"]["rejection_reasons"]["duplicate_of"], 1)
+        self.assertEqual(metrics["final_l1"]["viewpoint_recurrence_count"], 1)
+        self.assertEqual(metrics["llm"]["call_count"], 2)
+        self.assertEqual(metrics["llm"]["calls_by_stage"]["segmentation_agent"], 1)
+        self.assertEqual(metrics["llm"]["calls_by_stage"]["l1_argument_agent"], 1)
+
     def test_grounding_rejects_mismatch_even_with_high_candidate_confidence(self) -> None:
         lines = parse_transcript_lines("A: Lunch will be delivered at noon.")
         units = [
@@ -228,6 +385,31 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(candidates[0].source_unit_ids, ["U-S-1-01"])
         self.assertIn("U-S-1-01", runner.calls[0][1])
         self.assertNotIn("U-S-2-01", runner.calls[0][1])
+
+    def test_type_agent_supports_all_formal_l1_types(self) -> None:
+        units = [
+            IdeaUnit(
+                unit_id="U-S-1-01",
+                segment_id="S-1",
+                line_start=1,
+                line_end=2,
+                text="這段保留決策理由，也留下尚未解決的研究問題。",
+                completeness="complete",
+            )
+        ]
+
+        for obj_type in L1_MULTI_AGENT_TYPE_ORDER:
+            runner = FakeRunner()
+            candidates = l1_type_agent(
+                runner,
+                obj_type=obj_type,
+                idea_units=units,
+                existing_topics=[],
+                extraction_scope="B-001",
+                segment_ids=["S-1"],
+            )
+            self.assertEqual(candidates[0].type, obj_type)
+            self.assertIn(f"l1_{obj_type}_agent", runner.calls[0][0])
 
     def test_cross_window_continuation_merge_builds_one_bounded_batch(self) -> None:
         segments = [
@@ -297,6 +479,39 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(batches[0]["segment_ids"], ["S-0001-03", "S-0081-01"])
         self.assertEqual(decisions[0]["action"], "merge")
         self.assertIn("cross_window_topic_continuity", decisions[0]["reason"])
+
+    def test_continuation_merge_splits_oversized_batches_by_idea_unit_cap(self) -> None:
+        segments = [
+            SegmentProposal(
+                segment_id=f"S-0001-{index:02d}",
+                line_start=(index - 1) * 10 + 1,
+                line_end=index * 10,
+                topic_label="dynamic memory update",
+                needs_more_context=True,
+            )
+            for index in range(1, 5)
+        ]
+        units = [
+            IdeaUnit(
+                unit_id=f"U-{segment.segment_id}-{unit_index:02d}",
+                segment_id=segment.segment_id,
+                line_start=segment.line_start,
+                line_end=segment.line_end,
+                text=f"{segment.segment_id} unit {unit_index}",
+                completeness="complete",
+            )
+            for segment in segments
+            for unit_index in range(1, 9)
+        ]
+
+        batches, decisions = build_continuation_batches(segments, idea_units=units)
+        batch_unit_counts = [len(idea_units_for_batch(units, batch)) for batch in batches]
+
+        self.assertGreater(len(batches), 1)
+        self.assertTrue(
+            all(count <= MAX_IDEA_UNITS_PER_EXTRACTION_BATCH for count in batch_unit_counts)
+        )
+        self.assertTrue(any(decision["action"] == "split_large_batch" for decision in decisions))
 
     def test_cross_window_boundary_text_merges_without_matching_topic_labels(self) -> None:
         transcript_lines = parse_transcript_lines(
@@ -726,6 +941,41 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(len(memory_objects), 1)
         self.assertLessEqual(memory_objects[0]["importance"], 0.68)
 
+    def test_reducer_conservatively_penalizes_uncertain_source_units(self) -> None:
+        base = {
+            "candidate_id": "C-1",
+            "type": "method_change",
+            "source_unit_ids": ["U-1"],
+            "content": "The team decided to adopt tool calling as the long-term memory extraction pipeline.",
+            "importance": 0.95,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling", "long-term memory"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [1, 2, 3],
+            "evidence_quote": "The team decided to adopt tool calling as the pipeline.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        _, clean_objects = reduce_l1_patch([base], meeting_id="T")
+        uncertain = {
+            **base,
+            "source_unit_completeness": ["partial"],
+            "source_unit_uncertainty_notes": ["segment boundary may omit context"],
+            "unit_quality_warnings": [
+                "uncertain_source_unit",
+                "source_unit_uncertainty_note",
+            ],
+        }
+        _, uncertain_objects = reduce_l1_patch([uncertain], meeting_id="T")
+
+        self.assertLess(
+            uncertain_objects[0]["importance"],
+            clean_objects[0]["importance"],
+        )
+        self.assertLessEqual(uncertain_objects[0]["importance"], 0.82)
+
     def test_reducer_reclassifies_evaluation_suggestion_as_todo(self) -> None:
         candidates = [
             {
@@ -750,6 +1000,64 @@ class MultiAgentPipelineTests(unittest.TestCase):
 
         self.assertEqual(memory_objects[0]["type"], "todo")
         self.assertLessEqual(memory_objects[0]["importance"], 0.88)
+
+    def test_reducer_reclassifies_unresolved_decision_as_todo(self) -> None:
+        candidates = [
+            {
+                "candidate_id": "C-1",
+                "type": "decision",
+                "source_unit_ids": ["U-1"],
+                "content": "An unresolved task is to define how the Importance score should be calculated.",
+                "importance": 0.9,
+                "confidence": 0.95,
+                "rationale": "",
+                "related_topics": ["importance"],
+                "extraction_scope": "B-001",
+                "segment_ids": ["S-1"],
+                "evidence_lines": [1, 2],
+                "evidence_quote": "We still need to define importance.",
+                "support_score": 0.9,
+                "grounding_note": "grounded",
+            }
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(memory_objects[0]["type"], "todo")
+
+    def test_reducer_merges_todo_open_question_duplicate(self) -> None:
+        base = {
+            "source_unit_ids": ["U-1"],
+            "importance": 0.85,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [1, 2, 3],
+            "evidence_quote": "We need to define when tool calling triggers.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "todo",
+                "content": "需要定義在什麼節點狀態下會觸發 tool calling。",
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "open_question",
+                "content": "在什麼節點狀態下會觸發 tool calling？",
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "todo")
 
     def test_reducer_keeps_structure_description_as_result_not_todo(self) -> None:
         candidates = [
@@ -1205,6 +1513,85 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertIn("Read", memory_objects[0]["content"])
         self.assertIn("Write", memory_objects[0]["content"])
 
+    def test_reducer_uses_best_duplicate_target_not_first_match(self) -> None:
+        base = {
+            "source_unit_ids": ["U-1"],
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling", "memory database"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_quote": "Gemini uses Read and Write functions for memory update.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "type": "argument",
+                "content": "Tool calling is useful because Gemini can dynamically decide transcript line chunks.",
+                "evidence_lines": [1, 2, 3, 4, 5, 6, 7, 8],
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "type": "method_change",
+                "content": "記憶體更新流程是透過提供 Gemini 兩個主要函式 `Read` 和 `Write` 來實現。",
+                "evidence_lines": [11, 12, 13],
+            },
+            {
+                **base,
+                "candidate_id": "C-3",
+                "type": "result",
+                "content": "記憶體更新流程透過提供 `Read` 和 `Write` 兩個主要函式給 Gemini 來實現。",
+                "evidence_lines": [11, 12, 13],
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        contents = [obj["content"] for obj in memory_objects]
+        self.assertEqual(len(memory_objects), 2)
+        self.assertEqual(
+            sum("Read" in content and "Write" in content for content in contents),
+            1,
+        )
+
+    def test_reducer_merges_same_type_read_write_paraphrase(self) -> None:
+        base = {
+            "type": "method_change",
+            "source_unit_ids": ["U-1"],
+            "importance": 0.9,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling", "memory database"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [1, 2, 3],
+            "evidence_quote": "Gemini uses Read and Write functions to update memory.",
+            "support_score": 0.9,
+            "grounding_note": "grounded",
+        }
+        candidates = [
+            {
+                **base,
+                "candidate_id": "C-1",
+                "content": "記憶體更新流程透過提供 `Read` 和 `Write` 函式給 Gemini 來實現。",
+            },
+            {
+                **base,
+                "candidate_id": "C-2",
+                "content": "記憶體更新流程是透過 Gemini 的 `Read` 與 `Write` 兩個主要函式來實現。",
+            },
+        ]
+
+        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "method_change")
+
     def test_reducer_merges_flat_memory_tree_goal(self) -> None:
         base = {
             "importance": 0.9,
@@ -1320,6 +1707,8 @@ class MultiAgentPipelineTests(unittest.TestCase):
             "evidence_quote": "We switched evaluation to per-student recall.",
             "support_score": 0.8,
             "grounding_note": "grounded",
+            "source_unit_completeness": ["partial"],
+            "source_unit_uncertainty_notes": ["needs previous context"],
         }
         candidates = [
             GroundedCandidate(
@@ -1342,6 +1731,8 @@ class MultiAgentPipelineTests(unittest.TestCase):
 
         self.assertEqual(len(resolved), 1)
         self.assertEqual(resolved[0]["type"], "method_change")
+        self.assertEqual(resolved[0]["source_unit_completeness"], ["partial"])
+        self.assertEqual(resolved[0]["source_unit_uncertainty_notes"], ["needs previous context"])
         self.assertTrue(any(decision.action == "merge" for decision in decisions))
 
     def test_verifier_rejects_out_of_bounds_evidence(self) -> None:
