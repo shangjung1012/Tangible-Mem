@@ -68,6 +68,30 @@ def clear_staging_for_run(db_path: Path, run_id: str) -> None:
         conn.commit()
 
 
+def update_staged_candidate_statuses(
+    db_path: Path,
+    *,
+    verified_candidate_ids: set[str],
+    rejected_candidate_ids: set[str],
+) -> None:
+    ensure_staging_schema(db_path)
+    updates: list[tuple[str, str]] = []
+    updates.extend(("verified", candidate_id) for candidate_id in verified_candidate_ids)
+    updates.extend(("rejected", candidate_id) for candidate_id in rejected_candidate_ids)
+    if not updates:
+        return
+    with _connect(db_path) as conn:
+        conn.executemany(
+            """
+            UPDATE memory_candidate_staging
+            SET status = ?
+            WHERE candidate_id = ?
+            """,
+            updates,
+        )
+        conn.commit()
+
+
 def write_staged_candidate(
     db_path: Path,
     *,

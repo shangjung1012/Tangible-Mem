@@ -169,6 +169,21 @@ class ShortTermNormalizerTests(unittest.TestCase):
         self.assertEqual(meeting["key_points"], ["keep point"])
         self.assertEqual(meeting["open_questions"], ["keep question"])
 
+    def test_missing_meeting_window_patch_does_not_create_pending_summary(self) -> None:
+        updated = normalize_memory(
+            updated_memory={},
+            previous_memory={
+                "memory_version": 1,
+                "meeting_history_ids": ["Bmr020"],
+                "meeting_window": [],
+            },
+            meeting_id="Bmr021",
+            source_file="Bmr021.txt",
+        )
+
+        self.assertEqual(updated["meeting_history_ids"], ["Bmr020", "Bmr021"])
+        self.assertEqual(updated["meeting_window"], [])
+
     def test_action_history_collapses_repeated_updates_in_same_meeting(self) -> None:
         previous = {
             "memory_version": 1,

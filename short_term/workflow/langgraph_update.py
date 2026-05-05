@@ -22,7 +22,11 @@ try:
     from ..core.reducer import reduce_candidates
     from ..runtime.research_logger import ResearchLogger, elapsed, timed
     from ..storage.sqlite_store import save_memory_to_sqlite
-    from ..storage.staging_store import clear_staging_for_run, load_staged_candidates
+    from ..storage.staging_store import (
+        clear_staging_for_run,
+        load_staged_candidates,
+        update_staged_candidate_statuses,
+    )
     from ..storage.transcript_store import load_transcript_lines
     from ..core.verifier import verify_candidates
 except ImportError:  # pragma: no cover - script execution fallback
@@ -40,7 +44,11 @@ except ImportError:  # pragma: no cover - script execution fallback
     from short_term.core.reducer import reduce_candidates
     from short_term.runtime.research_logger import ResearchLogger, elapsed, timed
     from short_term.storage.sqlite_store import save_memory_to_sqlite
-    from short_term.storage.staging_store import clear_staging_for_run, load_staged_candidates
+    from short_term.storage.staging_store import (
+        clear_staging_for_run,
+        load_staged_candidates,
+        update_staged_candidate_statuses,
+    )
     from short_term.storage.transcript_store import load_transcript_lines
     from short_term.core.verifier import verify_candidates
 
@@ -195,6 +203,7 @@ def _build_graph(
                 logger=logger,
                 input_summary=_input_summary(state),
             )
+            _raise_on_agent_errors(result, node="plan_next_window")
             parsed = result.parsed
             processed = int(state.get("processed_until_line", 0) or 0)
             total = int(state.get("transcript_line_count", 0) or 0)
@@ -260,6 +269,7 @@ def _build_graph(
                 logger=logger,
                 input_summary=_input_summary(state),
             )
+            _raise_on_agent_errors(result, node="segment_window")
             units = result.parsed.get("units", [])
             if not isinstance(units, list):
                 units = []
@@ -455,6 +465,11 @@ def _build_graph(
                     int(line) for line in state.get("read_line_numbers", [])
                 },
             )
+            update_staged_candidate_statuses(
+                db_path,
+                verified_candidate_ids=_candidate_ids(verified),
+                rejected_candidate_ids=_candidate_ids(rejected),
+            )
             logger.candidates(
                 raw=list(state.get("raw_candidates", [])),
                 verified=verified,
@@ -473,6 +488,7 @@ def _build_graph(
     def reduce_patch(state: ShortTermGraphState) -> dict[str, Any]:
         def run() -> dict[str, Any]:
             patch = reduce_candidates(list(state.get("verified_candidates", [])))
+            _require_current_meeting_summary(patch, meeting_id=str(state["meeting_id"]))
             return {"final_patch": patch}
 
         return _node(logger, "reduce_patch", state, run, progress_callback=progress_callback)
@@ -631,31 +647,61 @@ def _extract_candidates(
                 policy=_agent_tool_policy(str(agent.name), section),
             ),
         )
+        if result.errors:
+            last_errors = [str(error) for error in result.errors if str(error).strip()]
+            continue
         output = _collect_agent_output(
             state=state,
             agent=agent,
             section=section,
             parsed=result.parsed,
         )
-        if output or not result.errors:
-            return output
-        last_errors = [str(error) for error in result.errors if str(error).strip()]
+        return output
 
-    # A single extraction branch should not abort the whole meeting update.
-    # Other section agents may still have useful candidates for this window.
-    if last_errors:
-        logger.graph_event(
-            node=f"extract_{section}",
-            event="recover",
-            status="warning",
-            summary={
-                "agent": str(agent.name),
-                "section": section,
-                "attempts": EXTRACTION_RESULT_RETRIES + 1,
-                "error": "; ".join(last_errors),
-            },
+    raise RuntimeError(
+        "LLM agent failed in "
+        f"extract_{section} after {EXTRACTION_RESULT_RETRIES + 1} attempts: "
+        f"{'; '.join(last_errors) or 'unknown error'}"
+    )
+
+
+def _raise_on_agent_errors(result: Any, *, node: str) -> None:
+    errors = [
+        str(error).strip()
+        for error in getattr(result, "errors", []) or []
+        if str(error).strip()
+    ]
+    if errors:
+        agent_name = str(getattr(result, "agent_name", "agent"))
+        raise RuntimeError(
+            f"LLM agent failed in {node} ({agent_name}): {'; '.join(errors)}"
         )
-    return []
+
+
+def _require_current_meeting_summary(patch: dict[str, Any], *, meeting_id: str) -> None:
+    rows = patch.get("meeting_window") if isinstance(patch, dict) else None
+    if not isinstance(rows, list):
+        raise RuntimeError(
+            f"Missing meeting_window summary for meeting_id={meeting_id}; refusing to persist."
+        )
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("meeting_id", "")).strip() != meeting_id:
+            continue
+        if str(row.get("summary", "")).strip():
+            return
+    raise RuntimeError(
+        f"Missing meeting_window summary for meeting_id={meeting_id}; refusing to persist."
+    )
+
+
+def _candidate_ids(candidates: list[dict[str, Any]]) -> set[str]:
+    return {
+        str(candidate.get("candidate_id", "")).strip()
+        for candidate in candidates
+        if isinstance(candidate, dict) and str(candidate.get("candidate_id", "")).strip()
+    }
 
 
 def _collect_agent_output(

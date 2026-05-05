@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -34,6 +35,7 @@ from short_term.storage.memory_tools import (  # noqa: E402
 )
 from short_term.storage.sqlite_store import save_memory_to_sqlite  # noqa: E402
 from short_term.storage.staging_store import load_staged_candidates  # noqa: E402
+from short_term.storage.staging_store import update_staged_candidate_statuses  # noqa: E402
 from short_term.storage.staging_store import write_staged_candidate  # noqa: E402
 from short_term.storage.transcript_store import import_transcript_to_sqlite  # noqa: E402
 from short_term.core.verifier import verify_candidates  # noqa: E402
@@ -422,7 +424,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(staged[0]["payload"]["evidence"], "L3-L4, L6")
             self.assertEqual(staged[0]["evidence_quote"], "We should prepare the data.")
 
-    def test_extract_candidates_recovers_when_agent_errors_without_usable_output(self) -> None:
+    def test_extract_candidates_fails_when_agent_errors_without_usable_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
             logger = ResearchLogger(tmp / "logs", "Bmr001", run_id="run_Bmr001")
@@ -471,28 +473,15 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                 errors=["LLM returned an empty response."],
             )
 
-            candidates = _extract_candidates(
-                state,  # type: ignore[arg-type]
-                logger,
-                agent,
-                "action_items",
-                "action_items",
-                "Extract action items.",
-            )
-
-            self.assertEqual(candidates, [])
-            events = [
-                json.loads(line)
-                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
-            ]
-            self.assertTrue(
-                any(
-                    event.get("event") == "recover"
-                    and event.get("status") == "warning"
-                    and event.get("node") == "extract_action_items"
-                    for event in events
+            with self.assertRaisesRegex(RuntimeError, "LLM agent failed in extract_action_items"):
+                _extract_candidates(
+                    state,  # type: ignore[arg-type]
+                    logger,
+                    agent,
+                    "action_items",
+                    "action_items",
+                    "Extract action items.",
                 )
-            )
 
     def test_extract_candidates_retries_after_agent_parse_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -892,6 +881,173 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(payload["run_id"], "run_Bmr002")
             self.assertEqual(payload["node"], "n")
 
+    def test_langgraph_fails_fast_on_planner_llm_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            transcript_db = tmp / "transcripts.db"
+            memory_db = tmp / "memory.db"
+            import_transcript_to_sqlite(
+                db_path=transcript_db,
+                meeting_id="Bmr005",
+                source_file="Bmr005.txt",
+                transcript="[S]: We should prepare the experiment data next.",
+            )
+            logger = ResearchLogger(tmp / "logs", "Bmr005", run_id="run_Bmr005")
+            agents = _FakeAgents()
+            agents.context_planner = _FakeAgent(
+                "context_planner",
+                {},
+                errors=["403 PERMISSION_DENIED"],
+            )
+            graph = _build_graph(
+                agents=agents,
+                logger=logger,
+                db_path=memory_db,
+                transcript_db_path=transcript_db,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "403 PERMISSION_DENIED"):
+                graph.compile().invoke(
+                    {
+                        "run_id": "run_Bmr005",
+                        "meeting_id": "Bmr005",
+                        "source_file": "Bmr005.txt",
+                        "model_name": "gemini-2.5-pro",
+                        "db_path": str(memory_db),
+                        "transcript_db_path": str(transcript_db),
+                        "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                        "research_log_dir": str(tmp / "logs"),
+                        "log_level": "debug",
+                        "keep_full_prompts": True,
+                        "dry_run": False,
+                        "chunk_size": 80,
+                        "max_lookback_lines": 20,
+                        "max_lookahead_lines": 40,
+                        "max_context_rounds": 3,
+                        "transcript_line_count": 1,
+                        "transcript_overview": {"line_count": 1},
+                        "current_memory": {
+                            "memory_version": 0,
+                            "meeting_history_ids": [],
+                            "meeting_window": [],
+                            "action_items": [],
+                            "method_changes": [],
+                            "experiment_todos": [],
+                            "next_meeting_focus": [],
+                        },
+                        "memory_source": "default",
+                        "processed_until_line": 0,
+                        "planner_history": [],
+                        "context_rounds": 0,
+                        "unresolved_context": [],
+                        "raw_candidates": [],
+                        "verified_candidates": [],
+                        "rejected_candidates": [],
+                        "final_patch": {},
+                        "final_memory": {},
+                        "report": {},
+                        "persisted": False,
+                        "read_line_numbers": [],
+                    }
+                )
+
+            events = [
+                json.loads(line)
+                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
+            ]
+            self.assertTrue(
+                any(
+                    event["node"] == "plan_next_window"
+                    and event["status"] == "error"
+                    for event in events
+                )
+            )
+            with sqlite3.connect(str(memory_db)) as conn:
+                canonical_rows = conn.execute(
+                    """
+                    SELECT name
+                    FROM sqlite_master
+                    WHERE type = 'table'
+                    AND name IN ('memory_meta', 'meeting_window')
+                    """
+                ).fetchall()
+            self.assertEqual(canonical_rows, [])
+
+    def test_langgraph_refuses_to_persist_without_meeting_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            transcript_db = tmp / "transcripts.db"
+            memory_db = tmp / "memory.db"
+            import_transcript_to_sqlite(
+                db_path=transcript_db,
+                meeting_id="Bmr006",
+                source_file="Bmr006.txt",
+                transcript="[S]: We should prepare the experiment data next.",
+            )
+            logger = ResearchLogger(tmp / "logs", "Bmr006", run_id="run_Bmr006")
+            graph = _build_graph(
+                agents=_NoMeetingSummaryFakeAgents(),
+                logger=logger,
+                db_path=memory_db,
+                transcript_db_path=transcript_db,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "Missing meeting_window summary"):
+                graph.compile().invoke(
+                    {
+                        "run_id": "run_Bmr006",
+                        "meeting_id": "Bmr006",
+                        "source_file": "Bmr006.txt",
+                        "model_name": "gemini-2.5-pro",
+                        "db_path": str(memory_db),
+                        "transcript_db_path": str(transcript_db),
+                        "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                        "research_log_dir": str(tmp / "logs"),
+                        "log_level": "debug",
+                        "keep_full_prompts": True,
+                        "dry_run": False,
+                        "chunk_size": 80,
+                        "max_lookback_lines": 20,
+                        "max_lookahead_lines": 40,
+                        "max_context_rounds": 3,
+                        "transcript_line_count": 1,
+                        "transcript_overview": {"line_count": 1},
+                        "current_memory": {
+                            "memory_version": 0,
+                            "meeting_history_ids": [],
+                            "meeting_window": [],
+                            "action_items": [],
+                            "method_changes": [],
+                            "experiment_todos": [],
+                            "next_meeting_focus": [],
+                        },
+                        "memory_source": "default",
+                        "processed_until_line": 0,
+                        "planner_history": [],
+                        "context_rounds": 0,
+                        "unresolved_context": [],
+                        "raw_candidates": [],
+                        "verified_candidates": [],
+                        "rejected_candidates": [],
+                        "final_patch": {},
+                        "final_memory": {},
+                        "report": {},
+                        "persisted": False,
+                        "read_line_numbers": [],
+                    }
+                )
+
+            with sqlite3.connect(str(memory_db)) as conn:
+                canonical_rows = conn.execute(
+                    """
+                    SELECT name
+                    FROM sqlite_master
+                    WHERE type = 'table'
+                    AND name IN ('memory_meta', 'meeting_window')
+                    """
+                ).fetchall()
+            self.assertEqual(canonical_rows, [])
+
     def test_langgraph_runner_shape_with_fake_agents(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
@@ -1111,6 +1267,51 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(len(staged), 1)
             self.assertEqual(staged[0]["target_id"], "A001")
 
+    def test_staging_statuses_update_after_verification(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "memory.db"
+            good = write_staged_candidate(
+                db_path,
+                run_id="run",
+                meeting_id="Bmr001",
+                agent_name="action_item_agent",
+                target_section="action_items",
+                operation="create",
+                candidate_payload={
+                    "title": "Prepare data",
+                    "detail": "Prepare data.",
+                    "proposer": "unknown",
+                    "owner": "unknown",
+                    "status": "open",
+                    "priority": "medium",
+                    "dependencies": [],
+                },
+                evidence_lines=[1],
+                evidence_quote="Prepare data.",
+                confidence=0.9,
+            )
+            bad = write_staged_candidate(
+                db_path,
+                run_id="run",
+                meeting_id="Bmr001",
+                agent_name="action_item_agent",
+                target_section="action_items",
+                operation="no_op",
+                candidate_payload={},
+                confidence=0.0,
+            )
+
+            update_staged_candidate_statuses(
+                db_path,
+                verified_candidate_ids={str(good["candidate_id"])},
+                rejected_candidate_ids={str(bad["candidate_id"])},
+            )
+            rows = load_staged_candidates(db_path, run_id="run")
+            statuses = {row["candidate_id"]: row["staging_status"] for row in rows}
+
+            self.assertEqual(statuses[good["candidate_id"]], "verified")
+            self.assertEqual(statuses[bad["candidate_id"]], "rejected")
+
 
 class _FakeAgent:
     def __init__(
@@ -1174,7 +1375,22 @@ class _FakeAgents:
                 ]
             },
         )
-        self.meeting = _FakeAgent("meeting_summary_agent", {"meeting_window": []})
+        self.meeting = _FakeAgent(
+            "meeting_summary_agent",
+            {
+                "meeting_window": [
+                    {
+                        "meeting_id": "Bmr003",
+                        "source_file": "Bmr003.txt",
+                        "summary": "Prepared experiment data.",
+                        "key_points": ["Prepare experiment data"],
+                        "open_questions": [],
+                        "evidence": "L1",
+                        "confidence": 0.9,
+                    }
+                ]
+            },
+        )
         self.action = _FakeAgent("action_item_agent", {"action_items": []})
         self.method = _FakeAgent("method_change_agent", {"method_changes": []})
         self.experiment = _FakeAgent("experiment_todo_agent", {"experiment_todos": []})
@@ -1222,7 +1438,29 @@ class _RepeatedContextFakeAgents(_FakeAgents):
                 ]
             },
         )
+        self.meeting = _FakeAgent(
+            "meeting_summary_agent",
+            {
+                "meeting_window": [
+                    {
+                        "meeting_id": "Bmr004",
+                        "source_file": "Bmr004.txt",
+                        "summary": "Repeated context meeting summary.",
+                        "key_points": ["Repeated context"],
+                        "open_questions": [],
+                        "evidence": "L1",
+                        "confidence": 0.9,
+                    }
+                ]
+            },
+        )
         self.focus = _FakeAgent("next_focus_agent", {"next_meeting_focus": []})
+
+
+class _NoMeetingSummaryFakeAgents(_FakeAgents):
+    def __init__(self) -> None:
+        super().__init__()
+        self.meeting = _FakeAgent("meeting_summary_agent", {"meeting_window": []})
 
 
 if __name__ == "__main__":

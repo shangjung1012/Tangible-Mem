@@ -105,15 +105,6 @@ def normalize_meeting_window(
         }
         item_map[mid] = item
 
-    if meeting_id not in item_map:
-        item_map[meeting_id] = {
-            "meeting_id": meeting_id,
-            "source_file": source_file,
-            "summary": "Summary pending from transcript extraction.",
-            "key_points": [],
-            "open_questions": [],
-        }
-
     normalized_recent_ids = dedupe_keep_last(recent_meeting_ids)
     return [item_map[mid] for mid in normalized_recent_ids if mid in item_map]
 
@@ -460,14 +451,6 @@ def merge_meeting_window_patch(
             meeting_id,
             source_file,
             [mid],
-        )[0]
-
-    if meeting_id not in row_map:
-        row_map[meeting_id] = normalize_meeting_window(
-            [],
-            meeting_id,
-            source_file,
-            [meeting_id],
         )[0]
 
     normalized_recent_ids = dedupe_keep_last(recent_meeting_ids)
