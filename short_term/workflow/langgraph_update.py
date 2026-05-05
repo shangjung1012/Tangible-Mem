@@ -128,6 +128,8 @@ def run_short_term_langgraph_update(
         "planner_history": [],
         "context_rounds": 0,
         "unresolved_context": [],
+        "context_units_buffer": [],
+        "context_items_buffer": [],
         "meeting_window_candidates_buffer": [],
         "action_items_candidates_buffer": [],
         "method_changes_candidates_buffer": [],
@@ -321,8 +323,31 @@ def _build_graph(
                     }
                 )
                 needs_more = False
+            merged_units = _merge_idea_units(
+                list(state.get("context_units_buffer", [])),
+                clean_units,
+            )
+            merged_items = _merge_transcript_items(
+                list(state.get("context_items_buffer", [])),
+                window.get("items", []) if isinstance(window, dict) else [],
+            )
+            if needs_more:
+                extraction_window = window
+                context_units_buffer = merged_units
+                context_items_buffer = merged_items
+            else:
+                extraction_window = _merge_context_window(
+                    window,
+                    merged_items,
+                    processed_until=int(state.get("processed_until_line", 0) or 0),
+                )
+                context_units_buffer = []
+                context_items_buffer = []
             return {
-                "current_units": clean_units,
+                "current_window": extraction_window,
+                "current_units": merged_units,
+                "context_units_buffer": context_units_buffer,
+                "context_items_buffer": context_items_buffer,
                 "needs_more_context": needs_more,
                 "context_rounds": context_rounds,
                 "unresolved_context": unresolved_context,
@@ -445,6 +470,8 @@ def _build_graph(
             return {
                 "raw_candidates": raw,
                 "processed_until_line": processed_until,
+                "context_units_buffer": [],
+                "context_items_buffer": [],
                 **buffer_updates,
             }
 
@@ -547,15 +574,13 @@ def _build_graph(
             "extract": "start_extraction",
         },
     )
+    # Keep extraction serial. Five concurrent Gemini tool agents can exhaust
+    # Vertex quota and make runs nondeterministically depend on transient 429s.
     graph.add_edge("start_extraction", "extract_meeting_summary")
-    graph.add_edge("start_extraction", "extract_action_items")
-    graph.add_edge("start_extraction", "extract_method_changes")
-    graph.add_edge("start_extraction", "extract_experiment_todos")
-    graph.add_edge("start_extraction", "extract_next_focus")
-    graph.add_edge("extract_meeting_summary", "collect_window_candidates")
-    graph.add_edge("extract_action_items", "collect_window_candidates")
-    graph.add_edge("extract_method_changes", "collect_window_candidates")
-    graph.add_edge("extract_experiment_todos", "collect_window_candidates")
+    graph.add_edge("extract_meeting_summary", "extract_action_items")
+    graph.add_edge("extract_action_items", "extract_method_changes")
+    graph.add_edge("extract_method_changes", "extract_experiment_todos")
+    graph.add_edge("extract_experiment_todos", "extract_next_focus")
     graph.add_edge("extract_next_focus", "collect_window_candidates")
     graph.add_conditional_edges(
         "collect_window_candidates",
@@ -1142,6 +1167,79 @@ def _line_range(window: Any) -> str:
     if not start or not end:
         return ""
     return f"L{start}-L{end}"
+
+
+def _merge_idea_units(
+    existing: list[dict[str, Any]],
+    current: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    seen: set[tuple[int, int, str]] = set()
+    for unit in existing + current:
+        if not isinstance(unit, dict):
+            continue
+        line_start = _safe_int(unit.get("line_start"), 0)
+        line_end = _safe_int(unit.get("line_end"), line_start)
+        topic = str(unit.get("topic", "")).strip()
+        signature = (line_start, line_end, topic)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        merged.append(unit)
+    return sorted(
+        merged,
+        key=lambda row: (
+            _safe_int(row.get("line_start"), 0),
+            _safe_int(row.get("line_end"), 0),
+            str(row.get("unit_id", "")),
+        ),
+    )
+
+
+def _merge_transcript_items(
+    existing: list[dict[str, Any]],
+    current: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_line: dict[int, dict[str, Any]] = {}
+    for item in existing + current:
+        if not isinstance(item, dict):
+            continue
+        line_number = _safe_int(item.get("line_number"), 0)
+        if line_number <= 0:
+            continue
+        by_line.setdefault(line_number, item)
+    return [by_line[line] for line in sorted(by_line)]
+
+
+def _merge_context_window(
+    current_window: Any,
+    merged_items: list[dict[str, Any]],
+    *,
+    processed_until: int,
+) -> dict[str, Any]:
+    if not isinstance(current_window, dict):
+        current_window = {}
+    line_numbers = [
+        _safe_int(item.get("line_number"), 0)
+        for item in merged_items
+        if isinstance(item, dict)
+    ]
+    line_numbers = [line for line in line_numbers if line > 0]
+    context_start = min(line_numbers) if line_numbers else _safe_int(
+        current_window.get("context_start_line"), 1
+    )
+    context_end = max(line_numbers) if line_numbers else _safe_int(
+        current_window.get("context_end_line"), context_start
+    )
+    forward_end = _safe_int(current_window.get("forward_end_line"), context_end)
+    return {
+        **current_window,
+        "context_start_line": context_start,
+        "context_end_line": context_end,
+        "forward_start_line": max(1, processed_until + 1),
+        "forward_end_line": max(forward_end, processed_until),
+        "items": merged_items,
+    }
 
 
 def _window_line_set(window: Any) -> set[int]:

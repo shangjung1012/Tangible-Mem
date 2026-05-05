@@ -1228,6 +1228,80 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             ][0]
             self.assertEqual(read_window_end["line_range"], "L1-L1")
 
+    def test_langgraph_accumulates_context_windows_before_extraction(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            transcript_db = tmp / "transcripts.db"
+            memory_db = tmp / "memory.db"
+            import_transcript_to_sqlite(
+                db_path=transcript_db,
+                meeting_id="Bmr007",
+                source_file="Bmr007.txt",
+                transcript="\n".join(f"[S]: line {index}" for index in range(1, 121)),
+            )
+            logger = ResearchLogger(tmp / "logs", "Bmr007", run_id="run_Bmr007")
+            agents = _ExpandedContextFakeAgents()
+            graph = _build_graph(
+                agents=agents,
+                logger=logger,
+                db_path=memory_db,
+                transcript_db_path=transcript_db,
+            )
+
+            state = graph.compile().invoke(
+                {
+                    "run_id": "run_Bmr007",
+                    "meeting_id": "Bmr007",
+                    "source_file": "Bmr007.txt",
+                    "model_name": "gemini-2.5-pro",
+                    "db_path": str(memory_db),
+                    "transcript_db_path": str(transcript_db),
+                    "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                    "research_log_dir": str(tmp / "logs"),
+                    "log_level": "debug",
+                    "keep_full_prompts": True,
+                    "dry_run": True,
+                    "chunk_size": 80,
+                    "max_lookback_lines": 20,
+                    "max_lookahead_lines": 40,
+                    "max_context_rounds": 3,
+                    "transcript_line_count": 120,
+                    "transcript_overview": {"line_count": 120},
+                    "current_memory": {
+                        "memory_version": 0,
+                        "meeting_history_ids": [],
+                        "meeting_window": [],
+                        "action_items": [],
+                        "method_changes": [],
+                        "experiment_todos": [],
+                        "next_meeting_focus": [],
+                    },
+                    "memory_source": "default",
+                    "processed_until_line": 0,
+                    "planner_history": [],
+                    "context_rounds": 0,
+                    "context_units_buffer": [],
+                    "context_items_buffer": [],
+                    "raw_candidates": [],
+                    "verified_candidates": [],
+                    "rejected_candidates": [],
+                    "final_patch": {},
+                    "final_memory": {},
+                    "report": {},
+                    "persisted": False,
+                    "read_line_numbers": [],
+                }
+            )
+
+            meeting_prompt = str(agents.meeting.last_kwargs["prompt"])
+            self.assertIn('"line_start": 1', meeting_prompt)
+            self.assertIn('"line_start": 81', meeting_prompt)
+            self.assertIn("L1 [S]: line 1", meeting_prompt)
+            self.assertIn("L120 [S]: line 120", meeting_prompt)
+            self.assertEqual(state["processed_until_line"], 120)
+            self.assertEqual(state["context_units_buffer"], [])
+            self.assertEqual(state["context_items_buffer"], [])
+
     def test_langgraph_stops_context_retry_when_planner_repeats_same_range(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
@@ -1603,6 +1677,92 @@ class _RepeatedContextFakeAgents(_FakeAgents):
                         "key_points": ["Repeated context"],
                         "open_questions": [],
                         "evidence": "L1",
+                        "confidence": 0.9,
+                    }
+                ]
+            },
+        )
+        self.focus = _FakeAgent("next_focus_agent", {"next_meeting_focus": []})
+
+
+class _ExpandedContextFakeAgents(_FakeAgents):
+    def __init__(self) -> None:
+        super().__init__()
+        self.context_planner = _FakeAgent(
+            "context_planner",
+            [
+                (
+                    {
+                        "start_line": 1,
+                        "end_line": 80,
+                        "lookback_lines": 0,
+                        "lookahead_lines": 0,
+                        "reason": "first chunk",
+                        "risk": "medium",
+                    },
+                    [],
+                ),
+                (
+                    {
+                        "start_line": 81,
+                        "end_line": 120,
+                        "lookback_lines": 0,
+                        "lookahead_lines": 0,
+                        "reason": "complete context",
+                        "risk": "medium",
+                    },
+                    [],
+                ),
+            ],
+        )
+        self.segment = _FakeAgent(
+            "segment_agent",
+            [
+                (
+                    {
+                        "units": [
+                            {
+                                "unit_id": "U001",
+                                "line_start": 1,
+                                "line_end": 80,
+                                "topic": "first half",
+                                "kind_hint": ["meeting_summary"],
+                                "needs_more_context": True,
+                                "reason": "needs second half",
+                            }
+                        ]
+                    },
+                    [],
+                ),
+                (
+                    {
+                        "units": [
+                            {
+                                "unit_id": "U002",
+                                "line_start": 81,
+                                "line_end": 120,
+                                "topic": "second half",
+                                "kind_hint": ["meeting_summary"],
+                                "needs_more_context": False,
+                                "reason": "complete",
+                            }
+                        ]
+                    },
+                    [],
+                ),
+            ],
+        )
+        self.meeting = _FakeAgent(
+            "meeting_summary_agent",
+            {
+                "meeting_window": [
+                    {
+                        "meeting_id": "Bmr007",
+                        "source_file": "Bmr007.txt",
+                        "summary": "Expanded context meeting summary.",
+                        "key_points": ["Expanded context"],
+                        "open_questions": [],
+                        "evidence": "L1, L120",
                         "confidence": 0.9,
                     }
                 ]

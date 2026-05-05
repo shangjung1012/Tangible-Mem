@@ -12,7 +12,6 @@ try:
     from ..storage.memory_tools import (
         AgentToolContext,
         read_short_term_memory_tool,
-        write_memory_candidate_tool,
     )
     from ..runtime.research_logger import ResearchLogger, elapsed, timed
 except ImportError:  # pragma: no cover - script execution fallback
@@ -20,7 +19,6 @@ except ImportError:  # pragma: no cover - script execution fallback
     from short_term.storage.memory_tools import (
         AgentToolContext,
         read_short_term_memory_tool,
-        write_memory_candidate_tool,
     )
     from short_term.runtime.research_logger import ResearchLogger, elapsed, timed
 
@@ -69,6 +67,7 @@ class GeminiJsonAgent:
         raw_text = ""
         parsed: dict[str, Any] | None = None
         errors: list[str] = []
+        tool_errors: list[str] = []
         retry_events: list[dict[str, Any]] = []
 
         def invoke_plain() -> Any:
@@ -96,6 +95,7 @@ class GeminiJsonAgent:
                     tool_context=tool_context,
                     max_tool_rounds=max_tool_rounds,
                     retry_events=retry_events,
+                    tool_errors=tool_errors,
                 )
             token_usage = _usage_metadata(response)
             raw_text = _response_text(response)
@@ -108,6 +108,7 @@ class GeminiJsonAgent:
                 )
             else:
                 parsed = extract_json(raw_text, parsed=getattr(response, "parsed", None))
+            errors.extend(tool_errors)
         except Exception as exc:  # noqa: BLE001
             errors.append(str(exc))
             token_usage = {}
@@ -142,6 +143,7 @@ class GeminiJsonAgent:
         tool_context: AgentToolContext,
         max_tool_rounds: int,
         retry_events: list[dict[str, Any]],
+        tool_errors: list[str],
     ) -> Any:
         def read_short_term_memory(
             section: str = "overview",
@@ -157,44 +159,16 @@ class GeminiJsonAgent:
                 ids=ids,
             )
 
-        def write_memory_candidate(
-            operation: str,
-            target_section: str,
-            candidate_payload: dict[str, Any],
-            target_id: str = "",
-            confidence: float = 0.0,
-            note: str = "",
-            evidence_lines: list[int] | None = None,
-            evidence_quote: str = "",
-        ) -> dict[str, Any]:
-            """Stage a complete memory candidate for deterministic validation.
-
-            candidate_payload must contain the real section fields, not only
-            operation/confidence/evidence. For action_items create, leave
-            item_id empty; existing action item IDs must use A###.
-            """
-            return write_memory_candidate_tool(
-                tool_context,
-                operation=operation,
-                target_section=target_section,
-                target_id=target_id,
-                candidate_payload=candidate_payload,
-                confidence=confidence,
-                note=note,
-                evidence_lines=evidence_lines,
-                evidence_quote=evidence_quote,
-            )
-
         config = types.GenerateContentConfig(
             system_instruction=(
                 "你是受限子代理。需要 current memory 時只能呼叫 read_short_term_memory；"
-                "提出候選時必須呼叫 write_memory_candidate 寫入 staging。"
-                "最後仍必須回傳符合 response schema 的 JSON summary。"
+                "不得呼叫任何寫入工具。候選必須完整放在最後 JSON response 中，"
+                "後續 deterministic verifier/reducer/normalizer 才能決定是否寫入 DB。"
             ),
             temperature=self.temperature,
             response_mime_type="application/json",
             response_json_schema=self.schema,
-            tools=[read_short_term_memory, write_memory_candidate],
+            tools=[read_short_term_memory],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             tool_config=types.ToolConfig(
                 function_calling_config=types.FunctionCallingConfig(mode="AUTO")
@@ -262,13 +236,17 @@ class GeminiJsonAgent:
                 try:
                     if tool_name == "read_short_term_memory":
                         result = read_short_term_memory(**args)
-                    elif tool_name == "write_memory_candidate":
-                        result = write_memory_candidate(**args)
                     else:
                         result = {"ok": False, "error": f"Unknown tool: {tool_name}"}
                 except Exception as exc:  # noqa: BLE001
                     error = str(exc)
                     result = {"ok": False, "error": error}
+                if isinstance(result, dict) and not result.get("ok", False):
+                    tool_errors.append(
+                        "Tool call failed "
+                        f"agent={self.name} tool={tool_name or 'unknown'} "
+                        f"error={result.get('error', 'unknown')}"
+                    )
 
                 logger.tool_call(
                     agent_name=self.name,
