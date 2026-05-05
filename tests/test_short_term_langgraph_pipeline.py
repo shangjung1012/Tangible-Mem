@@ -517,6 +517,65 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(len(candidates), 1)
             self.assertEqual(candidates[0]["payload"]["title"], "Prepare data")
 
+    def test_extract_candidates_passes_staging_tool_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            logger = ResearchLogger(tmp / "logs", "Bmr001", run_id="run_Bmr001")
+            state = {
+                "run_id": "run_Bmr001",
+                "meeting_id": "Bmr001",
+                "source_file": "Bmr001.txt",
+                "model_name": "gemini-2.5-pro",
+                "db_path": str(tmp / "memory.db"),
+                "transcript_db_path": str(tmp / "transcripts.db"),
+                "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                "research_log_dir": str(tmp / "logs"),
+                "log_level": "debug",
+                "keep_full_prompts": True,
+                "dry_run": True,
+                "transcript_line_count": 1,
+                "transcript_overview": {"line_count": 1},
+                "current_memory": {
+                    "action_items": [],
+                    "method_changes": [],
+                    "experiment_todos": [],
+                },
+                "current_window": {
+                    "context_start_line": 1,
+                    "context_end_line": 1,
+                    "forward_start_line": 1,
+                    "forward_end_line": 1,
+                    "items": [{"line_number": 1, "text": "We should prepare the data."}],
+                },
+                "current_units": [
+                    {
+                        "unit_id": "U001",
+                        "line_start": 1,
+                        "line_end": 1,
+                        "topic": "prepare data",
+                        "kind_hint": ["action_item"],
+                        "needs_more_context": False,
+                    }
+                ],
+                "raw_candidates": [],
+                "tool_reads": {},
+            }
+            agent = _FakeAgent("action_item_agent", {"action_items": []})
+
+            _extract_candidates(
+                state,  # type: ignore[arg-type]
+                logger,
+                agent,
+                "action_items",
+                "action_items",
+                "Extract action items.",
+            )
+
+            context = agent.last_kwargs.get("tool_context")
+            self.assertIsInstance(context, AgentToolContext)
+            self.assertEqual(context.policy.agent_name, "action_item_agent")
+            self.assertEqual(context.policy.write_sections, {"action_items"})
+
     def test_verifier_accepts_valid_candidates_and_reducer_builds_patch(self) -> None:
         candidates = [
             {
@@ -882,9 +941,11 @@ class _FakeAgent:
         self.parsed = parsed
         self.errors = errors or []
         self.call_count = 0
+        self.last_kwargs: dict[str, object] = {}
 
     def run(self, **kwargs: object) -> object:
         self.call_count += 1
+        self.last_kwargs = kwargs
         parsed = self.parsed
         errors = self.errors
         if isinstance(parsed, list):

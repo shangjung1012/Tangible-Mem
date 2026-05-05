@@ -91,7 +91,9 @@ Agent responsibility:
 {instructions}
 
 Candidate rules:
-- 直接回傳符合 response schema 的 JSON；不要呼叫工具，也不要輸出 markdown。
+- 可使用 read_short_term_memory 讀取你被允許的 current memory section。
+- 可使用 write_memory_candidate 將完整候選寫入 staging；即使寫入 staging，最後仍必須回傳符合 response schema 的 JSON。
+- 只回傳 JSON，不要輸出 markdown。
 - 只輸出你負責 section 的候選陣列；沒有候選時回傳空陣列。
 - action_items create 必須包含 title、detail、proposer、owner、status、priority、dependencies；新 action item 的 item_id 必須留空，系統會分配 A###。update/close 必須使用 current memory 中既有 A### item_id。
 - action_items 的 status 只能是 open、in_progress、completed、cancelled；priority 只能是 high、medium、low。
@@ -118,7 +120,7 @@ Accepted idea units:
 Transcript lines:
 {transcript_items_text(items)}
 
-輸出只能包含 {agent_kind} schema 負責的欄位。沒有明確 create/update/close/replace 時，若有相關但不更新的 unit，仍應先用 write_memory_candidate 寫 no_op staging candidate；最後 JSON 可回傳空陣列或 summary。
+輸出只能包含 {agent_kind} schema 負責的欄位。沒有明確 create/update/close/replace 時，若有相關但不更新的 unit，可用 operation=no_op 回傳，或用 write_memory_candidate 寫 no_op staging candidate；最後 JSON 可回傳空陣列或 no_op rows。
 """.strip()
 
 

@@ -2,7 +2,7 @@
 
 這個資料夾負責「一次輸入一次會議逐字稿」，把逐字稿匯入 SQLite，再透過 LangGraph pipeline 更新短期記憶。
 
-目前以 SQLite 為唯一 canonical memory store，程式預設路徑是 `short_term/storage/short_term_memory.db`。JSON snapshot 只由 DB 匯出給人檢視，程式更新流程不再讀 JSON 作為 memory source。
+目前以 SQLite 為唯一 canonical memory store，程式預設路徑是 `short_term/short_term_memory.db`。JSON snapshot 只由 DB 匯出給人檢視，程式更新流程不再讀 JSON 作為 memory source。
 
 逐字稿會匯入 transcript SQLite，程式預設路徑是 `short_term/storage/transcripts.db`。更新流程使用 LangGraph local-first orchestration：Gemini sub-agent 只負責產生候選；正式寫入前一律經過 deterministic verifier、reducer、normalizer 控制。
 
@@ -137,7 +137,7 @@ uv run short_term/update_memory.py --transcript ./ICSI_original_transcripts/tran
 ```bash
 uv run short_term/update_memory.py \
   --transcript meeting_recording/transcript/49.txt \
-  --db short_term/storage/short_term_memory.db \
+  --db short_term/short_term_memory.db \
   --transcript-db short_term/storage/transcripts.db \
   --snapshot-dir short_term/snapshots \
   --db-snapshot-dir short_term/db_snapshots \
@@ -179,7 +179,7 @@ uv run short_term/update_memory.py \
 
 ```bash
 uv run short_term/retrieve_qa.py \
-  --db short_term/storage/short_term_memory.db \
+  --db short_term/short_term_memory.db \
   --question "目前有哪些高優先的 action items？" \
   --show-context
 ```
@@ -188,7 +188,7 @@ uv run short_term/retrieve_qa.py \
 
 ```bash
 uv run short_term/retrieve_qa.py \
-  --db short_term/storage/short_term_memory.db \
+  --db short_term/short_term_memory.db \
   --question "最近大家卡住的研究工作是什麼？" \
   --retrieval-mode semantic \
   --show-context
@@ -198,7 +198,7 @@ uv run short_term/retrieve_qa.py \
 
 ```bash
 uv run short_term/retrieve_qa.py \
-  --db short_term/storage/short_term_memory.db \
+  --db short_term/short_term_memory.db \
   --question "哪一些事情是 Adam 在負責而且還沒完成？" \
   --retrieval-mode hybrid \
   --show-context

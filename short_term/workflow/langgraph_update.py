@@ -591,6 +591,12 @@ def _extract_candidates(
                 **_input_summary(filtered_state),
                 "extraction_attempt": attempt + 1,
             },
+            tool_context=AgentToolContext(
+                db_path=Path(str(state["db_path"])),
+                run_id=str(state["run_id"]),
+                meeting_id=str(state["meeting_id"]),
+                policy=_agent_tool_policy(str(agent.name), section),
+            ),
         )
         output = _collect_agent_output(
             state=state,
