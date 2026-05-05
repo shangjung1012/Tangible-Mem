@@ -171,6 +171,8 @@ class GeminiJsonAgent:
         config = types.GenerateContentConfig(
             system_instruction=(
                 "你是受限子代理。需要 current memory 時只能呼叫 read_short_term_memory；"
+                "read_short_term_memory 的 section 參數只能是被允許的精確 section 名稱，"
+                "不可把候選 JSON、memory patch 或自然語言放進 section 參數；"
                 "不得呼叫任何寫入工具。候選必須完整放在最後 JSON response 中，"
                 "後續 deterministic verifier/reducer/normalizer 才能決定是否寫入 DB。"
             ),
@@ -387,7 +389,7 @@ def _summarize_tool_args(args: dict[str, Any]) -> dict[str, Any]:
         "confidence",
     ):
         if key in args:
-            summary[key] = args[key]
+            summary[key] = _preview_summary_value(args[key])
     payload = args.get("candidate_payload")
     if isinstance(payload, dict):
         summary["candidate_payload_keys"] = sorted(payload.keys())
@@ -414,3 +416,9 @@ def _summarize_tool_result(result: Any) -> dict[str, Any]:
         if key in result:
             summary[key] = result[key]
     return summary
+
+
+def _preview_summary_value(value: Any, *, limit: int = 160) -> Any:
+    if isinstance(value, str) and len(value) > limit:
+        return value[:limit] + "...<truncated>"
+    return value

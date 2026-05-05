@@ -42,19 +42,26 @@ def read_short_term_memory_tool(
     limit: int = DEFAULT_PAGE_SIZE,
     ids: list[str] | None = None,
 ) -> dict[str, Any]:
-    normalized = str(section or "overview").strip()
+    normalized, warnings = _normalize_read_section_arg(
+        section,
+        allowed_sections=context.policy.read_sections,
+    )
     if normalized not in context.policy.read_sections:
         return {
             "ok": False,
             "error": "section_not_allowed",
-            "section": normalized,
+            "section": _preview_text(normalized),
+            "section_length": len(normalized),
             "allowed_sections": sorted(context.policy.read_sections),
         }
 
     memory = load_memory_from_sqlite(context.db_path)
     context.read_sections.add(normalized)
     if normalized == "overview":
-        return {"ok": True, "section": normalized, "overview": memory_summary(memory)}
+        result = {"ok": True, "section": normalized, "overview": memory_summary(memory)}
+        if warnings:
+            result["warnings"] = warnings
+        return result
 
     rows = memory.get(normalized, [])
     if normalized == "next_meeting_focus":
@@ -69,7 +76,7 @@ def read_short_term_memory_tool(
     safe_offset = max(0, int(offset or 0))
     safe_limit = max(1, min(200, int(limit or DEFAULT_PAGE_SIZE)))
     page = filtered[safe_offset : safe_offset + safe_limit]
-    return {
+    result = {
         "ok": True,
         "section": normalized,
         "offset": safe_offset,
@@ -79,6 +86,9 @@ def read_short_term_memory_tool(
         "has_more": safe_offset + safe_limit < len(filtered),
         "items": page,
     }
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 def write_memory_candidate_tool(
@@ -150,3 +160,34 @@ def _filter_rows_by_ids(
         if isinstance(row, dict) and str(row.get(id_key, "")).strip() in wanted:
             output.append(row)
     return output
+
+
+def _normalize_read_section_arg(
+    section: Any,
+    *,
+    allowed_sections: set[str],
+) -> tuple[str, list[str]]:
+    raw = str(section or "overview").strip()
+    lowered = raw.lower()
+    if lowered in allowed_sections:
+        warnings = [] if raw == lowered else ["normalized_section_case"]
+        return lowered, warnings
+
+    for allowed in sorted(allowed_sections, key=len, reverse=True):
+        if _looks_like_section_assignment(raw, allowed):
+            return allowed, ["coerced_malformed_section_argument"]
+
+    return raw, []
+
+
+def _looks_like_section_assignment(raw: str, section: str) -> bool:
+    if not raw.lower().startswith(section.lower()):
+        return False
+    suffix = raw[len(section) :].lstrip()
+    return bool(suffix) and suffix[0] in {"=", ":", "[", "{"}
+
+
+def _preview_text(value: str, *, limit: int = 160) -> str:
+    if len(value) <= limit:
+        return value
+    return value[:limit] + "...<truncated>"

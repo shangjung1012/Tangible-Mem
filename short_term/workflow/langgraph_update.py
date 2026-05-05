@@ -1162,7 +1162,10 @@ def _node_summary(name: str, state: dict[str, Any]) -> dict[str, Any]:
             "unresolved_context_count": len(state.get("unresolved_context", [])),
         }
     if name.startswith("extract_"):
-        return {"raw_candidates": len(state.get("raw_candidates", []))}
+        section = name.removeprefix("extract_")
+        return {
+            "raw_candidates": len(state.get(_section_buffer_key(section), [])),
+        }
     if name == "verify_candidates":
         return {
             "verified": len(state.get("verified_candidates", [])),

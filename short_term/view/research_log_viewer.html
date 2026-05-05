@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Short-Term Research Log Viewer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-subtle: #f1f4f8;
+      --text: #17202a;
+      --muted: #697586;
+      --line: #d9e0e8;
+      --accent: #0f766e;
+      --accent-weak: #d9f2ee;
+      --danger: #b42318;
+      --warning: #b54708;
+      --ok: #027a48;
+      --shadow: 0 1px 2px rgba(17, 24, 39, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      max-width: 1480px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .run-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      min-height: 34px;
+    }
+
+    input,
+    select {
+      border-radius: 6px;
+      padding: 6px 9px;
+    }
+
+    button {
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    main {
+      max-width: 1480px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 18px 20px 40px;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .content {
+      min-width: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 12px 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat {
+      background: var(--panel-subtle);
+      border-radius: 7px;
+      padding: 9px;
+      min-height: 58px;
+    }
+
+    .stat .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .stat .value {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+
+    .tab.active {
+      background: var(--accent-weak);
+      border-color: #82cfc5;
+      color: #0b4f49;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+    }
+
+    .event-card,
+    .agent-card,
+    .artifact-card,
+    .tool-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .event-card summary,
+    .agent-card summary,
+    .artifact-card summary,
+    .tool-card summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .summary-title {
+      min-width: 0;
+    }
+
+    .summary-title strong {
+      display: block;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-title span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+      overflow-wrap: anywhere;
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      font-size: 12px;
+      line-height: 1;
+      border-radius: 999px;
+      padding: 5px 7px;
+      background: var(--panel-subtle);
+      color: #344054;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      background: #dcfae6;
+      color: var(--ok);
+    }
+
+    .badge.warn {
+      background: #fef0c7;
+      color: var(--warning);
+    }
+
+    .badge.err {
+      background: #fee4e2;
+      color: var(--danger);
+    }
+
+    .details-body {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .source-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 12px;
+      background: #101828;
+      color: #e4e7ec;
+      border-radius: 7px;
+      overflow: auto;
+      max-height: 520px;
+      font-size: 12px;
+      line-height: 1.45;
+      tab-size: 2;
+    }
+
+    .json-block {
+      margin-top: 10px;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .empty,
+    .error {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      background: #fff;
+    }
+
+    .error {
+      border-color: #fda29b;
+      color: var(--danger);
+    }
+
+    .agent-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tool-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .mini-title {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin: 12px 0 6px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .run-controls {
+        justify-content: flex-start;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="topbar">
+        <h1>Short-Term Research Log Viewer</h1>
+        <div class="run-controls">
+          <select id="runSelect" aria-label="run id"></select>
+          <input id="runInput" aria-label="custom run id" size="28" placeholder="run_id">
+          <button id="loadButton" class="primary">Load</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <aside class="sidebar">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Run</h2>
+          </div>
+          <div class="panel-body">
+            <div id="stats" class="stats"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Sources</h2>
+          </div>
+          <div id="sources" class="panel-body"></div>
+        </section>
+      </aside>
+
+      <section class="content">
+        <div class="tabs" id="tabs"></div>
+        <div id="status"></div>
+
+        <section id="timelineSection" class="section active">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Timeline</h2>
+            </div>
+            <div class="panel-body">
+              <div id="timeline" class="timeline"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="agentsSection" class="section">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Agents</h2>
+            </div>
+            <div class="panel-body">
+              <div id="agents" class="agent-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="toolsSection" class="section">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Tool Calls</h2>
+            </div>
+            <div class="panel-body">
+              <div id="tools" class="agent-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="artifactsSection" class="section">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Artifacts</h2>
+            </div>
+            <div class="panel-body">
+              <div id="artifacts" class="agent-grid"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const KNOWN_RUNS = [
+      "20260506_011516_0307",
+      "20260506_011855_0318",
+      "20260506_012148_0325",
+      "20260506_012921_0408",
+      "20260506_013443_0422",
+      "20260506_014511_0429"
+    ];
+
+    const AGENTS = [
+      { key: "context_planner", label: "context_planner", node: "plan_next_window" },
+      { key: "segment_agent", label: "segment_agent", node: "segment_window" },
+      { key: "meeting_summary_agent", label: "meeting_summary_agent", node: "extract_meeting_window" },
+      { key: "action_item_agent", label: "action_item_agent", node: "extract_action_items" },
+      { key: "method_change_agent", label: "method_change_agent", node: "extract_method_changes" },
+      { key: "experiment_todo_agent", label: "experiment_todo_agent", node: "extract_experiment_todos" },
+      { key: "next_focus_agent", label: "next_focus_agent", node: "extract_next_meeting_focus" }
+    ];
+
+    const ARTIFACTS = [
+      { key: "run_meta", label: "run_meta", path: "run_meta.json", type: "json" },
+      { key: "raw_candidates", label: "raw_candidates", path: "candidates/raw_candidates.json", type: "json" },
+      { key: "verified_candidates", label: "verified_candidates", path: "candidates/verified_candidates.json", type: "json" },
+      { key: "rejected_candidates", label: "rejected_candidates", path: "candidates/rejected_candidates.json", type: "json" },
+      { key: "final_patch", label: "final_patch", path: "final_patch.json", type: "json" },
+      { key: "final_memory", label: "final_memory", path: "final_memory.json", type: "json" },
+      { key: "report", label: "report", path: "report.md", type: "text" }
+    ];
+
+    const state = {
+      runId: KNOWN_RUNS[0],
+      events: [],
+      agents: [],
+      tools: [],
+      artifacts: {}
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    init();
+
+    function init() {
+      const select = $("runSelect");
+      for (const runId of KNOWN_RUNS) {
+        const option = document.createElement("option");
+        option.value = runId;
+        option.textContent = runId;
+        select.appendChild(option);
+      }
+      select.value = state.runId;
+      $("runInput").value = state.runId;
+      select.addEventListener("change", () => {
+        $("runInput").value = select.value;
+      });
+      $("loadButton").addEventListener("click", () => {
+        loadRun($("runInput").value.trim() || select.value);
+      });
+      renderTabs();
+      loadRun(state.runId);
+    }
+
+    function renderTabs() {
+      const tabs = [
+        ["timelineSection", "Timeline"],
+        ["agentsSection", "Agents"],
+        ["toolsSection", "Tools"],
+        ["artifactsSection", "Artifacts"]
+      ];
+      $("tabs").innerHTML = "";
+      for (const [sectionId, label] of tabs) {
+        const button = document.createElement("button");
+        button.className = "tab" + (sectionId === "timelineSection" ? " active" : "");
+        button.textContent = label;
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach((node) => node.classList.remove("active"));
+          document.querySelectorAll(".section").forEach((node) => node.classList.remove("active"));
+          button.classList.add("active");
+          $(sectionId).classList.add("active");
+        });
+        $("tabs").appendChild(button);
+      }
+    }
+
+    async function loadRun(runId) {
+      state.runId = runId;
+      $("status").innerHTML = "";
+      clearViews();
+      setStats([{ label: "run_id", value: runId }, { label: "status", value: "loading" }]);
+
+      const base = `../research_logs/${encodeURIComponent(runId)}`;
+      try {
+        const [events, agents, tools, artifacts] = await Promise.all([
+          loadGraphEvents(`${base}/graph_events.jsonl`),
+          loadAgentResponses(base),
+          loadToolCalls(base),
+          loadArtifacts(base)
+        ]);
+        state.events = events;
+        state.agents = agents;
+        state.tools = tools;
+        state.artifacts = artifacts;
+        renderAll(base);
+      } catch (error) {
+        $("status").innerHTML = `<div class="error">${escapeHtml(error.message || String(error))}</div>`;
+        setStats([{ label: "run_id", value: runId }, { label: "status", value: "error" }]);
+      }
+    }
+
+    function clearViews() {
+      $("timeline").innerHTML = "";
+      $("agents").innerHTML = "";
+      $("tools").innerHTML = "";
+      $("artifacts").innerHTML = "";
+      $("sources").innerHTML = "";
+    }
+
+    async function loadGraphEvents(path) {
+      const text = await fetchText(path);
+      return text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
+    }
+
+    async function loadAgentResponses(base) {
+      const output = [];
+      for (const agent of AGENTS) {
+        const files = await findNumberedFiles(base, "responses", agent.key, [
+          "parsed.json",
+          "meta.json",
+          "raw.txt"
+        ]);
+        const promptFiles = await findNumberedFiles(base, "prompts", agent.key, [
+          "prompt.txt"
+        ]);
+        if (!files.parsed && !files.meta && !files.raw && !promptFiles.prompt) {
+          output.push({ ...agent, missing: true });
+          continue;
+        }
+        output.push({
+          ...agent,
+          missing: false,
+          paths: { ...files, prompt: promptFiles.prompt || "" },
+          parsed: files.parsed ? await fetchJson(files.parsed) : null,
+          meta: files.meta ? await fetchJson(files.meta) : null,
+          raw: files.raw ? await fetchText(files.raw) : "",
+          prompt: promptFiles.prompt ? await fetchText(promptFiles.prompt) : ""
+        });
+      }
+      return output;
+    }
+
+    async function loadToolCalls(base) {
+      const names = [];
+      for (const agent of AGENTS) {
+        names.push(`${agent.key}_read_short_term_memory`);
+      }
+      const calls = [];
+      for (const name of names) {
+        for (let i = 1; i <= 80; i += 1) {
+          const prefix = String(i).padStart(3, "0");
+          const path = `${base}/tool_calls/${prefix}_${name}.json`;
+          const json = await fetchJsonOptional(path);
+          if (json) {
+            calls.push({ path, data: json });
+          }
+        }
+      }
+      calls.sort((a, b) => String(a.data.timestamp || "").localeCompare(String(b.data.timestamp || "")));
+      return calls;
+    }
+
+    async function loadArtifacts(base) {
+      const output = {};
+      for (const artifact of ARTIFACTS) {
+        const path = `${base}/${artifact.path}`;
+        if (artifact.type === "json") {
+          const data = await fetchJsonOptional(path);
+          if (data !== null) output[artifact.key] = { ...artifact, path, data };
+        } else {
+          const text = await fetchTextOptional(path);
+          if (text !== null) output[artifact.key] = { ...artifact, path, data: text };
+        }
+      }
+      return output;
+    }
+
+    async function findNumberedFiles(base, folder, name, suffixes) {
+      const found = {};
+      for (let i = 1; i <= 80; i += 1) {
+        const prefix = String(i).padStart(3, "0");
+        for (const suffix of suffixes) {
+          const key = suffix.split(".")[0];
+          if (found[key]) continue;
+          const path = `${base}/${folder}/${prefix}_${name}.${suffix}`;
+          if (await exists(path)) {
+            found[key] = path;
+          }
+        }
+      }
+      return found;
+    }
+
+    async function renderAll(base) {
+      renderStats();
+      renderSources(base);
+      renderTimeline();
+      renderAgents();
+      renderTools();
+      renderArtifacts();
+    }
+
+    function renderStats() {
+      const finalMemory = state.artifacts.final_memory?.data || {};
+      const finalPatch = state.artifacts.final_patch?.data || {};
+      const rawCandidates = state.artifacts.raw_candidates?.data || [];
+      const verified = state.artifacts.verified_candidates?.data || [];
+      const rejected = state.artifacts.rejected_candidates?.data || [];
+      const lastEvent = state.events[state.events.length - 1] || {};
+      setStats([
+        { label: "run_id", value: state.runId },
+        { label: "status", value: lastEvent.status || "loaded" },
+        { label: "events", value: state.events.length },
+        { label: "agents", value: state.agents.filter((agent) => !agent.missing).length },
+        { label: "tool calls", value: state.tools.length },
+        { label: "raw candidates", value: rawCandidates.length },
+        { label: "verified", value: verified.length },
+        { label: "rejected", value: rejected.length },
+        { label: "memory version", value: finalMemory.memory_version ?? "" },
+        { label: "patch sections", value: Object.keys(finalPatch).length }
+      ]);
+    }
+
+    function setStats(items) {
+      $("stats").innerHTML = items.map((item) => `
+        <div class="stat">
+          <span class="label">${escapeHtml(item.label)}</span>
+          <span class="value">${escapeHtml(String(item.value ?? ""))}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderSources(base) {
+      const links = [
+        ["graph_events.jsonl", `${base}/graph_events.jsonl`],
+        ["raw_candidates.json", `${base}/candidates/raw_candidates.json`],
+        ["verified_candidates.json", `${base}/candidates/verified_candidates.json`],
+        ["rejected_candidates.json", `${base}/candidates/rejected_candidates.json`],
+        ["final_patch.json", `${base}/final_patch.json`],
+        ["final_memory.json", `${base}/final_memory.json`],
+        ["report.md", `${base}/report.md`]
+      ];
+      $("sources").innerHTML = links.map(([label, href]) => (
+        `<div class="source-row"><a href="${href}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a></div>`
+      )).join("");
+    }
+
+    function renderTimeline() {
+      if (!state.events.length) {
+        $("timeline").innerHTML = `<div class="empty">No graph events found.</div>`;
+        return;
+      }
+      $("timeline").innerHTML = state.events.map((event) => {
+        const statusClass = event.status === "ok" ? "ok" : event.status === "retry" ? "warn" : "err";
+        const duration = event.duration_seconds == null ? "" : `${Number(event.duration_seconds).toFixed(3)}s`;
+        const lineRange = event.line_range || "";
+        return `
+          <details class="event-card">
+            <summary>
+              <div class="summary-title">
+                <strong>${escapeHtml(event.node || "unknown")} / ${escapeHtml(event.event || "")}</strong>
+                <span>${escapeHtml(event.timestamp || "")}${lineRange ? " · " + escapeHtml(lineRange) : ""}</span>
+              </div>
+              <div class="badges">
+                <span class="badge ${statusClass}">${escapeHtml(event.status || "")}</span>
+                ${duration ? `<span class="badge">${duration}</span>` : ""}
+              </div>
+            </summary>
+            <div class="details-body">
+              ${jsonBlock(event)}
+            </div>
+          </details>
+        `;
+      }).join("");
+    }
+
+    function renderAgents() {
+      $("agents").innerHTML = state.agents.map((agent) => {
+        if (agent.missing) {
+          return `
+            <details class="agent-card">
+              <summary>
+                <div class="summary-title">
+                  <strong>${escapeHtml(agent.label)}</strong>
+                  <span>No response artifact found.</span>
+                </div>
+                <div class="badges"><span class="badge warn">missing</span></div>
+              </summary>
+              <div class="details-body">${jsonBlock({ node: agent.node, agent: agent.key, missing: true })}</div>
+            </details>
+          `;
+        }
+        const parsedCount = countPrimaryRows(agent.parsed);
+        const meta = agent.meta || {};
+        const toolCalls = state.tools.filter((call) => call.data.agent_name === agent.key);
+        return `
+          <details class="agent-card" ${agent.key === "context_planner" ? "open" : ""}>
+            <summary>
+              <div class="summary-title">
+                <strong>${escapeHtml(agent.label)}</strong>
+                <span>${escapeHtml(agent.node)}${parsedCount !== null ? " · rows=" + parsedCount : ""}</span>
+              </div>
+              <div class="badges">
+                ${meta.latency_seconds != null ? `<span class="badge">${Number(meta.latency_seconds).toFixed(2)}s</span>` : ""}
+                ${toolCalls.length ? `<span class="badge">tools ${toolCalls.length}</span>` : ""}
+              </div>
+            </summary>
+            <div class="details-body">
+              ${sourceLinks(agent.paths)}
+              <div class="mini-title">Parsed output</div>
+              ${jsonBlock(agent.parsed)}
+              <div class="mini-title">Tool calls</div>
+              ${toolCalls.length ? `<div class="tool-list">${toolCalls.map(renderToolCard).join("")}</div>` : `<div class="empty">No tool calls.</div>`}
+              <details>
+                <summary><div class="summary-title"><strong>Prompt input</strong><span>${escapeHtml(agent.paths.prompt || "")}</span></div></summary>
+                <div class="details-body">${textBlock(agent.prompt || "")}</div>
+              </details>
+              <details>
+                <summary><div class="summary-title"><strong>Raw output</strong><span>${escapeHtml(agent.paths.raw || "")}</span></div></summary>
+                <div class="details-body">${textBlock(agent.raw || "")}</div>
+              </details>
+              <details>
+                <summary><div class="summary-title"><strong>Meta</strong><span>${escapeHtml(agent.paths.meta || "")}</span></div></summary>
+                <div class="details-body">${jsonBlock(agent.meta)}</div>
+              </details>
+            </div>
+          </details>
+        `;
+      }).join("");
+    }
+
+    function renderTools() {
+      if (!state.tools.length) {
+        $("tools").innerHTML = `<div class="empty">No tool calls found.</div>`;
+        return;
+      }
+      $("tools").innerHTML = state.tools.map(renderToolCard).join("");
+    }
+
+    function renderToolCard(call) {
+      const data = call.data || {};
+      const ok = !data.error;
+      return `
+        <details class="tool-card">
+          <summary>
+            <div class="summary-title">
+              <strong>${escapeHtml(data.agent_name || "agent")} / ${escapeHtml(data.tool_name || "tool")}</strong>
+              <span>${escapeHtml(data.timestamp || "")}</span>
+            </div>
+            <div class="badges">
+              <span class="badge ${ok ? "ok" : "err"}">${ok ? "ok" : "error"}</span>
+              ${data.latency_seconds != null ? `<span class="badge">${Number(data.latency_seconds).toFixed(4)}s</span>` : ""}
+            </div>
+          </summary>
+          <div class="details-body">
+            <div class="source-row"><a href="${call.path}" target="_blank" rel="noreferrer">${escapeHtml(call.path)}</a></div>
+            <div class="mini-title">Args summary</div>
+            ${jsonBlock(data.args_summary || {})}
+            <div class="mini-title">Result summary</div>
+            ${jsonBlock(data.result_summary || {})}
+            <div class="mini-title">Full record</div>
+            ${jsonBlock(data)}
+          </div>
+        </details>
+      `;
+    }
+
+    function renderArtifacts() {
+      const rows = Object.values(state.artifacts);
+      if (!rows.length) {
+        $("artifacts").innerHTML = `<div class="empty">No artifacts found.</div>`;
+        return;
+      }
+      $("artifacts").innerHTML = rows.map((artifact) => {
+        const count = Array.isArray(artifact.data)
+          ? artifact.data.length
+          : artifact.data && typeof artifact.data === "object"
+            ? Object.keys(artifact.data).length
+            : "";
+        return `
+          <details class="artifact-card">
+            <summary>
+              <div class="summary-title">
+                <strong>${escapeHtml(artifact.label)}</strong>
+                <span>${escapeHtml(artifact.path)}</span>
+              </div>
+              <div class="badges">${count !== "" ? `<span class="badge">${count}</span>` : ""}</div>
+            </summary>
+            <div class="details-body">
+              <div class="source-row"><a href="${artifact.path}" target="_blank" rel="noreferrer">Open source</a></div>
+              ${typeof artifact.data === "string" ? textBlock(artifact.data) : jsonBlock(artifact.data)}
+            </div>
+          </details>
+        `;
+      }).join("");
+    }
+
+    function sourceLinks(paths) {
+      const labels = [
+        ["prompt", "Prompt"],
+        ["parsed", "Parsed"],
+        ["raw", "Raw"],
+        ["meta", "Meta"]
+      ];
+      return `<div class="source-row">${
+        labels
+          .filter(([key]) => paths[key])
+          .map(([key, label]) => `<a href="${paths[key]}" target="_blank" rel="noreferrer">${label}</a>`)
+          .join("")
+      }</div>`;
+    }
+
+    function countPrimaryRows(parsed) {
+      if (!parsed || typeof parsed !== "object") return null;
+      for (const value of Object.values(parsed)) {
+        if (Array.isArray(value)) return value.length;
+      }
+      return null;
+    }
+
+    async function exists(path) {
+      try {
+        const response = await fetch(path, { cache: "no-store" });
+        return response.ok;
+      } catch (_error) {
+        return false;
+      }
+    }
+
+    async function fetchText(path) {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Cannot read ${path}: HTTP ${response.status}`);
+      return response.text();
+    }
+
+    async function fetchTextOptional(path) {
+      try {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) return null;
+        return response.text();
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    async function fetchJson(path) {
+      return JSON.parse(await fetchText(path));
+    }
+
+    async function fetchJsonOptional(path) {
+      const text = await fetchTextOptional(path);
+      if (text === null) return null;
+      try {
+        return JSON.parse(text);
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function jsonBlock(value) {
+      return `<pre class="json-block">${escapeHtml(JSON.stringify(value ?? null, null, 2))}</pre>`;
+    }
+
+    function textBlock(value) {
+      return `<pre>${escapeHtml(String(value ?? ""))}</pre>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

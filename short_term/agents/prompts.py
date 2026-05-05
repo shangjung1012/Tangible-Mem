@@ -92,6 +92,7 @@ Agent responsibility:
 
 Candidate rules:
 - 可使用 read_short_term_memory 讀取你被允許的 current memory section。
+- 呼叫 read_short_term_memory 時，section 只能是精確 section 名稱，例如 overview、meeting_window、action_items、method_changes、experiment_todos、next_meeting_focus；不可把候選 JSON、memory patch、陣列或自然語言塞進 section。
 - 不要呼叫寫入工具；候選必須完整放在最後 JSON response。pipeline 會用 deterministic verifier/reducer/normalizer 決定是否寫入 DB。
 - JSON row 必須包含該 section 的實際內容欄位；不要只放 operation/confidence/evidence，也不要把內容只放在 note。
 - update/close 必須同時提供 target_id 與 payload 內的既有 ID；create 必須留空 ID。

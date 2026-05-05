@@ -30,6 +30,7 @@ from short_term.workflow.langgraph_update import (  # noqa: E402
     _build_graph,
     _candidate_payload_is_sparse,
     _extract_candidates,
+    _node_summary,
 )
 from short_term.runtime.genai_retry import call_with_retry  # noqa: E402
 from short_term.storage.memory_tools import (  # noqa: E402
@@ -44,10 +45,24 @@ from short_term.storage.staging_store import update_staged_candidate_statuses  #
 from short_term.storage.staging_store import write_staged_candidate  # noqa: E402
 from short_term.storage.transcript_store import import_transcript_to_sqlite  # noqa: E402
 from short_term.core.verifier import verify_candidates  # noqa: E402
-from short_term.agents.base import GeminiJsonAgent  # noqa: E402
+from short_term.agents.base import GeminiJsonAgent, _summarize_tool_args  # noqa: E402
 
 
 class ShortTermLangGraphPipelineTests(unittest.TestCase):
+    def test_extract_node_summary_counts_section_buffer_candidates(self) -> None:
+        summary = _node_summary(
+            "extract_action_items",
+            {
+                "raw_candidates": [],
+                "action_items_candidates_buffer": [
+                    {"candidate_id": "action_item_agent:action_items:1"},
+                    {"candidate_id": "action_item_agent:action_items:2"},
+                ],
+            },
+        )
+
+        self.assertEqual(summary, {"raw_candidates": 2})
+
     def test_research_logger_writes_debug_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             logger = ResearchLogger(
@@ -1679,6 +1694,83 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertTrue(write_result["ok"])
             self.assertEqual(len(staged), 1)
             self.assertEqual(staged[0]["target_id"], "A001")
+
+    def test_read_memory_tool_coerces_malformed_section_assignment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "memory.db"
+            save_memory_to_sqlite(
+                db_path,
+                {
+                    "meeting_window": [
+                        {
+                            "meeting_id": "Bmr004",
+                            "source_file": "Bmr004.txt",
+                            "summary": "Follow-up meeting.",
+                            "key_decisions": [],
+                            "open_questions": [],
+                            "created_meeting_id": "Bmr004",
+                            "last_updated_meeting_id": "Bmr004",
+                            "history": [],
+                        }
+                    ],
+                    "action_items": [],
+                    "method_changes": [],
+                    "experiment_todos": [],
+                    "next_meeting_focus": [],
+                },
+            )
+            context = AgentToolContext(
+                db_path=db_path,
+                run_id="run_Bmr004",
+                meeting_id="Bmr004",
+                policy=AgentToolPolicy(
+                    agent_name="meeting_summary_agent",
+                    read_sections={"overview", "meeting_window"},
+                    write_sections={"meeting_window"},
+                ),
+            )
+
+            result = read_short_term_memory_tool(
+                context,
+                section='meeting_window=[{"meeting_id":"Bmr004"}] 奏摺：{"',
+            )
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["section"], "meeting_window")
+            self.assertEqual(result["returned_count"], 1)
+            self.assertIn("coerced_malformed_section_argument", result["warnings"])
+            self.assertIn("meeting_window", context.read_sections)
+
+    def test_read_memory_tool_rejects_unknown_malformed_section_without_raw_blob(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            context = AgentToolContext(
+                db_path=Path(tmpdir) / "memory.db",
+                run_id="run_Bmr004",
+                meeting_id="Bmr004",
+                policy=AgentToolPolicy(
+                    agent_name="meeting_summary_agent",
+                    read_sections={"overview", "meeting_window"},
+                    write_sections={"meeting_window"},
+                ),
+            )
+            section = "unknown_section=" + ("x" * 400)
+
+            result = read_short_term_memory_tool(context, section=section)
+
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["error"], "section_not_allowed")
+            self.assertLess(len(result["section"]), len(section))
+            self.assertEqual(result["section_length"], len(section))
+            self.assertNotIn("unknown_section", context.read_sections)
+
+    def test_tool_arg_summary_truncates_large_section_argument(self) -> None:
+        section = "meeting_window=" + ("x" * 400)
+
+        summary = _summarize_tool_args({"section": section, "limit": 50})
+
+        self.assertLess(len(summary["section"]), len(section))
+        self.assertTrue(summary["section"].endswith("...<truncated>"))
+        self.assertEqual(summary["limit"], 50)
 
     def test_staging_statuses_update_after_verification(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
