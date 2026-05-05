@@ -647,16 +647,18 @@ def _extract_candidates(
                 policy=_agent_tool_policy(str(agent.name), section),
             ),
         )
-        if result.errors:
-            last_errors = [str(error) for error in result.errors if str(error).strip()]
-            continue
         output = _collect_agent_output(
             state=state,
             agent=agent,
             section=section,
             parsed=result.parsed,
         )
-        return output
+        if output:
+            return output
+        if result.errors:
+            last_errors = [str(error) for error in result.errors if str(error).strip()]
+            continue
+        return []
 
     raise RuntimeError(
         "LLM agent failed in "

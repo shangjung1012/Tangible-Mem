@@ -165,7 +165,7 @@ done
 
 for dir in "${dirs_to_empty[@]}"; do
   if [[ -d "$dir" ]]; then
-    find "$dir" -mindepth 1 ! -name ".gitignore" -exec rm -rf {} +
+    find "$dir" -mindepth 1 -maxdepth 1 ! -name ".gitignore" -exec rm -rf -- {} +
   fi
 done
 

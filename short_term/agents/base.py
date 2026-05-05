@@ -92,9 +92,17 @@ class GeminiJsonAgent:
                     max_tool_rounds=max_tool_rounds,
                     retry_events=retry_events,
                 )
-            raw_text = response.text or ""
-            parsed = extract_json(raw_text, parsed=getattr(response, "parsed", None))
             token_usage = _usage_metadata(response)
+            raw_text = _response_text(response)
+            unresolved_calls = _function_call_names(response)
+            if unresolved_calls:
+                errors.append(
+                    "LLM response still contained unresolved function calls after "
+                    f"max_tool_rounds={max_tool_rounds}: "
+                    + ", ".join(unresolved_calls)
+                )
+            else:
+                parsed = extract_json(raw_text, parsed=getattr(response, "parsed", None))
         except Exception as exc:  # noqa: BLE001
             errors.append(str(exc))
             token_usage = {}
@@ -296,6 +304,33 @@ def _usage_metadata(response: Any) -> dict[str, Any]:
     if isinstance(usage, dict):
         return usage
     return {"raw": str(usage)}
+
+
+def _function_call_names(response: Any) -> list[str]:
+    names: list[str] = []
+    for function_call in getattr(response, "function_calls", None) or []:
+        name = str(getattr(function_call, "name", "") or "").strip()
+        names.append(name or "unknown")
+    return names
+
+
+def _response_text(response: Any) -> str:
+    text_parts: list[str] = []
+    candidates = getattr(response, "candidates", None) or []
+    for candidate in candidates:
+        content = getattr(candidate, "content", None)
+        parts = getattr(content, "parts", None) or []
+        for part in parts:
+            if getattr(part, "function_call", None) is not None:
+                continue
+            text = getattr(part, "text", None)
+            if text:
+                text_parts.append(str(text))
+    if text_parts:
+        return "".join(text_parts)
+    if getattr(response, "function_calls", None):
+        return ""
+    return str(getattr(response, "text", "") or "")
 
 
 def _summarize_tool_args(args: dict[str, Any]) -> dict[str, Any]:
