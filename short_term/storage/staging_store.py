@@ -195,8 +195,10 @@ def _row_to_candidate(row: sqlite3.Row) -> dict[str, Any]:
     evidence_lines = _loads_list(row["evidence_lines_json"])
     warnings = _loads_list(row["warnings_json"])
     evidence_quote = str(row["evidence_quote"] or "")
-    if "evidence" not in payload and evidence_quote:
-        payload["evidence"] = evidence_quote
+    if "evidence" not in payload:
+        evidence = _format_evidence_lines(evidence_lines)
+        if evidence:
+            payload["evidence"] = evidence
     if "confidence" not in payload:
         payload["confidence"] = float(row["confidence"] or 0.0)
     if "operation" not in payload:
@@ -244,6 +246,39 @@ def _loads_list(raw: str) -> list[Any]:
     except json.JSONDecodeError:
         return []
     return value if isinstance(value, list) else []
+
+
+def _format_evidence_lines(values: list[Any]) -> str:
+    line_numbers: list[int] = []
+    for value in values:
+        try:
+            line_number = int(value)
+        except (TypeError, ValueError):
+            continue
+        if line_number > 0:
+            line_numbers.append(line_number)
+    if not line_numbers:
+        return ""
+
+    deduped = sorted(set(line_numbers))
+    ranges: list[str] = []
+    start = deduped[0]
+    previous = deduped[0]
+    for line_number in deduped[1:]:
+        if line_number == previous + 1:
+            previous = line_number
+            continue
+        ranges.append(_format_evidence_range(start, previous))
+        start = line_number
+        previous = line_number
+    ranges.append(_format_evidence_range(start, previous))
+    return ", ".join(ranges)
+
+
+def _format_evidence_range(start: int, end: int) -> str:
+    if start == end:
+        return f"L{start}"
+    return f"L{start}-L{end}"
 
 
 def _safe_float(value: Any, fallback: float) -> float:

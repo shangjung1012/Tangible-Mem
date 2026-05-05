@@ -265,6 +265,56 @@ class ShortTermNormalizerTests(unittest.TestCase):
         self.assertEqual(todos[0]["description"], "Refined stress-tag pilot")
         self.assertEqual(todos[0]["owner"], "fe008")
 
+    def test_experiment_todo_drops_dangling_related_action_refs(self) -> None:
+        previous = {
+            "memory_version": 1,
+            "meeting_history_ids": ["Bmr001", "Bmr002", "Bmr003"],
+            "action_items": [
+                {
+                    "item_id": "A001",
+                    "title": "Old task",
+                    "detail": "",
+                    "proposer": "unknown",
+                    "owner": "unknown",
+                    "created_meeting_id": "Bmr001",
+                    "created_time_hint": "",
+                    "dependencies": [],
+                    "status": "open",
+                    "priority": "medium",
+                    "evidence": "",
+                    "last_updated_meeting_id": "Bmr001",
+                    "history": [
+                        {
+                            "version": 0,
+                            "meeting_id": "Bmr001",
+                            "change": "created",
+                        }
+                    ],
+                }
+            ],
+            "experiment_todos": [
+                {
+                    "todo_id": "E001",
+                    "description": "Run evaluation",
+                    "status": "open",
+                    "owner": "unknown",
+                    "related_action_item_ids": ["A001", "A999"],
+                    "meeting_id": "Bmr003",
+                    "evidence": "L1",
+                }
+            ],
+        }
+
+        updated = normalize_memory(
+            updated_memory={},
+            previous_memory=previous,
+            meeting_id="Bmr004",
+            source_file="Bmr004.txt",
+        )
+
+        self.assertEqual(updated["action_items"], [])
+        self.assertEqual(updated["experiment_todos"][0]["related_action_item_ids"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

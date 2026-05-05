@@ -143,7 +143,7 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(events[0]["attempt"], 1)
         self.assertEqual(events[0]["operation_name"], "test operation")
 
-    def test_verifier_warns_missing_evidence_and_rejects_unknown_update_id(self) -> None:
+    def test_verifier_rejects_missing_evidence_and_unknown_update_id(self) -> None:
         current_memory = {
             "action_items": [
                 {
@@ -193,10 +193,35 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             allowed_line_numbers={1, 2, 3},
         )
 
-        self.assertEqual(len(verified), 1)
-        self.assertEqual(verified[0]["warnings"], ["missing_evidence"])
-        self.assertEqual(len(rejected), 1)
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 2)
         self.assertEqual(counts["update_unknown_id"], 1)
+        self.assertEqual(counts["missing_evidence"], 1)
+
+    def test_verifier_allows_no_op_without_focus_text(self) -> None:
+        candidates = [
+            {
+                "agent": "next_focus_agent",
+                "section": "next_meeting_focus",
+                "candidate_id": "focus-no-op",
+                "payload": {
+                    "operation": "no_op",
+                    "text": "",
+                    "evidence": "L1",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={"action_items": [], "method_changes": [], "experiment_todos": []},
+            allowed_line_numbers={1},
+        )
+
+        self.assertEqual(len(verified), 1)
+        self.assertEqual(rejected, [])
+        self.assertEqual(counts, {})
 
     def test_verifier_strips_non_canonical_create_ids(self) -> None:
         candidates = [
@@ -362,6 +387,40 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertTrue(result["ok"])
             self.assertEqual(len(staged), 1)
             self.assertEqual(staged[0]["operation"], "no_op")
+
+    def test_staging_uses_evidence_lines_not_quote_for_payload_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "memory.db"
+            result = write_staged_candidate(
+                db_path,
+                run_id="run",
+                meeting_id="Bmr001",
+                agent_name="action_item_agent",
+                target_section="action_items",
+                operation="create",
+                candidate_payload={
+                    "title": "Prepare data",
+                    "detail": "Prepare data.",
+                    "proposer": "unknown",
+                    "owner": "unknown",
+                    "status": "open",
+                    "priority": "medium",
+                    "dependencies": [],
+                },
+                evidence_lines=[3, 4, 6],
+                evidence_quote="We should prepare the data.",
+                confidence=0.9,
+            )
+            staged = load_staged_candidates(
+                db_path,
+                run_id="run",
+                agent_name="action_item_agent",
+                target_section="action_items",
+            )
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(staged[0]["payload"]["evidence"], "L3-L4, L6")
+            self.assertEqual(staged[0]["evidence_quote"], "We should prepare the data.")
 
     def test_extract_candidates_recovers_when_agent_errors_without_usable_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -757,6 +816,39 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(len(rejected), 1)
         self.assertEqual(counts["completed_create_not_allowed"], 1)
 
+    def test_verifier_rejects_unknown_related_action_item_ref(self) -> None:
+        candidates = [
+            {
+                "agent": "experiment_todo_agent",
+                "section": "experiment_todos",
+                "candidate_id": "bad-ref",
+                "payload": {
+                    "todo_id": "",
+                    "description": "Run evaluation",
+                    "status": "open",
+                    "owner": "unknown",
+                    "related_action_item_ids": ["A999"],
+                    "evidence": "L1",
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={
+                "action_items": [{"item_id": "A001", "title": "Existing"}],
+                "method_changes": [],
+                "experiment_todos": [],
+            },
+            allowed_line_numbers={1},
+        )
+
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(counts["related_action_item_unknown_id"], 1)
+
     def test_verifier_rejects_inventory_only_method_change(self) -> None:
         candidates = [
             {
@@ -864,6 +956,96 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(state["final_patch"]["next_meeting_focus"], ["準備實驗資料"])
             self.assertEqual(state["final_memory"]["meeting_history_ids"], ["Bmr003"])
             self.assertFalse(state["persisted"])
+            events = [
+                json.loads(line)
+                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
+            ]
+            read_window_end = [
+                event
+                for event in events
+                if event["node"] == "read_window" and event["event"] == "end"
+            ][0]
+            self.assertEqual(read_window_end["line_range"], "L1-L1")
+
+    def test_langgraph_stops_context_retry_when_planner_repeats_same_range(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            transcript_db = tmp / "transcripts.db"
+            memory_db = tmp / "memory.db"
+            import_transcript_to_sqlite(
+                db_path=transcript_db,
+                meeting_id="Bmr004",
+                source_file="Bmr004.txt",
+                transcript="\n".join(f"[S]: line {index}" for index in range(1, 101)),
+            )
+            logger = ResearchLogger(tmp / "logs", "Bmr004", run_id="run_Bmr004")
+            graph = _build_graph(
+                agents=_RepeatedContextFakeAgents(),
+                logger=logger,
+                db_path=memory_db,
+                transcript_db_path=transcript_db,
+            )
+
+            state = graph.compile().invoke(
+                {
+                    "run_id": "run_Bmr004",
+                    "meeting_id": "Bmr004",
+                    "source_file": "Bmr004.txt",
+                    "model_name": "gemini-2.5-pro",
+                    "db_path": str(memory_db),
+                    "transcript_db_path": str(transcript_db),
+                    "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                    "research_log_dir": str(tmp / "logs"),
+                    "log_level": "debug",
+                    "keep_full_prompts": True,
+                    "dry_run": True,
+                    "chunk_size": 80,
+                    "max_lookback_lines": 20,
+                    "max_lookahead_lines": 40,
+                    "max_context_rounds": 3,
+                    "transcript_line_count": 100,
+                    "transcript_overview": {"line_count": 100},
+                    "current_memory": {
+                        "memory_version": 0,
+                        "meeting_history_ids": [],
+                        "meeting_window": [],
+                        "action_items": [],
+                        "method_changes": [],
+                        "experiment_todos": [],
+                        "next_meeting_focus": [],
+                    },
+                    "memory_source": "default",
+                    "processed_until_line": 0,
+                    "planner_history": [],
+                    "context_rounds": 0,
+                    "raw_candidates": [],
+                    "verified_candidates": [],
+                    "rejected_candidates": [],
+                    "final_patch": {},
+                    "final_memory": {},
+                    "report": {},
+                    "persisted": False,
+                    "read_line_numbers": [],
+                }
+            )
+
+            self.assertEqual(len(state["unresolved_context"]), 1)
+            self.assertEqual(
+                state["unresolved_context"][0]["reason"],
+                "segment_requested_more_context_but_planner_repeated_same_range",
+            )
+            events = [
+                json.loads(line)
+                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
+            ]
+            repeated_window_reads = [
+                event
+                for event in events
+                if event["node"] == "read_window"
+                and event["event"] == "end"
+                and event["line_range"] == "L1-L80"
+            ]
+            self.assertEqual(len(repeated_window_reads), 2)
 
     def test_memory_tools_read_sqlite_and_write_staging(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1008,6 +1190,39 @@ class _FakeAgents:
                 ]
             },
         )
+
+
+class _RepeatedContextFakeAgents(_FakeAgents):
+    def __init__(self) -> None:
+        super().__init__()
+        self.context_planner = _FakeAgent(
+            "context_planner",
+            {
+                "start_line": 1,
+                "end_line": 80,
+                "lookback_lines": 0,
+                "lookahead_lines": 0,
+                "reason": "repeat same range",
+                "risk": "medium",
+            },
+        )
+        self.segment = _FakeAgent(
+            "segment_agent",
+            {
+                "units": [
+                    {
+                        "unit_id": "U001",
+                        "line_start": 1,
+                        "line_end": 80,
+                        "topic": "incomplete topic",
+                        "kind_hint": ["next_meeting_focus"],
+                        "needs_more_context": True,
+                        "reason": "needs more context",
+                    }
+                ]
+            },
+        )
+        self.focus = _FakeAgent("next_focus_agent", {"next_meeting_focus": []})
 
 
 if __name__ == "__main__":

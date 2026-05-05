@@ -31,6 +31,7 @@ class ShortTermGraphState(TypedDict, total=False):
     current_window: dict[str, Any]
     current_units: list[dict[str, Any]]
     needs_more_context: bool
+    unresolved_context: list[dict[str, Any]]
     read_line_numbers: list[int]
     meeting_window_candidates_buffer: list[dict[str, Any]]
     action_items_candidates_buffer: list[dict[str, Any]]

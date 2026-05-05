@@ -119,6 +119,7 @@ def run_short_term_langgraph_update(
         "processed_until_line": 0,
         "planner_history": [],
         "context_rounds": 0,
+        "unresolved_context": [],
         "meeting_window_candidates_buffer": [],
         "action_items_candidates_buffer": [],
         "method_changes_candidates_buffer": [],
@@ -272,17 +273,49 @@ def _build_graph(
                 and int(unit.get("line_end", 0) or 0) in allowed
             ]
             needs_more = any(bool(unit.get("needs_more_context")) for unit in clean_units)
+            unresolved_context = list(state.get("unresolved_context", []))
+            window_cannot_expand = _window_cannot_expand(
+                state.get("current_window", {}),
+                total_lines=int(state.get("transcript_line_count", 0) or 0),
+            )
+            repeated_context_range = _planner_repeated_context_range(
+                state.get("planner_history", []),
+                total_lines=int(state.get("transcript_line_count", 0) or 0),
+            )
             context_rounds = int(state.get("context_rounds", 0) or 0)
             if needs_more:
                 context_rounds += 1
             else:
                 context_rounds = 0
-            if context_rounds > int(state.get("max_context_rounds", 3) or 3):
+            if needs_more and window_cannot_expand:
+                unresolved_context.append(
+                    {
+                        "line_range": _line_range(state.get("current_window", {})),
+                        "reason": "segment_requested_more_context_but_window_covers_available_transcript",
+                    }
+                )
+                needs_more = False
+            elif needs_more and context_rounds > 1 and repeated_context_range:
+                unresolved_context.append(
+                    {
+                        "line_range": _line_range(state.get("current_window", {})),
+                        "reason": "segment_requested_more_context_but_planner_repeated_same_range",
+                    }
+                )
+                needs_more = False
+            elif context_rounds > int(state.get("max_context_rounds", 3) or 3):
+                unresolved_context.append(
+                    {
+                        "line_range": _line_range(state.get("current_window", {})),
+                        "reason": "segment_context_round_limit_reached",
+                    }
+                )
                 needs_more = False
             return {
                 "current_units": clean_units,
                 "needs_more_context": needs_more,
                 "context_rounds": context_rounds,
+                "unresolved_context": unresolved_context,
             }
 
         return _node(logger, "segment_window", state, run, progress_callback=progress_callback)
@@ -919,7 +952,12 @@ def _node(
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     started = timed()
-    logger.graph_event(node=name, event="start", summary=summary or {})
+    logger.graph_event(
+        node=name,
+        event="start",
+        summary=summary or {},
+        line_range=_line_range(state.get("current_window", {})),
+    )
     _emit_progress(
         progress_callback,
         state=state,
@@ -939,6 +977,7 @@ def _node(
             event="end",
             duration_seconds=duration,
             summary=node_summary,
+            line_range=_line_range(merged.get("current_window", {})),
         )
         _emit_progress(
             progress_callback,
@@ -957,6 +996,7 @@ def _node(
             status="error",
             duration_seconds=duration,
             summary={"error": str(exc)},
+            line_range=_line_range(state.get("current_window", {})),
         )
         _emit_progress(
             progress_callback,
@@ -1006,6 +1046,7 @@ def _node_summary(name: str, state: dict[str, Any]) -> dict[str, Any]:
         return {
             "units": len(state.get("current_units", [])),
             "needs_more_context": bool(state.get("needs_more_context")),
+            "unresolved_context_count": len(state.get("unresolved_context", [])),
         }
     if name.startswith("extract_"):
         return {"raw_candidates": len(state.get("raw_candidates", []))}
@@ -1063,6 +1104,40 @@ def _window_line_set(window: Any) -> set[int]:
     return output
 
 
+def _window_cannot_expand(window: Any, *, total_lines: int) -> bool:
+    if not isinstance(window, dict) or total_lines <= 0:
+        return False
+    try:
+        context_start = int(window.get("context_start_line", 0) or 0)
+        context_end = int(window.get("context_end_line", 0) or 0)
+    except (TypeError, ValueError):
+        return False
+    return context_start <= 1 and context_end >= total_lines
+
+
+def _planner_repeated_context_range(planner_history: Any, *, total_lines: int) -> bool:
+    if not isinstance(planner_history, list) or len(planner_history) < 2:
+        return False
+    last = planner_history[-1]
+    previous = planner_history[-2]
+    if not isinstance(last, dict) or not isinstance(previous, dict):
+        return False
+    return _plan_context_range(last, total_lines=total_lines) == _plan_context_range(
+        previous,
+        total_lines=total_lines,
+    )
+
+
+def _plan_context_range(plan: dict[str, Any], *, total_lines: int) -> tuple[int, int]:
+    start = _safe_int(plan.get("start_line"), 1)
+    end = _safe_int(plan.get("end_line"), start)
+    lookback = _safe_int(plan.get("lookback_lines"), 0)
+    lookahead = _safe_int(plan.get("lookahead_lines"), 0)
+    context_start = max(1, start - max(0, lookback))
+    context_end = min(max(total_lines, 1), end + max(0, lookahead))
+    return context_start, context_end
+
+
 def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
     rejected = state.get("rejected_candidates", [])
     rejection_counts = Counter(
@@ -1084,6 +1159,9 @@ def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
         warnings.append("Some candidates had no evidence and were kept for debug review.")
     if rejection_counts.get("low_confidence", 0):
         warnings.append("Some candidates were rejected because confidence was low.")
+    unresolved_context = state.get("unresolved_context", [])
+    if unresolved_context:
+        warnings.append("Some transcript windows requested more context but could not be expanded further.")
     if not final_patch:
         warnings.append("No verified candidate produced a final patch.")
     return {
@@ -1100,6 +1178,7 @@ def _build_report(state: dict[str, Any], run_id: str) -> dict[str, Any]:
         "warning_counts": dict(warning_counts),
         "staged_operations": _candidate_operation_counts(state.get("raw_candidates", [])),
         "final_writes": _final_write_summary(state.get("verified_candidates", [])),
+        "unresolved_context": unresolved_context if isinstance(unresolved_context, list) else [],
         "final": {
             "memory_version": final_memory.get("memory_version", ""),
             "meeting_window": len(final_memory.get("meeting_window", []))
@@ -1142,13 +1221,17 @@ def _final_write_summary(candidates: Any) -> list[dict[str, Any]]:
         if not isinstance(candidate, dict):
             continue
         payload = candidate.get("payload", {})
+        operation = candidate.get("operation") or (
+            payload.get("operation") if isinstance(payload, dict) else ""
+        )
+        if operation == "no_op":
+            continue
         output.append(
             {
                 "candidate_id": candidate.get("candidate_id", ""),
                 "agent": candidate.get("agent", ""),
                 "section": candidate.get("section", ""),
-                "operation": candidate.get("operation")
-                or (payload.get("operation") if isinstance(payload, dict) else ""),
+                "operation": operation,
                 "target_id": candidate.get("target_id", ""),
                 "warnings": candidate.get("warnings", []),
             }

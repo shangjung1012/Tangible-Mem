@@ -75,6 +75,12 @@ def verify_candidates(
             reasons.append("low_confidence")
 
         operation = str(payload.get("operation") or candidate.get("operation") or "").strip()
+        writes_memory = operation != "no_op"
+        if writes_memory:
+            if not evidence:
+                reasons.append("missing_evidence")
+            elif not _evidence_lines_are_allowed(evidence, allowed_line_numbers):
+                reasons.append("evidence_line_not_read")
         target_id = str(candidate.get("target_id", "")).strip()
         if target_id:
             if section == "action_items" and not str(payload.get("item_id", "")).strip():
@@ -101,6 +107,7 @@ def verify_candidates(
                 reasons.append("duplicate_create")
         elif section == "experiment_todos":
             _verify_experiment(payload, operation, existing_todo_ids, reasons)
+            _verify_related_action_item_ids(payload, existing_action_ids, reasons)
             if operation == "create" and _duplicate_text(
                 payload.get("description"),
                 current_memory.get("experiment_todos", []),
@@ -111,7 +118,7 @@ def verify_candidates(
             if not str(payload.get("meeting_id", "")).strip():
                 reasons.append("missing_meeting_id")
         elif section == "next_meeting_focus":
-            if not str(payload.get("text", "")).strip():
+            if operation != "no_op" and not str(payload.get("text", "")).strip():
                 reasons.append("missing_focus_text")
 
         if reasons:
@@ -225,6 +232,27 @@ def _verify_experiment(
         reasons.append("missing_owner")
     if operation == "create" and status == "completed":
         reasons.append("completed_create_not_allowed")
+
+
+def _verify_related_action_item_ids(
+    payload: dict[str, Any],
+    existing_action_ids: set[str],
+    reasons: list[str],
+) -> None:
+    related = payload.get("related_action_item_ids")
+    if related in (None, ""):
+        return
+    if not isinstance(related, list):
+        reasons.append("invalid_related_action_item_ids")
+        return
+    for value in related:
+        action_id = str(value).strip()
+        if not action_id:
+            continue
+        if not _ACTION_ID_RE.fullmatch(action_id):
+            reasons.append("invalid_related_action_item_id")
+        elif action_id not in existing_action_ids:
+            reasons.append("related_action_item_unknown_id")
 
 
 def _evidence_lines_are_allowed(evidence: str, allowed: set[int]) -> bool:

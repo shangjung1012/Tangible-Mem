@@ -93,6 +93,9 @@ Agent responsibility:
 Candidate rules:
 - 可使用 read_short_term_memory 讀取你被允許的 current memory section。
 - 可使用 write_memory_candidate 將完整候選寫入 staging；即使寫入 staging，最後仍必須回傳符合 response schema 的 JSON。
+- 呼叫 write_memory_candidate 時，candidate_payload 必須包含該 section 的實際內容欄位；不要只放 operation/confidence/evidence，也不要把內容只放在 note。
+- write_memory_candidate 的 evidence_lines 必須是整數行號陣列，例如 [86,87,88]；evidence_quote 放逐字稿短摘錄，不可放 Lx-Ly。
+- update/close 必須同時提供 target_id 與 payload 內的既有 ID；create 必須留空 ID。
 - 只回傳 JSON，不要輸出 markdown。
 - 只輸出你負責 section 的候選陣列；沒有候選時回傳空陣列。
 - action_items create 必須包含 title、detail、proposer、owner、status、priority、dependencies；新 action item 的 item_id 必須留空，系統會分配 A###。update/close 必須使用 current memory 中既有 A### item_id。

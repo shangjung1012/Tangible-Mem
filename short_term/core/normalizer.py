@@ -581,6 +581,27 @@ def merge_experiment_todo_patch(
     return list(item_map.values())
 
 
+def remove_dangling_experiment_action_refs(
+    todos: list[dict[str, Any]],
+    action_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    action_ids = {
+        normalize_str(item.get("item_id"))
+        for item in action_items
+        if isinstance(item, dict) and normalize_str(item.get("item_id"))
+    }
+    cleaned: list[dict[str, Any]] = []
+    for todo in todos:
+        updated = deepcopy(todo)
+        updated["related_action_item_ids"] = [
+            action_id
+            for action_id in normalize_str_list(todo.get("related_action_item_ids"))
+            if action_id in action_ids
+        ]
+        cleaned.append(updated)
+    return cleaned
+
+
 def normalize_memory(
     updated_memory: dict[str, Any],
     previous_memory: dict[str, Any],
@@ -633,7 +654,10 @@ def normalize_memory(
         recent_meeting_ids,
     )
     merged["method_changes"] = method_changes
-    merged["experiment_todos"] = experiment_todos
+    merged["experiment_todos"] = remove_dangling_experiment_action_refs(
+        experiment_todos,
+        merged["action_items"],
+    )
 
     next_focus = normalize_str_list(merged.get("next_meeting_focus"))
     if not next_focus:
