@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from google import genai
 from google.genai import types
@@ -70,6 +70,15 @@ class GeminiJsonAgent:
         tool_errors: list[str] = []
         retry_events: list[dict[str, Any]] = []
 
+        def record_retry(event: dict[str, Any]) -> None:
+            retry_events.append(event)
+            logger.graph_event(
+                node=self.name,
+                event="retry",
+                status="retry",
+                summary=event,
+            )
+
         def invoke_plain() -> Any:
             return self.client.models.generate_content(
                 model=self.model_name,
@@ -86,7 +95,7 @@ class GeminiJsonAgent:
                 response = call_with_retry(
                     invoke_plain,
                     operation_name=f"{self.name} generate_content",
-                    on_retry=retry_events.append,
+                    on_retry=record_retry,
                 )
             else:
                 response = self._run_with_tools(
@@ -94,7 +103,7 @@ class GeminiJsonAgent:
                     logger=logger,
                     tool_context=tool_context,
                     max_tool_rounds=max_tool_rounds,
-                    retry_events=retry_events,
+                    on_retry=record_retry,
                     tool_errors=tool_errors,
                 )
             token_usage = _usage_metadata(response)
@@ -142,7 +151,7 @@ class GeminiJsonAgent:
         logger: ResearchLogger,
         tool_context: AgentToolContext,
         max_tool_rounds: int,
-        retry_events: list[dict[str, Any]],
+        on_retry: Callable[[dict[str, Any]], None],
         tool_errors: list[str],
     ) -> Any:
         def read_short_term_memory(
@@ -178,7 +187,7 @@ class GeminiJsonAgent:
         response = call_with_retry(
             lambda: chat.send_message(prompt),
             operation_name=f"{self.name} tool send_message initial",
-            on_retry=retry_events.append,
+            on_retry=on_retry,
         )
 
         total_function_calls = 0
@@ -191,7 +200,7 @@ class GeminiJsonAgent:
                 if empty_response_retries >= MAX_EMPTY_RESPONSE_RETRIES:
                     return response
                 empty_response_retries += 1
-                retry_events.append(
+                on_retry(
                     {
                         "operation_name": f"{self.name} tool final JSON repair",
                         "attempt": empty_response_retries,
@@ -211,7 +220,7 @@ class GeminiJsonAgent:
                         f"{self.name} tool send_message empty-response repair "
                         f"{empty_response_retries}"
                     ),
-                    on_retry=retry_events.append,
+                    on_retry=on_retry,
                 )
                 continue
             empty_response_retries = 0
@@ -263,7 +272,7 @@ class GeminiJsonAgent:
             response = call_with_retry(
                 lambda: chat.send_message(parts),
                 operation_name=f"{self.name} tool send_message round {round_index}",
-                on_retry=retry_events.append,
+                on_retry=on_retry,
             )
 
         return response

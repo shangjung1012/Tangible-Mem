@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
+import queue
 import sqlite3
 import sys
 import tempfile
+import threading
+import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -145,6 +150,36 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["attempt"], 1)
         self.assertEqual(events[0]["operation_name"], "test operation")
+
+    def test_call_with_retry_enforces_local_timeout(self) -> None:
+        with mock.patch.dict(os.environ, {"GOOGLE_GENAI_TIMEOUT_MS": "10"}):
+            with self.assertRaisesRegex(TimeoutError, "timed out"):
+                call_with_retry(
+                    lambda: time.sleep(1),
+                    operation_name="slow operation",
+                    max_retries=1,
+                )
+
+    def test_call_with_retry_enforces_timeout_from_worker_thread(self) -> None:
+        errors: queue.Queue[BaseException] = queue.Queue()
+
+        def run() -> None:
+            with mock.patch.dict(os.environ, {"GOOGLE_GENAI_TIMEOUT_MS": "10"}):
+                try:
+                    call_with_retry(
+                        lambda: time.sleep(1),
+                        operation_name="slow worker operation",
+                        max_retries=1,
+                    )
+                except BaseException as exc:  # noqa: BLE001
+                    errors.put(exc)
+
+        worker = threading.Thread(target=run)
+        worker.start()
+        worker.join(1)
+
+        self.assertFalse(worker.is_alive())
+        self.assertIsInstance(errors.get_nowait(), TimeoutError)
 
     def test_tool_agent_repairs_empty_final_json_response(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -12,6 +12,7 @@ from google.genai import types
 
 DEFAULT_VERTEX_LOCATION = "global"
 DEFAULT_VERTEX_API_VERSION = "v1"
+DEFAULT_GENAI_TIMEOUT_MS = 120_000
 DEFAULT_ADC_CREDENTIALS_PATH = Path.home() / ".config/gcloud/application_default_credentials.json"
 VERTEX_SCOPES = ("https://www.googleapis.com/auth/cloud-platform",)
 TRUTHY_VALUES = {"1", "true", "t", "yes", "y", "on"}
@@ -26,6 +27,7 @@ class GenAIConfig:
     api_key: str | None = None
     credentials_path: Path | None = None
     api_version: str = DEFAULT_VERTEX_API_VERSION
+    timeout_ms: int = DEFAULT_GENAI_TIMEOUT_MS
 
 
 def load_dotenv_files() -> None:
@@ -45,6 +47,19 @@ def _env_bool(name: str, default: bool) -> bool:
     raise RuntimeError(
         f"{name} must be one of true/false, 1/0, yes/no, or on/off; got {raw_value!r}."
     )
+
+
+def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
+    raw_value = os.getenv(name, "").strip()
+    if not raw_value:
+        return default
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be an integer; got {raw_value!r}.") from exc
+    if value < minimum:
+        raise RuntimeError(f"{name} must be >= {minimum}; got {value}.")
+    return value
 
 
 def _gcloud_config_project() -> str:
@@ -82,6 +97,7 @@ def load_genai_config(api_key: str | None = None) -> GenAIConfig:
         os.getenv("GOOGLE_GENAI_API_VERSION", "").strip()
         or DEFAULT_VERTEX_API_VERSION
     )
+    timeout_ms = _env_int("GOOGLE_GENAI_TIMEOUT_MS", DEFAULT_GENAI_TIMEOUT_MS)
 
     if use_vertexai:
         credentials_path = _vertex_credentials_path()
@@ -114,6 +130,7 @@ def load_genai_config(api_key: str | None = None) -> GenAIConfig:
             location=location,
             credentials_path=credentials_path,
             api_version=api_version,
+            timeout_ms=timeout_ms,
         )
 
     resolved_api_key = (
@@ -131,6 +148,7 @@ def load_genai_config(api_key: str | None = None) -> GenAIConfig:
         use_vertexai=False,
         api_key=resolved_api_key,
         api_version=api_version,
+        timeout_ms=timeout_ms,
     )
 
 
@@ -148,9 +166,18 @@ def create_genai_client(config: GenAIConfig | None = None) -> genai.Client:
             credentials=credentials,
             project=resolved.project,
             location=resolved.location,
-            http_options=types.HttpOptions(apiVersion=resolved.api_version),
+            http_options=types.HttpOptions(
+                apiVersion=resolved.api_version,
+                timeout=resolved.timeout_ms,
+            ),
         )
-    return genai.Client(api_key=resolved.api_key)
+    return genai.Client(
+        api_key=resolved.api_key,
+        http_options=types.HttpOptions(
+            apiVersion=resolved.api_version,
+            timeout=resolved.timeout_ms,
+        ),
+    )
 
 
 def describe_genai_config(config: GenAIConfig) -> str:
@@ -159,6 +186,7 @@ def describe_genai_config(config: GenAIConfig) -> str:
             "Vertex AI "
             f"project={config.project} location={config.location} "
             f"api_version={config.api_version} "
+            f"timeout_ms={config.timeout_ms} "
             f"credentials={config.credentials_path}"
         )
-    return "Gemini Developer API"
+    return f"Gemini Developer API api_version={config.api_version} timeout_ms={config.timeout_ms}"

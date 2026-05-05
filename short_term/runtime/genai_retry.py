@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
+import queue
 import random
+import threading
 import time
 from typing import Any, Callable
 
@@ -10,6 +13,7 @@ MAX_API_RETRIES = 15
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
 API_RETRY_JITTER_SECONDS = 1.0
+DEFAULT_CALL_TIMEOUT_SECONDS = 120.0
 
 
 def _is_retryable_genai_error(exc: Exception) -> bool:
@@ -65,9 +69,14 @@ def call_with_retry(
     operation_name: str,
     max_retries: int = MAX_API_RETRIES,
 ) -> Any:
+    timeout_seconds = _call_timeout_seconds()
     for attempt in range(1, max_retries + 1):
         try:
-            return func()
+            return _call_with_timeout(
+                func,
+                operation_name=operation_name,
+                timeout_seconds=timeout_seconds,
+            )
         except Exception as exc:  # noqa: BLE001
             if not _is_retryable_genai_error(exc) or attempt >= max_retries:
                 raise
@@ -93,3 +102,52 @@ def call_with_retry(
             sleep_func(delay_seconds)
 
     raise RuntimeError("Unreachable: retry attempts exhausted unexpectedly.")
+
+
+def _call_timeout_seconds() -> float | None:
+    raw_ms = os.getenv("GOOGLE_GENAI_TIMEOUT_MS", "").strip()
+    if raw_ms:
+        try:
+            timeout_seconds = float(raw_ms) / 1000.0
+        except ValueError as exc:
+            raise RuntimeError(
+                f"GOOGLE_GENAI_TIMEOUT_MS must be an integer; got {raw_ms!r}."
+            ) from exc
+    else:
+        timeout_seconds = DEFAULT_CALL_TIMEOUT_SECONDS
+    if timeout_seconds <= 0:
+        return None
+    return timeout_seconds
+
+
+def _call_with_timeout(
+    func: Callable[[], Any],
+    *,
+    operation_name: str,
+    timeout_seconds: float | None,
+) -> Any:
+    if timeout_seconds is None:
+        return func()
+    output: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
+
+    def run() -> None:
+        try:
+            output.put(("result", func()))
+        except BaseException as exc:  # noqa: BLE001
+            output.put(("error", exc))
+
+    worker = threading.Thread(
+        target=run,
+        name=f"{operation_name} timeout worker",
+        daemon=True,
+    )
+    worker.start()
+    worker.join(timeout_seconds)
+    if worker.is_alive():
+        raise TimeoutError(
+            f"{operation_name} timed out after {timeout_seconds:.1f}s"
+        )
+    kind, value = output.get_nowait()
+    if kind == "error":
+        raise value
+    return value
