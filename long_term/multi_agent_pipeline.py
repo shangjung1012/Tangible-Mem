@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from io_utils import utc_now_iso
 from multi_agent_agents import (
@@ -23,6 +23,7 @@ from multi_agent_state import (
     L1_MULTI_AGENT_TYPES,
     SegmentProposal,
     TranscriptLine,
+    WindowPlan,
     parse_transcript_lines,
 )
 from multi_agent_tools import evidence_quote, jaccard
@@ -37,6 +38,7 @@ CROSS_WINDOW_TOPIC_MERGE_THRESHOLD = 0.30
 CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD = 0.20
 CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD = 0.20
 BOUNDARY_LINE_WINDOW = 6
+BOUNDARY_REFINEMENT_CONTEXT_LINES = 16
 SEGMENT_WINDOW_ID_RE = re.compile(r"^S-(\d+)-")
 
 
@@ -48,6 +50,189 @@ class MultiAgentPipelineResult:
     final_patch: dict[str, Any]
     final_meeting_node: dict[str, Any]
     artifact_paths: dict[str, str]
+
+
+BoundaryRefiner = Callable[
+    [SegmentProposal, SegmentProposal, WindowPlan, str],
+    tuple[list[SegmentProposal], dict[str, Any]],
+]
+
+
+def segment_window_start(segment: SegmentProposal) -> int | None:
+    match = SEGMENT_WINDOW_ID_RE.match(segment.segment_id)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def is_cross_window_boundary(left: SegmentProposal, right: SegmentProposal) -> bool:
+    left_window = segment_window_start(left)
+    right_window = segment_window_start(right)
+    return (
+        left_window is not None
+        and right_window is not None
+        and left_window != right_window
+    )
+
+
+def boundary_transcript_similarity(
+    left: SegmentProposal,
+    right: SegmentProposal,
+    transcript_lines: list[TranscriptLine] | None,
+) -> float:
+    if not transcript_lines:
+        return 0.0
+    left_start = max(left.line_start, left.line_end - BOUNDARY_LINE_WINDOW + 1)
+    right_end = min(right.line_end, right.line_start + BOUNDARY_LINE_WINDOW - 1)
+    left_text = evidence_quote(
+        transcript_lines,
+        list(range(left_start, left.line_end + 1)),
+        max_chars=1200,
+    )
+    right_text = evidence_quote(
+        transcript_lines,
+        list(range(right.line_start, right_end + 1)),
+        max_chars=1200,
+    )
+    return jaccard(left_text, right_text)
+
+
+def boundary_idea_unit_similarity(
+    left: SegmentProposal,
+    right: SegmentProposal,
+    idea_units: list[IdeaUnit] | None,
+) -> float:
+    if not idea_units:
+        return 0.0
+    left_units = sorted(
+        [unit for unit in idea_units if unit.segment_id == left.segment_id],
+        key=lambda unit: (unit.line_end, unit.line_start, unit.unit_id),
+        reverse=True,
+    )[:2]
+    right_units = sorted(
+        [unit for unit in idea_units if unit.segment_id == right.segment_id],
+        key=lambda unit: (unit.line_start, unit.line_end, unit.unit_id),
+    )[:2]
+    left_text = " ".join(unit.text for unit in reversed(left_units))
+    right_text = " ".join(unit.text for unit in right_units)
+    return jaccard(left_text, right_text)
+
+
+def should_refine_cross_window_boundary(
+    left: SegmentProposal,
+    right: SegmentProposal,
+    *,
+    transcript_lines: list[TranscriptLine] | None = None,
+) -> tuple[bool, str]:
+    if right.line_start > left.line_end + 1:
+        return False, "non_adjacent_segments"
+    if not is_cross_window_boundary(left, right):
+        return False, "not_cross_window_boundary"
+    topic_score = jaccard(left.topic_label, right.topic_label)
+    boundary_score = boundary_transcript_similarity(left, right, transcript_lines)
+    if (
+        left.needs_more_context
+        or right.needs_more_context
+        or topic_score >= CROSS_WINDOW_TOPIC_MERGE_THRESHOLD
+        or boundary_score >= CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD
+    ):
+        return True, (
+            "cross_window_boundary_refinement; "
+            f"topic_similarity={topic_score:.3f}; "
+            f"boundary_similarity={boundary_score:.3f}"
+        )
+    return False, (
+        "weak_cross_window_boundary_signal; "
+        f"topic_similarity={topic_score:.3f}; "
+        f"boundary_similarity={boundary_score:.3f}"
+    )
+
+
+def refine_cross_window_boundaries(
+    segments: list[SegmentProposal],
+    *,
+    transcript_lines: list[TranscriptLine] | None,
+    refine_span: BoundaryRefiner,
+) -> tuple[list[SegmentProposal], list[dict[str, Any]]]:
+    """Re-segment connected cross-window spans before idea-unit extraction."""
+    sorted_segments = sorted(
+        segments,
+        key=lambda segment: (segment.line_start, segment.line_end, segment.segment_id),
+    )
+    refined_segments: list[SegmentProposal] = []
+    reports: list[dict[str, Any]] = []
+    index = 0
+    while index < len(sorted_segments):
+        left = sorted_segments[index]
+        if index + 1 >= len(sorted_segments):
+            refined_segments.append(left)
+            break
+        right = sorted_segments[index + 1]
+        should_refine, reason = should_refine_cross_window_boundary(
+            left,
+            right,
+            transcript_lines=transcript_lines,
+        )
+        if not should_refine:
+            reports.append(
+                {
+                    "action": "keep_original",
+                    "left_segment_id": left.segment_id,
+                    "right_segment_id": right.segment_id,
+                    "reason": reason,
+                }
+            )
+            refined_segments.append(left)
+            index += 1
+            continue
+
+        plan = WindowPlan(
+            start_line=left.line_start,
+            end_line=right.line_end,
+            lookback_lines=BOUNDARY_REFINEMENT_CONTEXT_LINES,
+            lookahead_lines=BOUNDARY_REFINEMENT_CONTEXT_LINES,
+            reason=reason,
+        )
+        replacements, metadata = refine_span(left, right, plan, reason)
+        valid_replacements = [
+            segment
+            for segment in replacements
+            if (
+                plan.start_line <= segment.line_start <= segment.line_end <= plan.end_line
+            )
+        ]
+        if not valid_replacements:
+            reports.append(
+                {
+                    "action": "keep_original",
+                    "left_segment_id": left.segment_id,
+                    "right_segment_id": right.segment_id,
+                    "reason": "refinement_returned_no_valid_segments",
+                    "refinement_reason": reason,
+                    "metadata": metadata,
+                }
+            )
+            refined_segments.append(left)
+            index += 1
+            continue
+        valid_replacements = sorted(
+            valid_replacements,
+            key=lambda segment: (segment.line_start, segment.line_end, segment.segment_id),
+        )
+        reports.append(
+            {
+                "action": "refine",
+                "source_segment_ids": [left.segment_id, right.segment_id],
+                "output_segment_ids": [segment.segment_id for segment in valid_replacements],
+                "line_start": plan.start_line,
+                "line_end": plan.end_line,
+                "reason": reason,
+                "metadata": metadata,
+            }
+        )
+        refined_segments.extend(valid_replacements)
+        index += 2
+    return refined_segments, reports
 
 
 def build_continuation_batches(
@@ -314,6 +499,59 @@ def run_multi_agent_l1_pipeline(
                 "repairs": len(coverage_report["repair_segment_ids"]),
             },
         )
+    initial_segments = list(all_segments)
+    boundary_refinement_reports: list[dict[str, Any]] = []
+
+    def refine_boundary_span(
+        left: SegmentProposal,
+        right: SegmentProposal,
+        plan: WindowPlan,
+        reason: str,
+    ) -> tuple[list[SegmentProposal], dict[str, Any]]:
+        logger.append_event(
+            "boundary_refinement:start",
+            {
+                "left_segment_id": left.segment_id,
+                "right_segment_id": right.segment_id,
+                "start_line": plan.start_line,
+                "end_line": plan.end_line,
+                "reason": reason,
+            },
+        )
+        refined_raw = segmentation_agent(
+            runner,
+            meeting_id=meeting_id,
+            plan=plan,
+            transcript_lines=lines,
+        )
+        repaired_refined, refined_coverage = repair_segment_coverage(plan, refined_raw)
+        coarsened_refined, refined_coarsening = coarsen_segments_for_window(
+            plan,
+            repaired_refined,
+        )
+        logger.append_event(
+            "boundary_refinement:done",
+            {
+                "left_segment_id": left.segment_id,
+                "right_segment_id": right.segment_id,
+                "raw_segments": len(refined_raw),
+                "output_segments": len(coarsened_refined),
+                "coverage_rate": refined_coverage["coverage_rate"],
+            },
+        )
+        return coarsened_refined, {
+            "raw_segments": len(refined_raw),
+            "coverage": refined_coverage,
+            "coarsening": refined_coarsening,
+        }
+
+    all_segments, boundary_refinement_reports = refine_cross_window_boundaries(
+        all_segments,
+        transcript_lines=lines,
+        refine_span=refine_boundary_span,
+    )
+    logger.write_json("initial_segments.json", initial_segments)
+    logger.write_json("boundary_refinement.json", boundary_refinement_reports)
     logger.write_json("segments.json", all_segments)
     logger.write_json("segment_coverage_validation.json", coverage_reports)
     logger.write_json("segment_coarsening.json", coarsening_reports)

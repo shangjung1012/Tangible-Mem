@@ -9,7 +9,11 @@ LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
 
 from multi_agent_agents import IDEA_SCHEMA, l1_fallback_agent, l1_type_agent  # noqa: E402
-from multi_agent_pipeline import build_continuation_batches, idea_units_for_batch  # noqa: E402
+from multi_agent_pipeline import (  # noqa: E402
+    build_continuation_batches,
+    idea_units_for_batch,
+    refine_cross_window_boundaries,
+)
 from multi_agent_reducer import (  # noqa: E402
     reduce_l1_patch,
     resolve_cross_type_conflicts,
@@ -19,6 +23,7 @@ from multi_agent_state import (  # noqa: E402
     IdeaUnit,
     L1Candidate,
     SegmentProposal,
+    TranscriptLine,
     WindowPlan,
     parse_transcript_lines,
 )
@@ -311,6 +316,71 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(len(batches), 1)
         self.assertEqual(decisions[0]["action"], "merge")
         self.assertIn("boundary_similarity", decisions[0]["reason"])
+
+    def test_cross_window_boundary_refinement_resegments_joined_span(self) -> None:
+        transcript_lines = [
+            *[
+                TranscriptLine(line_id=line_id, text="forgetting decay memory")
+                for line_id in range(142, 161)
+            ],
+            *[
+                TranscriptLine(line_id=line_id, text="demo dataset memory")
+                for line_id in range(161, 184)
+            ],
+        ]
+        segments = [
+            SegmentProposal(
+                segment_id="S-0081-C05",
+                line_start=142,
+                line_end=160,
+                topic_label="forgetting and demo strategy",
+                needs_more_context=False,
+            ),
+            SegmentProposal(
+                segment_id="S-0161-C01",
+                line_start=161,
+                line_end=183,
+                topic_label="demo strategy and forgetting",
+                needs_more_context=False,
+            ),
+        ]
+
+        def fake_refiner(left, right, plan, reason):
+            del left, right, reason
+            return [
+                SegmentProposal(
+                    segment_id="S-0142-01",
+                    line_start=142,
+                    line_end=156,
+                    topic_label="forgetting mechanism",
+                    needs_more_context=False,
+                ),
+                SegmentProposal(
+                    segment_id="S-0142-02",
+                    line_start=157,
+                    line_end=172,
+                    topic_label="demo dataset strategy",
+                    needs_more_context=False,
+                ),
+                SegmentProposal(
+                    segment_id="S-0142-03",
+                    line_start=173,
+                    line_end=183,
+                    topic_label="presentation narrative",
+                    needs_more_context=False,
+                ),
+            ], {"test_plan": [plan.start_line, plan.end_line]}
+
+        refined, reports = refine_cross_window_boundaries(
+            segments,
+            transcript_lines=transcript_lines,
+            refine_span=fake_refiner,
+        )
+
+        self.assertEqual([(s.line_start, s.line_end) for s in refined], [(142, 156), (157, 172), (173, 183)])
+        self.assertEqual(reports[0]["action"], "refine")
+        self.assertEqual(reports[0]["source_segment_ids"], ["S-0081-C05", "S-0161-C01"])
+        self.assertEqual(reports[0]["metadata"]["test_plan"], [142, 183])
 
     def test_same_window_similar_segments_without_flag_stay_separate(self) -> None:
         segments = [

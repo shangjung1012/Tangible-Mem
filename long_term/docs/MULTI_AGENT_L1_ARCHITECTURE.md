@@ -29,7 +29,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 目前 `multi_agent` 的 L1 主流程是：
 
-`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> idea_unit_agent -> idea_unit_quality_validator/repair/coverage-fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1`
+`context_planner -> segmentation_agent -> segment_coverage_validator/repair -> segment_coarsening -> cross-window boundary refinement -> idea_unit_agent -> idea_unit_quality_validator/repair/coverage-fallback/compaction -> continuation_merge -> bounded l1_decision/todo/method_change/result_agent -> optional fallback_l1_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch/type-calibration/viewpoint-recurrence -> persist_l1`
 
 入口在 `long_term/bridge.py`。當 `--mode multi-agent` 被指定時，bridge 會呼叫 `run_multi_agent_l1_pipeline()`，最後仍把結果寫回同一個 `tree.json` meeting node。
 
@@ -140,7 +140,33 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `segment_coverage_validation.json`
 - `segment_coarsening.json`
 
-### 3.4 Continuation Merge
+### 3.4 Cross-Window Boundary Refinement
+
+檔案：`long_term/multi_agent_pipeline.py`
+
+函式：`refine_cross_window_boundaries(...)`
+
+責任：
+
+- 在 idea-unit extraction 前檢查相鄰但來自不同 context windows 的 segments
+- 若邊界附近 transcript 或 topic 顯示可能是同一段延續，重新對合併後的 line span 跑一次 segmentation
+- 重切時會帶入前後各 16 行 context，但輸出仍 clamp 回原本需要修補的核心 span
+- 用重切後的 segments 取代原本被 window 邊界切開的 segments
+
+設計理由：
+
+- continuation merge 可以避免跨窗內容遺失，但只把 extraction batch 接回來，不能恢復最佳語義切點
+- boundary refinement 讓 `160/161` 這類人工 window 邊界不只是事後合併，而是先在完整 span 內重新判斷 segment 邊界
+- 對 `80/81` 這類需要看前一段尾巴或後一段開頭才能判斷的情況，context-aware refinement 可以避免只看兩段核心 span 太窄
+- 只有 cross-window 且有足夠 continuity signal 的相鄰 span 會重切，避免對所有 segments 額外打 API
+
+輸出 artifact：
+
+- `initial_segments.json`
+- `boundary_refinement.json`
+- `segments.json` 會保存 refinement 後的 segment 結果
+
+### 3.5 Continuation Merge
 
 檔案：`long_term/multi_agent_pipeline.py`
 
@@ -174,7 +200,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - merge 只負責把相鄰 segment 變成 extraction batch
 - 漏行補救由前一層 segment coverage validator 負責
 
-### 3.5 Idea Unit Agent
+### 3.6 Idea Unit Agent
 
 檔案：`long_term/multi_agent_agents.py`
 
@@ -214,7 +240,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - `completeness` / `uncertainty_note` 目前只記錄，不影響 acceptance
 
-### 3.5.1 Idea Unit Quality Validator / Repair
+### 3.6.1 Idea Unit Quality Validator / Repair
 
 檔案：`long_term/multi_agent_validators.py`
 
@@ -242,7 +268,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - `idea_unit_quality_validation.json`
 
-### 3.6 Typed L1 Agents
+### 3.7 Typed L1 Agents
 
 檔案：`long_term/multi_agent_agents.py`
 
@@ -279,7 +305,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - `open_question` / `argument` 尚未接進 multi-agent loop
 - 目前只在「整個 batch 沒有任何 typed candidate」時跑一次 general fallback
 
-### 3.6.1 Fallback L1 Agent
+### 3.7.1 Fallback L1 Agent
 
 檔案：`long_term/multi_agent_agents.py`
 
@@ -300,7 +326,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - `batch_fallbacks.json`
 
-### 3.7 Evidence Grounding Agent
+### 3.8 Evidence Grounding Agent
 
 檔案：`long_term/multi_agent_verifier.py`
 
@@ -331,7 +357,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - local alignment 仍是 lexical / span-based heuristic
 - 還沒有對 paraphrase 型 evidence 做更強的本地語義檢查
 
-### 3.8 Cross-Type Conflict Resolver
+### 3.9 Cross-Type Conflict Resolver
 
 檔案：`long_term/multi_agent_reducer.py`
 
@@ -353,7 +379,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - collision policy 還不是完整 ontology governance
 - 目前只覆蓋部分 type pair
 
-### 3.9 Deterministic Verifier
+### 3.10 Deterministic Verifier
 
 檔案：`long_term/multi_agent_verifier.py`
 
@@ -384,7 +410,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - verifier 只驗證 candidate correctness；upstream segmentation / idea-unit 品質由前面的 validator / repair stages 處理
 
-### 3.10 Reducer / Persist
+### 3.11 Reducer / Persist
 
 檔案：`long_term/multi_agent_reducer.py`
 
@@ -430,6 +456,8 @@ Viewpoint recurrence 規則：
 - `run_meta.json`
 - `graph_events.jsonl`
 - `window_plans.json`
+- `initial_segments.json`
+- `boundary_refinement.json`
 - `segments.json`
 - `segment_coverage_validation.json`
 - `segment_coarsening.json`
