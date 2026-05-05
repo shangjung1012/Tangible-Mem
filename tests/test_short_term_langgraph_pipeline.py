@@ -1446,6 +1446,176 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
             self.assertEqual(state["processed_until_line"], 100)
             self.assertEqual(state["unresolved_context"], [])
 
+    def test_langgraph_does_not_treat_truncated_lookahead_as_full_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            transcript_db = tmp / "transcripts.db"
+            memory_db = tmp / "memory.db"
+            import_transcript_to_sqlite(
+                db_path=transcript_db,
+                meeting_id="Bmr008",
+                source_file="Bmr008.txt",
+                transcript="\n".join(f"[S]: line {index}" for index in range(1, 114)),
+            )
+            logger = ResearchLogger(tmp / "logs", "Bmr008", run_id="run_Bmr008")
+            agents = _TruncatedLookaheadFakeAgents()
+            graph = _build_graph(
+                agents=agents,
+                logger=logger,
+                db_path=memory_db,
+                transcript_db_path=transcript_db,
+            )
+
+            state = graph.compile().invoke(
+                {
+                    "run_id": "run_Bmr008",
+                    "meeting_id": "Bmr008",
+                    "source_file": "Bmr008.txt",
+                    "model_name": "gemini-2.5-pro",
+                    "db_path": str(memory_db),
+                    "transcript_db_path": str(transcript_db),
+                    "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                    "research_log_dir": str(tmp / "logs"),
+                    "log_level": "debug",
+                    "keep_full_prompts": True,
+                    "dry_run": True,
+                    "chunk_size": 80,
+                    "max_lookback_lines": 20,
+                    "max_lookahead_lines": 40,
+                    "max_context_rounds": 3,
+                    "transcript_line_count": 113,
+                    "transcript_overview": {"line_count": 113},
+                    "current_memory": {
+                        "memory_version": 0,
+                        "meeting_history_ids": [],
+                        "meeting_window": [],
+                        "action_items": [],
+                        "method_changes": [],
+                        "experiment_todos": [],
+                        "next_meeting_focus": [],
+                    },
+                    "memory_source": "default",
+                    "processed_until_line": 0,
+                    "planner_history": [],
+                    "context_rounds": 0,
+                    "context_units_buffer": [],
+                    "context_items_buffer": [],
+                    "raw_candidates": [],
+                    "verified_candidates": [],
+                    "rejected_candidates": [],
+                    "final_patch": {},
+                    "final_memory": {},
+                    "report": {},
+                    "persisted": False,
+                    "read_line_numbers": [],
+                }
+            )
+
+            events = [
+                json.loads(line)
+                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
+            ]
+            read_ranges = [
+                event["line_range"]
+                for event in events
+                if event["node"] == "read_window" and event["event"] == "end"
+            ]
+            meeting_prompt = str(agents.meeting.last_kwargs["prompt"])
+            self.assertEqual(read_ranges[:2], ["L1-L80", "L81-L113"])
+            self.assertEqual(agents.meeting.call_count, 1)
+            self.assertIn("L1 [S]: line 1", meeting_prompt)
+            self.assertIn("L113 [S]: line 113", meeting_prompt)
+            self.assertEqual(state["processed_until_line"], 113)
+            self.assertEqual(state["unresolved_context"], [])
+
+    def test_langgraph_stops_context_requests_when_merged_window_covers_transcript(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            transcript_db = tmp / "transcripts.db"
+            memory_db = tmp / "memory.db"
+            import_transcript_to_sqlite(
+                db_path=transcript_db,
+                meeting_id="Bmr009",
+                source_file="Bmr009.txt",
+                transcript="\n".join(f"[S]: line {index}" for index in range(1, 114)),
+            )
+            logger = ResearchLogger(tmp / "logs", "Bmr009", run_id="run_Bmr009")
+            agents = _TerminalContextFakeAgents()
+            graph = _build_graph(
+                agents=agents,
+                logger=logger,
+                db_path=memory_db,
+                transcript_db_path=transcript_db,
+            )
+
+            state = graph.compile().invoke(
+                {
+                    "run_id": "run_Bmr009",
+                    "meeting_id": "Bmr009",
+                    "source_file": "Bmr009.txt",
+                    "model_name": "gemini-2.5-pro",
+                    "db_path": str(memory_db),
+                    "transcript_db_path": str(transcript_db),
+                    "checkpoint_db_path": str(tmp / "checkpoint.db"),
+                    "research_log_dir": str(tmp / "logs"),
+                    "log_level": "debug",
+                    "keep_full_prompts": True,
+                    "dry_run": True,
+                    "chunk_size": 80,
+                    "max_lookback_lines": 20,
+                    "max_lookahead_lines": 40,
+                    "max_context_rounds": 3,
+                    "transcript_line_count": 113,
+                    "transcript_overview": {"line_count": 113},
+                    "current_memory": {
+                        "memory_version": 0,
+                        "meeting_history_ids": [],
+                        "meeting_window": [],
+                        "action_items": [],
+                        "method_changes": [],
+                        "experiment_todos": [],
+                        "next_meeting_focus": [],
+                    },
+                    "memory_source": "default",
+                    "processed_until_line": 0,
+                    "planner_history": [],
+                    "context_rounds": 0,
+                    "context_units_buffer": [],
+                    "context_items_buffer": [],
+                    "raw_candidates": [],
+                    "verified_candidates": [],
+                    "rejected_candidates": [],
+                    "final_patch": {},
+                    "final_memory": {},
+                    "report": {},
+                    "persisted": False,
+                    "read_line_numbers": [],
+                }
+            )
+
+            events = [
+                json.loads(line)
+                for line in (logger.run_dir / "graph_events.jsonl").read_text().splitlines()
+            ]
+            read_ranges = [
+                event["line_range"]
+                for event in events
+                if event["node"] == "read_window" and event["event"] == "end"
+            ]
+            self.assertEqual(read_ranges, ["L1-L80", "L81-L113"])
+            self.assertEqual(agents.segment.call_count, 2)
+            self.assertEqual(agents.meeting.call_count, 1)
+            self.assertEqual(state["processed_until_line"], 113)
+            self.assertEqual(
+                state["unresolved_context"],
+                [
+                    {
+                        "line_range": "L1-L113",
+                        "reason": "segment_requested_more_context_but_window_covers_available_transcript",
+                    }
+                ],
+            )
+
     def test_memory_tools_read_sqlite_and_write_staging(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "memory.db"
@@ -1827,6 +1997,162 @@ class _ExpandedContextFakeAgents(_FakeAgents):
                         "key_points": ["Expanded context"],
                         "open_questions": [],
                         "evidence": "L1, L120",
+                        "confidence": 0.9,
+                    }
+                ]
+            },
+        )
+        self.focus = _FakeAgent("next_focus_agent", {"next_meeting_focus": []})
+
+
+class _TruncatedLookaheadFakeAgents(_FakeAgents):
+    def __init__(self) -> None:
+        super().__init__()
+        self.context_planner = _FakeAgent(
+            "context_planner",
+            {
+                "start_line": 1,
+                "end_line": 80,
+                "lookback_lines": 0,
+                "lookahead_lines": 33,
+                "reason": "ask for the rest of the short transcript as lookahead",
+                "risk": "low",
+            },
+        )
+        self.segment = _FakeAgent(
+            "segment_agent",
+            [
+                (
+                    {
+                        "units": [
+                            {
+                                "unit_id": "U001",
+                                "line_start": 1,
+                                "line_end": 80,
+                                "topic": "first part needs the transcript tail",
+                                "kind_hint": ["meeting_summary"],
+                                "needs_more_context": True,
+                                "reason": "the topic continues after the page cap",
+                            }
+                        ]
+                    },
+                    [],
+                ),
+                (
+                    {
+                        "units": [
+                            {
+                                "unit_id": "U002",
+                                "line_start": 81,
+                                "line_end": 113,
+                                "topic": "tail completes the topic",
+                                "kind_hint": ["meeting_summary"],
+                                "needs_more_context": False,
+                                "reason": "complete",
+                            }
+                        ]
+                    },
+                    [],
+                ),
+            ],
+        )
+        self.meeting = _FakeAgent(
+            "meeting_summary_agent",
+            {
+                "meeting_window": [
+                    {
+                        "meeting_id": "Bmr008",
+                        "source_file": "Bmr008.txt",
+                        "summary": "Truncated lookahead was completed before extraction.",
+                        "key_points": ["Completed context before extraction"],
+                        "open_questions": [],
+                        "evidence": "L1, L113",
+                        "confidence": 0.9,
+                    }
+                ]
+            },
+        )
+        self.focus = _FakeAgent("next_focus_agent", {"next_meeting_focus": []})
+
+
+class _TerminalContextFakeAgents(_FakeAgents):
+    def __init__(self) -> None:
+        super().__init__()
+        self.context_planner = _FakeAgent(
+            "context_planner",
+            [
+                (
+                    {
+                        "start_line": 1,
+                        "end_line": 80,
+                        "lookback_lines": 0,
+                        "lookahead_lines": 0,
+                        "reason": "first chunk",
+                        "risk": "medium",
+                    },
+                    [],
+                ),
+                (
+                    {
+                        "start_line": 81,
+                        "end_line": 113,
+                        "lookback_lines": 0,
+                        "lookahead_lines": 0,
+                        "reason": "tail chunk",
+                        "risk": "medium",
+                    },
+                    [],
+                ),
+            ],
+        )
+        self.segment = _FakeAgent(
+            "segment_agent",
+            [
+                (
+                    {
+                        "units": [
+                            {
+                                "unit_id": "U001",
+                                "line_start": 1,
+                                "line_end": 80,
+                                "topic": "first part needs tail",
+                                "kind_hint": ["meeting_summary"],
+                                "needs_more_context": True,
+                                "reason": "continues in tail",
+                            }
+                        ]
+                    },
+                    [],
+                ),
+                (
+                    {
+                        "units": [
+                            {
+                                "unit_id": "U002",
+                                "line_start": 81,
+                                "line_end": 113,
+                                "topic": "tail still asks for more",
+                                "kind_hint": ["meeting_summary"],
+                                "needs_more_context": True,
+                                "reason": "model asks beyond transcript end",
+                            }
+                        ]
+                    },
+                    [],
+                ),
+            ],
+        )
+        self.meeting = _FakeAgent(
+            "meeting_summary_agent",
+            {
+                "meeting_window": [
+                    {
+                        "meeting_id": "Bmr009",
+                        "source_file": "Bmr009.txt",
+                        "summary": "Terminal context meeting summary.",
+                        "key_points": ["Terminal context"],
+                        "open_questions": [],
+                        "evidence": "L1, L113",
                         "confidence": 0.9,
                     }
                 ]

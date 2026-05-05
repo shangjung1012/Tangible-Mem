@@ -250,6 +250,27 @@ def _build_graph(
                 limit=max(1, context_end - context_start + 1),
             )
             items = page.get("items", []) if isinstance(page, dict) else []
+            actual_line_numbers = [
+                _safe_int(item.get("line_number"), 0)
+                for item in items
+                if isinstance(item, dict)
+            ]
+            actual_line_numbers = [line for line in actual_line_numbers if line > 0]
+            actual_context_start = (
+                min(actual_line_numbers)
+                if actual_line_numbers
+                else _safe_int(page.get("start_line"), context_start)
+                if isinstance(page, dict)
+                else context_start
+            )
+            actual_context_end = (
+                max(actual_line_numbers)
+                if actual_line_numbers
+                else _safe_int(page.get("end_line"), context_start)
+                if isinstance(page, dict)
+                else context_start
+            )
+            actual_forward_end = min(end, actual_context_end)
             line_numbers = list(state.get("read_line_numbers", []))
             for item in items:
                 if isinstance(item, dict):
@@ -258,10 +279,10 @@ def _build_graph(
                     except (TypeError, ValueError):
                         continue
             window = {
-                "context_start_line": context_start,
-                "context_end_line": context_end,
+                "context_start_line": actual_context_start,
+                "context_end_line": actual_context_end,
                 "forward_start_line": start,
-                "forward_end_line": end,
+                "forward_end_line": actual_forward_end,
                 "items": items,
             }
             return {
@@ -294,8 +315,21 @@ def _build_graph(
             ]
             needs_more = any(bool(unit.get("needs_more_context")) for unit in clean_units)
             unresolved_context = list(state.get("unresolved_context", []))
+            merged_units = _merge_idea_units(
+                list(state.get("context_units_buffer", [])),
+                clean_units,
+            )
+            merged_items = _merge_transcript_items(
+                list(state.get("context_items_buffer", [])),
+                window.get("items", []) if isinstance(window, dict) else [],
+            )
+            merged_window = _merge_context_window(
+                window,
+                merged_items,
+                processed_until=int(state.get("processed_until_line", 0) or 0),
+            )
             window_cannot_expand = _window_cannot_expand(
-                state.get("current_window", {}),
+                merged_window,
                 total_lines=int(state.get("transcript_line_count", 0) or 0),
             )
             repeated_context_range = _planner_repeated_context_range(
@@ -310,7 +344,7 @@ def _build_graph(
             if needs_more and window_cannot_expand:
                 unresolved_context.append(
                     {
-                        "line_range": _line_range(state.get("current_window", {})),
+                        "line_range": _line_range(merged_window),
                         "reason": "segment_requested_more_context_but_window_covers_available_transcript",
                     }
                 )
@@ -331,24 +365,12 @@ def _build_graph(
                     }
                 )
                 needs_more = False
-            merged_units = _merge_idea_units(
-                list(state.get("context_units_buffer", [])),
-                clean_units,
-            )
-            merged_items = _merge_transcript_items(
-                list(state.get("context_items_buffer", [])),
-                window.get("items", []) if isinstance(window, dict) else [],
-            )
             if needs_more:
                 extraction_window = window
                 context_units_buffer = merged_units
                 context_items_buffer = merged_items
             else:
-                extraction_window = _merge_context_window(
-                    window,
-                    merged_items,
-                    processed_until=int(state.get("processed_until_line", 0) or 0),
-                )
+                extraction_window = merged_window
                 context_units_buffer = []
                 context_items_buffer = []
             return {
@@ -1271,6 +1293,9 @@ def _window_line_set(window: Any) -> set[int]:
 def _window_cannot_expand(window: Any, *, total_lines: int) -> bool:
     if not isinstance(window, dict) or total_lines <= 0:
         return False
+    line_numbers = sorted(_window_line_set(window))
+    if line_numbers:
+        return line_numbers[0] <= 1 and line_numbers[-1] >= total_lines
     try:
         context_start = int(window.get("context_start_line", 0) or 0)
         context_end = int(window.get("context_end_line", 0) or 0)
