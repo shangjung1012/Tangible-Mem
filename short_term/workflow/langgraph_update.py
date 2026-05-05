@@ -653,11 +653,13 @@ def _extract_candidates(
             section=section,
             parsed=result.parsed,
         )
-        if output:
-            return output
         if result.errors:
             last_errors = [str(error) for error in result.errors if str(error).strip()]
+            if output and not _has_unresolved_tool_call_error(last_errors):
+                return output
             continue
+        if output:
+            return output
         return []
 
     raise RuntimeError(
@@ -678,6 +680,10 @@ def _raise_on_agent_errors(result: Any, *, node: str) -> None:
         raise RuntimeError(
             f"LLM agent failed in {node} ({agent_name}): {'; '.join(errors)}"
         )
+
+
+def _has_unresolved_tool_call_error(errors: list[str]) -> bool:
+    return any("unresolved function calls" in error for error in errors)
 
 
 def _require_current_meeting_summary(patch: dict[str, Any], *, meeting_id: str) -> None:

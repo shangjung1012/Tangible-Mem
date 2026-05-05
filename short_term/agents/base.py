@@ -26,6 +26,10 @@ except ImportError:  # pragma: no cover - script execution fallback
 
 from .prompts import DEFAULT_TEMPERATURE, PROMPT_VERSION
 
+MAX_FUNCTION_CALLS_PER_RESPONSE = 40
+MAX_FUNCTION_CALLS_PER_AGENT_RUN = 120
+MAX_TOOL_ROUNDS_PER_AGENT_RUN = 12
+
 
 @dataclass(slots=True)
 class AgentRunResult:
@@ -58,7 +62,7 @@ class GeminiJsonAgent:
         logger: ResearchLogger,
         input_summary: dict[str, Any],
         tool_context: AgentToolContext | None = None,
-        max_tool_rounds: int = 3,
+        max_tool_rounds: int = MAX_TOOL_ROUNDS_PER_AGENT_RUN,
     ) -> AgentRunResult:
         started = timed()
         raw_text = ""
@@ -202,13 +206,25 @@ class GeminiJsonAgent:
             on_retry=retry_events.append,
         )
 
+        total_function_calls = 0
         for round_index in range(1, max_tool_rounds + 1):
             function_calls = list(getattr(response, "function_calls", None) or [])
             if not function_calls:
                 return response
+            if len(function_calls) > MAX_FUNCTION_CALLS_PER_RESPONSE:
+                raise RuntimeError(
+                    f"{self.name} requested {len(function_calls)} function calls in "
+                    "one response; refusing to execute an uncontrolled tool batch."
+                )
 
             parts: list[types.Part] = []
             for function_call in function_calls:
+                if total_function_calls >= MAX_FUNCTION_CALLS_PER_AGENT_RUN:
+                    raise RuntimeError(
+                        f"{self.name} exceeded {MAX_FUNCTION_CALLS_PER_AGENT_RUN} "
+                        "tool calls in one run; refusing to continue."
+                    )
+                total_function_calls += 1
                 tool_name = function_call.name or ""
                 args = dict(function_call.args or {})
                 tool_start = timed()
