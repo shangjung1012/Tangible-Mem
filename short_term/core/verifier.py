@@ -64,7 +64,7 @@ def verify_candidates(
         elif agent not in allowed_agents:
             reasons.append("agent_section_mismatch")
 
-        evidence = str(payload.get("evidence", "")).strip()
+        evidence = _normalize_candidate_evidence(candidate, payload)
         if not evidence:
             warnings.append("missing_evidence")
         elif not _evidence_lines_are_allowed(evidence, allowed_line_numbers):
@@ -258,18 +258,104 @@ def _verify_related_action_item_ids(
 def _evidence_lines_are_allowed(evidence: str, allowed: set[int]) -> bool:
     if not allowed:
         return False
-    matches = list(_EVIDENCE_RE.finditer(evidence))
-    if not matches:
+    line_numbers = _evidence_line_numbers(evidence)
+    if not line_numbers:
         return False
-    for match in matches:
+    for line_number in line_numbers:
+        if line_number not in allowed:
+            return False
+    return True
+
+
+def _normalize_candidate_evidence(
+    candidate: dict[str, Any],
+    payload: dict[str, Any],
+) -> str:
+    evidence = str(payload.get("evidence", "")).strip()
+    if _evidence_line_numbers(evidence):
+        return evidence
+
+    line_numbers = _embedded_evidence_line_numbers(candidate, payload)
+    if not line_numbers:
+        return evidence
+    normalized = _format_evidence_lines(line_numbers)
+    payload["evidence"] = normalized
+    return normalized
+
+
+def _embedded_evidence_line_numbers(
+    candidate: dict[str, Any],
+    payload: dict[str, Any],
+) -> list[int]:
+    numbers: list[int] = []
+    evidence_lines = candidate.get("evidence_lines")
+    if isinstance(evidence_lines, list):
+        for value in evidence_lines:
+            try:
+                number = int(value)
+            except (TypeError, ValueError):
+                continue
+            if number > 0:
+                numbers.append(number)
+    numbers.extend(_evidence_line_numbers_from_value(payload, skip_keys={"evidence"}))
+    return sorted(set(numbers))
+
+
+def _evidence_line_numbers_from_value(
+    value: Any,
+    *,
+    skip_keys: set[str],
+) -> list[int]:
+    if isinstance(value, dict):
+        numbers: list[int] = []
+        for key, nested in value.items():
+            if str(key) in skip_keys:
+                continue
+            numbers.extend(
+                _evidence_line_numbers_from_value(nested, skip_keys=skip_keys)
+            )
+        return numbers
+    if isinstance(value, list):
+        numbers: list[int] = []
+        for item in value:
+            numbers.extend(_evidence_line_numbers_from_value(item, skip_keys=skip_keys))
+        return numbers
+    if isinstance(value, str):
+        return _evidence_line_numbers(value)
+    return []
+
+
+def _evidence_line_numbers(evidence: str) -> list[int]:
+    numbers: list[int] = []
+    for match in _EVIDENCE_RE.finditer(str(evidence or "")):
         start = int(match.group("start"))
         end = int(match.group("end") or start)
         if end < start:
             start, end = end, start
-        for line_number in range(start, end + 1):
-            if line_number not in allowed:
-                return False
-    return True
+        numbers.extend(range(start, end + 1))
+    return sorted(set(numbers))
+
+
+def _format_evidence_lines(values: list[int]) -> str:
+    numbers = sorted(set(number for number in values if number > 0))
+    if not numbers:
+        return ""
+    ranges: list[str] = []
+    start = previous = numbers[0]
+    for number in numbers[1:]:
+        if number == previous + 1:
+            previous = number
+            continue
+        ranges.append(_format_evidence_range(start, previous))
+        start = previous = number
+    ranges.append(_format_evidence_range(start, previous))
+    return ", ".join(ranges)
+
+
+def _format_evidence_range(start: int, end: int) -> str:
+    if start == end:
+        return f"L{start}"
+    return f"L{start}-L{end}"
 
 
 def _existing_ids(memory: dict[str, Any], section: str, id_key: str) -> set[str]:

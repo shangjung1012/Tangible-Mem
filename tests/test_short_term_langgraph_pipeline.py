@@ -225,6 +225,66 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertEqual(rejected, [])
         self.assertEqual(counts, {})
 
+    def test_verifier_recovers_meeting_evidence_from_structured_line_refs(self) -> None:
+        candidates = [
+            {
+                "agent": "meeting_summary_agent",
+                "section": "meeting_window",
+                "candidate_id": "meeting",
+                "payload": {
+                    "meeting_id": "0307",
+                    "summary": "Discussed memory architecture.",
+                    "key_points": [
+                        "Defined STM and LTM boundaries (L4-L6).",
+                        "Discussed evaluation planning (L10-L11).",
+                    ],
+                    "open_questions": ["How should it be evaluated? (L12)"],
+                    "evidence": "Evidence based on idea units 1, 2.",
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={"action_items": [], "method_changes": [], "experiment_todos": []},
+            allowed_line_numbers=set(range(1, 20)),
+        )
+
+        self.assertEqual(len(verified), 1)
+        self.assertEqual(rejected, [])
+        self.assertEqual(counts, {})
+        self.assertEqual(verified[0]["payload"]["evidence"], "L4-L6, L10-L12")
+
+    def test_verifier_does_not_mask_explicit_out_of_window_evidence(self) -> None:
+        candidates = [
+            {
+                "agent": "meeting_summary_agent",
+                "section": "meeting_window",
+                "candidate_id": "meeting",
+                "payload": {
+                    "meeting_id": "0307",
+                    "summary": "Discussed memory architecture.",
+                    "key_points": ["Defined STM and LTM boundaries (L4-L6)."],
+                    "evidence": "L999",
+                    "operation": "create",
+                    "confidence": 0.9,
+                },
+            }
+        ]
+
+        verified, rejected, counts = verify_candidates(
+            candidates,
+            current_memory={"action_items": [], "method_changes": [], "experiment_todos": []},
+            allowed_line_numbers=set(range(1, 20)),
+        )
+
+        self.assertEqual(verified, [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(counts["evidence_line_not_read"], 1)
+        self.assertEqual(rejected[0]["payload"]["evidence"], "L999")
+
     def test_verifier_strips_non_canonical_create_ids(self) -> None:
         candidates = [
             {
