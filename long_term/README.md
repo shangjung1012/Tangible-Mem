@@ -138,7 +138,7 @@ multi-agent 第一版完整實作 L1：`context_planner -> segmentation_agent ->
 
 `--multi-agent-previous-context` 是實驗性開關：typed L1 agents 會收到前 2 個 extraction batches 的 compact candidate summaries，僅用來理解代名詞、延續關係與避免重複；這些 previous context 不可作為 evidence，程式端仍限制 `source_unit_ids` 只能來自 current batch。每次 run 會寫 `previous_context_by_batch.json`，metrics 會記錄 context 是否啟用、哪些 batch 有 items、以及每 batch item 數。
 
-cross-meeting interaction 目前採 sidecar 設計：bridge 會先建立 `prior_context_pack.json`，把少量相關舊 L1 / L3 方法放進 prompt 作為 disambiguation context，並明確要求不可把舊記憶當作新 evidence。非 dry-run multi-agent 寫入後會更新 `memory_relations_index.json`（continues / resolves / supersedes / reactivates 等關係）與 `memory_activity_index.json`（activation / state / touch_count），讓 `summarize phase` 和 recall 能用「品質、活躍度、跨會議關係」做保守加權；canonical `importance` 和 L1 schema 不會被改動。
+cross-meeting interaction 目前採 sidecar 設計：bridge 會先建立 `prior_context_pack.json`，把少量相關舊 L1 / L3 方法放進 prompt 作為 disambiguation context，並明確要求不可把舊記憶當作新 evidence。非 dry-run multi-agent 寫入後會更新 `memory_relations_index.json`（continues / resolves / supersedes / reactivates 等關係）與 `memory_activity_index.json`（activation / state / touch_count），讓 `summarize phase` 和 recall 能用「品質、活躍度、跨會議關係」做保守加權；canonical `importance` 和 L1 schema 不會被改動。relations 會先用 viewpoint / concept key、related topics、lexical similarity 篩候選，再判斷 relation type；sidecar 會記錄 source/target content/evidence hash，避免重跑後 stale relation 被 prompt 或 recall 誤用。recall 可沿 relation graph 補少量 linked L1 context，但只作為 soft expansion，不取代原本 semantic search。
 
 常見補充參數：
 
