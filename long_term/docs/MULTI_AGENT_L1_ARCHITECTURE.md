@@ -18,6 +18,8 @@
 - `incremental`：Gemini function-calling 逐段讀取 transcript，產出 L1。
 - `multi-agent`：研究版 L1 pipeline，保留中介 artifact、局部責任邊界與後段驗證。
 
+這裡的 multi-agent 比較精確地說是「多角色分工的 staged prompt pipeline」。每個 stage 有清楚責任與 artifact，但目前不是每個 agent 都有獨立長期狀態、自治工具選擇或跨 run 目標管理。
+
 multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備：
 
 - bounded scope
@@ -439,6 +441,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 合併 tool-calling 候選時保留 `Read` / `Write` 這類具體函式細節
 - 計算同一嚴格 viewpoint key 是否在分離 transcript episodes 中反覆出現，並給予有上限的小幅 importance bonus
 - 產出 `final_patch.json`
+- 產出 run-level `l1_quality_index.json`
 - 產出 `viewpoint_recurrence.json`
 - 產出 `final_meeting_node.json`
 
@@ -457,6 +460,15 @@ Viewpoint recurrence 規則：
 - bonus 只小幅調整既有 importance，並受 type cap 限制：`decision` / `method_change` 最高 `0.93`，`result` / `todo` 最高 `0.84`
 - `viewpoint_recurrence.json` 會列出 affected objects 的 `base_importance` / `adjusted_importance` / `actual_bonus`，以及已達 type cap 的 `capped_objects` 或被更強 recurrence key 蓋過的 `superseded_by_stronger_viewpoint_count`
 - canonical memory object 不新增欄位；recurrence 細節寫在 artifact，方便檢查但不改既有 schema
+
+L1 quality sidecar：
+
+- reducer 會將 `support_score`、source unit completeness、uncertainty notes、quality warnings、evidence lines、source candidate IDs 與 applied viewpoint recurrence 彙整成 `obj_id -> quality metadata`
+- `quality_level` 目前分成 `strong` / `normal` / `tentative` / `weak`
+- `strong` 代表 support 高、source unit 完整、沒有 repair/uncertainty warning
+- `tentative` / `weak` 不會直接污染 canonical L1，只會放在 sidecar，供 L2 summarize 保守使用
+- `bridge --mode multi-agent` 在非 dry-run persist 後，會把 run-level `l1_quality_index.json` merge 到 `tree.json` 同層的 `long_term/l1_quality_index.json`
+- `summarize phase` 會讀取這份 sidecar，把 compact quality tag 加進 L2 prompt；retrieve 主架構不因此改動
 
 ## 4. Artifact 設計
 
@@ -481,8 +493,11 @@ Viewpoint recurrence 規則：
 - `verified_candidates.json`
 - `rejected_candidates.json`
 - `final_patch.json`
+- `l1_quality_index.json`
 - `viewpoint_recurrence.json`
 - `metrics_summary.json`
+- `status.json`
+- `run_summary.json`
 - `final_meeting_node.json`
 - `prompts/`
 - `responses/`
@@ -493,6 +508,7 @@ Viewpoint recurrence 規則：
 - 可以追 candidate 從哪個 batch 來
 - 可以查 grounding 為何接受或拒絕
 - 可以定位失敗是在 segmentation、type extraction、grounding、還是 reduction
+- 可以在失敗或中斷後檢查 `status.json` / `run_summary.json` 的 `last_started_stage`、`last_completed_stage`、error type 與 partial metrics
 
 ## 5. 已完成的關鍵設計
 
@@ -580,6 +596,8 @@ Viewpoint recurrence 規則：
 
 - per-stage latency
 - rough text-token proxy
+- `status.json` 持續記錄 run 狀態、目前進度、最後開始 / 完成的 stage
+- `run_summary.json` 在成功、失敗或中斷時保留 partial metrics 與 error payload
 
 還缺的是更完整的 production guardrails：
 
@@ -587,7 +605,20 @@ Viewpoint recurrence 規則：
 - artifact schema version
 - partial rerun support
 
-### 6.5 L2 / L3 Multi-Agent 化
+### 6.5 L2 / L3 Quality-Aware Summarize
+
+目前 L2/L3 仍沿用既有 summarize pipeline，但 L2 已可讀 multi-agent L1 的品質 sidecar。
+
+- `summarize phase` 會在每條 L1 前加入 `quality=strong|normal|tentative|weak|unknown`、support score、recurrence episode 等 compact tag
+- `strong/normal` 的 decision / method_change / result 可以升級成 phase-level 摘要或 changes
+- `tentative` 只能當背景，除非被多個 L1 或 recurrence 支撐
+- `weak` 原則上不升級到 L2
+- `argument` 不直接升級成 change，只能作為 decision / method_change 的理由背景
+- 沒有 sidecar 的 legacy/full/incremental L1 會標為 `quality=unknown`，仍用原本 type / importance / content / evidence 判斷
+
+第一版刻意不改 retrieve：retrieve 仍然是 L1 semantic search，再沿 parent chain 帶出 L2/L3。差別只是 L2/L3 的生成會更重視 L1 quality 訊號。
+
+### 6.6 L2 / L3 Multi-Agent 化
 
 目前 multi-agent 真正完成的是 L1 extraction。L2 / L3 仍是舊 summarize pipeline。
 
@@ -597,7 +628,7 @@ Viewpoint recurrence 規則：
 
 比較精確的描述方式：
 
-> 目前已完成 long-term L1 的 explicit multi-agent extraction pipeline，具備 bounded extraction、artifact traceability、segment/idea-unit upstream validation、bounded fallback、local grounding 與 deterministic verification；但 full ontology coverage、model-based repair retry、evaluation harness 與 operational telemetry 尚未補齊。
+> 目前已完成 long-term L1 的 explicit multi-agent extraction pipeline，具備 bounded extraction、artifact traceability、segment/idea-unit upstream validation、bounded fallback、local grounding、deterministic verification、六類 L1 typed extraction 與基本 operational telemetry；但 model-based repair retry、evaluation harness、partial rerun 與更完整的 production guardrails 尚未補齊。
 
 這個描述比直接說「long-term multi-agent 已完成」更準確。
 
@@ -612,6 +643,7 @@ Viewpoint recurrence 規則：
 - [x] 將 validator 結果寫入 artifact
 - [x] 為 uncovered / invalid spans 增加 focused tests
 - [x] 建立 stage-level metrics summary
+- [x] 寫出 `status.json` / `run_summary.json`，讓失敗或中斷時仍可看 partial metrics 與最後 stage
 
 ### Should Have
 

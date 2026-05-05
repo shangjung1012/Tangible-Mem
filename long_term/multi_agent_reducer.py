@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from importance import MIN_IMPORTANCE_THRESHOLD, calibrate_l1_importance
+from l1_quality import derive_quality_level
 from multi_agent_state import ConflictDecision, GroundedCandidate
 from multi_agent_tools import clamp_float, jaccard, tokenize, unique_strings
 
@@ -893,6 +894,21 @@ def _merge_memory_rows(preferred: dict[str, Any], other: dict[str, Any]) -> dict
         set(preferred.get("_unit_quality_warnings", []))
         | set(other.get("_unit_quality_warnings", []))
     )
+    merged["_support_scores"] = sorted(
+        {
+            clamp_float(score, fallback=0.0)
+            for score in list(preferred.get("_support_scores", []))
+            + list(other.get("_support_scores", []))
+        }
+    )
+    merged["_source_unit_quality"] = unique_strings(
+        list(preferred.get("_source_unit_quality", []))
+        + list(other.get("_source_unit_quality", []))
+    )
+    merged["_source_unit_uncertainty_notes"] = unique_strings(
+        list(preferred.get("_source_unit_uncertainty_notes", []))
+        + list(other.get("_source_unit_uncertainty_notes", []))
+    )
     if "read_write_memory_update" in merged["_concept_keys"]:
         preferred_has_functions = _has_any(
             str(preferred.get("content", "")),
@@ -1138,7 +1154,7 @@ def reduce_l1_patch(
     *,
     meeting_id: str,
     start_seq: int = 1,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for candidate in verified_candidates:
         obj_type = str(candidate.get("type", "")).strip()
@@ -1185,6 +1201,13 @@ def reduce_l1_patch(
                 )
             ),
             "_unit_quality_warnings": sorted(_source_unit_quality_warnings(candidate)),
+            "_support_scores": [clamp_float(candidate.get("support_score", 0.0))],
+            "_source_unit_quality": unique_strings(
+                candidate.get("source_unit_completeness", [])
+            ),
+            "_source_unit_uncertainty_notes": unique_strings(
+                candidate.get("source_unit_uncertainty_notes", [])
+            ),
         }
         duplicate_at = _duplicate_index(rows, {**candidate, **row})
         if duplicate_at is None:
@@ -1201,11 +1224,13 @@ def reduce_l1_patch(
     rows, viewpoint_recurrence = _apply_viewpoint_recurrence(rows)
 
     memory_objects: list[dict[str, Any]] = []
+    quality_index: dict[str, Any] = {}
     seq = start_seq
     for row in rows:
+        obj_id = f"L1-{meeting_id}-{seq:03d}"
         memory_objects.append(
             {
-                "obj_id": f"L1-{meeting_id}-{seq:03d}",
+                "obj_id": obj_id,
                 "type": row["type"],
                 "content": row["content"],
                 "importance": row["importance"],
@@ -1214,6 +1239,33 @@ def reduce_l1_patch(
                 "related_obj_ids": [],
             }
         )
+        support_scores = [
+            clamp_float(score, fallback=0.0)
+            for score in row.get("_support_scores", [])
+        ]
+        support_score = round(max(support_scores), 3) if support_scores else 0.0
+        source_unit_quality = unique_strings(row.get("_source_unit_quality", []))
+        quality_warnings = unique_strings(row.get("_unit_quality_warnings", []))
+        quality_index[obj_id] = {
+            "meeting_id": meeting_id,
+            "type": row["type"],
+            "importance": row["importance"],
+            "support_score": support_score,
+            "quality_level": derive_quality_level(
+                support_score=support_score,
+                source_unit_quality=source_unit_quality,
+                quality_warnings=quality_warnings,
+            ),
+            "source_unit_quality": source_unit_quality,
+            "quality_warnings": quality_warnings,
+            "source_unit_uncertainty_notes": unique_strings(
+                row.get("_source_unit_uncertainty_notes", [])
+            ),
+            "evidence_lines": sorted(set(row.get("_evidence_lines", []))),
+            "source_candidate_ids": unique_strings(row.get("_source_candidate_ids", [])),
+        }
+        if row.get("_viewpoint_recurrence"):
+            quality_index[obj_id]["viewpoint_recurrence"] = row["_viewpoint_recurrence"]
         seq += 1
 
     patch = {
@@ -1225,4 +1277,4 @@ def reduce_l1_patch(
         ],
         "viewpoint_recurrence": viewpoint_recurrence,
     }
-    return patch, memory_objects
+    return patch, memory_objects, quality_index

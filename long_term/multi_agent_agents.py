@@ -198,6 +198,19 @@ def _resolve_max_attempts() -> int:
 def _is_retryable_llm_error(exc: Exception) -> bool:
     if isinstance(exc, LLMCallTimeoutError):
         return True
+    exc_type = type(exc)
+    if exc_type.__module__.split(".", 1)[0] == "httpx" and exc_type.__name__ in {
+        "ConnectError",
+        "ConnectTimeout",
+        "PoolTimeout",
+        "ReadError",
+        "ReadTimeout",
+        "RemoteProtocolError",
+        "TransportError",
+        "WriteError",
+        "WriteTimeout",
+    }:
+        return True
     status_code = getattr(exc, "status_code", None)
     if status_code in {429, 499, 500, 502, 503, 504}:
         return True

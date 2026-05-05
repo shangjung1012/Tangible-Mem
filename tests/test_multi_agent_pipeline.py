@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
@@ -10,9 +13,11 @@ sys.path.insert(0, str(LONG_TERM_DIR))
 
 from multi_agent_agents import (  # noqa: E402
     IDEA_SCHEMA,
+    LLMCallTimeoutError,
     MAX_IDEA_UNITS_PER_AGENT,
     MAX_SEGMENTS_PER_WINDOW,
     SEGMENT_SCHEMA,
+    _is_retryable_llm_error,
     l1_fallback_agent,
     l1_type_agent,
 )
@@ -22,6 +27,7 @@ from multi_agent_pipeline import (  # noqa: E402
     build_continuation_batches,
     idea_units_for_batch,
     refine_cross_window_boundaries,
+    run_multi_agent_l1_pipeline,
 )
 from multi_agent_reducer import (  # noqa: E402
     reduce_l1_patch,
@@ -123,7 +129,28 @@ class FakeFallbackRunner:
         }
 
 
+class FakePipelineRunner:
+    def __init__(self, **kwargs) -> None:
+        del kwargs
+        self.call_records: list[dict] = []
+
+
 class MultiAgentPipelineTests(unittest.TestCase):
+    def test_transport_disconnects_are_retryable(self) -> None:
+        try:
+            import httpx
+        except ImportError:  # pragma: no cover - httpx is installed with google-genai.
+            self.skipTest("httpx is not installed")
+
+        self.assertTrue(_is_retryable_llm_error(LLMCallTimeoutError("timed out")))
+        self.assertTrue(
+            _is_retryable_llm_error(
+                httpx.RemoteProtocolError(
+                    "Server disconnected without sending a response."
+                )
+            )
+        )
+
     def test_adaptive_schema_limits_remain_bounded(self) -> None:
         self.assertEqual(
             SEGMENT_SCHEMA["properties"]["segments"]["maxItems"],
@@ -325,6 +352,40 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(metrics["llm"]["call_count"], 2)
         self.assertEqual(metrics["llm"]["calls_by_stage"]["segmentation_agent"], 1)
         self.assertEqual(metrics["llm"]["calls_by_stage"]["l1_argument_agent"], 1)
+
+    def test_pipeline_writes_failure_status_and_partial_summary(self) -> None:
+        def broken_segmentation(*args, **kwargs):
+            del args, kwargs
+            raise RuntimeError("segmentation exploded")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("multi_agent_pipeline.MultiAgentLLMRunner", FakePipelineRunner):
+                with patch("multi_agent_pipeline.segmentation_agent", broken_segmentation):
+                    with self.assertRaises(RuntimeError):
+                        run_multi_agent_l1_pipeline(
+                            model_name="gemini-test",
+                            api_key=[],
+                            transcript="A: important discussion",
+                            meeting_id="UnitRun",
+                            source_file="unit.txt",
+                            timestamp="2026-05-05T00:00:00Z",
+                            meeting_date="2026-05-05",
+                            existing_topics=[],
+                            research_log_dir=Path(tmp),
+                            window_size=20,
+                        )
+
+            run_dirs = [path for path in Path(tmp).iterdir() if path.is_dir()]
+            self.assertEqual(len(run_dirs), 1)
+            status = json.loads((run_dirs[0] / "status.json").read_text())
+            summary = json.loads((run_dirs[0] / "run_summary.json").read_text())
+
+        self.assertEqual(status["status"], "failed")
+        self.assertEqual(status["error"]["type"], "RuntimeError")
+        self.assertIn("segmentation_agent", status["last_started_stage"])
+        self.assertEqual(status["last_completed_stage"], "context_planner:done")
+        self.assertEqual(summary["metrics"]["windows"]["count"], 1)
+        self.assertEqual(summary["metrics"]["segments"]["final_count"], 0)
 
     def test_grounding_rejects_mismatch_even_with_high_candidate_confidence(self) -> None:
         lines = parse_transcript_lines("A: Lunch will be delivered at noon.")
@@ -936,7 +997,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertLessEqual(memory_objects[0]["importance"], 0.68)
@@ -958,7 +1019,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             "support_score": 0.9,
             "grounding_note": "grounded",
         }
-        _, clean_objects = reduce_l1_patch([base], meeting_id="T")
+        _, clean_objects, _ = reduce_l1_patch([base], meeting_id="T")
         uncertain = {
             **base,
             "source_unit_completeness": ["partial"],
@@ -968,13 +1029,52 @@ class MultiAgentPipelineTests(unittest.TestCase):
                 "source_unit_uncertainty_note",
             ],
         }
-        _, uncertain_objects = reduce_l1_patch([uncertain], meeting_id="T")
+        _, uncertain_objects, _ = reduce_l1_patch([uncertain], meeting_id="T")
 
         self.assertLess(
             uncertain_objects[0]["importance"],
             clean_objects[0]["importance"],
         )
         self.assertLessEqual(uncertain_objects[0]["importance"], 0.82)
+
+    def test_reducer_emits_quality_sidecar_without_polluting_l1_schema(self) -> None:
+        candidate = {
+            "candidate_id": "C-1",
+            "type": "method_change",
+            "source_unit_ids": ["U-1"],
+            "content": "The team decided to adopt tool calling for long-term memory extraction.",
+            "importance": 0.92,
+            "confidence": 0.95,
+            "rationale": "",
+            "related_topics": ["tool calling", "long-term memory"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [10, 11, 12],
+            "evidence_quote": "We decided tool calling should be the memory extraction path.",
+            "support_score": 0.86,
+            "grounding_note": "grounded",
+            "source_unit_completeness": ["complete"],
+        }
+
+        _, memory_objects, quality_index = reduce_l1_patch([candidate], meeting_id="T")
+
+        self.assertEqual(
+            set(memory_objects[0].keys()),
+            {
+                "obj_id",
+                "type",
+                "content",
+                "importance",
+                "evidence",
+                "related_topics",
+                "related_obj_ids",
+            },
+        )
+        meta = quality_index[memory_objects[0]["obj_id"]]
+        self.assertEqual(meta["quality_level"], "strong")
+        self.assertEqual(meta["support_score"], 0.86)
+        self.assertEqual(meta["evidence_lines"], [10, 11, 12])
+        self.assertEqual(meta["source_candidate_ids"], ["C-1"])
 
     def test_reducer_reclassifies_evaluation_suggestion_as_todo(self) -> None:
         candidates = [
@@ -996,7 +1096,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "todo")
         self.assertLessEqual(memory_objects[0]["importance"], 0.88)
@@ -1021,7 +1121,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "todo")
 
@@ -1054,7 +1154,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertEqual(memory_objects[0]["type"], "todo")
@@ -1079,7 +1179,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
 
@@ -1103,7 +1203,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "decision")
 
@@ -1127,7 +1227,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
 
@@ -1151,7 +1251,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
         self.assertLessEqual(memory_objects[0]["importance"], 0.86)
@@ -1176,7 +1276,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
         self.assertLessEqual(memory_objects[0]["importance"], 0.88)
@@ -1201,7 +1301,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
 
@@ -1225,7 +1325,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
 
@@ -1249,7 +1349,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(memory_objects[0]["type"], "result")
 
@@ -1283,7 +1383,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertEqual(memory_objects[0]["type"], "method_change")
@@ -1308,7 +1408,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertLessEqual(memory_objects[0]["importance"], 0.86)
 
@@ -1332,12 +1432,12 @@ class MultiAgentPipelineTests(unittest.TestCase):
             }
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertLessEqual(memory_objects[0]["importance"], 0.87)
 
     def test_reducer_does_not_boost_consecutive_viewpoint_mentions(self) -> None:
-        patch, memory_objects = reduce_l1_patch(
+        patch, memory_objects, _ = reduce_l1_patch(
             [
                 {
                     "candidate_id": "C-1",
@@ -1378,11 +1478,11 @@ class MultiAgentPipelineTests(unittest.TestCase):
             "support_score": 0.9,
             "grounding_note": "grounded",
         }
-        _, consecutive_objects = reduce_l1_patch(
+        _, consecutive_objects, _ = reduce_l1_patch(
             [{**base_candidate, "evidence_lines": [10, 11, 12, 13, 14]}],
             meeting_id="T",
         )
-        separated_patch, separated_objects = reduce_l1_patch(
+        separated_patch, separated_objects, _ = reduce_l1_patch(
             [{**base_candidate, "evidence_lines": [10, 11, 30, 31, 50]}],
             meeting_id="T",
         )
@@ -1435,7 +1535,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
 
@@ -1470,7 +1570,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertEqual(memory_objects[0]["type"], "method_change")
@@ -1507,7 +1607,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertIn("Read", memory_objects[0]["content"])
@@ -1550,7 +1650,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         contents = [obj["content"] for obj in memory_objects]
         self.assertEqual(len(memory_objects), 2)
@@ -1587,7 +1687,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertEqual(memory_objects[0]["type"], "method_change")
@@ -1623,7 +1723,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertLessEqual(memory_objects[0]["importance"], 0.87)
@@ -1656,7 +1756,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertEqual(memory_objects[0]["type"], "todo")
@@ -1690,7 +1790,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
             },
         ]
 
-        _, memory_objects = reduce_l1_patch(candidates, meeting_id="T")
+        _, memory_objects, _ = reduce_l1_patch(candidates, meeting_id="T")
 
         self.assertEqual(len(memory_objects), 1)
         self.assertEqual(memory_objects[0]["type"], "method_change")
@@ -1759,7 +1859,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
         )
 
     def test_reduce_patch_preserves_l1_tree_schema(self) -> None:
-        patch, memory_objects = reduce_l1_patch(
+        patch, memory_objects, _ = reduce_l1_patch(
             [
                 {
                     "candidate_id": "C-result-001",

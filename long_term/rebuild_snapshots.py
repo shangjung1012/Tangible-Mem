@@ -34,8 +34,9 @@ from pathlib import Path
 from typing import Any, Callable, TypeVar
 
 from io_utils import load_api_keys, load_tree, save_json
-from schema import DEFAULT_TREE
-from summarize import summarize_phase, update_project_profile
+from l1_quality import load_l1_quality_index, quality_index_default_path
+from schema import DEFAULT_MODEL_NAME, DEFAULT_TREE
+from summarize import resolve_model_name, summarize_phase, update_project_profile
 
 T = TypeVar("T")
 
@@ -79,7 +80,11 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--model",
-        default="gemini-2.5-flash",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     p.add_argument(
         "--dry-run",
@@ -145,6 +150,8 @@ def main() -> None:
         return
 
     api_key = load_api_keys()
+    model_name = resolve_model_name(args.model)
+    quality_index = load_l1_quality_index(quality_index_default_path(tree_path))
 
     # running_tree accumulates phases across steps so L3 sees all prior phases
     running_tree = deepcopy(DEFAULT_TREE)
@@ -193,13 +200,14 @@ def main() -> None:
         try:
             phase_node = _with_retry(
                 lambda: summarize_phase(
-                    model_name=args.model,
+                    model_name=model_name,
                     api_key=api_key,
                     tree=running_tree,
                     phase_id=phase_id,
                     time_start=phase_meeting_ids[0],
                     time_end=phase_meeting_ids[-1],
                     meeting_ids=phase_meeting_ids,
+                    quality_index=quality_index,
                 ),
                 max_retries=args.max_retries,
             )
@@ -213,7 +221,7 @@ def main() -> None:
         try:
             profile = _with_retry(
                 lambda: update_project_profile(
-                    model_name=args.model,
+                    model_name=model_name,
                     api_key=api_key,
                     tree=running_tree,
                 ),

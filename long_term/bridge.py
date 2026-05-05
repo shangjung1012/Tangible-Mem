@@ -26,6 +26,7 @@ from importance import (
     normalize_importance_score,
 )
 from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
+from l1_quality import merge_l1_quality_index, quality_index_default_path
 from schema import BRIDGE_RESPONSE_SCHEMA, DEFAULT_MODEL_NAME, MEMORY_OBJ_TYPES
 
 TODO_PREFIXES = ("需要", "待辦", "應", "計劃", "必須")
@@ -958,10 +959,26 @@ def main() -> None:
     save_json(snapshot_dir / snapshot_name, tree)
 
     if mode == "multi-agent" and multi_agent_result is not None:
+        if multi_agent_result.quality_index:
+            quality_path = quality_index_default_path(tree_path)
+            merged_quality = merge_l1_quality_index(
+                quality_path,
+                multi_agent_result.quality_index,
+            )
+        else:
+            quality_path = None
+            merged_quality = {}
         print(
             f"Multi-agent bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
         )
         print(f"Research log: {multi_agent_result.run_dir}")
+        if quality_path is not None:
+            print(
+                "L1 quality index: "
+                f"{quality_path} "
+                f"({len(multi_agent_result.quality_index)} updated, "
+                f"{len(merged_quality)} total)"
+            )
     elif mode == "incremental":
         print(
             f"Incremental bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
