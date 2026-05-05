@@ -33,6 +33,47 @@ TYPE_ACTIVITY_FLOORS = {
 }
 REACTIVATING_RELATIONS = {"continues", "reactivates", "repeats", "supports"}
 RESOLVING_RELATIONS = {"resolves", "supersedes"}
+MIN_RELATION_BOOST_CONFIDENCE = 0.70
+
+_CORE_CONTEXT_TERMS = (
+    "agent architecture",
+    "benchmarking",
+    "demo",
+    "demonstration",
+    "evaluation",
+    "long-term memory",
+    "long term memory",
+    "memory architecture",
+    "memory management",
+    "memory retrieval",
+    "model evaluation",
+    "project evaluation criteria",
+    "rag",
+    "recall",
+    "retrieval",
+    "short-term memory",
+    "system architecture",
+    "證明",
+    "展示",
+    "記憶",
+    "長期記憶",
+    "短期記憶",
+    "評估",
+    "檢索",
+    "架構",
+)
+_OPERATIONAL_CONTEXT_TERMS = (
+    "api key",
+    "api金鑰",
+    "budget",
+    "credit card",
+    "google帳戶",
+    "project budget",
+    "免費額度",
+    "信用卡",
+    "實驗室財務",
+    "帳戶",
+)
 
 
 def memory_activity_default_path(tree_path: Path) -> Path:
@@ -124,8 +165,53 @@ def base_activation_for_obj(
     except (TypeError, ValueError):
         importance = 0.0
     high_importance_bonus = 0.08 if importance >= 0.8 else 0.0
+    if _is_durable_context_memory(obj, importance=importance):
+        # A high-importance research thread may be temporarily inactive, but it
+        # should not collapse to the same floor as one-off operational todos.
+        floor = max(floor, 0.46 if obj_type == "todo" else 0.42)
+        high_importance_bonus = max(high_importance_bonus, 0.06)
     activation = max(floor, 1.0 - elapsed_days / decay_days + high_importance_bonus)
     return round(max(0.0, min(1.0, activation)), 3)
+
+
+def _obj_context_text(obj: dict[str, Any]) -> str:
+    raw_topics = obj.get("related_topics", [])
+    topics = " ".join(str(topic) for topic in raw_topics) if isinstance(raw_topics, list) else ""
+    return " ".join(
+        [
+            str(obj.get("type", "") or ""),
+            str(obj.get("content", "") or ""),
+            str(obj.get("evidence", "") or ""),
+            topics,
+        ]
+    ).lower()
+
+
+def _is_durable_context_memory(
+    obj: dict[str, Any],
+    *,
+    importance: float | None = None,
+) -> bool:
+    """Return True for old research threads that should fade gently.
+
+    This deliberately excludes project logistics.  The goal is to preserve
+    access to durable architecture/evaluation context without keeping stale API
+    keys, budgets, or one-off setup tasks active.
+    """
+    obj_type = str(obj.get("type", "") or "").lower()
+    if obj_type not in {"todo", "open_question", "result", "argument"}:
+        return False
+    if importance is None:
+        try:
+            importance = float(obj.get("importance") or 0.0)
+        except (TypeError, ValueError):
+            importance = 0.0
+    if importance < 0.68:
+        return False
+    text = _obj_context_text(obj)
+    if any(term in text for term in _OPERATIONAL_CONTEXT_TERMS):
+        return False
+    return any(term in text for term in _CORE_CONTEXT_TERMS)
 
 
 def _state_for_activation(activation: float) -> str:
@@ -230,9 +316,14 @@ def build_memory_activity_update(
 
             target_relations = by_target.get(obj_id, [])
             if target_relations:
+                strong_relations = [
+                    relation
+                    for relation in target_relations
+                    if _relation_can_update_activity(relation)
+                ]
                 relation_types = {
                     str(relation.get("relation", "")).strip()
-                    for relation in target_relations
+                    for relation in strong_relations
                     if str(relation.get("relation", "")).strip()
                 }
                 if relation_types & RESOLVING_RELATIONS:
@@ -244,13 +335,14 @@ def build_memory_activity_update(
                 elif "contradicts" in relation_types:
                     activation = max(activation, 0.68)
                     state = "active"
-                touch_count = max(1, touch_count + len(target_relations))
-                last_touched_meeting_id = meeting_id
-                last_touched_date = source_touch_date or now.date().isoformat()
-                for relation in target_relations:
-                    source_obj_id = str(relation.get("source_obj_id", "")).strip()
-                    if source_obj_id and source_obj_id not in reactivated_by:
-                        reactivated_by.append(source_obj_id)
+                if relation_types:
+                    touch_count = max(1, touch_count + len(strong_relations))
+                    last_touched_meeting_id = meeting_id
+                    last_touched_date = source_touch_date or now.date().isoformat()
+                    for relation in strong_relations:
+                        source_obj_id = str(relation.get("source_obj_id", "")).strip()
+                        if source_obj_id and source_obj_id not in reactivated_by:
+                            reactivated_by.append(source_obj_id)
 
             refreshed[obj_id] = {
                 "schema_version": MEMORY_ACTIVITY_SCHEMA_VERSION,
@@ -258,6 +350,7 @@ def build_memory_activity_update(
                 "type": str(obj.get("type", "") or ""),
                 "activation": round(max(0.0, min(1.0, activation)), 3),
                 "state": state,
+                "durable_context": _is_durable_context_memory(obj),
                 "last_touched_meeting_id": last_touched_meeting_id,
                 "last_touched_date": last_touched_date,
                 "touch_count": touch_count,
@@ -265,6 +358,21 @@ def build_memory_activity_update(
                 **l1_quality_hashes(obj),
             }
     return refreshed
+
+
+def _relation_can_update_activity(relation: dict[str, Any]) -> bool:
+    rel_type = str(relation.get("relation", "") or "").strip()
+    if rel_type not in REACTIVATING_RELATIONS | RESOLVING_RELATIONS | {"contradicts"}:
+        return False
+    try:
+        confidence = float(relation.get("confidence") or 0.0)
+    except (TypeError, ValueError):
+        confidence = 0.0
+    if confidence >= MIN_RELATION_BOOST_CONFIDENCE:
+        return True
+    shared_viewpoints = relation.get("shared_viewpoint_keys", [])
+    shared_concepts = relation.get("shared_concept_keys", [])
+    return bool(shared_viewpoints or shared_concepts)
 
 
 def merge_memory_activity_index(path: Path, updates: dict[str, Any]) -> dict[str, Any]:

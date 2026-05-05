@@ -181,6 +181,55 @@ _GOAL_STATEMENT_MARKERS = (
     "目的在於",
 )
 
+_CONCLUSION_MARKERS = (
+    "it was concluded",
+    "it was determined",
+    "it was noted",
+    "it was reported",
+    "the conclusion",
+    "concluded that",
+    "reported that",
+    "據報告",
+    "報告指出",
+    "結論是",
+    "結論為",
+    "可以得出",
+)
+
+_REASONING_MARKERS = (
+    "because",
+    "benefit",
+    "benefits",
+    "advantage",
+    "advantages",
+    "disadvantage",
+    "disadvantages",
+    "justify",
+    "justified",
+    "rationale",
+    "reason",
+    "trade-off",
+    "tradeoff",
+    "superior",
+    "inferior",
+    "preferable",
+    "considered",
+    "supports",
+    "why",
+    "因為",
+    "理由",
+    "好處",
+    "優勢",
+    "缺點",
+    "取捨",
+    "權衡",
+    "因此",
+    "所以",
+    "較好",
+    "比較好",
+    "支撐",
+)
+
 _UNRESOLVED_TASK_MARKERS = (
     "unresolved task",
     "unresolved question",
@@ -348,6 +397,16 @@ def _looks_like_proposal(text: str) -> bool:
 def _looks_like_goal_statement(text: str) -> bool:
     lowered = str(text or "").lower()
     return any(marker.lower() in lowered for marker in _GOAL_STATEMENT_MARKERS)
+
+
+def _looks_like_conclusion_statement(text: str) -> bool:
+    lowered = str(text or "").lower()
+    return any(marker.lower() in lowered for marker in _CONCLUSION_MARKERS)
+
+
+def _looks_like_reasoning_statement(text: str) -> bool:
+    lowered = str(text or "").lower()
+    return any(marker.lower() in lowered for marker in _REASONING_MARKERS)
 
 
 def _looks_like_unresolved_task(text: str) -> bool:
@@ -600,6 +659,15 @@ def _normalize_candidate_type(
     evidence: str,
 ) -> str:
     del evidence
+    followup_task = _looks_like_followup_task(content)
+    committed_change = _looks_like_committed_change(content)
+    descriptive_structure = _looks_like_descriptive_structure(content)
+    reasoning_statement = _looks_like_reasoning_statement(content)
+    conclusion_statement = _looks_like_conclusion_statement(content)
+    unresolved_task = _looks_like_unresolved_task(content)
+
+    if obj_type in {"decision", "todo"} and conclusion_statement:
+        return "result"
     if obj_type in {"decision", "method_change", "argument", "result"} and _looks_like_unresolved_task(
         content
     ):
@@ -610,6 +678,14 @@ def _normalize_candidate_type(
         and not _looks_like_committed_change(content)
     ):
         return "todo"
+    if obj_type == "result" and reasoning_statement and not descriptive_structure:
+        return "argument"
+    if obj_type == "todo" and not followup_task and not unresolved_task:
+        if reasoning_statement and not conclusion_statement:
+            return "argument"
+        if committed_change:
+            return "decision"
+        return "result"
     if (
         obj_type == "decision"
         and _looks_like_proposal(content)
@@ -831,6 +907,7 @@ def _duplicate_index(rows: list[dict[str, Any]], candidate: dict[str, Any]) -> i
                 frozenset({"decision", "method_change"}),
                 frozenset({"decision", "result"}),
                 frozenset({"result", "method_change"}),
+                frozenset({"result", "argument"}),
             }
         )
         if row_type == obj_type and similarity >= 0.52:
@@ -860,6 +937,7 @@ def _duplicate_index(rows: list[dict[str, Any]], candidate: dict[str, Any]) -> i
                 frozenset({"decision", "method_change"}),
                 frozenset({"decision", "result"}),
                 frozenset({"result", "method_change"}),
+                frozenset({"result", "argument"}),
             }:
                 consider(index, 70.0 + similarity - (gap / 100.0))
             if (

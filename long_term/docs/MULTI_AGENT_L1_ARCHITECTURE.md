@@ -341,14 +341,16 @@ CLI：`--multi-agent-previous-context`
 責任：
 
 - 在處理 batch N 時，從前 2 個已完成 extraction batches 建立 compact context
-- 每個 type 最多保留 3 條、總數最多 12 條、每條最多 160 chars
+- 每個 type 最多保留 2 條、總數最多 8 條、每條最多 160 chars
 - 只保留 confidence 足夠高且已有 current-batch source units 的候選摘要
+- 這些摘要來自前面 batch 的 raw candidates，尚未經過 grounding / reducer，因此只能當作未驗證脈絡
 - 寫出 `previous_context_by_batch.json`
 
 prompt 規則：
 
-- previous context 是 read-only
+- previous context 是 unverified、read-only
 - 只能用於理解代名詞、延續關係與避免重複
+- 不能因為 previous context 提到某 topic 就增加 current batch 的候選數
 - 不能當作 evidence
 - `source_unit_ids` 仍只能來自 current bounded idea units，程式端也會用白名單過濾
 

@@ -1393,7 +1393,9 @@ class MultiAgentPipelineTests(unittest.TestCase):
         )
 
         prompt = runner.calls[0][1]
-        self.assertIn("Previous batch context (read-only; not evidence)", prompt)
+        self.assertIn("Previous batch context (unverified, read-only; not evidence)", prompt)
+        self.assertIn("not passed grounding or final reduction yet", prompt)
+        self.assertIn("Do not increase candidate count", prompt)
         self.assertIn("Every source_unit_id must still come from the current bounded idea units", prompt)
         self.assertIn("[B-001 open_question]", prompt)
         self.assertEqual(candidates[0].source_unit_ids, ["U-S-1-01"])
@@ -1527,6 +1529,73 @@ class MultiAgentPipelineTests(unittest.TestCase):
         meta = quality_index[memory_objects[0]["obj_id"]]
         self.assertEqual(meta["quality_level"], "weak")
         self.assertIn("near_threshold_grounding", meta["quality_warnings"])
+
+    def test_reducer_reclassifies_non_action_todo_as_result(self) -> None:
+        candidate = {
+            "candidate_id": "C-1",
+            "type": "todo",
+            "source_unit_ids": ["U-1"],
+            "content": (
+                "It was concluded that the LLM behavior is adjustable through "
+                "carefully crafted prompts."
+            ),
+            "importance": 0.9,
+            "confidence": 0.92,
+            "rationale": "",
+            "related_topics": ["prompting"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [36, 37],
+            "evidence_quote": "I think this is adjustable with the correct prompt.",
+            "support_score": 0.82,
+            "grounding_note": "grounded",
+            "source_unit_completeness": ["complete"],
+        }
+
+        decision_candidate = {**candidate, "candidate_id": "C-2", "type": "decision"}
+        _, memory_objects, _ = reduce_l1_patch(
+            [candidate, decision_candidate],
+            meeting_id="T",
+        )
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "result")
+
+    def test_reducer_dedupes_result_argument_same_span(self) -> None:
+        result_candidate = {
+            "candidate_id": "C-result",
+            "type": "result",
+            "source_unit_ids": ["U-1"],
+            "content": (
+                "The iterative method is considered superior because it can "
+                "capture overlapping ideas that fixed chunks miss."
+            ),
+            "importance": 0.78,
+            "confidence": 0.9,
+            "rationale": "",
+            "related_topics": ["idea units"],
+            "extraction_scope": "B-001",
+            "segment_ids": ["S-1"],
+            "evidence_lines": [56, 57, 58],
+            "evidence_quote": "It can look up and down and catch overlap.",
+            "support_score": 0.76,
+            "grounding_note": "grounded",
+            "source_unit_completeness": ["complete"],
+        }
+        argument_candidate = {
+            **result_candidate,
+            "candidate_id": "C-argument",
+            "type": "argument",
+            "importance": 0.86,
+        }
+
+        _, memory_objects, _ = reduce_l1_patch(
+            [result_candidate, argument_candidate],
+            meeting_id="T",
+        )
+
+        self.assertEqual(len(memory_objects), 1)
+        self.assertEqual(memory_objects[0]["type"], "argument")
 
     def test_reducer_emits_quality_sidecar_without_polluting_l1_schema(self) -> None:
         candidate = {

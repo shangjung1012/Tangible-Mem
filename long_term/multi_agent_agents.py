@@ -641,12 +641,14 @@ def format_previous_context_for_prompt(previous_context: dict[str, Any] | None) 
     items = previous_context.get("items", [])
     if not items:
         return (
-            "Previous batch context: enabled, but no prior durable candidate "
+            "Previous batch context: enabled, but no prior unverified candidate "
             "summaries are available yet."
         )
     lines = [
-        "Previous batch context (read-only; not evidence):",
+        "Previous batch context (unverified, read-only; not evidence):",
         "- Use only to resolve pronouns, understand continuation, and avoid duplicates.",
+        "- These summaries have not passed grounding or final reduction yet.",
+        "- Do not increase candidate count just because previous context mentions a topic.",
         "- Do not cite previous context or use it as support.",
         "- Every source_unit_id must still come from the current bounded idea units.",
     ]

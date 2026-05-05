@@ -234,6 +234,7 @@ class MemoryInteractionTests(unittest.TestCase):
                 {
                     "target_obj_id": old_todo["obj_id"],
                     "relation": "reactivates",
+                    "confidence": 0.8,
                     "source_meeting_id": "0422",
                     "target_meeting_id": "0307",
                 }
@@ -260,6 +261,122 @@ class MemoryInteractionTests(unittest.TestCase):
         self.assertEqual(loaded_activity[old_todo["obj_id"]]["state"], "reactivated")
         self.assertGreaterEqual(loaded_activity[old_todo["obj_id"]]["activation"], 0.82)
         self.assertEqual(loaded_activity[new_decision["obj_id"]]["state"], "active")
+
+    def test_activity_decay_protects_durable_research_context_not_logistics(self) -> None:
+        durable = _obj(
+            "L1-0307-001",
+            "todo",
+            "Design the memory retrieval process that lets the agent use long-term memory during real-time responses.",
+            importance=0.78,
+            topics=["memory retrieval", "agent architecture"],
+        )
+        logistical = _obj(
+            "L1-0307-002",
+            "todo",
+            "Create a lab Google account for API key billing.",
+            importance=0.82,
+            topics=["API key management", "project budget"],
+        )
+        tree = {
+            "meetings": [
+                {
+                    "meeting_id": "0307",
+                    "meeting_date": "2026-03-07",
+                    "memory_objects": [durable, logistical],
+                }
+            ]
+        }
+
+        activity = build_memory_activity_update(
+            tree=tree,
+            meeting_id="0422",
+            relation_updates={},
+            now=datetime(2026, 5, 6, tzinfo=timezone.utc),
+        )
+
+        self.assertEqual(activity[durable["obj_id"]]["state"], "fading")
+        self.assertGreaterEqual(activity[durable["obj_id"]]["activation"], 0.46)
+        self.assertTrue(activity[durable["obj_id"]]["durable_context"])
+        self.assertEqual(activity[logistical["obj_id"]]["state"], "dormant")
+        self.assertEqual(activity[logistical["obj_id"]]["activation"], 0.15)
+        self.assertFalse(activity[logistical["obj_id"]]["durable_context"])
+
+    def test_low_confidence_relation_does_not_reactivate_old_activity(self) -> None:
+        old_todo = _obj(
+            "L1-0307-001",
+            "todo",
+            "Review project logistics.",
+            importance=0.55,
+            topics=["memory"],
+        )
+        new_result = _obj(
+            "L1-0422-001",
+            "result",
+            "The memory architecture discussion continued.",
+            topics=["memory"],
+        )
+        tree = {
+            "meetings": [
+                {
+                    "meeting_id": "0307",
+                    "meeting_date": "2026-03-07",
+                    "memory_objects": [old_todo],
+                },
+                {
+                    "meeting_id": "0422",
+                    "meeting_date": "2026-04-22",
+                    "memory_objects": [new_result],
+                },
+            ]
+        }
+
+        activity = build_memory_activity_update(
+            tree=tree,
+            meeting_id="0422",
+            relation_updates={
+                new_result["obj_id"]: [
+                    {
+                        "target_obj_id": old_todo["obj_id"],
+                        "relation": "reactivates",
+                        "confidence": 0.64,
+                        "source_meeting_id": "0422",
+                        "target_meeting_id": "0307",
+                    }
+                ]
+            },
+            now=datetime(2026, 5, 6, tzinfo=timezone.utc),
+        )
+
+        self.assertEqual(activity[old_todo["obj_id"]]["state"], "dormant")
+        self.assertEqual(activity[old_todo["obj_id"]]["activation"], 0.15)
+        self.assertEqual(activity[old_todo["obj_id"]]["touch_count"], 0)
+
+    def test_cross_meeting_linker_does_not_reactivate_from_broad_topic_only(self) -> None:
+        old_todo = _obj(
+            "L1-0307-001",
+            "todo",
+            "Create a shared blackboard for agents.",
+            topics=["memory"],
+        )
+        new_result = _obj(
+            "L1-0422-001",
+            "result",
+            "The interface should display final candidate counts.",
+            topics=["memory"],
+        )
+        tree = {
+            "meetings": [
+                {"meeting_id": "0307", "memory_objects": [old_todo]},
+                {"meeting_id": "0422", "memory_objects": [new_result]},
+            ]
+        }
+
+        relations = build_cross_meeting_relations(
+            tree=tree,
+            source_meeting={"meeting_id": "0422", "memory_objects": [new_result]},
+        )
+
+        self.assertNotIn(new_result["obj_id"], relations)
 
     def test_recall_activity_soft_penalty_does_not_filter_high_semantic_match(self) -> None:
         dormant = _obj(

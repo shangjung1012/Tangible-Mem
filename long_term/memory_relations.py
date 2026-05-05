@@ -33,6 +33,8 @@ _CONCEPT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     ("read_write_memory_update", ("read", "`read`", "write", "`write`"), ("memory database", "memory db", "記憶資料庫")),
     ("idea_unit_grouping", ("idea unit", "idea units", "想法單元"), ("same topic", "continuation", "完整", "連續", "延續", "分割", "合併")),
     ("rag_baseline_comparison", ("rag",), ("compare", "comparison", "baseline", "evaluation", "demo", "比較", "評估", "展示")),
+    ("model_evaluation_methodology", ("evaluate", "evaluation", "performance", "評估", "證明"), ("baseline", "benchmark", "compare", "comparison", "prove", "demo", "基線", "比較", "展示")),
+    ("long_term_memory_demonstration", ("long-term memory", "long term memory", "memory-enhanced", "standard rag", "長期記憶"), ("demo", "demonstrate", "demonstration", "exhibit", "highlight", "prove", "showcase", "展示", "證明")),
     ("memory_object_schema", ("memory object", "memory objects", "記憶物件"), ("type", "content", "evidence", "related topics", "欄位", "證據")),
     ("l123_hierarchy", ("l1", "l2", "l3"), ("hierarchy", "tree", "summary", "層級", "樹", "摘要")),
     ("memory_separation", ("short-term", "long-term", "短期", "長期"), ("separate", "separation", "distinguish", "區分", "分開")),
@@ -46,6 +48,8 @@ _VIEWPOINT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     ("short_long_memory_storage_distinction", ("short-term", "long-term", "短期", "長期"), ("separate", "separation", "differentiate", "distinguish", "儲存", "詳細", "精簡")),
     ("long_term_forgetting_decay", ("forgetting", "forgotten", "forget", "fade", "fade out", "decay", "遺忘", "忘記", "衰減"), ("relevancy", "relevance", "importance", "threshold", "weight", "重要性", "相關性", "權重", "衰減")),
     ("demo_own_meeting_dataset", ("own meeting", "meeting transcripts", "primary dataset", "我們自己的dataset", "自己的會議", "會議資料集"), ("demo", "demonstration", "evaluate", "evaluation", "展示", "示範", "評估")),
+    ("prove_long_term_memory_value", ("long-term memory", "long term memory", "memory-enhanced", "standard rag", "長期記憶"), ("demo", "demonstrate", "demonstration", "exhibit", "highlight", "prove", "showcase", "展示", "證明")),
+    ("evaluation_protocol_recurrence", ("evaluate", "evaluation", "performance", "評估", "證明"), ("baseline", "benchmark", "compare", "comparison", "prove", "demo", "基線", "比較", "展示")),
     ("idea_unit_cross_span_merging", ("idea unit", "idea units", "想法單元"), ("pack", "merge", "higher-level", "overlap", "打包", "合併", "重疊")),
     ("idea_unit_demo_scope", ("idea unit", "idea units", "想法單元"), ("demo", "demonstration", "exhibition", "五月", "專題展", "展示")),
     ("memory_object_schema_fields", ("memory object", "memory objects", "記憶物件"), ("type", "content", "evidence", "related topics", "欄位", "證據")),
@@ -259,19 +263,34 @@ def _relation_for_pair(
         if (similarity >= 0.18 or shared_viewpoint_keys or shared_concept_keys) and _contains_any(source_text, _CONTRADICT_CUES):
             return "contradicts", max(confidence, 0.72)
     if source_type == "argument" and target_type in {"decision", "method_change"}:
-        if similarity >= 0.16 or topic_overlap >= 0.25 or shared_concept_keys:
+        if (
+            similarity >= 0.16
+            or shared_viewpoint_keys
+            or shared_concept_keys
+            or (topic_overlap >= 0.45 and similarity >= 0.12)
+        ):
             return "supports", max(confidence, 0.62)
     if source_type == target_type and (
-        similarity >= 0.34 or topic_overlap >= 0.55 or shared_viewpoint_keys
+        shared_viewpoint_keys
+        or similarity >= 0.34
+        or (shared_concept_keys and (similarity >= 0.10 or topic_overlap >= 0.25))
+        or (topic_overlap >= 0.70 and similarity >= 0.16)
     ):
         return "repeats", max(confidence, 0.68)
     if shared_viewpoint_keys:
         return "reactivates", max(confidence, 0.70)
     if target_type in {"todo", "open_question", "result", "argument"} and (
-        similarity >= 0.24 or topic_overlap >= 0.40 or shared_concept_keys
+        similarity >= 0.24
+        or (shared_concept_keys and (similarity >= 0.08 or topic_overlap >= 0.25))
+        or (topic_overlap >= 0.55 and similarity >= 0.16)
     ):
         return "reactivates", max(confidence, 0.64)
-    if similarity >= 0.20 or topic_overlap >= 0.34 or shared_concept_keys:
+    if (
+        similarity >= 0.20
+        or shared_viewpoint_keys
+        or (shared_concept_keys and (similarity >= 0.08 or topic_overlap >= 0.20))
+        or (topic_overlap >= 0.60 and similarity >= 0.16)
+    ):
         return "continues", max(confidence, 0.58)
     return None
 
