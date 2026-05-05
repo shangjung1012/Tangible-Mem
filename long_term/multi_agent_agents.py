@@ -21,6 +21,8 @@ from multi_agent_tools import (
     unique_strings,
 )
 
+MAX_SEGMENTS_PER_WINDOW = 10
+MAX_IDEA_UNITS_PER_AGENT = 12
 MAX_L1_CANDIDATES_PER_TYPE = 2
 MAX_FALLBACK_CANDIDATES = 3
 
@@ -29,7 +31,7 @@ SEGMENT_SCHEMA: dict[str, Any] = {
     "properties": {
         "segments": {
             "type": "array",
-            "maxItems": 8,
+            "maxItems": MAX_SEGMENTS_PER_WINDOW,
             "items": {
                 "type": "object",
                 "properties": {
@@ -57,7 +59,7 @@ IDEA_SCHEMA: dict[str, Any] = {
     "properties": {
         "idea_units": {
             "type": "array",
-            "maxItems": 8,
+            "maxItems": MAX_IDEA_UNITS_PER_AGENT,
             "items": {
                 "type": "object",
                 "properties": {
@@ -227,8 +229,9 @@ Return JSON only. Split the transcript window into topic-coherent segments.
 Use original line numbers.
 
 Create durable discussion segments, not sentence-level or checklist-like slices.
-Prefer 10-24 primary-window lines per segment and no more than 6 segments for an
-80-line primary window unless there is a major topic shift.
+Normally return 3-6 segments for an 80-line primary window.
+You may return up to {MAX_SEGMENTS_PER_WINDOW} segments only when there are clear
+major topic shifts. Prefer 10-24 primary-window lines per segment.
 Do not split every small subpoint into a segment; downstream idea units will handle
 the smaller claims inside each durable segment.
 
@@ -273,7 +276,9 @@ You are idea_unit_agent. Convert this segment into compact idea units.
 Each unit should express one checkable idea that downstream L1 agents can share.
 Do not classify memory types here. Return JSON only.
 
-Return at most 8 idea units. Do not split every sentence into a separate unit.
+Normally return 3-8 idea units. You may return up to {MAX_IDEA_UNITS_PER_AGENT}
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
 Prefer durable, self-contained units that combine related details across several
 lines. Ignore filler, acknowledgements, and local wording clarifications unless
 they change the project method, decision, result, or todo.

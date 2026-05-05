@@ -41,7 +41,7 @@ uv run app/main.py
 ## 子模組說明
 
 - 短期記憶：[`short_term/README.md`](short_term/README.md)
-- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；L1 bridge 支援預設 full-transcript 模式與 optional incremental Gemini function-calling 模式
+- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；目前 L1 研究主線是 multi-agent bridge，full / incremental 保留作 baseline
 - 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
 
 ## Meeting Recording（摘要）

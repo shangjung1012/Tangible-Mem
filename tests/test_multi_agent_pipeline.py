@@ -8,7 +8,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
 
-from multi_agent_agents import IDEA_SCHEMA, l1_fallback_agent, l1_type_agent  # noqa: E402
+from multi_agent_agents import (  # noqa: E402
+    IDEA_SCHEMA,
+    MAX_IDEA_UNITS_PER_AGENT,
+    MAX_SEGMENTS_PER_WINDOW,
+    SEGMENT_SCHEMA,
+    l1_fallback_agent,
+    l1_type_agent,
+)
 from multi_agent_pipeline import (  # noqa: E402
     build_continuation_batches,
     idea_units_for_batch,
@@ -114,11 +121,18 @@ class FakeFallbackRunner:
 
 
 class MultiAgentPipelineTests(unittest.TestCase):
-    def test_idea_unit_schema_matches_validator_unit_limit(self) -> None:
-        self.assertEqual(IDEA_SCHEMA["properties"]["idea_units"]["maxItems"], 8)
-        self.assertGreaterEqual(
-            MAX_IDEA_UNITS_PER_SEGMENT,
+    def test_adaptive_schema_limits_remain_bounded(self) -> None:
+        self.assertEqual(
+            SEGMENT_SCHEMA["properties"]["segments"]["maxItems"],
+            MAX_SEGMENTS_PER_WINDOW,
+        )
+        self.assertEqual(
             IDEA_SCHEMA["properties"]["idea_units"]["maxItems"],
+            MAX_IDEA_UNITS_PER_AGENT,
+        )
+        self.assertLessEqual(
+            IDEA_SCHEMA["properties"]["idea_units"]["maxItems"],
+            MAX_IDEA_UNITS_PER_SEGMENT,
         )
 
     def test_grounding_uses_shared_idea_unit_spans(self) -> None:

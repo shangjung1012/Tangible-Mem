@@ -59,11 +59,11 @@ def _print_help() -> None:
     print("Examples:")
     print(
         "  uv run long_term/cli.py bridge --transcript "
-        "ICSI_original_transcripts/transcripts/Bmr001.mrt"
+        "meeting_recording/transcript/grace/0422.txt --mode multi-agent"
     )
     print(
         "  uv run long_term/cli.py bridge --transcript "
-        "meeting_recording/transcript/grace/0422.txt --mode multi-agent"
+        "ICSI_original_transcripts/transcripts/Bmr001.mrt --mode full"
     )
     print(
         "  uv run long_term/cli.py summarize phase "

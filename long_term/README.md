@@ -12,11 +12,14 @@
 最常用的幾個指令：
 
 ```bash
-uv run long_term/cli.py bridge --transcript ICSI_original_transcripts/transcripts/Bmr001.mrt
+uv run long_term/cli.py bridge --transcript meeting_recording/transcript/grace/0422.txt --mode multi-agent
 uv run long_term/cli.py build-tree --resume --phase-size 4
 uv run long_term/cli.py rebuild-snapshots --dry-run
 uv run long_term/cli.py smoke-todo
 ```
+
+目前 L1 研究主線是 `--mode multi-agent`。`--mode full` 和 `--mode incremental`
+仍保留作為 baseline/reference，不是主要開發路徑。
 
 ## 記憶層級
 
@@ -33,15 +36,17 @@ Recall 目前走 semantic retrieval：先用 embedding 對 L1 做搜尋，再把
 | 路徑 | 用途 |
 | --- | --- |
 | `cli.py` | long-term 專用 CLI 入口 |
-| `bridge.py` | 從單場逐字稿擷取 L1 記憶 |
+| `bridge.py` | 單場 L1 bridge 入口；目前主線走 `--mode multi-agent` |
+| `multi_agent_*.py` | multi-agent L1 pipeline、agents、validators、verifier、reducer |
 | `summarize.py` | `L1 -> L2` 與 `L2 -> L3` 的彙整 |
 | `recall.py` / `recall_planner.py` | recall 規劃、檢索、格式化 prompt |
 | `build_tree.py` / `rebuild_snapshots.py` | 批次建樹與重建 snapshots |
+| `gemini_incremental_extractor.py` / `incremental_store.py` | incremental function-calling baseline，目前保留作 reference |
 | `scripts/` | smoke test / 評估腳本 |
 | `tree.json` | 長期記憶主資料 |
 | `snapshots/` | L2 / L3 snapshots 與評估輸出 |
 | `docs/` | 設計稿與重構筆記 |
-| `archive/` | 舊備份與 redesign preview，平常可忽略 |
+| `archive/` | 小型舊備份與 redesign preview，平常可忽略；大型生成快照不再放這裡 |
 
 ## 環境變數
 

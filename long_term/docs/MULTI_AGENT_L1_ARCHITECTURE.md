@@ -113,6 +113,7 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 
 - segment 會被 clamp 回 primary window
 - 語義切段本身仍由 LLM 決定，因此仍可能切得太粗或太碎
+- segmentation prompt 採 bounded adaptive 設計：80 行 primary window 通常鼓勵 3-6 個 durable segments，但在明確 major topic shifts 時 schema 允許最多 10 個，避免固定上限壓掉高密度討論
 
 ### 3.3.1 Segment Coverage Validator / Repair
 
@@ -253,7 +254,8 @@ multi-agent 的核心目標不是只追求抽得更多，而是讓流程具備�
 - 對過胖 unit 用原 transcript lines 拆成 bounded fallback chunks
 - 如果某個 segment 完全沒有可用 unit，補 fallback idea unit
 - 如果某些 segment lines 沒被任何 idea unit 覆蓋，補 transcript-based fallback unit
-- idea-unit agent 仍被要求最多輸出 8 個 units，但 validator 補漏後允許最多 12 個 units
+- idea-unit prompt 採 bounded adaptive 設計：通常鼓勵 3-8 個 units，但在同一 segment 有多個 distinct durable claims 時 schema 允許最多 12 個
+- validator 補漏後仍以 12 個 units 作為 segment-level 上限
 - 只有超過 validator 上限時才做 deterministic compaction，避免把不同觀點硬壓進同一個 unit
 - compaction 會優先維持每個 idea unit 不超過 8 行，避免補漏後又產生過胖 unit
 
