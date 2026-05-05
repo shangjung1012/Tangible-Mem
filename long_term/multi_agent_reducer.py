@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from importance import MIN_IMPORTANCE_THRESHOLD, calibrate_l1_importance
-from l1_quality import derive_quality_level
+from l1_quality import (
+    QUALITY_INDEX_SCHEMA_VERSION,
+    derive_quality_level,
+    l1_quality_hashes,
+)
 from multi_agent_state import ConflictDecision, GroundedCandidate
 from multi_agent_tools import clamp_float, jaccard, tokenize, unique_strings
 
@@ -1246,10 +1250,13 @@ def reduce_l1_patch(
         support_score = round(max(support_scores), 3) if support_scores else 0.0
         source_unit_quality = unique_strings(row.get("_source_unit_quality", []))
         quality_warnings = unique_strings(row.get("_unit_quality_warnings", []))
+        memory_obj = memory_objects[-1]
         quality_index[obj_id] = {
+            "schema_version": QUALITY_INDEX_SCHEMA_VERSION,
             "meeting_id": meeting_id,
             "type": row["type"],
             "importance": row["importance"],
+            **l1_quality_hashes(memory_obj),
             "support_score": support_score,
             "quality_level": derive_quality_level(
                 support_score=support_score,

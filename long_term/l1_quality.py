@@ -7,6 +7,7 @@ use them without changing the public L1 schema.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,22 @@ from typing import Any
 from io_utils import save_json
 
 QUALITY_LEVELS = ("strong", "normal", "tentative", "weak")
+QUALITY_INDEX_SCHEMA_VERSION = 1
+
+
+def _hash_text(value: Any) -> str:
+    text = str(value or "").strip()
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def l1_quality_hashes(obj: dict[str, Any]) -> dict[str, str]:
+    """Return stable hashes used to guard sidecar metadata against stale obj_ids."""
+    return {
+        "content_hash": _hash_text(
+            f"{obj.get('type', '')}\n{obj.get('content', '')}"
+        ),
+        "evidence_hash": _hash_text(obj.get("evidence", "")),
+    }
 
 
 def quality_index_default_path(tree_path: Path) -> Path:
@@ -45,6 +62,26 @@ def merge_l1_quality_index(
         existing.update(updates)
         save_l1_quality_index(path, existing)
     return existing
+
+
+def remove_l1_quality_for_meeting(
+    path: Path,
+    meeting_id: str,
+) -> dict[str, Any]:
+    existing = load_l1_quality_index(path)
+    if not existing:
+        return existing
+    filtered = {
+        obj_id: meta
+        for obj_id, meta in existing.items()
+        if not (
+            isinstance(meta, dict)
+            and str(meta.get("meeting_id", "")).strip() == meeting_id
+        )
+    }
+    if len(filtered) != len(existing):
+        save_l1_quality_index(path, filtered)
+    return filtered
 
 
 def derive_quality_level(
@@ -92,6 +129,12 @@ def format_l1_quality_tag(
     obj_id = str(obj.get("obj_id", "")).strip()
     meta = (quality_index or {}).get(obj_id, {})
     if not isinstance(meta, dict):
+        meta = {}
+    expected_hashes = l1_quality_hashes(obj)
+    if (
+        meta.get("content_hash") != expected_hashes["content_hash"]
+        or meta.get("evidence_hash") != expected_hashes["evidence_hash"]
+    ):
         meta = {}
 
     level = str(meta.get("quality_level") or "unknown")

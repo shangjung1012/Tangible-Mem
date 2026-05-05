@@ -467,7 +467,9 @@ L1 quality sidecar：
 - `quality_level` 目前分成 `strong` / `normal` / `tentative` / `weak`
 - `strong` 代表 support 高、source unit 完整、沒有 repair/uncertainty warning
 - `tentative` / `weak` 不會直接污染 canonical L1，只會放在 sidecar，供 L2 summarize 保守使用
+- sidecar 每筆 metadata 會帶 content/evidence hash；`summarize phase` 只有在 hash 和目前 `tree.json` L1 相符時才使用該筆 quality，避免同 `obj_id` 重跑後吃到 stale metadata
 - `bridge --mode multi-agent` 在非 dry-run persist 後，會把 run-level `l1_quality_index.json` merge 到 `tree.json` 同層的 `long_term/l1_quality_index.json`
+- `bridge --mode full|incremental` 正式重寫同一 meeting 時會移除該 meeting 的 sidecar entries，避免 baseline rerun 留下 multi-agent quality
 - `summarize phase` 會讀取這份 sidecar，把 compact quality tag 加進 L2 prompt；retrieve 主架構不因此改動
 
 ## 4. Artifact 設計

@@ -26,7 +26,11 @@ from importance import (
     normalize_importance_score,
 )
 from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
-from l1_quality import merge_l1_quality_index, quality_index_default_path
+from l1_quality import (
+    merge_l1_quality_index,
+    quality_index_default_path,
+    remove_l1_quality_for_meeting,
+)
 from schema import BRIDGE_RESPONSE_SCHEMA, DEFAULT_MODEL_NAME, MEMORY_OBJ_TYPES
 
 TODO_PREFIXES = ("需要", "待辦", "應", "計劃", "必須")
@@ -958,9 +962,9 @@ def main() -> None:
     )
     save_json(snapshot_dir / snapshot_name, tree)
 
+    quality_path = quality_index_default_path(tree_path)
     if mode == "multi-agent" and multi_agent_result is not None:
         if multi_agent_result.quality_index:
-            quality_path = quality_index_default_path(tree_path)
             merged_quality = merge_l1_quality_index(
                 quality_path,
                 multi_agent_result.quality_index,
@@ -980,11 +984,13 @@ def main() -> None:
                 f"{len(merged_quality)} total)"
             )
     elif mode == "incremental":
+        remove_l1_quality_for_meeting(quality_path, meeting_id)
         print(
             f"Incremental bridge: inserted {len(memory_objects)} memory objects for {meeting_id}"
         )
         print(f"Incremental DB: {Path(args.incremental_db).resolve()}")
     else:
+        remove_l1_quality_for_meeting(quality_path, meeting_id)
         print(f"Bridge: inserted {len(memory_objects)} memory objects for {meeting_id}")
     print(f"Tree version: {tree['tree_version']}")
     print(f"Tree saved: {tree_path}")
