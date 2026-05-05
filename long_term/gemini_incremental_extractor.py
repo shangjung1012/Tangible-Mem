@@ -411,12 +411,25 @@ def _build_system_instruction(
     prior_context_pack: dict[str, Any] | None = None,
 ) -> str:
     topics = ", ".join(existing_topics) if existing_topics else "(none)"
-    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
+    prior_items = (prior_context_pack or {}).get("items", [])
+    prior_rules = ""
+    prior_context_text = ""
+    if isinstance(prior_items, list) and prior_items:
+        prior_rules = """
+13. Prior cross-meeting context is for disambiguation only; never use it as evidence for new L1 objects.
+14. Every issue mention and L1 evidence line must come from current transcript lines returned by read_transcript.
+""".strip()
+        prior_context_text = f"""
+
+Prior context:
+{format_prior_context_for_prompt(prior_context_pack)}
+""".rstrip()
     request_constrained_rules = ""
     if request_constrained:
-        request_constrained_rules = """
-15. You are in request-constrained single-key mode. Minimize generate_content turns and avoid one-call responses when more actions from the same span are already clear.
-16. For a typical forward_scan span, prefer to batch all necessary update_issue and create_l1_object calls, then request the next forward_scan span in the same response.
+        request_rule_start = 15 if prior_rules else 13
+        request_constrained_rules = f"""
+{request_rule_start}. You are in request-constrained single-key mode. Minimize generate_content turns and avoid one-call responses when more actions from the same span are already clear.
+{request_rule_start + 1}. For a typical forward_scan span, prefer to batch all necessary update_issue and create_l1_object calls, then request the next forward_scan span in the same response.
 """.rstrip()
     base_prompt = f"""
 You are the incremental long-term memory bridge for transcript {transcript_id}.
@@ -440,13 +453,10 @@ Rules:
 10. When create_l1_object is linked to an existing issue, prefer the exact issue_id returned by update_issue over issue_key.
 11. Batch related update_issue and create_l1_object calls for the same read_transcript span in one response whenever possible.
 12. Continue until forward_scan has reached the final transcript line reported by read_transcript.
-13. Prior cross-meeting context is for disambiguation only; never use it as evidence for new L1 objects.
-14. Every issue mention and L1 evidence line must come from current transcript lines returned by read_transcript.
+{prior_rules}
 {request_constrained_rules}
 
 Known related topics: {topics}
-
-Prior context:
 {prior_context_text}
 """.strip()
     if dataset_prompt_hint.strip():
