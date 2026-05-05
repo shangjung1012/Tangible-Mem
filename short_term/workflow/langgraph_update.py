@@ -349,6 +349,7 @@ def _build_graph(
                     }
                 )
                 needs_more = False
+                context_rounds = 0
             elif needs_more and context_rounds > 1 and repeated_context_range:
                 unresolved_context.append(
                     {
@@ -357,7 +358,8 @@ def _build_graph(
                     }
                 )
                 needs_more = False
-            elif context_rounds > int(state.get("max_context_rounds", 3) or 3):
+                context_rounds = 0
+            elif needs_more and context_rounds > int(state.get("max_context_rounds", 3) or 3):
                 unresolved_context.append(
                     {
                         "line_range": _line_range(state.get("current_window", {})),
@@ -365,6 +367,7 @@ def _build_graph(
                     }
                 )
                 needs_more = False
+                context_rounds = 0
             if needs_more:
                 extraction_window = window
                 context_units_buffer = merged_units
