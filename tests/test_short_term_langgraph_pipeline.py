@@ -181,6 +181,30 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
         self.assertFalse(worker.is_alive())
         self.assertIsInstance(errors.get_nowait(), TimeoutError)
 
+    def test_call_with_retry_retries_timeout_once(self) -> None:
+        attempts = {"count": 0}
+        events: list[dict[str, object]] = []
+
+        def slow_then_ok() -> str:
+            attempts["count"] += 1
+            if attempts["count"] == 1:
+                time.sleep(1)
+            return "ok"
+
+        with mock.patch.dict(os.environ, {"GOOGLE_GENAI_TIMEOUT_MS": "10"}):
+            result = call_with_retry(
+                slow_then_ok,
+                operation_name="slow then ok",
+                max_retries=15,
+                on_retry=events.append,
+                sleep_func=lambda _: None,
+            )
+
+        self.assertEqual(result, "ok")
+        self.assertEqual(attempts["count"], 2)
+        self.assertEqual(events[0]["error_type"], "TimeoutError")
+        self.assertEqual(events[0]["max_retries"], 2)
+
     def test_tool_agent_repairs_empty_final_json_response(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             logger = ResearchLogger(Path(tmpdir), "Bmr001", run_id="run_Bmr001")

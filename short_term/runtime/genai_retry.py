@@ -13,10 +13,13 @@ MAX_API_RETRIES = 15
 API_RETRY_BASE_DELAY_SECONDS = 2.0
 API_RETRY_MAX_DELAY_SECONDS = 20.0
 API_RETRY_JITTER_SECONDS = 1.0
-DEFAULT_CALL_TIMEOUT_SECONDS = 120.0
+DEFAULT_CALL_TIMEOUT_SECONDS = 180.0
+MAX_TIMEOUT_RETRIES = 2
 
 
 def _is_retryable_genai_error(exc: Exception) -> bool:
+    if isinstance(exc, TimeoutError):
+        return True
     if isinstance(exc, errors.ServerError):
         return True
     if isinstance(exc, errors.ClientError):
@@ -78,7 +81,12 @@ def call_with_retry(
                 timeout_seconds=timeout_seconds,
             )
         except Exception as exc:  # noqa: BLE001
-            if not _is_retryable_genai_error(exc) or attempt >= max_retries:
+            effective_max_retries = (
+                min(max_retries, MAX_TIMEOUT_RETRIES)
+                if isinstance(exc, TimeoutError)
+                else max_retries
+            )
+            if not _is_retryable_genai_error(exc) or attempt >= effective_max_retries:
                 raise
 
             delay_seconds = _retry_delay_seconds(exc, attempt)
@@ -87,7 +95,7 @@ def call_with_retry(
                     {
                         "operation_name": operation_name,
                         "attempt": attempt,
-                        "max_retries": max_retries,
+                        "max_retries": effective_max_retries,
                         "delay_seconds": round(delay_seconds, 4),
                         "error_type": type(exc).__name__,
                         "error": str(exc),

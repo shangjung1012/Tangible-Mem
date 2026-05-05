@@ -12,7 +12,7 @@ from google.genai import types
 
 DEFAULT_VERTEX_LOCATION = "global"
 DEFAULT_VERTEX_API_VERSION = "v1"
-DEFAULT_GENAI_TIMEOUT_MS = 120_000
+DEFAULT_GENAI_TIMEOUT_MS = 180_000
 DEFAULT_ADC_CREDENTIALS_PATH = Path.home() / ".config/gcloud/application_default_credentials.json"
 VERTEX_SCOPES = ("https://www.googleapis.com/auth/cloud-platform",)
 TRUTHY_VALUES = {"1", "true", "t", "yes", "y", "on"}
