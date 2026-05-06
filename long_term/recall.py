@@ -7,11 +7,21 @@ import os
 import random
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from embedder import EmbedCache, cosine_similarity, embed_text
 from gemini_clients import create_gemini_client
 from importance import normalize_importance_score
+from memory_activity import (
+    activity_score_for_obj,
+    adjust_recall_score_for_activity,
+    load_memory_activity_index,
+)
+from memory_relations import (
+    load_memory_relations_index,
+    relation_is_current,
+)
 from schema import DEFAULT_MODEL_NAME, EMBED_MODEL_NAME, RECALL_GATE_SCHEMA
 
 FALLBACK_SCORE_THRESHOLD = 0.80
@@ -102,6 +112,7 @@ def search_l1_semantic(
     top_k: int = 30,
     query_date: datetime | None = None,
     embed_model: str = EMBED_MODEL_NAME,
+    activity_index: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Search ALL L1 objects using semantic + recency + importance scoring."""
     if query_date is None:
@@ -147,7 +158,14 @@ def search_l1_semantic(
                 meeting_date, timestamp, str(obj_type), query_date, importance
             )
             s_importance = _importance_score(importance)
-            score = _combined_score(s_sem, s_recency, s_importance)
+            base_score = _combined_score(s_sem, s_recency, s_importance)
+            s_activation, activity_state = activity_score_for_obj(obj, activity_index)
+            score = adjust_recall_score_for_activity(
+                score=base_score,
+                semantic_score=s_sem,
+                activation=s_activation,
+                state=activity_state,
+            )
 
             results.append(
                 {
@@ -166,6 +184,10 @@ def search_l1_semantic(
                     "s_sem": round(s_sem, 4),
                     "s_recency": round(s_recency, 4),
                     "s_importance": round(s_importance, 4),
+                    "s_activation": (
+                        round(s_activation, 4) if s_activation is not None else None
+                    ),
+                    "activity_state": activity_state,
                 }
             )
 
@@ -224,6 +246,96 @@ def expand_parent_chain(
 
     l3_profile = get_l3_profile(tree)
     return l2_nodes, l3_profile
+
+
+def _l1_lookup(tree: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    lookup: dict[str, dict[str, Any]] = {}
+    for meeting in tree.get("meetings", []):
+        meeting_id = meeting.get("meeting_id", "")
+        timestamp = meeting.get("timestamp", "")
+        meeting_date = meeting.get("meeting_date", "")
+        phase_id = meeting.get("phase_id", "")
+        for obj in meeting.get("memory_objects", []):
+            obj_id = str(obj.get("obj_id", "")).strip()
+            if obj_id:
+                lookup[obj_id] = {
+                    "source": "long_term_l1_linked",
+                    "meeting_id": meeting_id,
+                    "timestamp": timestamp,
+                    "meeting_date": meeting_date,
+                    "phase_id": phase_id,
+                    "obj_id": obj_id,
+                    "type": obj.get("type", ""),
+                    "content": obj.get("content", ""),
+                    "importance": obj.get("importance", 0.0),
+                    "evidence": obj.get("evidence", ""),
+                    "related_topics": obj.get("related_topics", []),
+                    "_raw_obj": obj,
+                }
+    return lookup
+
+
+def expand_relation_graph(
+    tree: dict[str, Any],
+    l1_results: list[dict[str, Any]],
+    relations_index: dict[str, Any] | None,
+    *,
+    max_linked: int = 6,
+) -> list[dict[str, Any]]:
+    """Softly add linked L1 context without changing primary semantic search."""
+    if not relations_index:
+        return l1_results
+    lookup = _l1_lookup(tree)
+    output = list(l1_results)
+    seen_ids = {str(item.get("obj_id", "")).strip() for item in output}
+    linked: list[dict[str, Any]] = []
+    for item in l1_results:
+        source_obj_id = str(item.get("obj_id", "")).strip()
+        source_lookup = lookup.get(source_obj_id)
+        if not source_lookup:
+            continue
+        source_obj = source_lookup["_raw_obj"]
+        relations = relations_index.get(source_obj_id, [])
+        if not isinstance(relations, list):
+            continue
+        for relation in relations:
+            if not isinstance(relation, dict):
+                continue
+            target_obj_id = str(relation.get("target_obj_id", "")).strip()
+            if not target_obj_id or target_obj_id in seen_ids:
+                continue
+            target = lookup.get(target_obj_id)
+            if not target:
+                continue
+            if not relation_is_current(
+                relation,
+                source_obj=source_obj,
+                target_obj=target["_raw_obj"],
+            ):
+                continue
+            try:
+                relation_confidence = float(relation.get("confidence") or 0.0)
+            except (TypeError, ValueError):
+                relation_confidence = 0.0
+            linked_item = {
+                key: value
+                for key, value in target.items()
+                if key != "_raw_obj"
+            }
+            base_score = float(item.get("score", 0.0) or 0.0)
+            linked_item.update(
+                {
+                    "score": round(max(0.0, min(1.0, base_score * 0.86 * relation_confidence)), 4),
+                    "linked_from_obj_id": source_obj_id,
+                    "relation": relation.get("relation", ""),
+                    "relation_confidence": round(relation_confidence, 3),
+                }
+            )
+            linked.append(linked_item)
+            seen_ids.add(target_obj_id)
+            if len(linked) >= max_linked:
+                return sorted(output + linked, key=lambda row: -float(row.get("score", 0.0) or 0.0))
+    return sorted(output + linked, key=lambda row: -float(row.get("score", 0.0) or 0.0))
 
 
 # ===================================================================
@@ -388,6 +500,10 @@ def recall(
     query_date: datetime | None = None,
     embed_cache: EmbedCache | None = None,
     top_k_raw: int = 30,
+    activity_index: dict[str, Any] | None = None,
+    activity_index_path: Path | None = None,
+    relations_index: dict[str, Any] | None = None,
+    relations_index_path: Path | None = None,
 ) -> dict[str, Any]:
     """Execute a recall plan and return retrieved memories."""
     if query_date is None:
@@ -406,6 +522,10 @@ def recall(
     own_cache = embed_cache is None
     if embed_cache is None:
         embed_cache = EmbedCache()
+    if activity_index is None and activity_index_path is not None:
+        activity_index = load_memory_activity_index(activity_index_path)
+    if relations_index is None and relations_index_path is not None:
+        relations_index = load_memory_relations_index(relations_index_path)
 
     stm_results: list[dict[str, Any]] = []
     l1_results: list[dict[str, Any]] = []
@@ -456,12 +576,14 @@ def recall(
             top_k=top_k_raw,
             query_date=query_date,
             embed_model=embed_model,
+            activity_index=activity_index,
         )
 
         if plan.get("complexity") == "complex" and len(l1_candidates) > 5:
             l1_results = recall_gate(query, l1_candidates, api_key, model_name)
         else:
             l1_results = l1_candidates
+        l1_results = expand_relation_graph(tree, l1_results, relations_index)
 
         l2_results, l3_profile = expand_parent_chain(tree, l1_results)
 
@@ -540,11 +662,17 @@ def format_recall_for_prompt(recall_result: dict[str, Any]) -> str:
 
         for item in sorted(l1_results, key=_sort_key):
             date_str = item.get("meeting_date") or item.get("timestamp", "")[:10]
+            activity_state = item.get("activity_state")
+            activity_text = (
+                f" activity={activity_state}"
+                if activity_state and activity_state != "unknown"
+                else ""
+            )
             parts.append(
                 f"  [{item.get('meeting_id', '?')} | {date_str}] "
                 f"({item.get('type', '?')}) "
                 f"importance={item.get('importance', '?')} "
-                f"score={item.get('score', '?')}\n"
+                f"score={item.get('score', '?')}{activity_text}\n"
                 f"    {item.get('content', '')}"
             )
 

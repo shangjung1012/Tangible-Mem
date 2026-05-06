@@ -98,25 +98,47 @@ uv run long_term/cli.py bridge \
   --research-log-dir long_term/research_logs
 ```
 
+如果沒有明確傳 `--model`，bridge / summarize 會在載入 `.env` 後使用
+`GEMINI_MODEL`，未設定時才退回 `gemini-2.5-flash`。
+
 每次 run 會建立 `long_term/research_logs/<run_id>/`，至少包含：
 
 - `run_meta.json`
 - `graph_events.jsonl`
 - `window_plans.json`
+- `initial_segments.json`
+- `boundary_refinement.json`
 - `segments.json`
+- `segment_coverage_validation.json`
+- `segment_coarsening.json`
 - `continuation_merges.json`
 - `extraction_batches.json`
 - `idea_units.json`
+- `idea_unit_quality_validation.json`
+- `previous_context_by_batch.json`（啟用 `--multi-agent-previous-context` 時）
 - `raw_candidates.json`
+- `batch_fallbacks.json`
 - `grounded_candidates.json`
 - `conflict_resolution.json`
 - `verified_candidates.json`
 - `rejected_candidates.json`
 - `final_patch.json`
+- `l1_quality_index.json`
+- `viewpoint_recurrence.json`
+- `metrics_summary.json`
+- `status.json`
+- `run_summary.json`
+- `prior_context_pack.json`
+- `cross_meeting_relations.json`
+- `memory_activity_update.json`
 - `final_meeting_node.json`
 - `prompts/` 與 `responses/`
 
-multi-agent 第一版完整實作 L1：`context_planner -> segmentation_agent -> continuation_merge -> idea_unit_agent -> bounded l1_decision/todo/method_change/result_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`。type agents 只吃單一 bounded extraction batch 的 idea units；candidate 會保留 `extraction_scope` 與 `segment_ids` 供追責。grounding acceptance 只使用本地 evidence/content 對齊訊號，不使用模型自評 confidence。`open_question` 與 `argument` 仍保留在正式 schema 中，但專屬 agent 暫時延後，之後可沿用同一個 candidate schema 加進 `l1_type_agent` 迴圈。L2/L3 不另建新 schema；multi-agent 寫入的 meeting node 與既有 `summarize phase` / `summarize profile` 相容。
+multi-agent 第一版完整實作 L1：`context_planner -> segmentation_agent -> segment repair/coarsening -> boundary_refinement -> idea_unit_agent -> idea_unit repair -> continuation_merge -> bounded l1_decision/todo/method_change/result/argument/open_question_agent -> evidence_grounding_agent -> cross_type_conflict_resolver -> verify_l1_candidates -> reduce_l1_patch -> persist_l1`。這裡的 multi-agent 是「多角色分工的 staged prompt pipeline」，不是每個 agent 都有獨立長期狀態或自治工具。boundary refinement 會修 `segments.json` 的語義邊界；continuation merge 則只決定下游 extraction batch，不改 segment，且過大的 batch 會依 idea-unit 上限再切小，避免 type agents 在太胖的 scope 裡只取前幾個候選。type agents 只吃單一 bounded extraction batch 的 idea units；candidate 會保留 `extraction_scope` 與 `segment_ids` 供追責。grounding acceptance 主要使用本地 evidence/content 對齊訊號；只有 near-threshold support 且 source unit 完整、evidence 存在、沒有 uncertainty note、confidence 足夠高時，才保留為 `near_threshold_grounding` 低權重候選。idea unit 的 `completeness` / `uncertainty_note` 會保留到 grounded / verified artifacts，並在 reducer 端保守降權，不直接作為 rejection reason。若 idea-unit validator 發現漏行、過胖或過碎，pipeline 會先呼叫 `idea_unit_repair_agent` 產生語義修補 units 或標記真正的 non-memory context；只有 repair 後仍不足時才使用 transcript-based fallback / deterministic compaction。`argument` 與 `open_question` 已接進同一個 bounded type-agent loop，但 reducer 會對這兩類使用較保守的 importance cap，避免把一般討論理由或暫時疑問灌得過高；`argument` 目前仍是獨立 L1 object，用來支援「為什麼這樣決定」的 recall，不是附著在 decision/method_change 的 rationale 欄位。`l1_quality_index.json` 會把 support score、source unit quality、quality warnings、evidence lines、source candidate IDs、viewpoint recurrence 等品質訊號寫成 sidecar；正式 `tree.json` 的 L1 schema 仍保持乾淨。非 dry-run multi-agent bridge 會把 run-level sidecar merge 到 `long_term/l1_quality_index.json`，後續 `summarize phase` 會讀這份 sidecar，讓 L2 摘要知道哪些 L1 是 strong / normal / tentative / weak；sidecar 會用 content/evidence hash 比對目前 L1，避免重跑同一 meeting 後舊 metadata 被誤用。`metrics_summary.json` 會記錄 semantic repair / deterministic fallback / compaction counts、LLM call count、stage latency 與粗略 text-token proxy；`status.json` / `run_summary.json` 會在 run 中持續更新，目前 stage、partial metrics 與錯誤資訊會在失敗或中斷時保留下來。L2/L3 不另建新 schema；multi-agent 寫入的 meeting node 與既有 `summarize phase` / `summarize profile` 相容。
+
+`--multi-agent-previous-context` 是實驗性開關：typed L1 agents 會收到前 2 個 extraction batches 的少量 compact candidate summaries，僅用來理解代名詞、延續關係與避免重複；這些 summaries 尚未經過 grounding / reducer，因此 previous context 不可作為 evidence，也不應因為前文提到某 topic 就增加候選數。程式端仍限制 `source_unit_ids` 只能來自 current batch。每次 run 會寫 `previous_context_by_batch.json`，metrics 會記錄 context 是否啟用、哪些 batch 有 items、以及每 batch item 數。
+
+cross-meeting interaction 目前採 sidecar 設計：bridge 會先建立 `prior_context_pack.json`，把少量相關舊 L1 / L3 方法放進 prompt 作為 disambiguation context，並明確要求不可把舊記憶當作新 evidence。非 dry-run multi-agent 寫入後會更新 `memory_relations_index.json`（continues / resolves / supersedes / reactivates 等關係）與 `memory_activity_index.json`（activation / state / touch_count），讓 `summarize phase` 和 recall 能用「品質、活躍度、跨會議關係」做保守加權；canonical `importance` 和 L1 schema 不會被改動。relations 會先用 viewpoint / concept key、related topics、lexical similarity 篩候選，再判斷 relation type；sidecar 會記錄 source/target content/evidence hash，避免重跑後 stale relation 被 prompt 或 recall 誤用。recall 可沿 relation graph 補少量 linked L1 context，但只作為 soft expansion，不取代原本 semantic search。
 
 常見補充參數：
 
@@ -166,6 +188,8 @@ uv run long_term/cli.py summarize phase \
   --meetings Bmr027 Bmr028 Bmr029 Bmr030
 ```
 
+如果 `tree.json` 同層有 `l1_quality_index.json`，`summarize phase` 會自動在 prompt 裡加入 compact quality tag。`strong/normal` 的 L1 較容易升級成 phase-level change；`tentative/weak` 只作背景或被保守處理；沒有 sidecar 的 legacy L1 會標為 `quality=unknown`，仍按原本 type / importance / content / evidence 判斷。
+
 ```bash
 uv run long_term/cli.py summarize profile
 ```
@@ -181,7 +205,7 @@ uv run long_term/cli.py build-tree --resume --phase-size 4
 - `--dry-run` 只看會處理哪些會議
 - `--no-auto-summarize` 只建 L1，不自動補 L2 / L3
 - `--meetings Bmr001:Bmr005 Bmr009` 可只跑指定範圍
-- `build_tree.py` 目前內部 bridge model 固定是 `gemini-2.5-flash`
+- `--model` 可指定批次 L1/L2/L3 使用的 Gemini model；未指定時會讀取 `.env` 的 `GEMINI_MODEL`，再退回預設 `gemini-2.5-flash`
 
 ### 4. 用既有 `tree.json` 重建 snapshots
 

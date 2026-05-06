@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import time
+import os
+import signal
+import threading
+import json
+from collections import Counter
+from contextlib import contextmanager
 from typing import Any
 
-from gemini_clients import create_gemini_client
+from gemini_clients import DEFAULT_HTTP_TIMEOUT_S, create_gemini_client
 from multi_agent_logger import ResearchLogger
 from multi_agent_state import (
     IdeaUnit,
@@ -20,6 +27,8 @@ from multi_agent_tools import (
     slice_lines,
     unique_strings,
 )
+from multi_agent_validators import normalize_idea_completeness
+from prior_context import format_prior_context_for_prompt
 
 MAX_SEGMENTS_PER_WINDOW = 10
 MAX_IDEA_UNITS_PER_AGENT = 12
@@ -66,7 +75,10 @@ IDEA_SCHEMA: dict[str, Any] = {
                     "line_start": {"type": "integer"},
                     "line_end": {"type": "integer"},
                     "text": {"type": "string"},
-                    "completeness": {"type": "string"},
+                    "completeness": {
+                        "type": "string",
+                        "enum": ["complete", "partial", "incomplete", "uncertain"],
+                    },
                     "uncertainty_note": {"type": "string"},
                 },
                 "required": [
@@ -81,6 +93,53 @@ IDEA_SCHEMA: dict[str, Any] = {
         }
     },
     "required": ["idea_units"],
+    "additionalProperties": False,
+}
+
+IDEA_REPAIR_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "idea_units": {
+            "type": "array",
+            "maxItems": MAX_IDEA_UNITS_PER_AGENT,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "line_start": {"type": "integer"},
+                    "line_end": {"type": "integer"},
+                    "text": {"type": "string"},
+                    "completeness": {
+                        "type": "string",
+                        "enum": ["complete", "partial", "incomplete", "uncertain"],
+                    },
+                    "uncertainty_note": {"type": "string"},
+                },
+                "required": [
+                    "line_start",
+                    "line_end",
+                    "text",
+                    "completeness",
+                    "uncertainty_note",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        "non_memory_context_ranges": {
+            "type": "array",
+            "maxItems": MAX_IDEA_UNITS_PER_AGENT,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "line_start": {"type": "integer"},
+                    "line_end": {"type": "integer"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["line_start", "line_end", "reason"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["idea_units", "non_memory_context_ranges"],
     "additionalProperties": False,
 }
 
@@ -155,7 +214,105 @@ TYPE_DEFINITIONS = {
     "todo": "explicit next step, assigned follow-up, pending action, or unresolved work item with execution expectation",
     "method_change": "change in method, process, procedure, strategy, data handling, or evaluation approach",
     "result": "observation, outcome, finding, experiment result, failure mode, comparison, or evidence report",
+    "argument": "reasoning, tradeoff, constraint, or justification that explains why a decision or method direction is preferred",
+    "open_question": "unresolved research question, blocker, uncertainty, or decision point that still needs clarification",
 }
+
+
+class LLMCallTimeoutError(TimeoutError):
+    """Raised when a multi-agent Gemini call exceeds the local hard timeout."""
+
+
+def _resolve_call_timeout_s() -> int:
+    raw_value = (
+        os.getenv("GEMINI_MULTI_AGENT_CALL_TIMEOUT_S", "").strip()
+        or os.getenv("GEMINI_HTTP_TIMEOUT_S", "").strip()
+    )
+    if not raw_value:
+        return DEFAULT_HTTP_TIMEOUT_S
+    try:
+        timeout_s = int(raw_value)
+    except ValueError:
+        return DEFAULT_HTTP_TIMEOUT_S
+    return max(1, timeout_s)
+
+
+def _resolve_max_attempts() -> int:
+    raw_value = os.getenv("GEMINI_MULTI_AGENT_MAX_ATTEMPTS", "").strip()
+    if not raw_value:
+        return 2
+    try:
+        attempts = int(raw_value)
+    except ValueError:
+        return 2
+    return max(1, attempts)
+
+
+def _is_retryable_llm_error(exc: Exception) -> bool:
+    if isinstance(exc, LLMCallTimeoutError):
+        return True
+    exc_type = type(exc)
+    if exc_type.__module__.split(".", 1)[0] == "httpx" and exc_type.__name__ in {
+        "ConnectError",
+        "ConnectTimeout",
+        "PoolTimeout",
+        "ReadError",
+        "ReadTimeout",
+        "RemoteProtocolError",
+        "TransportError",
+        "WriteError",
+        "WriteTimeout",
+    }:
+        return True
+    status_code = getattr(exc, "status_code", None)
+    if status_code in {429, 499, 500, 502, 503, 504}:
+        return True
+    message = str(exc).upper()
+    return any(
+        token in message
+        for token in (
+            "429",
+            "499",
+            "500",
+            "502",
+            "503",
+            "504",
+            "RESOURCE_EXHAUSTED",
+            "UNAVAILABLE",
+            "TIMEOUT",
+            "TIMED OUT",
+            "READTIMEOUT",
+        )
+    )
+
+
+@contextmanager
+def _hard_timeout(stage: str, timeout_s: int):
+    if (
+        timeout_s <= 0
+        or threading.current_thread() is not threading.main_thread()
+        or not hasattr(signal, "setitimer")
+    ):
+        yield
+        return
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+
+    def _raise_timeout(_signum: int, _frame: Any) -> None:
+        raise LLMCallTimeoutError(
+            f"Gemini call timed out after {timeout_s}s at stage {stage}."
+        )
+
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    signal.setitimer(signal.ITIMER_REAL, timeout_s)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
 
 
 class MultiAgentLLMRunner:
@@ -169,21 +326,82 @@ class MultiAgentLLMRunner:
         self.model_name = model_name
         self.client = create_gemini_client(api_key)
         self.logger = logger
+        self.call_records: list[dict[str, Any]] = []
+        self.call_counts: Counter[str] = Counter()
 
     def call_json(self, stage: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         self.logger.write_prompt(stage, prompt)
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config={
-                "temperature": 0.1,
-                "response_mime_type": "application/json",
-                "response_json_schema": schema,
-            },
-        )
-        raw_text = response.text or ""
-        self.logger.write_response(stage, raw_text)
-        return extract_json_object(raw_text)
+        timeout_s = _resolve_call_timeout_s()
+        max_attempts = _resolve_max_attempts()
+        last_error: Exception | None = None
+        for attempt in range(1, max_attempts + 1):
+            started_at = time.monotonic()
+            raw_text = ""
+            try:
+                with _hard_timeout(stage, timeout_s):
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=prompt,
+                        config={
+                            "temperature": 0.1,
+                            "response_mime_type": "application/json",
+                            "response_json_schema": schema,
+                        },
+                    )
+                raw_text = response.text or ""
+                self.logger.write_response(stage, raw_text)
+                data = extract_json_object(raw_text)
+            except Exception as exc:
+                latency_sec = round(time.monotonic() - started_at, 3)
+                record = {
+                    "stage": stage,
+                    "success": False,
+                    "attempt": attempt,
+                    "max_attempts": max_attempts,
+                    "latency_sec": latency_sec,
+                    "timeout_s": timeout_s,
+                    "prompt_chars": len(prompt),
+                    "response_chars": len(raw_text),
+                    "error_type": type(exc).__name__,
+                }
+                self.call_records.append(record)
+                self.call_counts[stage] += 1
+                self.logger.append_event("llm_call:error", record)
+                last_error = exc
+                if attempt < max_attempts and _is_retryable_llm_error(exc):
+                    wait_s = min(10.0, 2.0 * attempt)
+                    self.logger.append_event(
+                        "llm_call:retry",
+                        {
+                            "stage": stage,
+                            "attempt": attempt + 1,
+                            "max_attempts": max_attempts,
+                            "wait_s": wait_s,
+                            "previous_error_type": type(exc).__name__,
+                        },
+                    )
+                    time.sleep(wait_s)
+                    continue
+                raise
+
+            latency_sec = round(time.monotonic() - started_at, 3)
+            record = {
+                "stage": stage,
+                "success": True,
+                "attempt": attempt,
+                "max_attempts": max_attempts,
+                "latency_sec": latency_sec,
+                "timeout_s": timeout_s,
+                "prompt_chars": len(prompt),
+                "response_chars": len(raw_text),
+            }
+            self.call_records.append(record)
+            self.call_counts[stage] += 1
+            self.logger.append_event("llm_call:done", record)
+            return data
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError(f"Gemini call failed without an error at stage {stage}.")
 
 
 def plan_context_windows(
@@ -280,8 +498,14 @@ Normally return 3-8 idea units. You may return up to {MAX_IDEA_UNITS_PER_AGENT}
 only when the segment contains many distinct durable claims.
 Do not split every sentence into a separate unit.
 Prefer durable, self-contained units that combine related details across several
-lines. Ignore filler, acknowledgements, and local wording clarifications unless
-they change the project method, decision, result, or todo.
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Do not use fallback or compacted; those are reserved for deterministic validators.
 
 Segment: {segment.segment_id}
 Topic: {segment.topic_label}
@@ -290,8 +514,21 @@ Transcript lines:
 {format_lines(lines)}
 """.strip()
     data = runner.call_json(f"idea_units_{segment.segment_id}", prompt, IDEA_SCHEMA)
+    return _idea_units_from_rows(
+        data.get("idea_units", []),
+        segment=segment,
+        unit_id_prefix=f"U-{segment.segment_id}",
+    )
+
+
+def _idea_units_from_rows(
+    rows: list[dict[str, Any]],
+    *,
+    segment: SegmentProposal,
+    unit_id_prefix: str,
+) -> list[IdeaUnit]:
     units: list[IdeaUnit] = []
-    for index, row in enumerate(data.get("idea_units", []), start=1):
+    for index, row in enumerate(rows, start=1):
         line_start = max(segment.line_start, int(row.get("line_start", segment.line_start)))
         line_end = min(segment.line_end, int(row.get("line_end", line_start)))
         text = str(row.get("text", "")).strip()
@@ -299,16 +536,129 @@ Transcript lines:
             continue
         units.append(
             IdeaUnit(
-                unit_id=f"U-{segment.segment_id}-{index:02d}",
+                unit_id=f"{unit_id_prefix}-{index:02d}",
                 segment_id=segment.segment_id,
                 line_start=line_start,
                 line_end=line_end,
                 text=text,
-                completeness=str(row.get("completeness", "")).strip() or "unknown",
+                completeness=normalize_idea_completeness(
+                    str(row.get("completeness", "")).strip()
+                ),
                 uncertainty_note=str(row.get("uncertainty_note", "")).strip(),
             )
         )
     return units
+
+
+def idea_unit_repair_agent(
+    runner: MultiAgentLLMRunner,
+    *,
+    segment: SegmentProposal,
+    transcript_lines: list[TranscriptLine],
+    current_units: list[IdeaUnit],
+    validation_report: dict[str, Any],
+) -> tuple[list[IdeaUnit], list[dict[str, Any]]]:
+    """Ask the model to semantically repair idea-unit coverage before fallback."""
+    lines = slice_lines(transcript_lines, segment.line_start, segment.line_end)
+    current_units_json = [
+        {
+            "unit_id": unit.unit_id,
+            "line_start": unit.line_start,
+            "line_end": unit.line_end,
+            "text": unit.text,
+            "completeness": unit.completeness,
+            "uncertainty_note": unit.uncertainty_note,
+        }
+        for unit in current_units
+    ]
+    prompt = f"""
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior. Do not dismiss these as
+filler.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Do not use fallback or compacted.
+
+For non_memory_context_ranges, include only lines that are purely filler,
+acknowledgements, local wording clarification, or social closing with no memory
+value.
+
+Segment: {segment.segment_id}
+Topic: {segment.topic_label}
+
+Transcript lines:
+{format_lines(lines)}
+
+Current idea units:
+{json.dumps(current_units_json, ensure_ascii=False, indent=2)}
+
+Validator report:
+{json.dumps(validation_report, ensure_ascii=False, indent=2)}
+""".strip()
+    data = runner.call_json(
+        f"idea_unit_repair_agent_{segment.segment_id}",
+        prompt,
+        IDEA_REPAIR_SCHEMA,
+    )
+    repaired_units = _idea_units_from_rows(
+        data.get("idea_units", []),
+        segment=segment,
+        unit_id_prefix=f"U-{segment.segment_id}-SR",
+    )
+    non_memory_ranges: list[dict[str, Any]] = []
+    for row in data.get("non_memory_context_ranges", []):
+        try:
+            line_start = max(segment.line_start, int(row.get("line_start", segment.line_start)))
+            line_end = min(segment.line_end, int(row.get("line_end", line_start)))
+        except (TypeError, ValueError):
+            continue
+        reason = str(row.get("reason", "")).strip()
+        if line_end < line_start:
+            continue
+        non_memory_ranges.append(
+            {
+                "start_line": line_start,
+                "end_line": line_end,
+                "reason": reason or "model marked as non-memory context",
+            }
+        )
+    return repaired_units, non_memory_ranges
+
+
+def format_previous_context_for_prompt(previous_context: dict[str, Any] | None) -> str:
+    """Render compact previous-batch hints for typed agents."""
+    if not previous_context or not previous_context.get("enabled"):
+        return ""
+    items = previous_context.get("items", [])
+    if not items:
+        return (
+            "Previous batch context: enabled, but no prior unverified candidate "
+            "summaries are available yet."
+        )
+    lines = [
+        "Previous batch context (unverified, read-only; not evidence):",
+        "- Use only to resolve pronouns, understand continuation, and avoid duplicates.",
+        "- These summaries have not passed grounding or final reduction yet.",
+        "- Do not increase candidate count just because previous context mentions a topic.",
+        "- Do not cite previous context or use it as support.",
+        "- Every source_unit_id must still come from the current bounded idea units.",
+    ]
+    for item in items:
+        obj_type = str(item.get("type", "unknown") or "unknown")
+        source_batch_id = str(item.get("source_batch_id", "previous") or "previous")
+        content = str(item.get("content", "") or "").strip()
+        if content:
+            lines.append(f"- [{source_batch_id} {obj_type}] {content}")
+    return "\n".join(lines)
 
 
 def l1_type_agent(
@@ -317,6 +667,8 @@ def l1_type_agent(
     obj_type: str,
     idea_units: list[IdeaUnit],
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
+    previous_context: dict[str, Any] | None = None,
     extraction_scope: str = "",
     segment_ids: list[str] | None = None,
 ) -> list[L1Candidate]:
@@ -326,20 +678,27 @@ def l1_type_agent(
         f"{unit.unit_id} ({unit.line_start}-{unit.line_end}): {unit.text}"
         for unit in idea_units
     )
+    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
+    previous_context_text = format_previous_context_for_prompt(previous_context)
     prompt = f"""
 You are l1_{obj_type}_agent in a multi-agent long-term memory pipeline.
 Your operational type definition: {TYPE_DEFINITIONS[obj_type]}.
 
 Read only the bounded idea units below and propose only {obj_type} candidates.
 Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
 The same idea unit may support other memory types; do not suppress valid {obj_type} objects for that reason.
 Return at most {MAX_L1_CANDIDATES_PER_TYPE} candidates. Return an empty list when the
 batch has no durable {obj_type}.
 
 Only output durable long-term memory:
-- keep project-level decisions, method changes, concrete follow-ups, or stable findings
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
 - do not restate each idea unit as a candidate
 - do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
 - use importance >= 0.90 only for project-level or future-steering items
 - use 0.50-0.70 for useful but local meeting-level context
 Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
@@ -347,6 +706,10 @@ Return JSON only. Text fields should prefer Traditional Chinese when the transcr
 Extraction scope: {extraction_scope or "(single bounded batch)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
 Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "(none)"}
+
+{prior_context_text}
+
+{previous_context_text}
 
 Bounded idea units:
 {units_text}
@@ -391,6 +754,8 @@ def l1_fallback_agent(
     *,
     idea_units: list[IdeaUnit],
     existing_topics: list[str],
+    prior_context_pack: dict[str, Any] | None = None,
+    previous_context: dict[str, Any] | None = None,
     extraction_scope: str = "",
     segment_ids: list[str] | None = None,
 ) -> list[L1Candidate]:
@@ -402,6 +767,8 @@ def l1_fallback_agent(
         for unit in idea_units
     )
     allowed_types = ", ".join(sorted(TYPE_DEFINITIONS))
+    prior_context_text = format_prior_context_for_prompt(prior_context_pack)
+    previous_context_text = format_previous_context_for_prompt(previous_context)
     prompt = f"""
 You are general_l1_fallback_agent in a multi-agent long-term memory pipeline.
 This fallback runs only because the typed L1 agents produced no candidates for this bounded batch.
@@ -410,12 +777,17 @@ Read only the bounded idea units below. Propose a small number of durable L1 can
 the batch clearly contains one of these types: {allowed_types}.
 Return an empty candidates list if the batch is purely filler, logistics, acknowledgements, or unclear.
 Do not invent information outside the supplied unit IDs.
+Prior context may help disambiguate references, but it is never evidence.
 Return at most {MAX_FALLBACK_CANDIDATES} candidates.
 Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
 
 Extraction scope: {extraction_scope or "(single bounded batch)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
 Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "(none)"}
+
+{prior_context_text}
+
+{previous_context_text}
 
 Bounded idea units:
 {units_text}

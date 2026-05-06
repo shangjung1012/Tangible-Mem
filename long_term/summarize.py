@@ -12,6 +12,21 @@ from typing import Any
 
 from gemini_clients import create_gemini_client
 from io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
+from l1_quality import (
+    format_l1_quality_tag,
+    load_l1_quality_index,
+    quality_index_default_path,
+)
+from memory_activity import (
+    format_memory_activity_tag,
+    load_memory_activity_index,
+    memory_activity_default_path,
+)
+from memory_relations import (
+    format_memory_relations_tag,
+    load_memory_relations_index,
+    memory_relations_default_path,
+)
 from schema import (
     DEFAULT_MODEL_NAME,
     PHASE_SUMMARY_SCHEMA,
@@ -53,21 +68,48 @@ def _extract_json(raw_text: str) -> dict[str, Any]:
 def _build_phase_summary_prompt(
     phase_id: str,
     meetings: list[dict[str, Any]],
+    quality_index: dict[str, Any] | None = None,
+    activity_index: dict[str, Any] | None = None,
+    relations_index: dict[str, Any] | None = None,
 ) -> str:
     meetings_text = ""
     for m in meetings:
         meetings_text += f"\n--- Meeting: {m['meeting_id']} ---\n"
         for obj in m.get("memory_objects", []):
+            evidence = str(obj.get("evidence", "")).strip()
+            if len(evidence) > 220:
+                evidence = evidence[:217].rstrip() + "..."
             meetings_text += (
-                f"  [{obj['type']}] (importance={obj['importance']}) "
+                f"  [{obj.get('obj_id', '?')}] "
+                f"type={obj['type']} importance={obj['importance']} "
+                f"({format_l1_quality_tag(obj, quality_index)}; "
+                f"{format_memory_activity_tag(obj, activity_index)}; "
+                f"{format_memory_relations_tag(obj, relations_index)}) "
                 f"{obj['content']}\n"
             )
+            if evidence:
+                meetings_text += f"    evidence={evidence}\n"
 
     return f"""
 你是「長期記憶彙整器」。
 任務：將多個會議的 L1 記憶物件彙整成一個階段性摘要（L2 Phase Summary）。
 
 ★ 核心原則：每一層只回答自己層次的問題，不要抄寫下層的細節。
+
+品質訊號使用規則：
+- quality=strong/normal 的 decision、method_change、result 可以升級成 phase-level changes 或摘要依據。
+- quality=tentative 的 L1 只能當背景，除非被多個 L1 或 recurrence 支撐，不要寫成已確立變更。
+- quality=weak 的 L1 原則上不要升級到 L2；最多作為背景脈絡。
+- quality=unknown 表示舊流程或沒有 sidecar，請回到既有標準，根據 type、importance、content、evidence 判斷。
+- open_question 只有在仍阻礙下一步時才放入 open_to_next。
+- argument 不要直接升級成 change，只能作為 decision/method_change 的理由背景。
+
+跨會議互動訊號使用規則：
+- activity=active/reactivated 的 strong/normal L1 更容易升級成 phase-level change。
+- activity=dormant 的 todo/open_question 不要直接放入 open_to_next，除非本 phase 有新 L1 重新提到。
+- relations=resolves:* 代表本期可能解決舊問題，changes 或 summary 應反映這個轉折。
+- relations=supersedes:* 代表方法演進或取代，不要把新舊方法並列成同時採用。
+- relations=continues/reactivates/repeats 代表同一 thread 跨會議延續，可作為升級依據。
 
 欄位規則：
 1) summary：本階段的主軸是什麼？1-2 句，60 字以內。只寫大方向，不要列舉。
@@ -94,6 +136,9 @@ def summarize_phase(
     time_start: str,
     time_end: str,
     meeting_ids: list[str] | None = None,
+    quality_index: dict[str, Any] | None = None,
+    activity_index: dict[str, Any] | None = None,
+    relations_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create or update an L2 phase summary from L1 meetings."""
     client = create_gemini_client(api_key)
@@ -112,7 +157,13 @@ def summarize_phase(
             "Use --meetings to specify meeting IDs."
         )
 
-    prompt = _build_phase_summary_prompt(phase_id, meetings)
+    prompt = _build_phase_summary_prompt(
+        phase_id,
+        meetings,
+        quality_index,
+        activity_index,
+        relations_index,
+    )
     config = {
         "temperature": 0.15,
         "response_mime_type": "application/json",
@@ -283,6 +334,13 @@ def update_project_profile(
 # CLI
 # ===================================================================
 
+def resolve_model_name(requested_model: str | None) -> str:
+    clean = str(requested_model or "").strip()
+    if clean:
+        return clean
+    return os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Summarize L1→L2 phase or L2→L3 project profile."
@@ -306,7 +364,12 @@ def parse_args() -> argparse.Namespace:
     phase_p.add_argument("--tree", default="long_term/tree.json")
     phase_p.add_argument("--snapshot-dir", default="long_term/snapshots")
     phase_p.add_argument(
-        "--model", default=os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+        "--model",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     phase_p.add_argument("--dry-run", action="store_true")
 
@@ -316,7 +379,12 @@ def parse_args() -> argparse.Namespace:
     prof_p.add_argument("--tree", default="long_term/tree.json")
     prof_p.add_argument("--snapshot-dir", default="long_term/snapshots")
     prof_p.add_argument(
-        "--model", default=os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
+        "--model",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     prof_p.add_argument("--dry-run", action="store_true")
 
@@ -329,16 +397,23 @@ def main() -> None:
     snapshot_dir = Path(args.snapshot_dir).resolve()
     tree = load_tree(tree_path)
     api_keys = load_api_keys()
+    model_name = resolve_model_name(args.model)
 
     if args.command == "phase":
+        quality_index = load_l1_quality_index(quality_index_default_path(tree_path))
+        activity_index = load_memory_activity_index(memory_activity_default_path(tree_path))
+        relations_index = load_memory_relations_index(memory_relations_default_path(tree_path))
         phase_node = summarize_phase(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             tree=tree,
             phase_id=args.phase_id,
             time_start=args.time_start,
             time_end=args.time_end,
             meeting_ids=args.meetings,
+            quality_index=quality_index,
+            activity_index=activity_index,
+            relations_index=relations_index,
         )
         if args.dry_run:
             print_json_safe(phase_node)
@@ -351,7 +426,7 @@ def main() -> None:
 
     elif args.command == "profile":
         profile = update_project_profile(
-            model_name=args.model,
+            model_name=model_name,
             api_key=api_keys,
             tree=tree,
             project_id=args.project_id,

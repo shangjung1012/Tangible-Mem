@@ -11,6 +11,8 @@ from pathlib import Path
 
 from embedder import EmbedCache
 from io_utils import load_api_keys, load_tree
+from memory_activity import memory_activity_default_path
+from memory_relations import memory_relations_default_path
 from recall import recall
 from recall_planner import plan_recall
 
@@ -39,6 +41,8 @@ def main() -> None:
         tree=tree,
         api_key=api_key,
         embed_cache=cache,
+        activity_index_path=memory_activity_default_path(Path("long_term/tree.json")),
+        relations_index_path=memory_relations_default_path(Path("long_term/tree.json")),
     )
     cache.save()
 

@@ -22,9 +22,11 @@ from bridge import (
     collect_existing_topics,
     insert_meeting_into_tree,
     normalize_memory_objects,
+    resolve_model_name,
 )
 from io_utils import load_api_keys, load_tree, save_json, utc_now_iso
-from schema import DEFAULT_TREE
+from l1_quality import load_l1_quality_index, quality_index_default_path
+from schema import DEFAULT_MODEL_NAME, DEFAULT_TREE
 from summarize import summarize_phase, update_project_profile
 from transcript_utils import infer_meeting_date, mrt_to_text
 
@@ -56,6 +58,14 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=15000,
         help="Max transcript chars per meeting (truncate to save tokens).",
+    )
+    p.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "Gemini model name. Defaults to GEMINI_MODEL from .env, "
+            f"or {DEFAULT_MODEL_NAME} if unset."
+        ),
     )
     p.add_argument(
         "--resume",
@@ -151,6 +161,12 @@ def main() -> None:
         return
 
     api_key = load_api_keys()
+    model_name = resolve_model_name(args.model)
+    quality_index = (
+        {}
+        if args.no_auto_summarize
+        else load_l1_quality_index(quality_index_default_path(tree_path))
+    )
     total_objects = 0
     failed: list[str] = []
 
@@ -170,7 +186,7 @@ def main() -> None:
         try:
             existing_topics = collect_existing_topics(tree)
             llm_output = call_gemini_bridge(
-                model_name="gemini-2.5-flash",
+                model_name=model_name,
                 api_key=api_key,
                 transcript=transcript_text,
                 meeting_id=meeting_id,
@@ -218,13 +234,14 @@ def main() -> None:
             )
             try:
                 phase_node = summarize_phase(
-                    model_name="gemini-2.5-flash",
+                    model_name=model_name,
                     api_key=api_key,
                     tree=tree,
                     phase_id=phase_id,
                     time_start=phase_meeting_ids[0],
                     time_end=phase_meeting_ids[-1],
                     meeting_ids=phase_meeting_ids,
+                    quality_index=quality_index,
                 )
                 l2_snap_name = f"{phase_id}__{meeting_id}.json"
                 save_json(snapshot_dir / "L2" / l2_snap_name, phase_node)
@@ -235,7 +252,7 @@ def main() -> None:
             print("→ L3...", end=" ", flush=True)
             try:
                 profile = update_project_profile(
-                    model_name="gemini-2.5-flash",
+                    model_name=model_name,
                     api_key=api_key,
                     tree=tree,
                 )
