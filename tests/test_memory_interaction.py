@@ -301,6 +301,43 @@ class MemoryInteractionTests(unittest.TestCase):
         self.assertEqual(activity[logistical["obj_id"]]["activation"], 0.15)
         self.assertFalse(activity[logistical["obj_id"]]["durable_context"])
 
+    def test_activity_decay_protects_segmentation_and_function_calling_context(self) -> None:
+        function_calling = _obj(
+            "L1-0422-001",
+            "todo",
+            "Function Calling lets Gemini dynamically adjust start_line and end_line while reading transcript spans.",
+            importance=0.70,
+            topics=["Function Calling", "Segmentation", "Architectural design"],
+        )
+        idea_units = _obj(
+            "L1-0422-002",
+            "todo",
+            "Use information entropy to identify idea unit boundaries for dynamic segmentation.",
+            importance=0.66,
+            topics=["Idea Units", "Dynamic Segmentation"],
+        )
+        tree = {
+            "meetings": [
+                {
+                    "meeting_id": "0422",
+                    "meeting_date": "2026-04-22",
+                    "memory_objects": [function_calling, idea_units],
+                }
+            ]
+        }
+
+        activity = build_memory_activity_update(
+            tree=tree,
+            meeting_id="SIM05",
+            relation_updates={},
+            now=datetime(2026, 5, 27, tzinfo=timezone.utc),
+        )
+
+        self.assertEqual(activity[function_calling["obj_id"]]["state"], "fading")
+        self.assertTrue(activity[function_calling["obj_id"]]["durable_context"])
+        self.assertEqual(activity[idea_units["obj_id"]]["state"], "fading")
+        self.assertTrue(activity[idea_units["obj_id"]]["durable_context"])
+
     def test_low_confidence_relation_does_not_reactivate_old_activity(self) -> None:
         old_todo = _obj(
             "L1-0307-001",

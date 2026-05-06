@@ -37,10 +37,21 @@ MIN_RELATION_BOOST_CONFIDENCE = 0.70
 
 _CORE_CONTEXT_TERMS = (
     "agent architecture",
+    "architectural design",
     "benchmarking",
+    "baseline comparison",
+    "chunking",
+    "data handling strategy",
     "demo",
     "demonstration",
     "evaluation",
+    "evaluation methods",
+    "evaluation strategy",
+    "function calling",
+    "idea unit",
+    "idea units",
+    "information entropy",
+    "item tracking",
     "long-term memory",
     "long term memory",
     "memory architecture",
@@ -50,9 +61,19 @@ _CORE_CONTEXT_TERMS = (
     "project evaluation criteria",
     "rag",
     "recall",
+    "relative time",
     "retrieval",
+    "segmentation",
     "short-term memory",
     "system architecture",
+    "tool calling",
+    "transcript",
+    "working memory",
+    "三層",
+    "函式呼叫",
+    "分塊",
+    "切分",
+    "想法單元",
     "證明",
     "展示",
     "記憶",
@@ -206,7 +227,7 @@ def _is_durable_context_memory(
             importance = float(obj.get("importance") or 0.0)
         except (TypeError, ValueError):
             importance = 0.0
-    if importance < 0.68:
+    if importance < 0.65:
         return False
     text = _obj_context_text(obj)
     if any(term in text for term in _OPERATIONAL_CONTEXT_TERMS):
