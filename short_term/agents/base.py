@@ -262,7 +262,9 @@ class GeminiJsonAgent:
                 logger.tool_call(
                     agent_name=self.name,
                     tool_name=tool_name,
+                    args=args,
                     args_summary=_summarize_tool_args(args),
+                    result=result,
                     result_summary=_summarize_tool_result(result),
                     latency_seconds=elapsed(tool_start),
                     error=error,

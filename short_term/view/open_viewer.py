@@ -10,7 +10,7 @@ import threading
 import webbrowser
 from functools import partial
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,8 +77,37 @@ def discover_runs(root: Path) -> list[dict[str, object]]:
                 "mtime": stat.st_mtime,
             }
         )
-    runs.sort(key=lambda row: (float(row["mtime"]), str(row["run_id"])), reverse=True)
+    runs.sort(key=lambda row: (float(row["mtime"]), str(row["run_id"])))
     return runs
+
+
+def build_run_manifest(root: Path, run_id: str) -> dict[str, object]:
+    run_dir = _safe_run_dir(root, run_id)
+    if not run_dir.exists():
+        return {"run_id": run_id, "files": {}}
+
+    files: dict[str, list[str]] = {}
+    for folder in ("responses", "prompts", "tool_calls", "candidates"):
+        path = run_dir / folder
+        files[folder] = sorted(
+            child.name for child in path.iterdir() if child.is_file()
+        ) if path.exists() else []
+
+    files["root"] = sorted(
+        child.name for child in run_dir.iterdir() if child.is_file()
+    )
+    return {"run_id": run_id, "files": files}
+
+
+def _safe_run_dir(root: Path, run_id: str) -> Path:
+    clean_run_id = run_id.strip()
+    if not clean_run_id or Path(clean_run_id).name != clean_run_id:
+        raise ValueError(f"Invalid run_id: {run_id!r}")
+    research_root = (root / "short_term" / "research_logs").resolve()
+    run_dir = (research_root / clean_run_id).resolve()
+    if run_dir.parent != research_root:
+        raise ValueError(f"Invalid run_id: {run_id!r}")
+    return run_dir
 
 
 class ViewerHandler(http.server.SimpleHTTPRequestHandler):
@@ -90,9 +119,17 @@ class ViewerHandler(http.server.SimpleHTTPRequestHandler):
         return
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         if path == "/short_term/view/runs.json":
             self._send_json({"runs": discover_runs(self.root)})
+            return
+        if path == "/short_term/view/run_manifest.json":
+            run_id = parse_qs(parsed.query).get("run_id", [""])[0]
+            try:
+                self._send_json(build_run_manifest(self.root, run_id))
+            except ValueError as exc:
+                self.send_error(400, str(exc))
             return
         super().do_GET()
 

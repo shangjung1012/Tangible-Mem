@@ -80,6 +80,70 @@
       justify-content: flex-end;
     }
 
+    .run-dropdown {
+      position: relative;
+      min-width: min(460px, 100%);
+    }
+
+    .run-select-button {
+      width: 100%;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      text-align: left;
+      background: #fff;
+    }
+
+    .run-select-button::after {
+      content: "";
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--muted);
+      flex: 0 0 auto;
+    }
+
+    .run-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: none;
+      max-height: 320px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(17, 24, 39, 0.18);
+      padding: 6px;
+    }
+
+    .run-dropdown.open .run-menu {
+      display: grid;
+      gap: 2px;
+    }
+
+    .run-option {
+      border: 0;
+      border-radius: 6px;
+      width: 100%;
+      min-height: 34px;
+      padding: 7px 9px;
+      text-align: left;
+      background: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .run-option:hover,
+    .run-option.active {
+      background: var(--accent-weak);
+      color: #0b4f49;
+    }
+
     input,
     select,
     button {
@@ -376,7 +440,10 @@
       <div class="topbar">
         <h1>Short-Term Research Log Viewer</h1>
         <div class="run-controls">
-          <select id="runSelect" aria-label="run id"></select>
+          <div id="runDropdown" class="run-dropdown">
+            <button id="runDropdownButton" class="run-select-button" type="button" aria-haspopup="listbox" aria-expanded="false">Select run</button>
+            <div id="runMenu" class="run-menu" role="listbox"></div>
+          </div>
           <input id="runInput" aria-label="custom run id" size="28" placeholder="run_id">
           <button id="loadButton" class="primary">Load</button>
         </div>
@@ -489,12 +556,13 @@
 
     async function init() {
       renderTabs();
-      const select = $("runSelect");
-      select.addEventListener("change", () => {
-        $("runInput").value = select.value;
+      $("runDropdownButton").addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleRunMenu();
       });
+      document.addEventListener("click", closeRunMenu);
       $("loadButton").addEventListener("click", () => {
-        loadRun($("runInput").value.trim() || select.value);
+        loadRun($("runInput").value.trim() || state.runId);
       });
 
       try {
@@ -527,14 +595,48 @@
     }
 
     function renderRunOptions() {
-      const select = $("runSelect");
-      select.innerHTML = "";
+      const menu = $("runMenu");
+      menu.innerHTML = "";
       for (const run of state.runs) {
-        const option = document.createElement("option");
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = "run-option";
         option.value = run.run_id;
+        option.role = "option";
         option.textContent = run.meeting_id ? `${run.run_id} (${run.meeting_id})` : run.run_id;
-        select.appendChild(option);
+        option.addEventListener("click", (event) => {
+          event.stopPropagation();
+          setSelectedRun(run.run_id);
+          closeRunMenu();
+        });
+        menu.appendChild(option);
       }
+    }
+
+    function toggleRunMenu() {
+      const dropdown = $("runDropdown");
+      const willOpen = !dropdown.classList.contains("open");
+      dropdown.classList.toggle("open", willOpen);
+      $("runDropdownButton").setAttribute("aria-expanded", String(willOpen));
+    }
+
+    function closeRunMenu() {
+      $("runDropdown").classList.remove("open");
+      $("runDropdownButton").setAttribute("aria-expanded", "false");
+    }
+
+    function setSelectedRun(runId) {
+      state.runId = runId;
+      $("runInput").value = runId;
+      const selectedRun = state.runs.find((run) => run.run_id === runId);
+      $("runDropdownButton").textContent = selectedRun?.meeting_id
+        ? `${runId} (${selectedRun.meeting_id})`
+        : runId || "Select run";
+      document.querySelectorAll(".run-option").forEach((option) => {
+        const isSelected = option.value === runId;
+        option.classList.toggle("active", isSelected);
+        option.setAttribute("aria-selected", String(isSelected));
+      });
     }
 
     function renderTabs() {
@@ -561,10 +663,8 @@
 
     async function loadRun(runId) {
       if (!runId) return;
-      state.runId = runId;
       ensureRunOption(runId);
-      $("runSelect").value = runId;
-      $("runInput").value = runId;
+      setSelectedRun(runId);
       window.location.hash = encodeURIComponent(runId);
       $("status").innerHTML = "";
       clearViews();
@@ -572,10 +672,11 @@
 
       const base = `../research_logs/${encodeURIComponent(runId)}`;
       try {
+        const manifest = await fetchJson(`run_manifest.json?run_id=${encodeURIComponent(runId)}`);
         const [events, agents, tools, artifacts] = await Promise.all([
           loadGraphEvents(`${base}/graph_events.jsonl`),
-          loadAgentResponses(base),
-          loadToolCalls(base),
+          loadAgentResponses(base, manifest),
+          loadToolCalls(base, manifest),
           loadArtifacts(base)
         ]);
         state.events = events;
@@ -590,12 +691,9 @@
     }
 
     function ensureRunOption(runId) {
-      const select = $("runSelect");
-      if ([...select.options].some((option) => option.value === runId)) return;
-      const option = document.createElement("option");
-      option.value = runId;
-      option.textContent = `${runId} (manual)`;
-      select.prepend(option);
+      if (state.runs.some((run) => run.run_id === runId)) return;
+      state.runs.unshift({ run_id: runId, meeting_id: "" });
+      renderRunOptions();
     }
 
     function clearViews() {
@@ -615,52 +713,81 @@
         .map((line) => JSON.parse(line));
     }
 
-    async function loadAgentResponses(base) {
+    async function loadAgentResponses(base, manifest) {
       const output = [];
       for (const agent of AGENTS) {
-        const files = await findNumberedFiles(base, "responses", agent.key, [
-          "parsed.json",
-          "meta.json",
-          "raw.txt"
-        ]);
-        const promptFiles = await findNumberedFiles(base, "prompts", agent.key, [
-          "prompt.txt"
-        ]);
-        if (!files.parsed && !files.meta && !files.raw && !promptFiles.prompt) {
-          output.push({ ...agent, missing: true });
+        const responses = await findAgentResponses(base, manifest, agent.key);
+        if (!responses.length) {
+          output.push({ ...agent, missing: true, responses: [] });
           continue;
         }
         output.push({
           ...agent,
           missing: false,
-          paths: { ...files, prompt: promptFiles.prompt || "" },
-          parsed: files.parsed ? await fetchJson(files.parsed) : null,
-          meta: files.meta ? await fetchJson(files.meta) : null,
-          raw: files.raw ? await fetchText(files.raw) : "",
-          prompt: promptFiles.prompt ? await fetchText(promptFiles.prompt) : ""
+          responses
         });
       }
       return output;
     }
 
-    async function loadToolCalls(base) {
+    async function loadToolCalls(base, manifest) {
       const names = [];
       for (const agent of AGENTS) {
         names.push(`${agent.key}_read_short_term_memory`);
       }
+      const files = manifest?.files?.tool_calls || [];
       const calls = [];
-      for (const name of names) {
-        for (let i = 1; i <= 80; i += 1) {
-          const prefix = String(i).padStart(3, "0");
-          const path = `${base}/tool_calls/${prefix}_${name}.json`;
-          const json = await fetchJsonOptional(path);
-          if (json) {
-            calls.push({ path, data: json });
-          }
+      for (const file of files) {
+        if (!names.some((name) => file.endsWith(`_${name}.json`))) continue;
+        const path = `${base}/tool_calls/${encodeURIComponent(file)}`;
+        const json = await fetchJsonOptional(path);
+        if (json) {
+          calls.push({ path, data: json });
         }
       }
       calls.sort((a, b) => String(a.data.timestamp || "").localeCompare(String(b.data.timestamp || "")));
       return calls;
+    }
+
+    async function findAgentResponses(base, manifest, name) {
+      const responseFiles = manifest?.files?.responses || [];
+      const promptFiles = manifest?.files?.prompts || [];
+      const byPrefix = new Map();
+      const responsePattern = new RegExp(`^(\\d{3})_${escapeRegExp(name)}\\.(parsed\\.json|meta\\.json|raw\\.txt)$`);
+      const promptPattern = new RegExp(`^(\\d{3})_${escapeRegExp(name)}\\.prompt\\.txt$`);
+
+      for (const file of responseFiles) {
+        const match = file.match(responsePattern);
+        if (!match) continue;
+        const [, prefix, suffix] = match;
+        const paths = byPrefix.get(prefix) || {};
+        const key = suffix.startsWith("parsed") ? "parsed" : suffix.startsWith("meta") ? "meta" : "raw";
+        paths[key] = `${base}/responses/${encodeURIComponent(file)}`;
+        byPrefix.set(prefix, paths);
+      }
+      for (const file of promptFiles) {
+        const match = file.match(promptPattern);
+        if (!match) continue;
+        const [, prefix] = match;
+        const paths = byPrefix.get(prefix) || {};
+        paths.prompt = `${base}/prompts/${encodeURIComponent(file)}`;
+        byPrefix.set(prefix, paths);
+      }
+
+      const responses = [];
+      const prefixes = [...byPrefix.keys()].sort();
+      for (const prefix of prefixes) {
+        const paths = byPrefix.get(prefix);
+        responses.push({
+          prefix,
+          paths,
+          parsed: paths.parsed ? await fetchJson(paths.parsed) : null,
+          meta: paths.meta ? await fetchJson(paths.meta) : null,
+          raw: paths.raw ? await fetchText(paths.raw) : "",
+          prompt: paths.prompt ? await fetchText(paths.prompt) : ""
+        });
+      }
+      return responses;
     }
 
     async function loadArtifacts(base) {
@@ -676,22 +803,6 @@
         }
       }
       return output;
-    }
-
-    async function findNumberedFiles(base, folder, name, suffixes) {
-      const found = {};
-      for (let i = 1; i <= 80; i += 1) {
-        const prefix = String(i).padStart(3, "0");
-        for (const suffix of suffixes) {
-          const key = suffix.split(".")[0];
-          if (found[key]) continue;
-          const path = `${base}/${folder}/${prefix}_${name}.${suffix}`;
-          if (await exists(path)) {
-            found[key] = path;
-          }
-        }
-      }
-      return found;
     }
 
     async function renderAll(base) {
@@ -753,10 +864,12 @@
         $("timeline").innerHTML = `<div class="empty">No graph events found.</div>`;
         return;
       }
-      $("timeline").innerHTML = state.events.map((event) => {
+      $("timeline").innerHTML = state.events.map((event, index) => {
         const statusClass = event.status === "ok" ? "ok" : event.status === "retry" ? "warn" : "err";
         const duration = event.duration_seconds == null ? "" : `${Number(event.duration_seconds).toFixed(3)}s`;
         const lineRange = event.line_range || "";
+        const relatedResponses = timelineResponsesForEvent(event);
+        const relatedTools = timelineToolCallsForEvent(event, index);
         return `
           <details class="event-card">
             <summary>
@@ -767,14 +880,76 @@
               <div class="badges">
                 <span class="badge ${statusClass}">${escapeHtml(event.status || "")}</span>
                 ${duration ? `<span class="badge">${duration}</span>` : ""}
+                ${relatedResponses.length ? `<span class="badge">responses ${relatedResponses.length}</span>` : ""}
+                ${relatedTools.length ? `<span class="badge">tools ${relatedTools.length}</span>` : ""}
               </div>
             </summary>
             <div class="details-body">
               ${jsonBlock(event)}
+              ${relatedResponses.length ? `
+                <div class="mini-title">Agent output</div>
+                ${relatedResponses.map((item) => renderTimelineAgentResponse(item.agent, item.response)).join("")}
+              ` : ""}
+              ${relatedTools.length ? `
+                <div class="mini-title">Tool calls in this step</div>
+                <div class="tool-list">${relatedTools.map(renderToolCard).join("")}</div>
+              ` : ""}
             </div>
           </details>
         `;
       }).join("");
+    }
+
+    function timelineResponsesForEvent(event) {
+      if (event.event !== "end") return [];
+      const eventNode = event.node || "";
+      const eventLineRange = event.line_range || "";
+      const output = [];
+      for (const agent of state.agents) {
+        if (agent.missing || agent.node !== eventNode) continue;
+        for (const response of agent.responses || []) {
+          const responseLineRange = response.meta?.input_summary?.line_range || "";
+          if (
+            (eventLineRange && responseLineRange === eventLineRange) ||
+            (!eventLineRange && !responseLineRange)
+          ) {
+            output.push({ agent, response });
+          }
+        }
+      }
+      return output;
+    }
+
+    function timelineToolCallsForEvent(event, eventIndex) {
+      if (event.event !== "end") return [];
+      const agentNames = state.agents
+        .filter((agent) => !agent.missing && agent.node === event.node)
+        .map((agent) => agent.key);
+      if (!agentNames.length) return [];
+
+      const endMs = Date.parse(event.timestamp || "");
+      const startMs = timelineStartMsForEvent(event, eventIndex);
+      if (!Number.isFinite(endMs) || !Number.isFinite(startMs)) return [];
+
+      return state.tools.filter((call) => {
+        if (!agentNames.includes(call.data.agent_name)) return false;
+        const toolMs = Date.parse(call.data.timestamp || "");
+        return Number.isFinite(toolMs) && toolMs >= startMs && toolMs <= endMs;
+      });
+    }
+
+    function timelineStartMsForEvent(event, eventIndex) {
+      for (let i = eventIndex - 1; i >= 0; i -= 1) {
+        const candidate = state.events[i];
+        if (
+          candidate.node === event.node &&
+          candidate.event === "start" &&
+          (candidate.line_range || "") === (event.line_range || "")
+        ) {
+          return Date.parse(candidate.timestamp || "");
+        }
+      }
+      return Number.NaN;
     }
 
     function renderAgents() {
@@ -793,43 +968,103 @@
             </details>
           `;
         }
-        const parsedCount = countPrimaryRows(agent.parsed);
-        const meta = agent.meta || {};
+        const responses = agent.responses || [];
+        const parsedCount = responses.reduce((sum, response) => {
+          const count = countPrimaryRows(response.parsed);
+          return sum + (count === null ? 0 : count);
+        }, 0);
         const toolCalls = state.tools.filter((call) => call.data.agent_name === agent.key);
         return `
           <details class="agent-card" ${agent.key === "context_planner" ? "open" : ""}>
             <summary>
               <div class="summary-title">
                 <strong>${escapeHtml(agent.label)}</strong>
-                <span>${escapeHtml(agent.node)}${parsedCount !== null ? " · rows=" + parsedCount : ""}</span>
+                <span>${escapeHtml(agent.node)} · responses=${responses.length} · rows=${parsedCount}</span>
               </div>
               <div class="badges">
-                ${meta.latency_seconds != null ? `<span class="badge">${Number(meta.latency_seconds).toFixed(2)}s</span>` : ""}
                 ${toolCalls.length ? `<span class="badge">tools ${toolCalls.length}</span>` : ""}
               </div>
             </summary>
             <div class="details-body">
-              ${sourceLinks(agent.paths)}
-              <div class="mini-title">Parsed output</div>
-              ${jsonBlock(agent.parsed)}
+              ${responses.map((response, index) => renderAgentResponse(agent, response, index)).join("")}
               <div class="mini-title">Tool calls</div>
               ${toolCalls.length ? `<div class="tool-list">${toolCalls.map(renderToolCard).join("")}</div>` : `<div class="empty">No tool calls.</div>`}
-              <details>
-                <summary><div class="summary-title"><strong>Prompt input</strong><span>${escapeHtml(agent.paths.prompt || "")}</span></div></summary>
-                <div class="details-body">${textBlock(agent.prompt || "")}</div>
-              </details>
-              <details>
-                <summary><div class="summary-title"><strong>Raw output</strong><span>${escapeHtml(agent.paths.raw || "")}</span></div></summary>
-                <div class="details-body">${textBlock(agent.raw || "")}</div>
-              </details>
-              <details>
-                <summary><div class="summary-title"><strong>Meta</strong><span>${escapeHtml(agent.paths.meta || "")}</span></div></summary>
-                <div class="details-body">${jsonBlock(agent.meta)}</div>
-              </details>
             </div>
           </details>
         `;
       }).join("");
+    }
+
+    function renderAgentResponse(agent, response, index) {
+      const meta = response.meta || {};
+      const lineRange = meta.input_summary?.line_range || "";
+      const parsedCount = countPrimaryRows(response.parsed);
+      return `
+        <details class="artifact-card" ${index === 0 ? "open" : ""}>
+          <summary>
+            <div class="summary-title">
+              <strong>${escapeHtml(response.prefix)} ${escapeHtml(agent.label)} response</strong>
+              <span>${escapeHtml(lineRange || meta.timestamp || "")}</span>
+            </div>
+            <div class="badges">
+              ${parsedCount !== null ? `<span class="badge">rows ${parsedCount}</span>` : ""}
+              ${meta.latency_seconds != null ? `<span class="badge">${Number(meta.latency_seconds).toFixed(2)}s</span>` : ""}
+              ${meta.retry_count ? `<span class="badge warn">retry ${meta.retry_count}</span>` : ""}
+            </div>
+          </summary>
+          <div class="details-body">
+            ${sourceLinks(response.paths)}
+            <div class="mini-title">Parsed response</div>
+            ${jsonBlock(response.parsed)}
+            <div class="mini-title">Actual raw response</div>
+            ${textBlock(response.raw || "")}
+            <details>
+              <summary><div class="summary-title"><strong>Prompt input</strong><span>${escapeHtml(response.paths.prompt || "")}</span></div></summary>
+              <div class="details-body">${textBlock(response.prompt || "")}</div>
+            </details>
+            <details>
+              <summary><div class="summary-title"><strong>Meta</strong><span>${escapeHtml(response.paths.meta || "")}</span></div></summary>
+              <div class="details-body">${jsonBlock(response.meta)}</div>
+            </details>
+          </div>
+        </details>
+      `;
+    }
+
+    function renderTimelineAgentResponse(agent, response) {
+      const meta = response.meta || {};
+      const lineRange = meta.input_summary?.line_range || "";
+      const parsedCount = countPrimaryRows(response.parsed);
+      return `
+        <details class="artifact-card">
+          <summary>
+            <div class="summary-title">
+              <strong>${escapeHtml(response.prefix)} ${escapeHtml(agent.label)} output</strong>
+              <span>${escapeHtml(lineRange || meta.timestamp || "")}</span>
+            </div>
+            <div class="badges">
+              ${parsedCount !== null ? `<span class="badge">rows ${parsedCount}</span>` : ""}
+              ${meta.latency_seconds != null ? `<span class="badge">${Number(meta.latency_seconds).toFixed(2)}s</span>` : ""}
+              ${meta.retry_count ? `<span class="badge warn">retry ${meta.retry_count}</span>` : ""}
+            </div>
+          </summary>
+          <div class="details-body">
+            ${sourceLinks(response.paths)}
+            <div class="mini-title">Parsed response</div>
+            ${jsonBlock(response.parsed)}
+            <div class="mini-title">Actual raw response</div>
+            ${textBlock(response.raw || "")}
+            <details>
+              <summary><div class="summary-title"><strong>Prompt input</strong><span>${escapeHtml(response.paths.prompt || "")}</span></div></summary>
+              <div class="details-body">${textBlock(response.prompt || "")}</div>
+            </details>
+            <details>
+              <summary><div class="summary-title"><strong>Meta</strong><span>${escapeHtml(response.paths.meta || "")}</span></div></summary>
+              <div class="details-body">${jsonBlock(response.meta)}</div>
+            </details>
+          </div>
+        </details>
+      `;
     }
 
     function renderTools() {
@@ -859,8 +1094,11 @@
             <div class="source-row"><a href="${call.path}" target="_blank" rel="noreferrer">${escapeHtml(call.path)}</a></div>
             <div class="mini-title">Args summary</div>
             ${jsonBlock(data.args_summary || {})}
-            <div class="mini-title">Result summary</div>
-            ${jsonBlock(data.result_summary || {})}
+            <div class="mini-title">Actual args</div>
+            ${jsonBlock(data.args ?? data.args_summary ?? {})}
+            <div class="mini-title">Actual tool response</div>
+            ${jsonBlock(data.result ?? data.result_summary ?? {})}
+            ${data.result === undefined ? `<div class="empty">This older tool log only contains result_summary. Re-run with the current logger to capture the full tool response.</div>` : ""}
             <div class="mini-title">Full record</div>
             ${jsonBlock(data)}
           </div>
@@ -928,6 +1166,10 @@
       } catch (_error) {
         return false;
       }
+    }
+
+    function escapeRegExp(value) {
+      return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
 
     async function fetchText(path) {

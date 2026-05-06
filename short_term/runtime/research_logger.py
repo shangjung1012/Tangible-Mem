@@ -139,6 +139,8 @@ class ResearchLogger:
         args_summary: dict[str, Any],
         result_summary: dict[str, Any],
         latency_seconds: float,
+        args: dict[str, Any] | None = None,
+        result: Any | None = None,
         error: str = "",
     ) -> None:
         self._counter += 1
@@ -146,7 +148,9 @@ class ResearchLogger:
             "agent_name": agent_name,
             "tool_name": tool_name,
             "timestamp": _utc_like_now(),
+            "args": args or {},
             "args_summary": args_summary,
+            "result": result,
             "result_summary": result_summary,
             "latency_seconds": latency_seconds,
             "error": error,
