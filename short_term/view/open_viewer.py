@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import argparse
 import http.server
-import os
+import json
 import socket
 import socketserver
 import sys
 import threading
 import webbrowser
+from functools import partial
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 def parse_args() -> argparse.Namespace:
@@ -50,9 +52,58 @@ def find_free_port(preferred: int) -> int:
     raise RuntimeError(f"No free port found from {preferred} to {preferred + 99}.")
 
 
-class QuietHandler(http.server.SimpleHTTPRequestHandler):
+def discover_runs(root: Path) -> list[dict[str, object]]:
+    research_root = root / "short_term" / "research_logs"
+    if not research_root.exists():
+        return []
+
+    runs: list[dict[str, object]] = []
+    for run_dir in research_root.iterdir():
+        if not run_dir.is_dir():
+            continue
+        run_meta = run_dir / "run_meta.json"
+        if not run_meta.exists():
+            continue
+        try:
+            meta = json.loads(run_meta.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            meta = {}
+        stat = run_meta.stat()
+        runs.append(
+            {
+                "run_id": run_dir.name,
+                "meeting_id": meta.get("meeting_id", ""),
+                "model_name": meta.get("model_name", ""),
+                "mtime": stat.st_mtime,
+            }
+        )
+    runs.sort(key=lambda row: (float(row["mtime"]), str(row["run_id"])), reverse=True)
+    return runs
+
+
+class ViewerHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args: object, root: Path, **kwargs: object) -> None:
+        self.root = root
+        super().__init__(*args, directory=str(root), **kwargs)
+
     def log_message(self, format: str, *args: object) -> None:
         return
+
+    def do_GET(self) -> None:
+        path = urlparse(self.path).path
+        if path == "/short_term/view/runs.json":
+            self._send_json({"runs": discover_runs(self.root)})
+            return
+        super().do_GET()
+
+    def _send_json(self, payload: dict[str, object]) -> None:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
 
 def main() -> None:
@@ -63,10 +114,10 @@ def main() -> None:
         raise RuntimeError(f"Viewer not found: {viewer_path}")
 
     port = find_free_port(args.port)
-    os.chdir(root)
 
     socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.TCPServer(("127.0.0.1", port), QuietHandler)
+    handler = partial(ViewerHandler, root=root)
+    server = socketserver.ThreadingTCPServer(("127.0.0.1", port), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
 

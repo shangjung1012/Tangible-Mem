@@ -454,15 +454,6 @@
   </div>
 
   <script>
-    const KNOWN_RUNS = [
-      "20260506_011516_0307",
-      "20260506_011855_0318",
-      "20260506_012148_0325",
-      "20260506_012921_0408",
-      "20260506_013443_0422",
-      "20260506_014511_0429"
-    ];
-
     const AGENTS = [
       { key: "context_planner", label: "context_planner", node: "plan_next_window" },
       { key: "segment_agent", label: "segment_agent", node: "segment_window" },
@@ -484,7 +475,8 @@
     ];
 
     const state = {
-      runId: KNOWN_RUNS[0],
+      runId: "",
+      runs: [],
       events: [],
       agents: [],
       tools: [],
@@ -495,24 +487,54 @@
 
     init();
 
-    function init() {
+    async function init() {
+      renderTabs();
       const select = $("runSelect");
-      for (const runId of KNOWN_RUNS) {
-        const option = document.createElement("option");
-        option.value = runId;
-        option.textContent = runId;
-        select.appendChild(option);
-      }
-      select.value = state.runId;
-      $("runInput").value = state.runId;
       select.addEventListener("change", () => {
         $("runInput").value = select.value;
       });
       $("loadButton").addEventListener("click", () => {
         loadRun($("runInput").value.trim() || select.value);
       });
-      renderTabs();
-      loadRun(state.runId);
+
+      try {
+        state.runs = await loadRunIndex();
+        renderRunOptions();
+        const hashRunId = decodeURIComponent(window.location.hash.replace(/^#/, "")).trim();
+        const initialRunId = hashRunId || state.runs[0]?.run_id || "";
+        if (!initialRunId) {
+          setStats([{ label: "status", value: "no runs" }]);
+          $("status").innerHTML = `<div class="error">No research logs found under short_term/research_logs.</div>`;
+          return;
+        }
+        loadRun(initialRunId);
+      } catch (error) {
+        setStats([{ label: "status", value: "error" }]);
+        $("status").innerHTML = `<div class="error">${escapeHtml(error.message || String(error))}</div>`;
+      }
+    }
+
+    async function loadRunIndex() {
+      const data = await fetchJson("runs.json");
+      const runs = Array.isArray(data.runs) ? data.runs : [];
+      return runs
+        .map((run) => {
+          if (typeof run === "string") return { run_id: run };
+          if (run && typeof run === "object") return run;
+          return null;
+        })
+        .filter((run) => run && typeof run.run_id === "string" && run.run_id);
+    }
+
+    function renderRunOptions() {
+      const select = $("runSelect");
+      select.innerHTML = "";
+      for (const run of state.runs) {
+        const option = document.createElement("option");
+        option.value = run.run_id;
+        option.textContent = run.meeting_id ? `${run.run_id} (${run.meeting_id})` : run.run_id;
+        select.appendChild(option);
+      }
     }
 
     function renderTabs() {
@@ -538,7 +560,12 @@
     }
 
     async function loadRun(runId) {
+      if (!runId) return;
       state.runId = runId;
+      ensureRunOption(runId);
+      $("runSelect").value = runId;
+      $("runInput").value = runId;
+      window.location.hash = encodeURIComponent(runId);
       $("status").innerHTML = "";
       clearViews();
       setStats([{ label: "run_id", value: runId }, { label: "status", value: "loading" }]);
@@ -560,6 +587,15 @@
         $("status").innerHTML = `<div class="error">${escapeHtml(error.message || String(error))}</div>`;
         setStats([{ label: "run_id", value: runId }, { label: "status", value: "error" }]);
       }
+    }
+
+    function ensureRunOption(runId) {
+      const select = $("runSelect");
+      if ([...select.options].some((option) => option.value === runId)) return;
+      const option = document.createElement("option");
+      option.value = runId;
+      option.textContent = `${runId} (manual)`;
+      select.prepend(option);
     }
 
     function clearViews() {
