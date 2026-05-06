@@ -65,9 +65,9 @@ ID 與狀態約定：
 ## 檔案拆分
 
 - `update_memory.py`: CLI 入口與 LangGraph orchestration（Vertex Gemini sub-agents + SQLite）
-- `workflow/langgraph_update.py`: LangGraph workflow（window planning、segmentation、extraction、verify、reduce、persist）
+- `workflow/langgraph_update.py`: LangGraph workflow（window planning、segmentation、extraction、verify、reduce、persist）；context 擴窗被迫停止後會重設回合計數，避免下一個 forward window 繼承舊狀態
 - `agents/`: Context Planner / Segment / Summary / Action / Method / Experiment / Focus sub-agent prompt 與 JSON schema
-- `storage/memory_tools.py`: sub-agent read-only memory tool 與 staging candidate write tool
+- `storage/memory_tools.py`: sub-agent read-only memory tool 與 staging candidate write tool；read tool 只接受被允許的精確 section 名稱，對明顯誤把 `section=<payload>` 放入 section 的情況會轉成合法 section 並回傳 warning，其他非法 section 直接拒絕
 - `storage/staging_store.py`: staging candidates SQLite table；agent write tool 只寫這裡，不直接寫 official memory
 - `core/verifier.py`: deterministic candidate validation（ID、enum、confidence、section ownership、duplicate create；evidence 主要作為 warning/debug）
 - `core/reducer.py`: verified candidates -> partial memory patch
@@ -88,7 +88,7 @@ ID 與狀態約定：
 4. 建立 research log run，清掉同一個 run 的 staging candidates
 5. `ContextPlannerAgent` 規劃下一段 forward window，以及可用的 lookback/lookahead
 6. 從 transcript SQLite 讀取 planner 指定的 line range
-7. `SegmentAgent` 將該 window 切成 idea units；如果需要更多上下文，會回到 planner 補讀，最多重試有限次
+7. `SegmentAgent` 將該 window 切成 idea units；如果需要更多上下文，會回到 planner 補讀，最多重試有限次。若已覆蓋可用逐字稿、planner 重複同一 range、或達到 context round 上限，pipeline 會停止該 window 的擴張並記錄 `unresolved_context`，同時重設 context round，避免影響後續 window
 8. 進入 extraction fan-out，同一個 window 內會同時送出五個 section agent：
    - `meeting_summary_agent`
    - `action_item_agent`
@@ -164,6 +164,13 @@ uv run short_term/update_memory.py \
 - `candidates/verified_candidates.json`: 通過 deterministic verifier 的候選
 - `candidates/rejected_candidates.json`: 被拒絕的候選與原因
 - `final_patch.json` / `final_memory.json` / `report.md`: 最終寫入前後結果與人工可讀報告
+
+研究 log 判讀約定：
+
+- extraction node 的 `summary.raw_candidates` 是該 section agent 在當前 window 產生的候選數，不是全域累積候選數。
+- `raw_candidates=` 顯示在一般進度列時可能代表進入該 node 前的累積狀態；以 node END 的 `summary` 判斷該 agent 本次實際產量。
+- `retry` event 代表受控重試，需同時檢查後續 node 是否成功完成；只有 `ERROR`、`Traceback`、`LLM agent failed`、tool result `ok=false`、或 verifier/reducer/normalizer 失敗才代表流程失敗。
+- `tool_calls/*.json` 的 `args_summary` 會截斷過長參數，避免 malformed tool call 把大段候選 JSON 寫進 log 摘要。
 
 ## 測試 Retrieval QA
 
