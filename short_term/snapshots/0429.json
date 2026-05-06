@@ -1,6 +1,6 @@
 {
   "memory_version": 6,
-  "last_updated_utc": "2026-05-05T16:56:16Z",
+  "last_updated_utc": "2026-05-05T18:52:49Z",
   "last_updated_meeting_id": "0429",
   "meeting_history_ids": [
     "0307",
@@ -14,131 +14,182 @@
     {
       "meeting_id": "0408",
       "source_file": "/home/tsj/virtual-mentor/meeting_recording/transcript/grace/0408.txt",
-      "summary": "本次會議為一場深度技術討論，聚焦於虛擬導師的記憶架構。團隊首先回顧了現有的分層記憶結構（L1, L2, L3）及其生成過程，並指出現有處理方式（將完整逐字稿一次性輸入）的局限性。會議的核心部分在於辯論短期與長期記憶之間的關係與更新機制，探討了平行更新與序列式流動兩種模式。此外，團隊提出了一個重要的新方案：使用大型語言模型（LLM）的函式呼叫（function calling）功能來進行記憶檢索，讓模型能動態決定要查詢哪個記憶庫。會議最後達成共識，決定將逐字稿改為以句子為單位進行處理，以實現更細緻的記憶更新，並將未來的工作重點放在如何評估與證明新架構的有效性上。",
+      "summary": "本次會議深入探討了 agent 的記憶系統架構，特別是短期與長期記憶之間的關係與更新機制。團隊回顧了現有的 L1-L3 三層階層式記憶結構，並討論了從逐字稿生成 L1 idea units 的過程。會議中提出了兩項重要的新方法：(1) 在 agent 的「使用階段」，利用 LLM 的 function-calling 功能，讓模型動態決定要查詢短期或長期記憶；(2) 在「更新階段」也採用類似方法，透過逐句分析，決定資訊應更新至哪個記憶庫。此外，會議也強調了為了提升 LLM 分析的準確性，需要對逐字稿進行預處理，將其切分為更小的 idea units。然而，關於記憶整合的具體標準、不同記憶類型間的確切關係等架構性問題仍待解決。",
       "key_points": [
-        "回顧了現有的分層記憶架構（L1細粒度筆記、L2跨會議摘要、L3高層次概覽）及其從逐字稿生成物件的過程。(證據: L12-L21)",
-        "指出現有逐字稿處理方法的局限性，特別是缺乏預先分塊策略，並探討了按句子或語意單元分塊的替代方案以提高準確性。(證據: L27-L30, L38-L46)",
-        "提出一個新的檢索模型，利用LLM的函式呼叫功能，讓模型能根據問題動態決定查詢短期或長期記憶。(證據: L47-L53, L66-L78)",
-        "深入辯論了短期與長期記憶的核心更新邏輯，比較了「序列式（短期記憶淡化後轉入長期）」與「平行式（兩者獨立從來源更新）」的架構。(證據: L81-L94)",
-        "會議結束時，短期與長期記憶之間的確切關係和資料流動方式仍是一個待解決的問題。(證據: L105-L107)",
-        "達成一項關鍵技術決策：未來將以句子為單位處理逐字稿，以實現更精細的記憶更新和更好地處理重新討論的主題。(證據: L113)",
-        "確定下一個主要目標：定義一個方法來證明所提出的記憶架構相較於其他方案的有效性。(證據: L108)"
+        "團隊闡明了 L1 (單次會議筆記)、L2 (多次會議摘要) 與 L3 (最高層級摘要) 的三層式記憶架構。 (證據: L13-19)",
+        "一項核心架構提議是讓短期和長期記憶從原始逐字稿中獨立更新，而非讓資訊從短期依序流向長期記憶。 (證據: L91-94, L107)",
+        "針對 agent 的「使用階段」，提出讓 LLM 透過 function-calling 根據使用者問題，動態決定查詢短期或長期記憶，取代固定的系統邏輯。 (證據: L47-59, L66-79)",
+        "延伸 function-calling 的概念，建議在「更新階段」也導入此機制，透過逐句分析逐字稿，讓 LLM 決定該資訊要更新到短期還是長期記憶。 (證據: L109-113)",
+        "會議確定在將逐字稿交給 LLM 分析前，需先進行預處理，將其切分為「idea units」，以提高資訊抽取的準確度。 (證據: L39-45)",
+        "系統設計包含一個追蹤「重新出現主題」的機制，該機制使用基於「新近度 (Recency)」和「重要性 (Importance)」的評分系統，並設有衰減下限，以防主題被完全遺忘。 (證據: L22-25)",
+        "目前預設的 L1 物件類型 (如：決策、待辦事項、開放問題) 被視為一個有效的初步假設，同時也是系統當前的限制之一。 (證據: L31-38)"
       ],
       "open_questions": [
-        "在生成記憶之前，預處理逐字稿的最佳策略是什麼（例如，按語意單元、句子或發言輪次分塊）？(證據: L27-L30, L38-L46)",
-        "短期和長期記憶之間的最終更新機制和關係應該是什麼？（例如，平行更新或序列流動）(證據: L105-L107)",
-        "如何量化評估並證明記憶架構（特別是新的函式呼叫檢索模型）的有效性？(證據: L108)",
-        "當前L1記憶物件的本體（ontology，如決策、待辦事項等）是否足以捕捉會議中的所有關鍵資訊？(證據: L31-L38)"
+        "記憶鞏固機制：資訊被整合到長期記憶的具體標準是什麼（例如：頻率、重要性、時間衰減）？短期和長期記憶之間的更新流程與關係尚未最終確定。 (證據: L81-90, L107)",
+        "檢索分數權重：結合了語意相似度、新近度和重要性的檢索分數，其權重應如何計算與評估？ (證據: L26)",
+        "初始 Idea Unit 生成：從原始逐字稿中叢集並生成 L1「idea units」的最佳方法或 prompt 是什麼？ (證據: L27-30)",
+        "系統邏輯 vs. LLM 邏輯：團隊對於使用寫死的系統邏輯，或是讓 LLM 決定查詢哪個記憶庫的優劣進行了辯論，最佳方法仍在討論中。 (證據: L66-79)",
+        "定義記憶特徵：在此 agent 的架構中，短期和長期記憶在結構和內容上的明確差異是什麼（例如：節點數量、內容密度）？ (證據: L80)"
       ]
     },
     {
       "meeting_id": "0422",
       "source_file": "/home/tsj/virtual-mentor/meeting_recording/transcript/grace/0422.txt",
-      "summary": "本次會議深入探討了如何將會議逐字稿轉化為結構化的「想法單元」(idea units)。會議首先釐清了當前透過「工具呼叫」(Tool Calling) 讓模型動態決定讀取行數的迭代方法。接著，SPEAKER_00 提出了一種基於資訊熵的動態文本分割新方法，引發了關於其創新性與計算成本的討論。隨後，對話轉向了短期與長期記憶的架構差異，確認了短期記憶包含會議摘要與行動項目，而長期記憶則具有 L1/L2/L3 的層級結構和一個關鍵的「遺忘」機制。此機制透過重要性衰減來提升即時檢索效率，被認為是架構的核心優勢。最後，團隊確定了五月專題展的兩大任務：(1) 實作一個實驗，證明長期記憶在回憶舊主題上優於標準 RAG；(2) 完善並評估動態「想法單元打包」的方法。",
+      "summary": "本次會議深入探討了記憶更新的架構。團隊比較了兩種處理逐字稿的方法：一種是使用LLM工具調用（Tool Calling）進行迭代和動態分塊，另一種是預處理步驟以預先分組「想法單元」（idea units）。會議詳細介紹了短期記憶（包含行動項目和近期會議摘要）和長期記憶（用於上下文摘要的L1-L3層次結構）的結構。支持這種分離的一個關鍵理由是長期記憶中的「遺忘」機制，該機制利用衰減的相關性和重要性分數來提高即時檢索效率。團隊還規劃了評估策略，包括將其系統與標準RAG進行比較，並利用團隊自身的會議歷史來展示長期記憶和「遺忘」功能，以準備即將在五月舉行的專題展覽。",
       "key_points": [
-        "釐清了當前的逐字稿處理方法是一種迭代式的「工具呼叫」，讓模型能動態決定讀取範圍以形成完整的想法單元。(證據: L1-L22, L43-L78)",
-        "提出了一種新的動態文本分割方法，該方法利用資訊熵來預測和尋找想法單元的最佳邊界。(證據: L86-L93)",
-        "闡明了短期記憶（包含會議摘要和行動項目）與長期記憶（具有 L1/L2/L3 層級結構）的區別。(證據: L110-L128)",
-        "確認長期記憶的核心特徵是「遺忘」機制，它透過重要性和相關性的衰減來提高即時檢索的效率。(證據: L143-L156)",
-        "確定了五月專題展的兩項主要任務：進行長期回憶實驗以對比 RAG，以及完善「想法單元打包」的技術。(證據: L172-L174)"
+        "討論了使用LLM工具調用進行動態、迭代式處理逐字稿以形成「想法單元」的方法，並與靜態分塊或預分組方法進行了比較。",
+        "闡明了記憶架構：短期記憶保存行動項目和近期會議摘要，而長期記憶則採用層次化（L1-L3）結構，用於跨時間的上下文摘要。",
+        "提出了「遺忘」機制作為劃分長短期記憶的關鍵理由，該機制基於衰減的相關性和重要性分數，旨在提高即時檢索的效率。",
+        "確認了五月專題展的計畫，重點展示長期記憶能力和「想法單元」的打包過程。",
+        "提出了一項評估策略：利用團隊自身的會議歷史，將系統與標準RAG模型進行比較，以突顯「遺忘」機制的優勢。"
       ],
       "open_questions": [
-        "基於資訊熵的動態分割方法是否為全新概念？需要進行文獻回顧。(證據: L96)",
-        "如何具體設計實驗來證明長期記憶架構在回憶舊主題上優於標準 RAG？(證據: L161-L171)",
-        "長期記憶中「遺忘」機制的具體參數和閾值（如重要性/相關性衰減率）應如何設定？(證據: L147, L177)"
+        "將對話分割為「想法單元」的最佳方法是什麼？是所提出的動態迭代方法、使用LLM進行預分組，還是其他方法？",
+        "如何利用團隊自身的會議歷史作為數據集，有效地展示「遺忘」機制？",
+        "目前的五次會議數據是否足以展示長期記憶的效果，或者是否需要一個更大、可能需要人工生成的數據集？"
       ]
     },
     {
       "meeting_id": "0429",
       "source_file": "/home/tsj/virtual-mentor/meeting_recording/transcript/grace/0429.txt",
-      "summary": "本次會議主要圍繞三大主題：首先，團隊回顧了目前的專案進度，包括已收集的180分鐘逐字稿，並討論了資料量是否足夠以及轉錄品質問題。其次，會議深入探討了核心的系統方法論，特別是逐字稿的處理方式，從而引發了關於「Top-Down」（大文本塊分析）與「Bottom-Up」（從小單位聚合）策略的辯論，並設計了實驗來比較不同分塊策略的優劣。最後，會議從一個 debug 議題（LLM function calling 的參數不可控）延伸至對整體架構的批判性反思，最終提出一個重大的架構重構方向：從目前由單一大型 prompt 驅動的模式，轉向由程式碼驅動的「管理者/代理人 (manager/agent)」模型，以實現更好的流程控制、模組化與可除錯性。",
+      "summary": "本次會議聚焦於兩大主軸：定義評估計畫，以及針對記憶更新流程的深度架構辯論。團隊規劃了多面向的評估策略，包含短期正確性、長期演進追蹤、決策推理，以及一項創新的「遺忘 (fade-out)」指標。大量的討論集中在系統架構，權衡了由LLM驅動的函式調用方法與更具程式化控制的逐步流程之間的優劣。此番討論催生了「管理者-代理人 (Manager-Agent)」架構的提案，旨在透過一個管理者將任務指派給專門的代理人，以提升系統的可控性與可觀察性。團隊同時也討論了資料量的充足性、腦力激盪了資料增強的策略，並透過分配預算解決了API的計費問題。",
       "key_points": [
-        "進度更新：已收集五場會議，共180分鐘的逐字稿，但對資料量與品質感到擔憂。",
-        "定義「Long Context」：指派任務去研究學界對LLM「長上下文」的標準定義，以評估現有資料規模。",
-        "資料增強策略：討論了兩種策略，包括使用AI生成對話，或整合其他研究的會議錄音，但未做決定。",
-        "評估維度：規劃了三種評估問題類型（短期正確性、長期演進、決策推理），並提出測試「智慧遺忘」的新指標。",
-        "遺忘機制探討：結論是目前文獻中的「遺忘」多是在RAG層面刪除外部資料，而非改變模型本身。",
-        "方法論辯論 (Top-Down vs. Bottom-Up)：深入討論了逐字稿的處理方法，比較了當前依賴LLM在固定大文本塊中分割主題的「Top-Down」方法，與從最小單位開始聚合的「Bottom-Up」方法，並計畫進行實驗比較。",
-        "架構重構提案 (Manager/Agent)：由於發現目前的LLM驅動工作流（單一prompt驅動function calling）難以控制和除錯，會議提出一個新的架構，由一個程式碼編寫的「管理者」來協調調度多個執行單一任務的「代理人」（專門的LLM call），以提高系統的模組化、可控性和可靠性。",
-        "專案管理：發現Gemini API的計費方式不如預期，團隊決定直接撥配預算以解決API使用問題。"
+        "定義評估計畫：評估將涵蓋三個主要類別：短期正確性、長期演進追蹤和決策推理。(L18-22, L108-111)",
+        "提出創新的「遺忘 (Fade-Out)」指標：提出一項新指標，用於評估系統在不永久刪除資訊的情況下，遺忘不重要資訊的能力，此方法與標準的RAG刪除作法形成對比。(L23-28, L112-122)",
+        "規劃消融研究 (Ablation Study)：計畫進行一項消融研究，將完整系統與基線（僅RAG、僅短期、僅長期）進行比較，以證明其組合式架構的優越性。(L42-49, L123-127)",
+        "討論資料稀缺性與增強策略：認為當前資料集（5次會議，180分鐘）可能不足，並討論了資料增強策略，例如使用AI擴展對話或整合其他專案的資料。(L4-17, L99-107)",
+        "核心架構辯論：會議的中心議題是當前「由上而下」的固定視窗處理方式，與提案的「由下而上」的動態「想法單元 (idea unit)」切分方法之間的衝突。(L70-92, L128-160)",
+        "提出「管理者-代理人」架構：為解決當前LLM驅動工作流程在可控性與可靠性上的問題，提出了一個「管理者-代理人」架構。由一個中心管理者透過指派任務（如逐字稿切分、記憶更新）給專門的代理人來協調流程。(L282-320)",
+        "解決API計費問題：為了解決Gemini API點數未能正確應用的問題，團隊決定撥款20,000台幣預算給一位團隊成員處理。(L170-184)"
       ],
       "open_questions": [
-        "學界對於「long context」的確切定義（如token數量）是什麼？以此標準來看，我們現有的180分鐘資料是否足夠？",
-        "我們應該採用何種資料增強策略來擴充我們的數據集？",
-        "如何具體實現和評估「智慧遺忘」機制，即讓不活躍的資訊淡出但仍可被特定指令喚醒？",
-        "比較「固定窗口」與「動態窗口」逐字稿處理方式的消融實驗結果如何？",
-        "團隊是否採納將系統重構為「管理者/代理人」架構的提案？具體的實施細節是什麼？",
-        "關於API使用的預算問題，最終的解決方案與執行方式為何？"
+        "在當前最先進的LLM-agent情境下，「長脈絡 (long context)」的精確定義與token數量為何？(L7-10, L102-104)",
+        "提案的「管理者-代理人」架構將如何實作？哪些特定的代理人會被優先創建？(L313-320)",
+        "在比較不同逐字稿切分方法（固定、動態、逐輪）的實驗中，將如何衡量計算成本、精確率和召回率之間的權衡？(L82-92, L161-169)",
+        "團隊是否會從其他學生的會議中獲取額外資料來擴充現有資料集？(L13-16, L105-107)"
       ]
     }
   ],
   "action_items": [
     {
-      "item_id": "A010",
-      "title": "Refine and execute the plan to prove memory architecture effectiveness for the May presentation",
-      "detail": "The evaluation plan is updated to include testing the 'fade-out' of unimportant memories based on relevance and importance. A comparative experiment on different incremental processing methods has been explicitly postponed until after the May presentation to focus on core deliverables.",
+      "item_id": "A006",
+      "title": "Manage lab Google account and API key billing",
+      "detail": "The previous plan to use promotional credits failed for the Gemini API. A new decision was made to allocate a 20,000 TWD budget to a team member to cover API expenses after charges were incurred on a personal card.",
       "proposer": "SPEAKER_02",
-      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_02",
-      "created_meeting_id": "0408",
+      "owner": "SPEAKER_00",
+      "created_meeting_id": "0307",
       "created_time_hint": "",
       "dependencies": [],
       "status": "in_progress",
       "priority": "high",
-      "evidence": "L23-L26, L53, L130",
+      "evidence": "L170-L184",
       "last_updated_meeting_id": "0429",
       "history": [
         {
           "version": 0,
-          "meeting_id": "0408",
+          "meeting_id": "0307",
           "change": "imported or created"
         },
         {
           "version": 1,
-          "meeting_id": "0422",
-          "change": "updated fields: dependencies, detail, evidence, proposer, title"
-        },
-        {
-          "version": 2,
-          "meeting_id": "0429",
-          "change": "updated fields: dependencies, detail, evidence, proposer, status, title"
-        }
-      ]
-    },
-    {
-      "item_id": "A011",
-      "title": "Implement and refine the 'idea unit packaging' architecture",
-      "detail": "The implementation approach is evolving towards a structured 'manager/agent' architecture. This model involves a 'manager' orchestrating calls to specialized 'agents' for discrete tasks like identifying idea units or updating memory, shifting from a monolithic prompt to a more modular, code-driven workflow.",
-      "proposer": "SPEAKER_02, SPEAKER_00",
-      "owner": "SPEAKER_01, SPEAKER_02",
-      "created_meeting_id": "0408",
-      "created_time_hint": "",
-      "dependencies": [],
-      "status": "in_progress",
-      "priority": "high",
-      "evidence": "L282-L297, L313-L315",
-      "last_updated_meeting_id": "0429",
-      "history": [
-        {
-          "version": 0,
-          "meeting_id": "0408",
-          "change": "imported or created"
-        },
-        {
-          "version": 1,
-          "meeting_id": "0422",
+          "meeting_id": "0325",
           "change": "updated fields: detail, evidence, proposer, title"
         },
         {
           "version": 2,
           "meeting_id": "0429",
-          "change": "updated fields: detail, evidence, proposer, status, title"
+          "change": "updated fields: detail, evidence, owner, status"
+        }
+      ]
+    },
+    {
+      "item_id": "A011",
+      "title": "Define a method to prove the value of the memory architecture",
+      "detail": "Following the discussion on memory architecture, a next step was proposed to define a method to prove the value of having the proposed long-term memory architecture.",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "0408",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "L107-L108",
+      "last_updated_meeting_id": "0408",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0408",
+          "change": "imported or created"
         }
       ]
     },
     {
       "item_id": "A012",
-      "title": "Explore data augmentation by obtaining meeting recordings from other researchers",
-      "detail": "To augment the dataset for the project, the team should contact the senior student (真盈) to request her meeting recordings for analysis, as proposed by SPEAKER_02.",
+      "title": "Define the relationship and update mechanism for memory architectures",
+      "detail": "Clarify the relationship between short-term and long-term memory and define how they are updated, including how information transitions between them.",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "0408",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "L108-L109",
+      "last_updated_meeting_id": "0408",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0408",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A013",
+      "title": "Implement pre-processing for meeting transcriptions",
+      "detail": "Implement a pre-processing step for meeting transcriptions, such as splitting them into sentences, before feeding them into the memory update system to improve accuracy and enable more fine-grained control.",
+      "proposer": "SPEAKER_01",
+      "owner": "unknown",
+      "created_meeting_id": "0408",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "L109, L113",
+      "last_updated_meeting_id": "0408",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0408",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A014",
+      "title": "Research the definition of 'long context' for LLMs",
+      "detail": "To properly assess the sufficiency of the current 180-minute dataset, the team needs to research how 'long context' is defined for LLMs, specifically in terms of tokens, not minutes. This will provide a standard for comparison.",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "0429",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "high",
+      "evidence": "L9-L10, L103, L107",
+      "last_updated_meeting_id": "0429",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0429",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A015",
+      "title": "Acquire more meeting recording data from other students",
+      "detail": "To augment the dataset, acquire past meeting recordings from other students. Specifically, contact senior student Zhen Ying (真盈) who also works on meeting analysis and is likely to have relevant data.",
       "proposer": "SPEAKER_02",
       "owner": "SPEAKER_04",
       "created_meeting_id": "0429",
@@ -146,7 +197,7 @@
       "dependencies": [],
       "status": "open",
       "priority": "medium",
-      "evidence": "L13-L16",
+      "evidence": "L13-L17",
       "last_updated_meeting_id": "0429",
       "history": [
         {
@@ -157,38 +208,38 @@
       ]
     },
     {
-      "item_id": "A013",
-      "title": "Resolve Gemini API billing issue by setting up a dedicated budget",
-      "detail": "A billing issue was identified where Gemini API usage is being charged to a personal card instead of using project credits. SPEAKER_00 proposed allocating a 20,000 TWD budget to resolve this blocker. The team needs to follow up to establish the new billing arrangement.",
-      "proposer": "SPEAKER_00",
-      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_04",
-      "created_meeting_id": "0429",
-      "created_time_hint": "",
-      "dependencies": [],
-      "status": "open",
-      "priority": "high",
-      "evidence": "L170-L182",
-      "last_updated_meeting_id": "0429",
-      "history": [
-        {
-          "version": 0,
-          "meeting_id": "0429",
-          "change": "imported or created"
-        }
-      ]
-    },
-    {
-      "item_id": "A014",
-      "title": "Find and share the paper on 'Time Memory' and forgetting mechanisms",
-      "detail": "During the discussion on memory fade-out, SPEAKER_04 mentioned a paper (possibly 'Time Memory') that implements a forgetting mechanism. SPEAKER_02 requested it to be shared for team review.",
+      "item_id": "A016",
+      "title": "Conduct a literature review on LLM 'forgetting' mechanisms",
+      "detail": "Review and list existing literature on how 'forgetting' is implemented in LLMs, distinguishing between RAG-based (external data removal) and fundamental model alteration approaches. A specific paper mentioned as 'Time Memory' should be located and included.",
       "proposer": "SPEAKER_02",
       "owner": "SPEAKER_04",
       "created_meeting_id": "0429",
       "created_time_hint": "",
       "dependencies": [],
       "status": "open",
-      "priority": "low",
-      "evidence": "L31-L34",
+      "priority": "medium",
+      "evidence": "L31-L34, L41",
+      "last_updated_meeting_id": "0429",
+      "history": [
+        {
+          "version": 0,
+          "meeting_id": "0429",
+          "change": "imported or created"
+        }
+      ]
+    },
+    {
+      "item_id": "A017",
+      "title": "Test and evaluate the dynamic transcript processing method",
+      "detail": "An agreement was made to test a new, more efficient dynamic method for processing meeting transcripts against an iterative or fixed-window summary approach. The evaluation should focus on metrics like compute cost, precision, and recall.",
+      "proposer": "SPEAKER_02",
+      "owner": "SPEAKER_04",
+      "created_meeting_id": "0429",
+      "created_time_hint": "",
+      "dependencies": [],
+      "status": "open",
+      "priority": "medium",
+      "evidence": "L161-L169",
       "last_updated_meeting_id": "0429",
       "history": [
         {
@@ -202,304 +253,320 @@
   "method_changes": [
     {
       "change_id": "M001",
-      "topic": "Speaker Diarization Strategy for Experiments",
-      "before": "Handling complex speaker diarization from physical meeting recordings.",
-      "after": "For experimental purposes, simplify by assuming the data source is from online meetings (e.g., Zoom) where speaker identities are pre-tagged with the transcript.",
-      "reason": "To simplify the experimental setup and bypass the difficult step of speaker diarization, especially if the diarization model (e.g., WhisperX) is not perfectly accurate.",
-      "status": "active",
-      "meeting_id": "0307",
-      "evidence": "L1-L3"
-    },
-    {
-      "change_id": "M002",
-      "topic": "Time Representation in Memory",
-      "before": "Using absolute Meeting IDs (e.g., 16, 17) to timestamp information.",
-      "after": "Incorporate relative time concepts (e.g., 'one week ago') that dynamically update as new meetings occur.",
-      "reason": "To make the time context of stored memories more natural and intuitive, reflecting the passage of time relative to the current meeting.",
+      "topic": "Time representation in memory",
+      "before": "The memory system uses absolute meeting IDs (e.g., '16', '17') to reference when an item was discussed.",
+      "after": "Proposed change to use relative time references (e.g., 'one week ago') for memory items.",
+      "reason": "A suggestion was made to make the timeline of memory items more intuitive and human-readable, changing from absolute meeting IDs to relative time.",
       "status": "active",
       "meeting_id": "0307",
       "evidence": "L14-L16"
     },
     {
-      "change_id": "M003",
-      "topic": "Definition of Short-Term Memory Scope",
-      "before": "The scope of short-term memory was not explicitly defined.",
-      "after": "Short-term memory is defined as retaining important information from the last three meetings. Information not discussed within three meetings may be removed.",
-      "reason": "To formally define the operational scope and retention policy of the short-term memory component.",
-      "status": "active",
-      "meeting_id": "0307",
-      "evidence": "L16-L18"
-    },
-    {
-      "change_id": "M004",
-      "topic": "Memory System Architecture Definition",
-      "before": "A three-part architecture (Working, Short-Term, Long-Term) with an implicitly sequential update flow, where information might move from short-term to long-term memory over time.",
-      "after": "A parallel update architecture is proposed where Short-Term and Long-Term memories are updated independently and in parallel from the source transcript, rather than in a sequential flow.",
-      "reason": "To avoid information loss or distortion from a multi-layered summarization process and to treat the memory stores as separate, parallel databases, each updated from the primary source (transcript).",
-      "status": "active",
-      "meeting_id": "0307",
-      "evidence": "L91-L94"
-    },
-    {
-      "change_id": "M005",
-      "topic": "Evaluation Strategy for Memory Architecture",
-      "before": "No specific evaluation strategy was defined.",
-      "after": "Adopt an evaluation strategy based on methods from existing literature, likely using standardized tests or benchmarks to prove the model's performance against a baseline. This involves designing specific questions to test the functionality of short-term and long-term memory.",
-      "reason": "To objectively demonstrate the value and effectiveness of the proposed memory architecture.",
-      "status": "active",
-      "meeting_id": "0307",
-      "evidence": "L33-L39"
-    },
-    {
-      "change_id": "M006",
-      "topic": "Development Workflow and Collaboration",
-      "before": "Individual development with potentially unaligned data folder structures.",
-      "after": "Standardize the data folder structure and collaboratively modify a forked open-source repository to ensure code and data compatibility.",
-      "reason": "To streamline collaborative development and prevent inconsistencies in the project structure.",
+      "change_id": "M002",
+      "topic": "Code development and data structure alignment",
+      "before": "Unspecified or individual development workflows.",
+      "after": "The team decided to collaborate by modifying a shared open-source GitHub repository and align on a common folder structure.",
+      "reason": "To align development efforts and prevent data duplication, such as having multiple versions of meeting transcripts.",
       "status": "active",
       "meeting_id": "0307",
       "evidence": "L57-L59"
     },
     {
-      "change_id": "M007",
-      "topic": "Immediate Research Strategy for Model Improvement",
-      "before": "Considering finding a new, less fragmented dataset to improve model output.",
-      "after": "Decided to first study the source papers of the current models more closely before making decisions about changing datasets.",
-      "reason": "To better understand the underlying methods and their limitations before attempting fixes, as the issue might be with the model's application rather than the data itself.",
+      "change_id": "M003",
+      "topic": "Long-term memory object structure",
+      "before": "Adopt an object-based structure for long-term memory, extracting specific object types.",
+      "after": "The long-term memory object structure is defined to include: 'Type' (e.g., decision, method), 'Content' (an LLM-generated summary), 'Evidence' (the original verbatim transcript lines), and 'Related Topics' (keywords for retrieval).",
+      "reason": "To establish a concrete schema for LTM objects that captures the summarized idea, its direct source from the transcript, and metadata to facilitate future retrieval.",
       "status": "active",
-      "meeting_id": "0307",
-      "evidence": "L60-L62"
+      "meeting_id": "0325",
+      "evidence": "L103-109"
+    },
+    {
+      "change_id": "M004",
+      "topic": "Transcript Processing for Idea Unit Segmentation",
+      "before": "A pre-processing step is added to segment the transcript into smaller idea units (e.g., by sentence or turn) before feeding them to the LLM.",
+      "after": "Adopt an iterative, model-driven approach for transcript segmentation. Instead of fixed pre-processing, the model uses a 'Read' tool to dynamically decide how many lines of the transcript to process at once, allowing it to form cohesive 'idea units' without being constrained by predefined chunks. It can read a few lines, form a candidate idea, and then read more to merge and complete the idea.",
+      "reason": "This dynamic approach avoids the key limitation of fixed-chunking, which often splits a single idea across multiple chunks. It allows the model to handle overlapping ideas and form more accurate, contextually complete units for memory updates.",
+      "status": "active",
+      "meeting_id": "0408",
+      "evidence": "L1-2, L17-22, L52-58"
+    },
+    {
+      "change_id": "M005",
+      "topic": "Relationship Between Short-Term and Long-Term Memory Updates",
+      "before": "An LLM will use function-calling to dynamically decide whether to update short-term memory, long-term memory, or both from a single stream.",
+      "after": "Short-term and long-term memory are updated in separate, independent processes. Each process receives the complete transcript and operates on its respective memory store without interaction during the update phase.",
+      "reason": "This approach was deemed more sensible as it simplifies the update pipeline and allows for specialized logic for each memory type, rather than having a single process decide the destination for each idea unit.",
+      "status": "active",
+      "meeting_id": "0408",
+      "evidence": "L38-42"
+    },
+    {
+      "change_id": "M006",
+      "topic": "Input Data for Memory Update",
+      "before": "Unspecified transcript format.",
+      "after": "Using WhisperX turn-based transcripts, which are manually corrected for speaker turns, as the standard input for the memory update process. This format is treated like a database where rows can be read programmatically.",
+      "reason": "To establish a standardized, structured input format that enables the model to programmatically read and process the conversation line-by-line or in dynamic chunks.",
+      "status": "active",
+      "meeting_id": "0422",
+      "evidence": "L3-10"
+    },
+    {
+      "change_id": "M007",
+      "topic": "Core Memory Update Architecture",
+      "before": "Unspecified update flow.",
+      "after": "The memory update process is structured into two distinct, model-controlled steps: 1) A 'Read' function is used to access the source transcript and the current state of the memory database. 2) A 'Write' function is used to modify the memory database with new or updated information.",
+      "reason": "To create a clear, programmatic flow for memory modification that is controlled by the LLM, separating the information gathering phase from the writing phase.",
+      "status": "active",
+      "meeting_id": "0422",
+      "evidence": "L11-13"
     },
     {
       "change_id": "M008",
-      "topic": "Long-term memory structure",
-      "before": "A complex, tree-based structure was previously considered for long-term memory.",
-      "after": "Adopt a time-ordered list of objects for each meeting, categorized by type (e.g., decision, to-do, method change). Retrieval will be based on semantic similarity combined with a recency score that includes a floor for important items.",
-      "reason": "The tree structure makes it difficult to implement time-based importance decay. A linear, time-ordered structure with a retrieval formula incorporating recency is proposed to better manage long-term information relevance and prevent important old information from being lost.",
+      "topic": "Proposed Advanced Segmentation Method: Information Entropy",
+      "before": "Dynamic segmentation is guided implicitly by the LLM.",
+      "after": "A specific method is proposed to make dynamic segmentation more efficient: use a metric like information entropy to predict the number of subsequent sentences that belong to the current topic. The model would dynamically adjust the 'chunk size' based on whether the topic diversity increases, allowing it to quickly find the optimal cut-point for an idea unit.",
+      "reason": "This is a potential improvement over simple iterative reading, aiming to balance computational cost with accuracy by intelligently 'jumping' forward a predicted number of sentences instead of processing one by one or in small, fixed steps.",
       "status": "active",
-      "meeting_id": "0325",
-      "evidence": "L1-L8, L132-L135"
+      "meeting_id": "0422",
+      "evidence": "L81-96"
     },
     {
       "change_id": "M009",
-      "topic": "Agent output format",
-      "before": "Agent output is text-based, derived from transcripts.",
-      "after": "The agent should be able to retrieve and play back specific audio segments from past meetings, leveraging timestamps stored with memory items.",
-      "reason": "Audio playback is considered a more direct and effective way to recall the context of past discussions compared to reading text summaries.",
+      "topic": "Project Evaluation Strategy",
+      "before": "Unspecified evaluation plan.",
+      "after": "A two-pronged evaluation strategy is proposed: 1) Benchmark the dynamic idea unit creation method against baseline methods (fixed-size and sentence-by-sentence chunking). 2) Compare the performance of the dual short-term/long-term memory architecture against a standard RAG system.",
+      "reason": "To quantitatively and qualitatively demonstrate the value and novelty of the project's core technical contributions.",
       "status": "active",
-      "meeting_id": "0325",
-      "evidence": "L14-L25"
+      "meeting_id": "0422",
+      "evidence": "L100-102"
     },
     {
       "change_id": "M010",
-      "topic": "Implementation method for 'Personality' feature",
-      "before": "Undefined.",
-      "after": "A two-step process is proposed: 1) The memory system generates the core content. 2) The generated content is then processed by a separate 'Persona' module to adjust the wording and style.",
-      "reason": "This approach separates the concerns of factual memory recall from stylistic presentation, as outlined in the original project plan.",
+      "topic": "Hierarchical Structure of Long-Term Memory (L1-L3)",
+      "before": "Long-term memory is a flat collection of memory objects.",
+      "after": "Long-term memory is organized into a three-level hierarchy: L1 (the most low-level, individual memory objects generated from meetings), which are summarized into L2 (e.g., monthly summaries), and further into L3 (high-level, overall project context). This structure allows retrieval of an L1 item to also pull its broader L2/L3 context.",
+      "reason": "To provide contextual summarization at different levels of abstraction, enabling the agent to understand not just a specific fact, but also its broader temporal and thematic context.",
       "status": "active",
-      "meeting_id": "0325",
-      "evidence": "L76-L78"
+      "meeting_id": "0422",
+      "evidence": "L116-123"
     },
     {
       "change_id": "M011",
-      "topic": "Modeling conversational interruptions",
-      "before": "Conversational style, including interruptions, was not explicitly modeled.",
-      "after": "A proposed experimental approach is to fine-tune a model to output both text and a separate flag indicating whether an interruption is appropriate.",
-      "reason": "To explicitly model a key aspect of natural meeting dynamics (interruptions) that is difficult to capture with standard text generation.",
+      "topic": "Evaluation Dataset Selection",
+      "before": "Unspecified dataset for evaluation.",
+      "after": "The team's own meeting history will be used as the primary dataset for evaluating the memory system.",
+      "reason": "This dataset is highly relevant and contains real examples of evolving topics, method changes, and forgotten ideas, making it ideal for demonstrating the system's long-term tracking and 'forgetting' capabilities.",
       "status": "active",
-      "meeting_id": "0325",
-      "evidence": "L206-L210"
+      "meeting_id": "0422",
+      "evidence": "L157-160"
     },
     {
       "change_id": "M012",
-      "topic": "Memory Update and Retrieval Mechanism",
-      "before": "Memory update and retrieval logic is pre-defined and follows a fixed process (e.g., semantic search on ST and LT).",
-      "after": "Use an agent with function calling to dynamically decide how to update memory (e.g., which store to update) and retrieve information. The agent can process input sentence-by-sentence and decide to call functions for ST retrieval, LT retrieval, or context loading.",
-      "reason": "To allow for more flexible, context-aware memory operations, especially for handling revisited topics by dynamically loading old context from long-term memory into the short-term context.",
+      "topic": "Long-Term Memory Dynamics: Relevance and Forgetting",
+      "before": "Retrieval mechanism was not fully specified.",
+      "after": "LTM incorporates a 'forgetting' mechanism based on relevance and importance scores. A memory's relevance can decay over time if not referenced. However, it can be 're-awakened' if the topic is discussed again. A critical rule is that memories with an 'importance' score above a certain threshold will never fade out, ensuring essential information is preserved.",
+      "reason": "To model human-like memory, improving real-time retrieval efficiency by focusing on currently relevant topics while still retaining the ability to recall old information. The 'importance' score prevents the loss of critical, foundational knowledge.",
       "status": "active",
-      "meeting_id": "0408",
-      "evidence": "L109-L113"
+      "meeting_id": "0422",
+      "evidence": "L143-146, L175-177"
     },
     {
       "change_id": "M013",
-      "topic": "Transcript Pre-processing for Memory Update",
-      "before": "The entire transcript is processed as a single block by the LLM.",
-      "after": "The transcript will be segmented by sentences before being fed into the memory update process.",
-      "reason": "To enable fine-grained, sentence-level judgment and processing, which is key for handling revisited topics and dynamically loading context from long-term memory.",
+      "topic": "Data Augmentation Strategy",
+      "before": "Using only the 5 meetings from the current project (180 minutes).",
+      "after": "Augmenting the dataset by 1) using an LLM to extend existing dialogues and 2) incorporating meeting recordings from other students/projects to increase data volume and contextual diversity.",
+      "reason": "The current dataset of 5 meetings may be insufficient for robust LLM training and evaluation.",
       "status": "active",
-      "meeting_id": "0408",
-      "evidence": "L113"
+      "meeting_id": "0429",
+      "evidence": "L11-17"
     },
     {
       "change_id": "M014",
-      "topic": "Project Evaluation Plan",
-      "before": "The general goal was to devise a method to prove the effectiveness of the memory architecture (A010), but a specific comparative evaluation plan was not defined.",
-      "after": "A two-pronged evaluation plan was adopted. It involves: 1) Comparing the project's text segmentation method against baselines (e.g., fixed-size, sentence-by-sentence). 2) Comparing the project's memory architecture against a standard RAG baseline.",
-      "reason": "To establish a structured and convincing plan to demonstrate the value of the project's novel components for an upcoming presentation.",
+      "topic": "Evaluation Question Framework",
+      "before": "Evaluation questions were not formally categorized.",
+      "after": "Establishing a structured evaluation framework with three distinct categories: 1) Short-term correctness, 2) Long-term evolution tracking, and 3) Decision reasoning.",
+      "reason": "To systematically assess different capabilities of the memory system.",
       "status": "active",
-      "meeting_id": "0422",
-      "evidence": "L100-L102"
+      "meeting_id": "0429",
+      "evidence": "L18-22"
     },
     {
       "change_id": "M015",
-      "topic": "Experiment Design for Long-Term Memory Evaluation",
-      "before": "The newly adopted evaluation plan included a general comparison of the memory architecture against a standard RAG baseline.",
-      "after": "A specific experiment was designed to demonstrate the model's superiority over standard RAG. The experiment will use a dataset spanning a long history of meetings (e.g., ~20) to test the ability to recall a topic mentioned long ago but not recently, showcasing the handling of time-decay and relevancy.",
-      "reason": "To create a concrete, compelling demonstration of the long-term memory architecture's unique capabilities, which a shorter time span might not adequately show.",
+      "topic": "New Evaluation Metric for Forgetting",
+      "before": "Evaluation did not include a metric for the agent's ability to forget or ignore irrelevant information.",
+      "after": "Introducing a new evaluation metric to test the \"fade out\" of unimportant information. The agent should not surface these memories in general dialogue but they should remain in an \"inactive\" state, retrievable via specific queries or repeated mentions. This would be controlled by an importance weight.",
+      "reason": "To develop a more sophisticated and human-like memory system that avoids cluttering conversations with irrelevant long-term memories.",
       "status": "active",
-      "meeting_id": "0422",
-      "evidence": "L164-L171"
+      "meeting_id": "0429",
+      "evidence": "L23-28"
     },
     {
       "change_id": "M016",
-      "topic": "Transcript Processing and Chunking Strategy",
-      "before": "Using a fixed-size window (e.g., 20 lines) to read the transcript and relying on the LLM to identify idea units within that large, arbitrary chunk.",
-      "after": "Implementing and experimenting with a \"bottom-up\" dynamic chunking method. This method involves the model predicting the appropriate chunk size based on the current line's content, aiming to create semantically coherent blocks. This will be compared against the fixed-chunk and a fine-grained single-sentence iterative approach.",
-      "reason": "The fixed-chunk method is arbitrary and can split ideas or group unrelated ones. The single-sentence method is computationally expensive and captures too much noise. The proposed dynamic method aims to improve the precision and recall of identifying idea units while managing computational cost.",
+      "topic": "Experimental Strategy for System Justification",
+      "before": "No formal ablation study was defined.",
+      "after": "A formal ablation study is planned to prove the value of the full architecture. It will compare four conditions: 1) RAG-only baseline, 2) Short-term memory only, 3) Long-term memory only, and 4) The full system combining short and long-term memory.",
+      "reason": "To experimentally justify the complexity and components of the proposed memory architecture.",
       "status": "active",
       "meeting_id": "0429",
-      "evidence": "L81-92, L131-160, L161-169"
+      "evidence": "L42-49"
     },
     {
       "change_id": "M017",
-      "topic": "Benchmarking and Evaluation Standards",
-      "before": "Describing dataset size using informal time-based metrics (e.g., \"180 minutes of meetings\").",
-      "after": "Adopting the formal, token-based definition of \"long context\" used in current LLM research to accurately benchmark the project's dataset size and the model's processing capabilities.",
-      "reason": "To align with industry standards for more rigorous and credible evaluation and reporting.",
+      "topic": "Transcript Segmentation Method",
+      "before": "Using a fixed-window approach (e.g., reading 20-40 lines at a time) and letting a single LLM call identify idea units within that chunk (a \"top-down\" approach).",
+      "after": "Agreed to test a new dynamic, \"bottom-up\" segmentation method. This involves the agent predicting the appropriate length of the next chunk based on the current sentence, aiming to create more semantically coherent blocks. The evaluation will compare this to fixed-window and turn-by-turn methods on metrics like compute cost, precision, and recall.",
+      "reason": "The fixed-window approach is arbitrary and may split or incorrectly group ideas, while a turn-by-turn approach is computationally expensive. The dynamic approach aims for a better trade-off between computational efficiency and segmentation accuracy.",
       "status": "active",
       "meeting_id": "0429",
-      "evidence": "L7-L10, L102-L103"
+      "evidence": "L70-92, L128-160, 161-169"
     },
     {
       "change_id": "M018",
-      "topic": "Agent Architecture and Workflow Orchestration",
-      "before": "An LLM-driven workflow where a single, complex prompt instructs the model to orchestrate a sequence of function calls. The model has high autonomy, making it difficult to control and debug.",
-      "after": "A proposed shift to a code-driven, modular architecture. A \"manager\" script orchestrates the workflow by making controlled calls to specialized \"agents\" (smaller, focused LLM prompts or functions) for discrete tasks like identifying idea units, predicting chunk size, or updating memory.",
-      "reason": "The current monolithic prompt approach is hard to control, debug, and leads to unpredictable behavior (e.g., incorrect line number handling). The proposed manager/agent architecture provides better control, observability, and modularity.",
+      "topic": "System Control Flow Architecture",
+      "before": "A monolithic approach where a single large prompt dictates the entire workflow, relying on LLM function calling to control the sequence of operations. This was found to be hard to control and debug.",
+      "after": "Proposal to switch to a \"Manager-Agent\" architecture. A programmatic \"Manager\" controls the high-level workflow, delegating specific, granular tasks to specialized \"Agents\" (e.g., an agent for splitting text into idea units, an agent for updating memory). The LLM is used within agents to perform tasks, not to control the overall flow.",
+      "reason": "To improve the system's reliability, controllability, debuggability, and modularity by replacing a single, complex LLM-driven control flow with a structured, programmatic one that orchestrates calls to specialized LLM-powered agents.",
       "status": "active",
       "meeting_id": "0429",
-      "evidence": "L197-209, L223-240, L245-254, L282-297, L313-L315"
+      "evidence": "L185-240, L254-320"
     }
   ],
   "experiment_todos": [
     {
       "todo_id": "E001",
-      "description": "研究如何評估和證明記憶架構的性能，參考現有論文的評估和基準測試方法，並設計實驗來展示短期和長期記憶能力。",
+      "description": "Design and run an experiment to demonstrate the memory system's effectiveness, for example, by visualizing how an event's history is tracked by the agent compared to a baseline agent, or by designing questions that show different answers.",
       "status": "open",
       "owner": "unknown",
       "related_action_item_ids": [],
       "meeting_id": "0307",
-      "evidence": "L32-L39"
+      "evidence": "L37, L44-L46"
     },
     {
       "todo_id": "E002",
-      "description": "找出能夠突顯長期記憶系統獨特能力的方法，例如透過可視化記憶拓撲來證明其價值。",
+      "description": "Research and review how related papers evaluate and prove their memory model's performance, including looking for standardized tests or benchmarking datasets.",
       "status": "open",
       "owner": "unknown",
       "related_action_item_ids": [],
       "meeting_id": "0307",
-      "evidence": "L44-L46"
+      "evidence": "L34-L36, L39, L62"
     },
     {
       "todo_id": "E003",
-      "description": "Calculate and estimate the token consumption and computational/energy cost of LLM requests for the new 'Sustainable AI' project. [Update: Initial usage reported, ~37 API calls cost ~75 TWD].",
-      "status": "in_progress",
-      "owner": "SPEAKER_01",
+      "description": "Start implementing the new memory architecture by pulling and modifying the open-source GitHub repository.",
+      "status": "open",
+      "owner": "SPEAKER_01, SPEAKER_02",
       "related_action_item_ids": [],
-      "meeting_id": "0325",
-      "evidence": "L231-L234"
+      "meeting_id": "0307",
+      "evidence": "L59"
     },
     {
       "todo_id": "E004",
-      "description": "Explore modeling conversational interruptions, possibly with a two-step model (content generation then style application) or a dedicated model flag.",
+      "description": "Investigate prior work that uses the ICSI dataset, especially for memory-related tasks published after 2022.",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0325",
+      "evidence": "L50-L65"
+    },
+    {
+      "todo_id": "E005",
+      "description": "Explore a two-step approach to model meeting 'style', specifically for handling interruptions, by first generating content and then applying a style model or flag.",
       "status": "open",
       "owner": "SPEAKER_01",
       "related_action_item_ids": [],
       "meeting_id": "0325",
-      "evidence": "L206-L210"
-    },
-    {
-      "todo_id": "E005",
-      "description": "Review the 'Digital Meme' paper and create synthetic data with 'dead topics' to evaluate the model's ability to track abandoned topics.",
-      "status": "open",
-      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_02",
-      "related_action_item_ids": [],
-      "meeting_id": "0325",
-      "evidence": "L224-L230"
+      "evidence": "L206-L209"
     },
     {
       "todo_id": "E006",
-      "description": "實驗比較動態分塊（dynamic chunking）與固定大小分塊（fixed-size chunking）在會議摘要上的效果，並使用精確率（precision）和召回率（recall）等指標評估其權衡。",
-      "status": "open",
-      "owner": "SPEAKER_00, SPEAKER_01, SPEAKER_04",
-      "related_action_item_ids": [
-        "A011"
-      ],
-      "meeting_id": "0429",
-      "evidence": "L81-L92"
-    },
-    {
-      "todo_id": "E007",
-      "description": "進行消融實驗，比較完整系統與不同基準（僅RAG、僅短期記憶、僅長期記憶）的效能差異。",
-      "status": "open",
-      "owner": "SPEAKER_01, SPEAKER_04",
-      "related_action_item_ids": [
-        "A010"
-      ],
-      "meeting_id": "0429",
-      "evidence": "L42-L49"
-    },
-    {
-      "todo_id": "E008",
-      "description": "Generate a dataset from the team's own past meeting transcripts to find a suitable scenario for a demo, specifically for the long-term recall experiment.",
+      "description": "Refine the evaluation for 'dead topics' to test the 'fade out' mechanism. The test should verify that unimportant/inactive topics do not appear in regular dialogue but can be retrieved from long-term memory via specific probes.",
       "status": "open",
       "owner": "unknown",
-      "related_action_item_ids": [],
-      "meeting_id": "0422",
-      "evidence": "L161-L163"
-    },
-    {
-      "todo_id": "E009",
-      "description": "Design and run a specific experiment to demonstrate the long-term memory model's superiority over standard RAG by testing recall of a topic from ~20 meetings ago.",
-      "status": "open",
-      "owner": "unknown",
-      "related_action_item_ids": [
-        "A010"
-      ],
-      "meeting_id": "0422",
-      "evidence": "L164-L171"
-    },
-    {
-      "todo_id": "E010",
-      "description": "研究目前學界對LLM agent中「long context」的確切定義（例如token數量），並以此標準重新評估現有180分鐘資料的規模。",
-      "status": "open",
-      "owner": "SPEAKER_01, SPEAKER_04",
-      "related_action_item_ids": [],
-      "meeting_id": "0429",
-      "evidence": "L7-L10"
-    },
-    {
-      "todo_id": "E011",
-      "description": "研究並設計實驗，測試模型是否能將不重要或過時的資訊（inactive idea）淡出日常對話，但又能透過特定指令喚醒。",
-      "status": "open",
-      "owner": "SPEAKER_01, SPEAKER_04",
       "related_action_item_ids": [],
       "meeting_id": "0429",
       "evidence": "L23-L28"
     },
     {
-      "todo_id": "E012",
-      "description": "將 agent 的邏輯從單一大型 prompt 重構為一系列較小、可控的步驟，以改善偵錯與控制能力。",
+      "todo_id": "E007",
+      "description": "Implement a pre-processing step to segment transcripts into smaller idea units before analysis to improve LLM performance and reduce hallucination.",
       "status": "open",
-      "owner": "SPEAKER_00",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0408",
+      "evidence": "L39-L45"
+    },
+    {
+      "todo_id": "E008",
+      "description": "Experiment with using function calling to allow the agent to dynamically decide which memory (short-term or long-term) to access or update based on sentence-level analysis.",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0408",
+      "evidence": "L109-L113"
+    },
+    {
+      "todo_id": "E009",
+      "description": "Compare the proposed dynamic idea unit creation method against fixed-size and sentence-by-sentence methods to evaluate its effectiveness and trade-offs.",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [
+        "A013"
+      ],
+      "meeting_id": "0422",
+      "evidence": "L100-L101"
+    },
+    {
+      "todo_id": "E010",
+      "description": "Conduct an ablation study to justify the system's architecture by comparing the full system (short-term + long-term memory) against multiple baselines: RAG-only, short-term-only, and long-term-only.",
+      "status": "open",
+      "owner": "SPEAKER_04",
+      "related_action_item_ids": [
+        "A011",
+        "A012"
+      ],
+      "meeting_id": "0429",
+      "evidence": "L42-L49"
+    },
+    {
+      "todo_id": "E011",
+      "description": "Prepare a dataset for evaluation, potentially by generating dialogue sessions from existing meeting transcripts, to demonstrate long-term memory effects. Evaluate if the current 5 meetings are sufficient or if more data is needed.",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0422",
+      "evidence": "L161-L167"
+    },
+    {
+      "todo_id": "E012",
+      "description": "Design and run a specific experiment to demonstrate long-term memory: query about a topic from a much older meeting (e.g., 20 meetings ago) and compare the model's response with a standard RAG model's response.",
+      "status": "open",
+      "owner": "unknown",
+      "related_action_item_ids": [],
+      "meeting_id": "0422",
+      "evidence": "L168-L171"
+    },
+    {
+      "todo_id": "E013",
+      "description": "Experiment with using an LLM to augment the dataset by extending the dialogue in existing transcripts.",
+      "status": "open",
+      "owner": "unknown",
       "related_action_item_ids": [],
       "meeting_id": "0429",
-      "evidence": "L197-L209"
+      "evidence": "L11-L12"
+    },
+    {
+      "todo_id": "E014",
+      "description": "Acquire meeting recordings from senior student (真盈) to use as additional training/evaluation data for experiments.",
+      "status": "open",
+      "owner": "SPEAKER_04",
+      "related_action_item_ids": [],
+      "meeting_id": "0429",
+      "evidence": "L13-L16"
     }
   ],
   "next_meeting_focus": [
-    "確立「長脈絡 (long context)」的量化定義，並根據該標準評估現有資料量是否充足，同時探索資料增強的可行方案 (例如：生成式對話或整合其他會議錄音)。",
-    "研究並提出評估模型「智慧遺忘」的新指標，測試模型在一般對話中淡化非活躍資訊，但能透過特定指令喚醒這些記憶的能力。",
-    "設計並執行實驗，比較「動態切分」與「固定長度切分」逐字稿的優劣，以驗證動態方法在減少運算成本與提升摘要精準度上的效益。"
+    "Finalize the agent-based architecture, focusing on the 'Manager-Agent' model and the implementation of dynamic, topic-aware transcript segmentation.",
+    "Establish a clear definition of 'long context' in terms of tokens and formulate a data strategy, including whether to augment existing data or acquire new meeting logs."
   ]
 }
