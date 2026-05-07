@@ -42,7 +42,10 @@ CROSS_WINDOW_BOUNDARY_MERGE_THRESHOLD = 0.20
 CROSS_WINDOW_IDEA_UNIT_MERGE_THRESHOLD = 0.20
 BOUNDARY_LINE_WINDOW = 6
 BOUNDARY_REFINEMENT_CONTEXT_LINES = 16
-MAX_IDEA_UNITS_PER_EXTRACTION_BATCH = 10
+TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH = 10
+MAX_IDEA_UNITS_PER_EXTRACTION_BATCH = 14
+EXTRACTION_BATCH_OVERLAP_UNITS = 2
+MIN_SPLIT_REMAINDER_IDEA_UNITS = 3
 PREVIOUS_CONTEXT_LOOKBACK_BATCHES = 2
 PREVIOUS_CONTEXT_MAX_ITEMS_PER_TYPE = 2
 PREVIOUS_CONTEXT_MAX_TOTAL_ITEMS = 8
@@ -379,11 +382,66 @@ def build_continuation_batches(
             return 0
         return sum(unit_counts_by_segment.get(segment.segment_id, 0) for segment in group)
 
+    unit_by_id = {unit.unit_id: unit for unit in idea_units or []}
+
+    def batch_line_bounds(
+        group: list[SegmentProposal],
+        unit_ids: list[str] | None,
+    ) -> tuple[int, int]:
+        units = [unit_by_id[unit_id] for unit_id in unit_ids or [] if unit_id in unit_by_id]
+        if units:
+            return (
+                min(unit.line_start for unit in units),
+                max(unit.line_end for unit in units),
+            )
+        return (
+            min(segment.line_start for segment in group),
+            max(segment.line_end for segment in group),
+        )
+
+    def segments_for_unit_ids(
+        parent_group: list[SegmentProposal],
+        unit_ids: list[str],
+    ) -> list[SegmentProposal]:
+        segment_ids = {
+            unit_by_id[unit_id].segment_id
+            for unit_id in unit_ids
+            if unit_id in unit_by_id
+        }
+        return [segment for segment in parent_group if segment.segment_id in segment_ids]
+
+    def overlapping_unit_chunks(unit_ids: list[str]) -> list[list[str]]:
+        if len(unit_ids) <= MAX_IDEA_UNITS_PER_EXTRACTION_BATCH:
+            return [unit_ids]
+        overlap = min(EXTRACTION_BATCH_OVERLAP_UNITS, MAX_IDEA_UNITS_PER_EXTRACTION_BATCH - 1)
+        stride = max(1, MAX_IDEA_UNITS_PER_EXTRACTION_BATCH - overlap)
+        chunk_count = max(2, (len(unit_ids) - overlap + stride - 1) // stride)
+        target_chunk_size = min(
+            MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+            (len(unit_ids) + overlap * (chunk_count - 1) + chunk_count - 1)
+            // chunk_count,
+        )
+        chunks: list[list[str]] = []
+        start = 0
+        while start < len(unit_ids):
+            end = min(len(unit_ids), start + target_chunk_size)
+            if len(unit_ids) - end < MIN_SPLIT_REMAINDER_IDEA_UNITS:
+                end = len(unit_ids)
+            chunk = unit_ids[start:end]
+            if chunk:
+                chunks.append(chunk)
+            if end >= len(unit_ids):
+                break
+            next_start = end - overlap
+            start = next_start if next_start > start else end
+        return chunks
+
     def append_batch(
         group: list[SegmentProposal],
         *,
         reason: str,
         unit_ids: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         if not group:
             return
@@ -392,11 +450,12 @@ def build_continuation_batches(
         for segment in group:
             if segment.topic_label not in topic_labels:
                 topic_labels.append(segment.topic_label)
+        line_start, line_end = batch_line_bounds(group, unit_ids)
         batch = {
             "batch_id": batch_id,
             "segment_ids": [segment.segment_id for segment in group],
-            "line_start": min(segment.line_start for segment in group),
-            "line_end": max(segment.line_end for segment in group),
+            "line_start": line_start,
+            "line_end": line_end,
             "topic_label": " / ".join(topic_labels),
             "needs_more_context": any(segment.needs_more_context for segment in group),
             "reason": reason,
@@ -404,7 +463,64 @@ def build_continuation_batches(
         }
         if unit_ids is not None:
             batch["unit_ids"] = unit_ids
+        if metadata:
+            batch.update(metadata)
         batches.append(batch)
+
+    def append_split_family(
+        group: list[SegmentProposal],
+        *,
+        reason: str,
+        split_reason: str,
+    ) -> None:
+        parent_unit_ids: list[str] = []
+        for segment in group:
+            parent_unit_ids.extend(unit_ids_by_segment.get(segment.segment_id, []))
+        chunks = overlapping_unit_chunks(parent_unit_ids)
+        if len(chunks) <= 1:
+            append_batch(group, reason=reason, unit_ids=parent_unit_ids or None)
+            return
+        parent_batch_id = f"PB-{len(batches) + 1:03d}"
+        semantic_parent_segment_ids = [segment.segment_id for segment in group]
+        tiny_remainder_avoided = (
+            len(parent_unit_ids) % TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH
+            in range(1, MIN_SPLIT_REMAINDER_IDEA_UNITS)
+        )
+        for index, chunk_ids in enumerate(chunks, start=1):
+            previous_ids = set(chunks[index - 2]) if index > 1 else set()
+            next_ids = set(chunks[index]) if index < len(chunks) else set()
+            overlap_unit_ids = sorted(
+                set(chunk_ids).intersection(previous_ids | next_ids),
+                key=chunk_ids.index,
+            )
+            chunk_group = segments_for_unit_ids(group, chunk_ids) or group
+            append_batch(
+                chunk_group,
+                reason=f"{reason}; {split_reason}",
+                unit_ids=chunk_ids,
+                metadata={
+                    "parent_batch_id": parent_batch_id,
+                    "split_index": index,
+                    "split_count": len(chunks),
+                    "split_reason": split_reason,
+                    "overlap_unit_ids": overlap_unit_ids,
+                    "semantic_parent_segment_ids": semantic_parent_segment_ids,
+                    "tiny_remainder_avoided": tiny_remainder_avoided,
+                },
+            )
+            decisions.append(
+                {
+                    "action": "split_large_batch",
+                    "parent_batch_id": parent_batch_id,
+                    "split_index": index,
+                    "split_count": len(chunks),
+                    "segment_ids": [segment.segment_id for segment in chunk_group],
+                    "semantic_parent_segment_ids": semantic_parent_segment_ids,
+                    "unit_ids": chunk_ids,
+                    "overlap_unit_ids": overlap_unit_ids,
+                    "reason": split_reason,
+                }
+            )
 
     def flush_group(group: list[SegmentProposal]) -> None:
         if not group:
@@ -414,77 +530,33 @@ def build_continuation_batches(
             if len(group) > 1
             else "single segment extraction batch"
         )
-        if not unit_counts_by_segment or group_unit_count(group) <= MAX_IDEA_UNITS_PER_EXTRACTION_BATCH:
-            append_batch(group, reason=base_reason)
+        total_units = group_unit_count(group)
+        if not unit_counts_by_segment or total_units <= MAX_IDEA_UNITS_PER_EXTRACTION_BATCH:
+            metadata = {}
+            if (
+                total_units > TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH
+                and total_units % TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH
+                in range(1, MIN_SPLIT_REMAINDER_IDEA_UNITS)
+            ):
+                metadata["tiny_remainder_avoided"] = True
+                metadata["split_reason"] = "over_target_within_max_soft_cap"
+            append_batch(group, reason=base_reason, metadata=metadata)
             return
 
-        current_chunk: list[SegmentProposal] = []
-        current_units = 0
-        for segment in group:
-            segment_unit_count = unit_counts_by_segment.get(segment.segment_id, 0)
-            if segment_unit_count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH:
-                if current_chunk:
-                    append_batch(
-                        current_chunk,
-                        reason=f"{base_reason}; split_by_idea_unit_cap",
-                    )
-                    decisions.append(
-                        {
-                            "action": "split_large_batch",
-                            "segment_ids": [item.segment_id for item in current_chunk],
-                            "reason": (
-                                f"idea_unit_count exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH}"
-                            ),
-                        }
-                    )
-                    current_chunk = []
-                    current_units = 0
-                segment_unit_ids = unit_ids_by_segment.get(segment.segment_id, [])
-                for start in range(0, len(segment_unit_ids), MAX_IDEA_UNITS_PER_EXTRACTION_BATCH):
-                    chunk_ids = segment_unit_ids[start : start + MAX_IDEA_UNITS_PER_EXTRACTION_BATCH]
-                    append_batch(
-                        [segment],
-                        reason=f"{base_reason}; split_large_segment_by_idea_unit_cap",
-                        unit_ids=chunk_ids,
-                    )
-                    decisions.append(
-                        {
-                            "action": "split_large_batch",
-                            "segment_ids": [segment.segment_id],
-                            "unit_ids": chunk_ids,
-                            "reason": (
-                                f"single segment exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH} idea units"
-                            ),
-                        }
-                    )
-                continue
-
-            if (
-                current_chunk
-                and current_units + segment_unit_count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH
-            ):
-                append_batch(
-                    current_chunk,
-                    reason=f"{base_reason}; split_by_idea_unit_cap",
-                )
-                decisions.append(
-                    {
-                        "action": "split_large_batch",
-                        "segment_ids": [item.segment_id for item in current_chunk],
-                        "reason": (
-                            f"idea_unit_count exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH}"
-                        ),
-                    }
-                )
-                current_chunk = []
-                current_units = 0
-            current_chunk.append(segment)
-            current_units += segment_unit_count
-        if current_chunk:
-            append_batch(
-                current_chunk,
-                reason=f"{base_reason}; split_by_idea_unit_cap",
-            )
+        split_reason = (
+            f"single segment exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH} idea units"
+            if len(group) == 1
+            else f"idea_unit_count exceeded {MAX_IDEA_UNITS_PER_EXTRACTION_BATCH}"
+        )
+        append_split_family(
+            group,
+            reason=(
+                f"{base_reason}; split_large_segment_by_idea_unit_cap"
+                if len(group) == 1
+                else f"{base_reason}; split_by_idea_unit_cap"
+            ),
+            split_reason=split_reason,
+        )
 
     for segment in sorted_segments:
         if not current:
@@ -849,6 +921,16 @@ def build_metrics_summary(
         len(idea_units_for_batch(idea_units, batch))
         for batch in extraction_batches
     ]
+    split_family_ids = {
+        str(batch.get("parent_batch_id", "") or "")
+        for batch in extraction_batches
+        if str(batch.get("parent_batch_id", "") or "").strip()
+    }
+    tiny_remainder_keys = {
+        str(batch.get("parent_batch_id") or batch.get("batch_id", ""))
+        for batch in extraction_batches
+        if batch.get("tiny_remainder_avoided")
+    }
     previous_context_by_batch = previous_context_by_batch or {}
     previous_context_item_counts = _previous_context_item_counts(previous_context_by_batch)
 
@@ -912,7 +994,25 @@ def build_metrics_summary(
                 count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH
                 for count in batch_unit_counts
             ),
+            "target_idea_units_per_batch": TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
             "max_idea_units_per_batch": MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+            "overlap_units_per_split": EXTRACTION_BATCH_OVERLAP_UNITS,
+            "batches_over_target_cap": sum(
+                count > TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH
+                for count in batch_unit_counts
+            ),
+            "split_family_count": len(split_family_ids),
+            "split_batch_count": sum(
+                1
+                for batch in extraction_batches
+                if str(batch.get("parent_batch_id", "") or "").strip()
+            ),
+            "overlap_unit_count": sum(
+                len(batch.get("overlap_unit_ids", []))
+                for batch in extraction_batches
+                if isinstance(batch.get("overlap_unit_ids", []), list)
+            ),
+            "tiny_remainder_avoided_count": len(tiny_remainder_keys),
             "continuation_actions": _counter_dict(
                 Counter(
                     str(decision.get("action", "unknown") or "unknown")
@@ -1363,6 +1463,7 @@ def run_multi_agent_l1_pipeline(
                     existing_topics=existing_topics,
                     prior_context_pack=prior_context_pack,
                     previous_context=previous_context,
+                    batch_metadata=batch,
                     extraction_scope=str(batch["batch_id"]),
                     segment_ids=list(batch["segment_ids"]),
                 )
@@ -1391,6 +1492,7 @@ def run_multi_agent_l1_pipeline(
                     existing_topics=existing_topics,
                     prior_context_pack=prior_context_pack,
                     previous_context=previous_context,
+                    batch_metadata=batch,
                     extraction_scope=str(batch["batch_id"]),
                     segment_ids=list(batch["segment_ids"]),
                 )

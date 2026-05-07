@@ -12,19 +12,24 @@ LONG_TERM_DIR = REPO_ROOT / "long_term"
 sys.path.insert(0, str(LONG_TERM_DIR))
 
 from multi_agent_agents import (  # noqa: E402
+    CANDIDATE_SCHEMA,
     IDEA_SCHEMA,
     IDEA_REPAIR_SCHEMA,
     LLMCallTimeoutError,
     MAX_IDEA_UNITS_PER_AGENT,
+    MAX_L1_CANDIDATES_PER_TYPE,
     MAX_SEGMENTS_PER_WINDOW,
     SEGMENT_SCHEMA,
     _is_retryable_llm_error,
+    idea_unit_agent,
     idea_unit_repair_agent,
     l1_fallback_agent,
     l1_type_agent,
 )
 from multi_agent_pipeline import (  # noqa: E402
+    EXTRACTION_BATCH_OVERLAP_UNITS,
     MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+    TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
     build_metrics_summary,
     build_continuation_batches,
     build_previous_batch_context,
@@ -78,10 +83,10 @@ class FakeRunner:
 
 class NoisyTypeRunner:
     def __init__(self) -> None:
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[str, str, dict]] = []
 
     def call_json(self, stage: str, prompt: str, schema: dict) -> dict:
-        self.calls.append((stage, prompt))
+        self.calls.append((stage, prompt, schema))
         return {
             "candidates": [
                 {
@@ -107,6 +112,46 @@ class NoisyTypeRunner:
                     "confidence": 0.88,
                     "rationale": "durable",
                     "related_topics": ["memory"],
+                },
+                {
+                    "source_unit_ids": ["U-1"],
+                    "content": "Preserve dynamic transcript segmentation as a durable extraction scope.",
+                    "importance": 0.86,
+                    "confidence": 0.86,
+                    "rationale": "durable",
+                    "related_topics": ["segmentation"],
+                },
+                {
+                    "source_unit_ids": ["U-1"],
+                    "content": "Use verifier and reducer stages to control candidate quality.",
+                    "importance": 0.84,
+                    "confidence": 0.84,
+                    "rationale": "durable",
+                    "related_topics": ["verifier", "reducer"],
+                },
+                {
+                    "source_unit_ids": ["U-1"],
+                    "content": "Keep batch as extraction scope rather than final semantic truth.",
+                    "importance": 0.82,
+                    "confidence": 0.82,
+                    "rationale": "durable",
+                    "related_topics": ["batch"],
+                },
+                {
+                    "source_unit_ids": ["U-1"],
+                    "content": "Allow source candidates to cite multiple idea units.",
+                    "importance": 0.8,
+                    "confidence": 0.8,
+                    "rationale": "durable",
+                    "related_topics": ["idea units"],
+                },
+                {
+                    "source_unit_ids": ["U-1"],
+                    "content": "Extra local aside that should be trimmed by the safety cap.",
+                    "importance": 0.78,
+                    "confidence": 0.78,
+                    "rationale": "lower ranked",
+                    "related_topics": [],
                 },
             ]
         }
@@ -159,6 +204,25 @@ class FakeIdeaRepairRunner:
         }
 
 
+class FakeIdeaRunner:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, dict]] = []
+
+    def call_json(self, stage: str, prompt: str, schema: dict) -> dict:
+        self.calls.append((stage, prompt, schema))
+        return {
+            "idea_units": [
+                {
+                    "line_start": 1,
+                    "line_end": 2,
+                    "text": "The team discusses dynamic transcript segmentation.",
+                    "completeness": "complete",
+                    "uncertainty_note": "",
+                }
+            ]
+        }
+
+
 class FakePipelineRunner:
     def __init__(self, **kwargs) -> None:
         del kwargs
@@ -206,6 +270,10 @@ class MultiAgentPipelineTests(unittest.TestCase):
             ]["enum"],
             ["complete", "partial", "incomplete", "uncertain"],
         )
+        self.assertEqual(
+            CANDIDATE_SCHEMA["properties"]["candidates"]["maxItems"],
+            MAX_L1_CANDIDATES_PER_TYPE,
+        )
 
     def test_normalize_idea_completeness_maps_model_variants(self) -> None:
         self.assertEqual(normalize_idea_completeness("Complete"), "complete")
@@ -251,9 +319,42 @@ class MultiAgentPipelineTests(unittest.TestCase):
 
         self.assertEqual(runner.calls[0][0], "idea_unit_repair_agent_S-0001-01")
         self.assertIs(runner.calls[0][2], IDEA_REPAIR_SCHEMA)
+        self.assertIn("Completeness rubric:", runner.calls[0][1])
+        self.assertIn("partial: the unit is useful", runner.calls[0][1])
+        self.assertIn("incomplete: the discussion is cut off", runner.calls[0][1])
+        self.assertIn("uncertain: the text is ambiguous", runner.calls[0][1])
         self.assertEqual(units[0].completeness, "complete")
         self.assertEqual(units[0].line_start, 2)
         self.assertEqual(non_memory_ranges[0]["start_line"], 4)
+
+    def test_idea_unit_agent_prompt_defines_completeness_rubric(self) -> None:
+        runner = FakeIdeaRunner()
+        segment = SegmentProposal(
+            segment_id="S-0001-01",
+            line_start=1,
+            line_end=2,
+            topic_label="dynamic segmentation",
+            needs_more_context=False,
+        )
+        lines = parse_transcript_lines(
+            "A: Fixed chunking may split a complete idea.\n"
+            "B: Dynamic segmentation could preserve the full unit."
+        )
+
+        units = idea_unit_agent(
+            runner,
+            segment=segment,
+            transcript_lines=lines,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIs(runner.calls[0][2], IDEA_SCHEMA)
+        self.assertIn("Completeness rubric:", prompt)
+        self.assertIn("complete: the unit is self-contained", prompt)
+        self.assertIn("partial: the unit is useful", prompt)
+        self.assertIn("incomplete: the discussion is cut off", prompt)
+        self.assertIn("uncertain: the text is ambiguous", prompt)
+        self.assertEqual(units[0].completeness, "complete")
 
     def test_grounding_uses_shared_idea_unit_spans(self) -> None:
         lines = parse_transcript_lines(
@@ -461,6 +562,20 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(metrics["extraction_batches"]["continuation_actions"]["merge"], 1)
         self.assertEqual(metrics["extraction_batches"]["idea_units_per_batch"]["max"], 1.0)
         self.assertEqual(metrics["extraction_batches"]["oversized_batch_count"], 0)
+        self.assertEqual(
+            metrics["extraction_batches"]["target_idea_units_per_batch"],
+            TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
+        )
+        self.assertEqual(
+            metrics["extraction_batches"]["max_idea_units_per_batch"],
+            MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+        )
+        self.assertEqual(
+            metrics["extraction_batches"]["overlap_units_per_split"],
+            EXTRACTION_BATCH_OVERLAP_UNITS,
+        )
+        self.assertEqual(metrics["extraction_batches"]["split_family_count"], 0)
+        self.assertEqual(metrics["extraction_batches"]["tiny_remainder_avoided_count"], 0)
         self.assertTrue(metrics["previous_context"]["enabled"])
         self.assertEqual(metrics["previous_context"]["batches_with_items"], 1)
         self.assertEqual(metrics["previous_context"]["items_per_batch"]["max"], 1.0)
@@ -766,7 +881,76 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertTrue(
             all(count <= MAX_IDEA_UNITS_PER_EXTRACTION_BATCH for count in batch_unit_counts)
         )
+        self.assertTrue(all(count > TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH for count in batch_unit_counts))
+        self.assertTrue(any("parent_batch_id" in batch for batch in batches))
         self.assertTrue(any(decision["action"] == "split_large_batch" for decision in decisions))
+
+    def test_single_segment_over_target_but_within_max_is_not_split(self) -> None:
+        segment = SegmentProposal(
+            segment_id="S-0001-01",
+            line_start=1,
+            line_end=11,
+            topic_label="tool calling extraction design",
+            needs_more_context=False,
+        )
+        units = [
+            IdeaUnit(
+                unit_id=f"U-{index:02d}",
+                segment_id=segment.segment_id,
+                line_start=index,
+                line_end=index,
+                text=f"durable idea unit {index}",
+                completeness="complete",
+            )
+            for index in range(1, TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH + 2)
+        ]
+
+        batches, decisions = build_continuation_batches([segment], idea_units=units)
+        batch_units = idea_units_for_batch(units, batches[0])
+
+        self.assertEqual(len(batches), 1)
+        self.assertEqual(len(batch_units), TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH + 1)
+        self.assertNotIn("parent_batch_id", batches[0])
+        self.assertTrue(batches[0]["tiny_remainder_avoided"])
+        self.assertFalse(any(decision["action"] == "split_large_batch" for decision in decisions))
+
+    def test_continuation_group_over_target_but_within_max_is_not_split(self) -> None:
+        segments = [
+            SegmentProposal(
+                segment_id="S-0001-01",
+                line_start=1,
+                line_end=7,
+                topic_label="dynamic memory update",
+                needs_more_context=True,
+            ),
+            SegmentProposal(
+                segment_id="S-0008-01",
+                line_start=8,
+                line_end=13,
+                topic_label="dynamic memory update",
+                needs_more_context=False,
+            ),
+        ]
+        units = [
+            IdeaUnit(
+                unit_id=f"U-{index:02d}",
+                segment_id=segments[0].segment_id if index <= 7 else segments[1].segment_id,
+                line_start=index,
+                line_end=index,
+                text=f"durable idea unit {index}",
+                completeness="complete",
+            )
+            for index in range(1, TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH + 4)
+        ]
+
+        batches, decisions = build_continuation_batches(segments, idea_units=units)
+        batch_units = idea_units_for_batch(units, batches[0])
+
+        self.assertEqual(len(batches), 1)
+        self.assertEqual(batches[0]["segment_ids"], ["S-0001-01", "S-0008-01"])
+        self.assertEqual(len(batch_units), TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH + 3)
+        self.assertNotIn("parent_batch_id", batches[0])
+        self.assertTrue(any(decision["action"] == "merge" for decision in decisions))
 
     def test_single_large_segment_splits_into_bounded_unit_chunks(self) -> None:
         segment = SegmentProposal(
@@ -785,7 +969,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
                 text=f"durable idea unit {index}",
                 completeness="complete",
             )
-            for index in range(1, MAX_IDEA_UNITS_PER_EXTRACTION_BATCH + 7)
+            for index in range(1, 21)
         ]
 
         batches, decisions = build_continuation_batches([segment], idea_units=units)
@@ -794,9 +978,17 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(len(batches), 2)
         self.assertEqual(
             batch_unit_counts,
-            [MAX_IDEA_UNITS_PER_EXTRACTION_BATCH, 6],
+            [11, 11],
         )
         self.assertTrue(all("unit_ids" in batch for batch in batches))
+        self.assertEqual(batches[0]["parent_batch_id"], batches[1]["parent_batch_id"])
+        self.assertEqual(batches[0]["split_index"], 1)
+        self.assertEqual(batches[1]["split_index"], 2)
+        self.assertEqual(batches[0]["split_count"], 2)
+        self.assertEqual(batches[0]["overlap_unit_ids"], ["U-10", "U-11"])
+        self.assertEqual(batches[1]["overlap_unit_ids"], ["U-10", "U-11"])
+        self.assertIn("single segment exceeded", batches[0]["split_reason"])
+        self.assertEqual(batches[0]["semantic_parent_segment_ids"], ["S-0001-01"])
         self.assertTrue(any(decision["action"] == "split_large_batch" for decision in decisions))
 
     def test_cross_window_boundary_text_merges_without_matching_topic_labels(self) -> None:
@@ -1310,13 +1502,34 @@ class MultiAgentPipelineTests(unittest.TestCase):
             obj_type="decision",
             idea_units=units,
             existing_topics=[],
+            batch_metadata={
+                "parent_batch_id": "PB-001",
+                "split_index": 1,
+                "split_count": 2,
+                "split_reason": "single segment exceeded 14 idea units",
+                "overlap_unit_ids": ["U-1"],
+                "semantic_parent_segment_ids": ["S-0001-01"],
+            },
             extraction_scope="B-001",
             segment_ids=["S-0001-01"],
         )
 
-        self.assertEqual(len(candidates), 2)
+        prompt = runner.calls[0][1]
+        self.assertIs(runner.calls[0][2], CANDIDATE_SCHEMA)
+        self.assertIn("Normally return 0-4 candidates", prompt)
+        self.assertIn(f"up to {MAX_L1_CANDIDATES_PER_TYPE}", prompt)
+        self.assertIn("Do not pad", prompt)
+        self.assertIn("do not restate each idea unit as a candidate", prompt)
+        self.assertIn("Split-family scope metadata (not evidence):", prompt)
+        self.assertIn("overlap_unit_ids=U-1", prompt)
+        self.assertIn("Do not cite sibling metadata", prompt)
+        self.assertEqual(len(candidates), MAX_L1_CANDIDATES_PER_TYPE)
         self.assertEqual(candidates[0].content, "Adopt durable tool calling design.")
         self.assertNotIn("Low ranked local detail.", [candidate.content for candidate in candidates])
+        self.assertNotIn(
+            "Extra local aside that should be trimmed by the safety cap.",
+            [candidate.content for candidate in candidates],
+        )
 
     def test_previous_batch_context_keeps_recent_high_confidence_candidates(self) -> None:
         long_content = "A" * 220

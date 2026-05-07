@@ -32,7 +32,7 @@ from prior_context import format_prior_context_for_prompt
 
 MAX_SEGMENTS_PER_WINDOW = 10
 MAX_IDEA_UNITS_PER_AGENT = 12
-MAX_L1_CANDIDATES_PER_TYPE = 2
+MAX_L1_CANDIDATES_PER_TYPE = 6
 MAX_FALLBACK_CANDIDATES = 3
 
 SEGMENT_SCHEMA: dict[str, Any] = {
@@ -505,6 +505,11 @@ Ignore only true filler, acknowledgements, local wording clarifications, and
 purely social turns that do not affect the project state.
 
 Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
 Do not use fallback or compacted; those are reserved for deterministic validators.
 
 Segment: {segment.segment_id}
@@ -586,6 +591,11 @@ affect future project decisions or memory behavior. Do not dismiss these as
 filler.
 
 Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
 Do not use fallback or compacted.
 
 For non_memory_context_ranges, include only lines that are purely filler,
@@ -661,6 +671,33 @@ def format_previous_context_for_prompt(previous_context: dict[str, Any] | None) 
     return "\n".join(lines)
 
 
+def format_batch_metadata_for_prompt(batch_metadata: dict[str, Any] | None) -> str:
+    """Render split-family metadata for bounded extraction prompts."""
+    if not batch_metadata or not batch_metadata.get("parent_batch_id"):
+        return ""
+    parent_batch_id = str(batch_metadata.get("parent_batch_id", "") or "")
+    split_index = str(batch_metadata.get("split_index", "") or "")
+    split_count = str(batch_metadata.get("split_count", "") or "")
+    split_reason = str(batch_metadata.get("split_reason", "") or "")
+    overlap_unit_ids = unique_strings(batch_metadata.get("overlap_unit_ids", []))
+    parent_segment_ids = unique_strings(
+        batch_metadata.get("semantic_parent_segment_ids", [])
+    )
+    lines = [
+        "Split-family scope metadata (not evidence):",
+        f"- parent_batch_id={parent_batch_id}; split_index={split_index}/{split_count}",
+        f"- split_reason={split_reason or 'bounded extraction chunk'}",
+        "- If this batch is part of a split family, avoid creating a partial candidate solely because the chunk boundary cuts a larger idea.",
+        "- Overlap idea units may be cited as normal bounded evidence when they appear below.",
+        "- Do not cite sibling metadata or infer from unseen sibling batches.",
+    ]
+    if overlap_unit_ids:
+        lines.append(f"- overlap_unit_ids={', '.join(overlap_unit_ids)}")
+    if parent_segment_ids:
+        lines.append(f"- semantic_parent_segment_ids={', '.join(parent_segment_ids)}")
+    return "\n".join(lines)
+
+
 def l1_type_agent(
     runner: MultiAgentLLMRunner,
     *,
@@ -669,6 +706,7 @@ def l1_type_agent(
     existing_topics: list[str],
     prior_context_pack: dict[str, Any] | None = None,
     previous_context: dict[str, Any] | None = None,
+    batch_metadata: dict[str, Any] | None = None,
     extraction_scope: str = "",
     segment_ids: list[str] | None = None,
 ) -> list[L1Candidate]:
@@ -680,6 +718,7 @@ def l1_type_agent(
     )
     prior_context_text = format_prior_context_for_prompt(prior_context_pack)
     previous_context_text = format_previous_context_for_prompt(previous_context)
+    batch_metadata_text = format_batch_metadata_for_prompt(batch_metadata)
     prompt = f"""
 You are l1_{obj_type}_agent in a multi-agent long-term memory pipeline.
 Your operational type definition: {TYPE_DEFINITIONS[obj_type]}.
@@ -689,8 +728,9 @@ Do not infer from outside this extraction scope.
 Prior context may help disambiguate references, but it is never evidence.
 Every candidate must be supported by the bounded idea units below.
 The same idea unit may support other memory types; do not suppress valid {obj_type} objects for that reason.
-Return at most {MAX_L1_CANDIDATES_PER_TYPE} candidates. Return an empty list when the
-batch has no durable {obj_type}.
+Normally return 0-4 candidates. You may return up to {MAX_L1_CANDIDATES_PER_TYPE} only
+when there are clearly distinct durable {obj_type} memories. Return an empty list when
+the batch has no durable {obj_type}. Do not pad the response to fill the limit.
 
 Only output durable long-term memory:
 - keep project-level decisions, method changes, concrete follow-ups, stable findings,
@@ -710,6 +750,8 @@ Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "
 {prior_context_text}
 
 {previous_context_text}
+
+{batch_metadata_text}
 
 Bounded idea units:
 {units_text}
@@ -756,6 +798,7 @@ def l1_fallback_agent(
     existing_topics: list[str],
     prior_context_pack: dict[str, Any] | None = None,
     previous_context: dict[str, Any] | None = None,
+    batch_metadata: dict[str, Any] | None = None,
     extraction_scope: str = "",
     segment_ids: list[str] | None = None,
 ) -> list[L1Candidate]:
@@ -769,6 +812,7 @@ def l1_fallback_agent(
     allowed_types = ", ".join(sorted(TYPE_DEFINITIONS))
     prior_context_text = format_prior_context_for_prompt(prior_context_pack)
     previous_context_text = format_previous_context_for_prompt(previous_context)
+    batch_metadata_text = format_batch_metadata_for_prompt(batch_metadata)
     prompt = f"""
 You are general_l1_fallback_agent in a multi-agent long-term memory pipeline.
 This fallback runs only because the typed L1 agents produced no candidates for this bounded batch.
@@ -788,6 +832,8 @@ Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "
 {prior_context_text}
 
 {previous_context_text}
+
+{batch_metadata_text}
 
 Bounded idea units:
 {units_text}
