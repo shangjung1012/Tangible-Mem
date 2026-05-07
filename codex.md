@@ -8,7 +8,7 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 
 ## Long-Term Current State
 
-- Repository state inspected on `main` at `fe8e0a8 Improve multi-agent batch split handling`; local branch was clean before this handoff file was created.
+- Repository canonical state is the current `main` branch plus this handoff file; device-specific local worktree artifacts are tracked separately below.
 - `long_term/` is the cross-meeting memory module. Canonical storage is still `long_term/tree.json`; L1 objects are produced per meeting, then summarized upward into L2 phase summaries and the L3 project profile.
 - The current L1 research mainline is `uv run long_term/cli.py bridge --mode multi-agent`. `full` / `monolithic` and `incremental` remain baselines or references, not the primary development path.
 - Multi-agent L1 is a staged prompt pipeline, not autonomous long-lived agents: `prior_context_pack -> context_planner -> segmentation -> repair/coarsening -> boundary refinement -> idea units -> bounded type agents -> grounding -> conflict resolution -> verifier -> reducer -> persist L1 -> relation/activity sidecars`.
@@ -18,6 +18,14 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 - Multi-agent quality, recurrence, relation, and activity metadata live in sidecars such as `l1_quality_index.json`, `memory_relations_index.json`, and `memory_activity_index.json`; the canonical L1 schema remains clean.
 - `summarize phase` can read the L1 quality sidecar and treat strong/normal/tentative/weak L1 evidence differently. Legacy L1 without sidecar quality is still allowed.
 - Local generated stores and research outputs such as embedding caches, incremental DBs, Grace outputs, and research logs are working artifacts unless explicitly promoted through documentation.
+- Topic-tree L2/L3 is not adopted. Temporal compact L2/L3 remains canonical until the topic-tree branch is evaluated and explicitly promoted.
+
+## Windows Local Worktree State
+
+- On this Windows device, the local worktree has untracked local artifacts: `04_08_bridge_test_results.json`, `test_bridge.py`, and `long_term/grace output/`.
+- Treat those files as local working artifacts unless a future update explicitly promotes them through docs or a reviewed commit.
+- The partial Grace run under `long_term/grace output/...0307_multi_agent` reports `argument` and `open_question` as deferred. That artifact is stale: current repo code and tests include both types in the bounded type-agent loop.
+- `uv run python -m unittest discover -s tests` currently hits Windows temp SQLite cleanup locks (`WinError 32`) in incremental/short-term tests. Track this as a separate Windows test hygiene follow-up, not as a blocker for the P0 topic-tree evaluation.
 
 Useful commands:
 
@@ -34,10 +42,11 @@ uv run python -m unittest discover -s tests
 
 | Status | Priority | Task | Canonical next step |
 | --- | --- | --- | --- |
-| active | P0 | Decide whether the L2/L3 topic-forest proposal should complement or replace the current temporal parent chain. | Evaluate a hybrid design: topic forest for cross-meeting topic evolution, plus meeting timeline nodes for per-meeting direction. Compare against current temporal L2/L3 on retrieve precision, context continuity, ability to show meeting flow, and migration cost. Do not change schema until this comparison is written down. |
+| active | P0 | Decide whether the L2/L3 topic-tree proposal should complement or replace the current temporal parent chain. | Evaluate a hybrid design: topic tree for cross-meeting topic evolution, plus meeting timeline nodes for per-meeting direction. Compare against current temporal L2/L3 on retrieve precision, context continuity, ability to show meeting flow, and migration cost. Do not change schema until this comparison is written down. |
 | active | P1 | Validate current multi-agent L1 plus sidecars on real Grace/ICSI meetings. | Run a small repeatable set, inspect `status.json`, `run_summary.json`, `metrics_summary.json`, `l1_quality_index.json`, relation/activity sidecars, and final `tree.json` diffs. |
 | active | P1 | Tighten recall behavior around L1 -> L2/L3 parent-chain context. | Check whether retrieved answers get enough high-level context without flooding prompts. Prefer compact L2/L3 plus linked sidecar context before inventing a new retrieval store. |
 | active | P2 | Keep multi-agent cost and failure visibility under control. | When a run is slow or interrupted, inspect per-run `status.json` and `run_summary.json` first. Add targeted fixes only where artifacts show a bottleneck. |
+| active | P2 | Fix Windows full unittest SQLite cleanup locks. | Investigate temp SQLite connection cleanup in incremental and short-term tests after the topic-tree comparison path is clear. This is local test hygiene, not a P0 topic-tree blocker. |
 | done | P0 | Merge the selected long-term Codex chats into one canonical handoff flow. | Use this `codex.md` as the single entrypoint for future chats. |
 | done | P1 | Adopt semantic L1 retrieval with parent-chain expansion. | Treat `long_term/docs/RETRIEVE_IMPLEMENTATION_PLAN.md` as historical implementation context; current code/docs are the source of truth. |
 | done | P1 | Adopt compact L2/L3 schema. | Temporal L2/L3 remains canonical unless the topic-tree branch is explicitly promoted. |
@@ -53,18 +62,18 @@ Only the following selected Codex chats should steer future `long_term/` work. O
 | --- | --- | --- |
 | `019df723` - `分析長期架構邏輯` | merged | High-level architecture review concluded: multi-agent is strongest in traceability, bounded scope, deterministic guardrails, and schema compatibility; weak points are cost, run resumption/failure closure, type ambiguity, relation depth, and using rich sidecar signals in L2/L3/recall. Later work addressed several of these through status/run summary and sidecars. |
 | `019df88d`, `019df912`, `019dfa5f` - incremental/multi-agent forked work | merged as historical forks | These large forked histories include incremental bridge implementation, run checks, pushes, and long-running multi-agent status checks. Use current repo/docs, not raw fork instructions, for implementation decisions. |
-| `019dfc8f` - `評估 L2/L3 主題樹方案` | open branch | Proposed replacing or complementing time-based L2/L3 with topic-oriented trees where objects append over time. Latest clarification: the safer shape is a topic forest plus separate meeting timeline nodes, not pure topic trees. Not adopted yet. Main unresolved question: can this hybrid improve retrieve precision while preserving meeting flow and temporal context better than current L1 retrieval plus temporal parent chain? |
+| `019dfc8f` - `評估 L2/L3 主題樹方案` | open branch | Proposed replacing or complementing time-based L2/L3 with topic-oriented trees where objects append over time. Latest clarification: the safer shape is a topic tree plus separate meeting timeline nodes, not pure topic trees. Not adopted yet. Main unresolved question: can this hybrid improve retrieve precision while preserving meeting flow and temporal context better than current L1 retrieval plus temporal parent chain? |
 
-## Recent L2/L3 Topic-Forest Discussion
+## Recent L2/L3 Topic-Tree Discussion
 
 This is the latest design clarification from the 2026-05-07 discussion and should be read before changing `schema.py`, `summarize.py`, or `recall.py`.
 
 ### Proposed Meaning Of L1/L2/L3
 
 - `L1` remains an immutable, evidence-grounded memory object extracted from one meeting segment. It keeps `meeting_id`, timestamp/date, evidence text, and ideally line/span metadata where available.
-- `L2` in the topic-forest proposal is not a time phase. It is a subtopic or state node inside a topic tree, such as `L2/L3 organization`, `upward retrieve`, `forgetting policy`, or `precision-recall evaluation`.
-- `L3` in the topic-forest proposal is not one singleton project profile. It is the root of one major topic tree, such as `long-term memory architecture`, `retrieval strategy`, `evaluation method`, or `poster/demo planning`.
-- A separate project or forest overview may still exist, but it should not be treated as the only L3 if the topic-forest design is adopted.
+- `L2` in the topic-tree proposal is not a time phase. It is a subtopic or state node inside a topic tree, such as `L2/L3 organization`, `upward retrieve`, `forgetting policy`, or `precision-recall evaluation`.
+- `L3` in the topic-tree proposal is not one singleton project profile. It is the root of one major topic tree, such as `long-term memory architecture`, `retrieval strategy`, `evaluation method`, or `poster/demo planning`.
+- A separate project/topic overview may still exist, but it should not be treated as the only L3 if the topic-tree design is adopted.
 
 Example shape:
 
@@ -93,11 +102,11 @@ The safer design is two coordinated views:
 ```text
 Meeting timeline view:
   Meeting 0507
-    direction/summary: this meeting shifted from time-based L2/L3 toward topic-forest L2/L3, while raising concern about losing meeting-level context.
+    direction/summary: this meeting shifted from time-based L2/L3 toward topic-tree L2/L3, while raising concern about losing meeting-level context.
     ordered_object_ids: [obj1, obj2, obj3, obj4]
     topic_ids: [long_term_memory_architecture, retrieval_strategy, meeting_context]
 
-Topic forest view:
+Topic tree view:
   L3 long_term_memory_architecture
     L2 topic_tree_design
       obj1, obj2
@@ -169,14 +178,14 @@ What to check before reviving this fork:
 - Keep `tree.json` as canonical unless there is a separate storage migration plan with tests and rollback.
 - If incremental mode is used for evaluation, compare output quality against multi-agent on the same transcript set and report both accepted L1 objects and rejected/low-confidence candidates.
 
-### `019dfc8f` - Topic-Forest Open Branch
+### `019dfc8f` - Topic-Tree Open Branch
 
 Use this thread as the active design fork to evaluate next.
 
 Proposal:
 
 - Current retrieve starts from an L1 match and brings in the L2/L3 parent from the same temporal phase/project profile.
-- The topic-forest idea would add or replace that upward path with topic-oriented thread trees: one meeting's objects can be distributed across multiple topic threads, and future objects append as new timestamped events under the same topic.
+- The topic-tree idea would add or replace that upward path with topic-oriented thread trees: one meeting's objects can be distributed across multiple topic threads, and future objects append as new timestamped events under the same topic.
 - In this proposal, L2 is a subtopic/state node and L3 is a major topic root. There can be many L3 topic roots, not only one singleton project profile.
 - Old L1 objects should remain append-only and evidence-grounded. The dynamic part should be the topic thread's `current_state`, `timeline_digest`, or topic-level summary, not the original L1 evidence object.
 - Meeting-level context must stay available through a separate meeting timeline/node view that records the meeting's direction, ordered object IDs, and touched topic IDs.
@@ -207,11 +216,11 @@ Evaluation question:
 
 - `codex.md` is the canonical cross-device handoff; raw Codex JSONL is private backup only.
 - Keep `tree.json` as the canonical long-term store. SQLite remains working state for incremental extraction, not the long-term source of truth.
-- Keep temporal L2/L3 as canonical until the topic-forest branch is evaluated and explicitly promoted.
+- Keep temporal L2/L3 as canonical until the topic-tree branch is evaluated and explicitly promoted.
 - Retrieve should start from L1 because L1 has concrete evidence; L2/L3 are brought in through parent-chain expansion to provide phase/project context.
 - Preserve meeting flow by keeping temporal containment or explicit meeting timeline nodes available even if topic-oriented views are later added.
-- If topic-forest L2/L3 is adopted, use many L3 topic roots and L2 subtopic/state nodes; keep any global project/forest overview separate from those roots.
-- A topic-forest implementation must not make old L1 objects mutable. Append new timestamped L1 events and update only topic-level state/digests.
+- If topic-tree L2/L3 is adopted, use many L3 topic roots and L2 subtopic/state nodes; keep any global project/topic overview separate from those roots.
+- A topic-tree implementation must not make old L1 objects mutable. Append new timestamped L1 events and update only topic-level state/digests.
 - Keep L1 object schema clean and put quality/relation/activity metadata in sidecars. Sidecars may influence summarize/recall conservatively but should not become hidden canonical truth.
 - Treat `argument` as an independent L1 object for now because it helps answer "why did we decide this?" without bloating `decision` / `method_change` content.
 - Use compact L2/L3 prompt context. Avoid reintroducing large flattened method timelines unless a benchmark shows recall quality needs them.
@@ -237,12 +246,14 @@ How to update:
 - Add or adjust `Focused Thread Details` only when the selected thread interpretation changes.
 - Add a dated entry under `Handoff Log` at the end of each meaningful work session.
 - Keep secrets out: never write `.env` values, API keys, real credential paths, service-account JSON, or raw Codex JSONL into this file.
+- Keep repo canonical state separate from local device/worktree artifacts; local untracked files can be noted, but they are not canonical unless promoted through docs or commit.
+- Stale run artifacts can inform debugging, but they must not override current repo code, current tests, or `Design Decisions`.
 - If current repo code disagrees with a previous note in this file, inspect the code and update the note instead of carrying both as equal truth.
 - If the change is exploratory and no canonical state changed, leave `codex.md` untouched and just report findings.
 
-## Topic-Forest Evaluation Checklist
+## Topic-Tree Evaluation Checklist
 
-Before implementing the topic-forest branch as canonical schema, write down the comparison result for these questions:
+Before implementing the topic-tree branch as canonical schema, write down the comparison result for these questions:
 
 - Retrieval precision: for topic-evolution questions, does topic-thread expansion return less irrelevant context than temporal L2/L3 parent-chain expansion?
 - Meeting continuity: can the system still answer "what happened in this meeting?" after one meeting's L1 objects are distributed across multiple topics?
@@ -252,7 +263,7 @@ Before implementing the topic-forest branch as canonical schema, write down the 
 - Coordinate separation: does each L1 object keep both meeting coordinates and topic coordinates?
 - Sidecar boundary: does topic state complement `memory_relations_index.json` / `memory_activity_index.json`, or does it duplicate them?
 - Prompt budget: can retrieval include only the latest topic state and a short relevant timeline instead of the full append-only history?
-- Migration cost: what code must change in summarize, recall, snapshots, tests, and docs if topic forest replaces temporal L2/L3?
+- Migration cost: what code must change in summarize, recall, snapshots, tests, and docs if topic tree replaces temporal L2/L3?
 - Promotion rule: start as a sidecar/view; promote to canonical only if it improves retrieve quality without losing temporal flow.
 
 ## Next Prompt
@@ -264,7 +275,7 @@ Use this prompt when starting the next Codex chat on this project:
 
 你的任務是接續 long_term 的目前主線：先確認 Merged Task Board 裡 active 的最高優先項，再讀相關 long_term 程式與測試。若發現舊討論和目前程式碼不一致，以目前 repo 和 codex.md 的 Design Decisions 為準。
 
-如果這次工作改變了 canonical 狀態，請直接更新 codex.md：更新 Merged Task Board、Design Decisions、Focused Thread Details 或 Topic-Forest Evaluation Checklist 中相關段落，並在 Handoff Log 追加本次完成、未完成、下一步、任何被 supersede 的舊分支。若只是探索且沒有改變 canonical 狀態，請不要修改 codex.md，只在回覆中說明原因。
+如果這次工作改變了 canonical 狀態，請直接更新 codex.md：更新 Merged Task Board、Design Decisions、Focused Thread Details 或 Topic-Tree Evaluation Checklist 中相關段落，並在 Handoff Log 追加本次完成、未完成、下一步、任何被 supersede 的舊分支。若只是探索且沒有改變 canonical 狀態，請不要修改 codex.md，只在回覆中說明原因。
 ```
 
 ## History Handling
@@ -295,16 +306,25 @@ Cross-device restore rule:
 ### 2026-05-07 - Focus Long-Term Codex Forks
 
 - Added this canonical `codex.md` plan for focusing the selected long-term parallel/forked Codex chats.
-- Expanded the selected thread details so future Codex chats can recover the reasoning behind the current mainline, the incremental baseline, and the topic-forest open branch.
+- Expanded the selected thread details so future Codex chats can recover the reasoning behind the current mainline, the incremental baseline, and the topic-tree open branch.
 - Added dynamic update rules so future Codex chats can maintain this file directly instead of only producing handoff text.
-- Current canonical direction: multi-agent L1 stays primary; temporal compact L2/L3 stays canonical; topic-forest L2/L3 remains an open branch requiring retrieve/context comparison.
-- Next first step: evaluate the topic-forest proposal against current semantic L1 retrieval plus temporal parent-chain expansion before changing schema.
+- Current canonical direction: multi-agent L1 stays primary; temporal compact L2/L3 stays canonical; topic-tree L2/L3 remains an open branch requiring retrieve/context comparison.
+- Next first step: evaluate the topic-tree proposal against current semantic L1 retrieval plus temporal parent-chain expansion before changing schema.
 - Superseded: four-room role split and any fork instruction that treats SQL or topic trees as already adopted canonical storage.
 
-### 2026-05-07 - Clarify Topic-Forest L2/L3 Proposal
+### 2026-05-07 - Clarify Topic-Tree L2/L3 Proposal
 
 - Clarified that the proposed new L2/L3 shape is many topic trees: L3 topic roots, L2 subtopic/state nodes, and immutable timestamped L1 evidence objects.
 - Clarified why upward retrieval matters: L1 gives evidence, while L2/L3 provide the same-topic explanatory frame, current state, and evolution context.
 - Decided that pure topic trees are not enough because they can lose "what was this meeting mainly doing?" context.
-- Updated the open branch toward a hybrid design: topic forest for cross-meeting topic evolution, plus meeting timeline/node view for per-meeting direction and ordered flow.
-- Current canonical direction remains unchanged for code: temporal compact L2/L3 stays canonical until the hybrid topic-forest design is evaluated and explicitly promoted.
+- Updated the open branch toward a hybrid design: topic tree for cross-meeting topic evolution, plus meeting timeline/node view for per-meeting direction and ordered flow.
+- Current canonical direction remains unchanged for code: temporal compact L2/L3 stays canonical until the hybrid topic-tree design is evaluated and explicitly promoted.
+
+### 2026-05-07 - Separate Canonical And Windows Local State
+
+- Updated terminology across the handoff to use topic-tree consistently for the open branch.
+- Split repo canonical state from this Windows device's local worktree state. Current untracked local artifacts are `04_08_bridge_test_results.json`, `test_bridge.py`, and `long_term/grace output/`.
+- Marked the partial `long_term/grace output/...0307_multi_agent` run as stale where it reports `argument` and `open_question` as deferred; current repo code and targeted tests include both types in the bounded type-agent loop.
+- Targeted checks from this inspection passed: `tests.test_l2_l3_redesign`, `tests.test_l1_quality`, `tests.test_memory_interaction`, and `tests.test_multi_agent_pipeline`.
+- Recorded Windows full unittest `WinError 32` temp SQLite cleanup locks as a separate P2 test hygiene follow-up, not a blocker for the P0 topic-tree comparison.
+- Next step remains unchanged: write the topic-tree versus temporal parent-chain comparison before changing schema.
