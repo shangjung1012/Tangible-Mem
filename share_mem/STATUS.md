@@ -47,14 +47,18 @@ These interfaces are intended to stay structurally stable:
 
 Partner guidance:
 
-- New `long_term` L2/L3 work should use `share_mem/tree.json` or
-  `share_mem.store.load_share_tree()` as the L1 source.
+- New `long_term` L2/L3 work should use `share_mem/tree.json`,
+  `share_mem/meetings/`, or `share_mem.store.load_share_tree()` as the L1
+  source.
 - Retrieval should remain bottom-up: find relevant L1 first, then pull L2/L3
   or topic-tree context as sidecar context.
 - `short_term` integration can start by using `load_recent_meetings(limit=3)`
   or equivalent reads from `share_mem/tree.json`.
 - Do not mutate old L1 objects to represent updates. Add new L1 evidence and
   use sidecars/views to express evolution.
+- The old temporal `long_term/tree.json`, snapshots, build-tree, bridge, and
+  summarize pipeline are archived under
+  `long_term/archive/legacy_temporal_l2_l3/`.
 
 ## Still Under Ultimate Quality Loop
 

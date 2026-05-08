@@ -7,7 +7,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LONG_TERM_DIR = REPO_ROOT / "long_term"
+LEGACY_LONG_TERM_DIR = LONG_TERM_DIR / "archive" / "legacy_temporal_l2_l3"
 sys.path.insert(0, str(LONG_TERM_DIR))
+sys.path.insert(0, str(LEGACY_LONG_TERM_DIR))
 
 from l1_quality import (  # noqa: E402
     l1_quality_hashes,

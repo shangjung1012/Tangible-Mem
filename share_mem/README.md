@@ -27,8 +27,10 @@ share_mem/build_tree.py
   -> outputs under share_mem/
 ```
 
-`long_term/` keeps compatibility wrappers for the old import paths, but the
-multi-agent L1 source of truth is now under `share_mem/l1/`.
+`long_term/` keeps the active recall surface and reserved L2 view entrypoints.
+The old temporal pipeline and older import paths are archived under
+`long_term/archive/legacy_temporal_l2_l3/`; the multi-agent L1 source of truth
+is now under `share_mem/l1/`.
 
 ## L1 Type v2 Side-by-Side Experiment
 
@@ -130,4 +132,5 @@ Use `share_mem.store` for shared L1 reads:
 - `load_recent_meetings(limit=3)`
 
 Short-term and topic-tree consumers should read through this API instead of
-depending on the older `long_term/tree.json` temporal artifact.
+depending on the archived `long_term/archive/legacy_temporal_l2_l3/tree.json`
+temporal artifact.

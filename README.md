@@ -3,14 +3,16 @@
 ## Share Memory L1 Store
 
 `share_mem/` is the canonical L1 memory store for new work. The multi-agent L1
-implementation now lives under `share_mem/l1/`; `long_term/` keeps legacy
-wrappers and the L2/L3 temporal tools. Rebuild the Grace L1 store with:
+implementation now lives under `share_mem/l1/`; `long_term/` now keeps the
+active recall surface and reserved L2 view entrypoints. Rebuild the Grace L1
+store with:
 
 ```bash
 uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
 ```
 
-`long_term/tree.json` is a legacy temporal artifact for older L2/L3 work; new
+The old temporal `long_term/tree.json`, snapshots, and summarize/build-tree
+pipeline are archived under `long_term/archive/legacy_temporal_l2_l3/`; new
 short-term and long-term views should use `share_mem/tree.json` as their L1
 source.
 
@@ -74,7 +76,7 @@ uv run app/main.py
 ## 子模組說明
 
 - 短期記憶：[`short_term/README.md`](short_term/README.md)
-- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；目前 L1 研究主線是 `share_mem/l1` multi-agent bridge，full / incremental 保留作 baseline
+- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；目前 active surface 是 recall / L2 view，舊 full / incremental pipeline 已移到 `long_term/archive/legacy_temporal_l2_l3/`
 - 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
 
 ## Meeting Recording（摘要）

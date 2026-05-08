@@ -1,4 +1,4 @@
-"""Unified CLI entrypoint for long-term memory workflows."""
+"""Active CLI entrypoint for long-term L2 and recall workflows."""
 
 from __future__ import annotations
 
@@ -14,36 +14,35 @@ class CommandSpec:
 
 
 COMMANDS: dict[str, CommandSpec] = {
-    "bridge": CommandSpec(
-        module_path="bridge",
-        description="從單一逐字稿建立 / 更新 L1 記憶。",
+    "build-l2-view": CommandSpec(
+        module_path="build_l2_view",
+        description="Build the L2 view from canonical share_mem L1 evidence.",
     ),
-    "summarize": CommandSpec(
-        module_path="summarize",
-        description="建立 L2 phase 或更新 L3 profile。",
-    ),
-    "build-tree": CommandSpec(
-        module_path="build_tree",
-        description="批次處理 Bmr 逐字稿，必要時自動補 L2 / L3。",
-    ),
-    "rebuild-snapshots": CommandSpec(
-        module_path="rebuild_snapshots",
-        description="用既有 tree.json 重建 L2 / L3 snapshots。",
-    ),
-    "smoke-todo": CommandSpec(
-        module_path="scripts.smoke_todo_recall",
-        description="快速檢查 todo recall filter 是否正常。",
-    ),
-    "eval-injection": CommandSpec(
-        module_path="scripts.eval_prompt_injection",
-        description="比較 recall prompt injection 的效果。",
+    "validate-l2-view": CommandSpec(
+        module_path="validate_l2_view",
+        description="Validate the generated L2 view and linked L1 evidence.",
     ),
 }
 
-ALIASES = {
-    "build": "build-tree",
-    "rebuild": "rebuild-snapshots",
+LEGACY_COMMANDS = {
+    "bridge",
+    "summarize",
+    "build-tree",
+    "rebuild-snapshots",
+    "smoke-todo",
+    "eval-injection",
 }
+
+ALIASES = {
+    "build-l2": "build-l2-view",
+    "validate-l2": "validate-l2-view",
+}
+
+LEGACY_NOTE = (
+    "Legacy temporal L1/L2/L3 commands were archived under "
+    "long_term/archive/legacy_temporal_l2_l3/. New L2 work should read "
+    "canonical L1 evidence from share_mem/."
+)
 
 
 def _print_help() -> None:
@@ -52,35 +51,24 @@ def _print_help() -> None:
     print("Usage:")
     print("  uv run long_term/cli.py <command> [args...]")
     print()
-    print("Commands:")
+    print("Active commands:")
     for name, spec in COMMANDS.items():
         print(f"  {name:<18} {spec.description}")
     print()
-    print("Examples:")
-    print(
-        "  uv run long_term/cli.py bridge --transcript "
-        "meeting_recording/transcript/grace/0422.txt --mode multi-agent"
-    )
-    print(
-        "  uv run long_term/cli.py bridge --transcript "
-        "ICSI_original_transcripts/transcripts/Bmr001.mrt --mode full"
-    )
-    print(
-        "  uv run long_term/cli.py summarize phase "
-        "--phase-id P-007 --time-start Bmr027 --time-end Bmr030 "
-        "--meetings Bmr027 Bmr028 Bmr029 Bmr030"
-    )
-    print("  uv run long_term/cli.py build-tree --resume --phase-size 4")
-    print("  uv run long_term/cli.py rebuild-snapshots --dry-run")
-    print("  uv run long_term/cli.py smoke-todo")
+    print("Archived legacy commands:")
+    print("  bridge, summarize, build-tree, rebuild-snapshots, smoke-todo, eval-injection")
     print()
-    print("Tips:")
-    print("  uv run long_term/cli.py help <command>   # pass through to that command's --help")
-    print("  build / rebuild are available as shorter aliases")
+    print(LEGACY_NOTE)
 
 
 def _resolve_command(name: str) -> str:
     return ALIASES.get(name, name)
+
+
+def _legacy_exit(command: str) -> None:
+    print(f"Archived legacy command: {command}", file=sys.stderr)
+    print(LEGACY_NOTE, file=sys.stderr)
+    raise SystemExit(2)
 
 
 def _dispatch(command: str, argv: list[str]) -> None:
@@ -109,6 +97,8 @@ def main(argv: list[str] | None = None) -> None:
             _print_help()
             return
         command = _resolve_command(args[1])
+        if command in LEGACY_COMMANDS:
+            _legacy_exit(command)
         if command not in COMMANDS:
             print(f"Unknown command: {args[1]}", file=sys.stderr)
             raise SystemExit(2)
@@ -116,6 +106,8 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     command = _resolve_command(args[0])
+    if command in LEGACY_COMMANDS:
+        _legacy_exit(command)
     if command not in COMMANDS:
         print(f"Unknown command: {args[0]}", file=sys.stderr)
         print(file=sys.stderr)

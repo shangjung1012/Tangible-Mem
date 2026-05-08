@@ -1658,16 +1658,15 @@ def run_multi_agent_l1_pipeline(
             "l2_l3_wiring.json",
             {
                 "phase_summarizer": {
-                    "status": "compatible_with_existing_summarize_phase",
-                    "command": (
-                        "uv run long_term/cli.py summarize phase --phase-id <phase> "
-                        "--time-start <start> --time-end <end> --meetings "
-                        f"{meeting_id}"
-                    ),
+                    "status": "legacy_temporal_summarize_archived",
+                    "archive_path": "long_term/archive/legacy_temporal_l2_l3/summarize.py",
+                    "next_active_path": "uv run long_term/cli.py build-l2-view",
+                    "meeting_id": meeting_id,
                 },
                 "profile_updater": {
-                    "status": "compatible_with_existing_summarize_profile",
-                    "command": "uv run long_term/cli.py summarize profile",
+                    "status": "legacy_temporal_profile_archived",
+                    "archive_path": "long_term/archive/legacy_temporal_l2_l3/summarize.py",
+                    "next_active_path": "uv run long_term/cli.py build-l2-view",
                 },
             },
         )
