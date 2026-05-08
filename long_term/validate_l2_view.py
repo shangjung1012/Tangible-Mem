@@ -25,6 +25,58 @@ from build_l2_view import (
 )
 from share_mem.store import build_l1_index, load_share_tree
 
+EXPECTED_L2_ASSIGNMENTS = {
+    "L1-0307-005": "memory update semantics",
+    "L1-0307-006": "memory update semantics",
+    "L1-0307-012": "research methodology",
+    "L1-0307-047": "data fragmentation",
+    "L1-0318-002": "memory evaluation strategy",
+    "L1-0318-003": "agentic pipeline control",
+    "L1-0325-002": "memory evidence anchoring",
+    "L1-0325-003": "memory evidence anchoring",
+    "L1-0325-004": "memory evidence anchoring",
+    "L1-0325-018": "memory evidence anchoring",
+    "L1-0325-019": "memory evidence anchoring",
+    "L1-0325-061": "memory retrieval",
+    "L1-0408-004": "dataset selection",
+    "L1-0408-017": "memory system implementation",
+    "L1-0408-030": "memory retrieval",
+    "L1-0408-036": "stm ltm integration",
+    "L1-0408-041": "memory retrieval",
+    "L1-0408-043": "memory retrieval",
+    "L1-0408-052": "transcript segmentation and idea-unit coverage",
+    "L1-0408-054": "memory processing architecture",
+    "L1-0408-057": "stm ltm integration",
+    "L1-0422-015": "transcript segmentation and idea-unit coverage",
+    "L1-0422-046": "stm ltm integration",
+    "L1-0422-053": "memory lifecycle",
+    "L1-0429-004": "dataset selection",
+    "L1-0429-025": "transcript segmentation and idea-unit coverage",
+    "L1-0429-032": "l2 topic grouping",
+    "L1-0429-033": "transcript segmentation and idea-unit coverage",
+    "L1-0429-037": "transcript segmentation and idea-unit coverage",
+    "L1-0429-057": "memory evaluation strategy",
+    "L1-0429-058": "memory evaluation strategy",
+    "L1-0429-059": "dataset selection",
+    "L1-0429-101": "transcript segmentation and idea-unit coverage",
+    "L1-0429-107": "pipeline observability and validation",
+    "L1-0429-127": "agentic pipeline control",
+    "L1-0429-139": "agentic pipeline control",
+    "L1-0429-145": "agentic pipeline control",
+    "L1-0506-013": "prompt design and instruction quality",
+    "L1-0506-006": "prompt design and instruction quality",
+    "L1-0506-009": "transcript segmentation and idea-unit coverage",
+    "L1-0506-024": "pipeline observability and validation",
+    "L1-0506-028": "agentic pipeline control",
+    "L1-0506-029": "l2 topic grouping",
+    "L1-0506-032": "l2 topic grouping",
+    "L1-0506-036": "memory lifecycle",
+    "L1-0506-038": "memory lifecycle",
+    "L1-0506-040": "memory processing architecture",
+    "L1-0506-041": "memory processing architecture",
+    "L1-0506-042": "memory processing architecture",
+}
+
 
 def _write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -217,6 +269,9 @@ def _validate_unlinked(
             importance = float(item.get("importance", 0.0))
         except (TypeError, ValueError):
             importance = 0.0
+        reason = str(item.get("reason", "") or "")
+        if reason == "administrative_or_local_context":
+            continue
         if importance >= 0.7 or item.get("review_required"):
             issues.append(
                 _issue(
@@ -226,7 +281,7 @@ def _validate_unlinked(
                     obj_id=str(item.get("obj_id", "") or ""),
                     meeting_id=str(item.get("meeting_id", "") or ""),
                     importance=importance,
-                    reason=str(item.get("reason", "") or ""),
+                    reason=reason,
                 )
             )
 
@@ -245,6 +300,27 @@ def _validate_unlinked(
                 obj_id=obj_id,
             )
         )
+    return issues
+
+
+def _validate_expected_assignments(l2_index: dict[str, Any], l1_index: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    for obj_id, expected_label in EXPECTED_L2_ASSIGNMENTS.items():
+        if obj_id not in l1_index:
+            continue
+        entry = l2_index.get(obj_id)
+        actual_label = str(entry.get("l2_label", "") or "") if isinstance(entry, dict) else ""
+        if actual_label != expected_label:
+            issues.append(
+                _issue(
+                    "expected_l2_assignment_mismatch",
+                    "severe",
+                    "Known L2 topic quality regression does not match the expected assignment.",
+                    obj_id=obj_id,
+                    expected_l2_label=expected_label,
+                    actual_l2_label=actual_label or "<unlinked>",
+                )
+            )
     return issues
 
 
@@ -295,11 +371,17 @@ def validate_l2_view_outputs(
             l2_index,
             l1_index,
         ),
+        *_validate_expected_assignments(l2_index, l1_index),
     ]
     manual_queue = [
         issue
         for issue in issues
-        if issue["code"] in {"high_importance_unlinked", "large_l2_topic", "generic_l2_label"}
+        if issue["code"] in {
+            "expected_l2_assignment_mismatch",
+            "high_importance_unlinked",
+            "large_l2_topic",
+            "generic_l2_label",
+        }
     ]
     severe_count = sum(1 for issue in issues if issue["severity"] == "severe")
     warning_count = sum(1 for issue in issues if issue["severity"] == "warning")

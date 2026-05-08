@@ -1,6 +1,6 @@
 # share_mem Checkpoint Status
 
-Last updated: 2026-05-08
+Last updated: 2026-05-09
 
 This file is the handoff note for collaborators integrating `share_mem` with
 new `long_term` L2/L3 retrieval and `short_term` context loading.
@@ -60,7 +60,7 @@ Partner guidance:
 - Do not mutate old L1 objects to represent updates. Add new L1 evidence and
   use sidecars/views to express evolution.
 - New `long_term` L2 integration can use `long_term/l2/l2_index.json` for
-  `obj_id -> L2 direction` lookup and `long_term/l2/l2_view.json` for compact
+  `obj_id -> L2 topic` lookup and `long_term/l2/l2_view.json` for compact
   upward context.
 - The old temporal `long_term/tree.json`, snapshots, build-tree, bridge, and
   summarize pipeline are archived under
@@ -87,9 +87,10 @@ Current generated state:
 - Topic-tree sidecar: exists, with 54 topics and 545 topic events.
 - Topic validation: 0 severe issues; current warnings are large-topic review
   diagnostics, not schema blockers.
-- Long-term L2 view: exists under `long_term/l2/`, with 17 L2 directions, 428
-  linked L1 objects, 117 intentionally unlinked low-review L1 objects, and 0
-  severe validation issues.
+- Long-term L2 topic view: exists under `long_term/l2/`, with 18 L2 topics, 467
+  linked L1 objects, 78 intentionally unlinked low-review L1 objects, and 0
+  severe validation issues. The only current warning is the explainable large
+  `transcript segmentation and idea-unit coverage` topic.
 
 These files should be treated as generated outputs:
 

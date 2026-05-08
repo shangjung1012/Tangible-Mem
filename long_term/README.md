@@ -24,11 +24,11 @@ uv run long_term/cli.py validate-l2-view --help
 
 The first L2 implementation is deterministic and does not call Gemini. It reads
 clean immutable L1 objects from `share_mem`, links only L1 objects with a durable
-long-term direction, and writes generated L2 artifacts under `long_term/l2/`.
+long-term topic, and writes generated L2 artifacts under `long_term/l2/`.
 
 Generated L2 outputs:
 
-- `long_term/l2/l2_view.json`: materialized L2 directions with compact state,
+- `long_term/l2/l2_view.json`: materialized L2 topics with compact state,
   timeline digest, linked L1 object ids, and meeting ids.
 - `long_term/l2/l2_index.json`: `obj_id -> l2_id / l2_label / assignment`
   lookup for retrieval.
@@ -64,15 +64,15 @@ instead of dispatching the old workflow.
 
 ## Current Direction
 
-The next L2 layer should read clean immutable L1 objects from `share_mem` and
-group only the L1 evidence that deserves long-term abstraction. It does not need
-to link every L1 object. Unlinked low-value or isolated L1 objects should be
-reported for review rather than forced into an L2 node.
+The L2 layer is the active topic layer over clean immutable L1 objects from
+`share_mem`. It groups only the L1 evidence that deserves long-term abstraction.
+It does not need to link every L1 object. Unlinked low-value or isolated L1
+objects should be reported for review rather than forced into an L2 node.
 
 Current generated Grace state:
 
 - Source L1: 7 Grace meetings, 545 L1 objects.
-- L2 view: 17 L2 directions, 428 linked L1 objects, 117 intentionally
-  unlinked low-review L1 objects.
+- L2 view: 18 L2 topics, 467 linked L1 objects, 78 intentionally unlinked
+  low-review L1 objects.
 - Validation: 0 severe issues. Current warnings are large-topic diagnostics for
-  broad long-running directions, not schema blockers.
+  broad long-running topics, not schema blockers.
