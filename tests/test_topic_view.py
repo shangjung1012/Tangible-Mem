@@ -581,6 +581,205 @@ class TopicViewTests(unittest.TestCase):
         self.assertIn("memory evaluation strategy", concepts)
         self.assertNotIn("memory processing architecture", concepts)
 
+    def test_locomo_question_taxonomy_routes_to_memory_evaluation_not_dataset_sourcing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "share_mem"
+            tree = {
+                "tree_version": 1,
+                "last_updated_utc": "2026-05-08T00:00:00Z",
+                "project_profile": {},
+                "phases": [],
+                "meetings": [
+                    {
+                        "meeting_id": "0318",
+                        "timestamp": "2026-03-18T00:00:00Z",
+                        "meeting_date": "2026-03-18",
+                        "source_file": "meeting_recording/transcript/grace/0318.txt",
+                        "phase_id": "",
+                        "memory_objects": [
+                            _obj(
+                                "L1-0318-001",
+                                "argument",
+                                (
+                                    "In the LOCOMO dataset, a multi-hop question is "
+                                    "defined by the number of reasoning sub-problems "
+                                    "rather than conversational turns."
+                                ),
+                                topics=["dataset", "question taxonomy"],
+                            )
+                        ],
+                    }
+                ],
+            }
+
+            build_topic_view_outputs(root=root, tree=tree, mode="hybrid")
+
+            topic_index = load_topic_index(root)
+            self.assertEqual(
+                topic_index["L1-0318-001"]["topic_path"],
+                ["memory", "memory evaluation strategy"],
+            )
+
+    def test_memory_source_anchor_objects_do_not_merge_into_processing_architecture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "share_mem"
+            tree = {
+                "tree_version": 1,
+                "last_updated_utc": "2026-05-08T00:00:00Z",
+                "project_profile": {},
+                "phases": [],
+                "meetings": [
+                    {
+                        "meeting_id": "0325",
+                        "timestamp": "2026-03-25T00:00:00Z",
+                        "meeting_date": "2026-03-25",
+                        "source_file": "meeting_recording/transcript/grace/0325.txt",
+                        "phase_id": "",
+                        "memory_objects": [
+                            _obj(
+                                "L1-0325-001",
+                                "finding",
+                                (
+                                    "Memory objects should link back to specific audio "
+                                    "timestamps in the original recording so the agent can "
+                                    "play the source evidence."
+                                ),
+                                topics=["memory system architecture", "source link"],
+                            )
+                        ],
+                    }
+                ],
+            }
+
+            build_topic_view_outputs(root=root, tree=tree, mode="hybrid")
+
+            topic_index = load_topic_index(root)
+            self.assertEqual(
+                topic_index["L1-0325-001"]["topic_path"],
+                ["memory", "memory evidence anchoring"],
+            )
+
+    def test_protected_data_fragmentation_ignores_unrelated_relation_assignment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "share_mem"
+            tree = {
+                "tree_version": 1,
+                "last_updated_utc": "2026-05-08T00:00:00Z",
+                "project_profile": {},
+                "phases": [],
+                "meetings": [
+                    {
+                        "meeting_id": "0506",
+                        "timestamp": "2026-05-06T00:00:00Z",
+                        "meeting_date": "2026-05-06",
+                        "source_file": "meeting_recording/transcript/grace/0506.txt",
+                        "phase_id": "",
+                        "memory_objects": [
+                            _obj(
+                                "L1-0506-001",
+                                "argument",
+                                (
+                                    "Agent-based long-text processing has semantic "
+                                    "issues in text chunking."
+                                ),
+                                topics=[
+                                    "agent-based long-text processing",
+                                    "semantic issues in text chunking",
+                                ],
+                            ),
+                            _obj(
+                                "L1-0506-002",
+                                "open_issue",
+                                (
+                                    "The batch definition is unclear: it may be a repair "
+                                    "mechanism for broken segments, a grouping of chunks, "
+                                    "or a merger of idea units, creating data fragmentation."
+                                ),
+                                topics=["text chunking", "semantic integrity"],
+                                related_obj_ids=["L1-0506-001"],
+                            ),
+                        ],
+                    }
+                ],
+            }
+
+            build_topic_view_outputs(root=root, tree=tree, mode="hybrid")
+
+            topic_index = load_topic_index(root)
+            self.assertEqual(
+                topic_index["L1-0506-002"]["topic_path"],
+                ["data fragmentation", "data fragmentation"],
+            )
+
+    def test_memory_lifecycle_concept_is_not_absorbed_by_llm_into_processing_architecture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "share_mem"
+            tree = {
+                "tree_version": 1,
+                "last_updated_utc": "2026-05-08T00:00:00Z",
+                "project_profile": {},
+                "phases": [],
+                "meetings": [
+                    {
+                        "meeting_id": "0506",
+                        "timestamp": "2026-05-06T00:00:00Z",
+                        "meeting_date": "2026-05-06",
+                        "source_file": "meeting_recording/transcript/grace/0506.txt",
+                        "phase_id": "",
+                        "memory_objects": [
+                            _obj(
+                                "L1-0506-001",
+                                "decision",
+                                (
+                                    "The memory hierarchy uses L1, L2, and L3 parent "
+                                    "objects during retrieval."
+                                ),
+                                topics=["memory system architecture"],
+                            ),
+                            _obj(
+                                "L1-0506-002",
+                                "open_issue",
+                                (
+                                    "There is uncertainty about how the importance score "
+                                    "is used and what discard as L1 means."
+                                ),
+                                topics=["importance score", "memory management"],
+                            ),
+                        ],
+                    }
+                ],
+            }
+
+            def bad_assigner(**kwargs):
+                obj = kwargs["obj"]
+                candidates = kwargs["candidates"]
+                if obj["obj_id"] == "L1-0506-002":
+                    processing = next(
+                        candidate
+                        for candidate in candidates
+                        if candidate["topic_label"] == "memory processing architecture"
+                    )
+                    return {
+                        "action": "assign_existing",
+                        "topic_id": processing["topic_id"],
+                        "state_summary": "incorrectly merged",
+                        "rationale": "bad merge",
+                    }
+                return None
+
+            build_topic_view_outputs(
+                root=root,
+                tree=tree,
+                mode="hybrid",
+                llm_assigner=bad_assigner,
+            )
+
+            topic_index = load_topic_index(root)
+            self.assertEqual(
+                topic_index["L1-0506-002"]["topic_path"],
+                ["memory", "memory lifecycle"],
+            )
+
     def test_related_obj_ids_assign_generic_update_to_prior_topic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "share_mem"

@@ -88,6 +88,9 @@ OVER_BROAD_TOPIC_LABELS = {
 }
 PROTECTED_TOPIC_LABELS = {
     "data fragmentation",
+    "memory evidence anchoring",
+    "memory evaluation strategy",
+    "memory lifecycle",
     "memory processing architecture",
 }
 TOPIC_ALIAS_MAP = {
@@ -341,6 +344,22 @@ def _concept_keys_for_obj(obj: dict[str, Any]) -> set[str]:
         concepts.add("data fragmentation")
     if _has_any(text, ("segment repair", "repair mechanism", "crosses chunks", "cross chunk")):
         concepts.add("data fragmentation")
+    if _has_any(
+        text,
+        (
+            "source link",
+            "source links",
+            "source evidence",
+            "audio timestamp",
+            "audio timestamps",
+            "original recording",
+            "original source",
+            "source material",
+            "source data",
+            "mrt file",
+        ),
+    ):
+        concepts.add("memory evidence anchoring")
     if (
         "memory" in text
         and _has_any(
@@ -404,6 +423,10 @@ def _root_label_for_obj(obj: dict[str, Any]) -> str:
     concepts = _concept_keys_for_obj(obj)
     if "data fragmentation" in concepts:
         return "data fragmentation"
+    if "memory evidence anchoring" in concepts:
+        return "memory"
+    if "memory evaluation strategy" in concepts:
+        return "memory"
     if "memory processing architecture" in concepts:
         return "memory"
     if (
@@ -427,8 +450,9 @@ def _root_label_for_obj(obj: dict[str, Any]) -> str:
 def _topic_label_for_obj(obj: dict[str, Any], root_label: str) -> str:
     concepts = _concept_keys_for_obj(obj)
     for preferred in (
-        "memory processing architecture",
         "data fragmentation",
+        "memory evidence anchoring",
+        "memory processing architecture",
         "topic-tree",
         "memory evaluation strategy",
         "memory lifecycle",
@@ -610,20 +634,6 @@ def _deterministic_assignment(
                 if obj_id in set(existing_child.get("object_ids", []))
             ],
         }
-    candidate = _candidate_existing_topic(topic_tree, obj, relation_index=relation_index)
-    if candidate is not None and set(related_obj_ids) & set(candidate[1].get("object_ids", [])):
-        root, child, _score = candidate
-        return {
-            "action": "assign_existing",
-            "root_topic_id": str(root["topic_id"]),
-            "root_label": str(root["label"]),
-            "topic_id": str(child["topic_id"]),
-            "topic_label": str(child["label"]),
-            "previous_state": str(child.get("current_state", "") or ""),
-            "keywords": [str(keyword) for keyword in child.get("keywords", [])],
-            "assignment_method": "deterministic",
-            "linked_prior_obj_ids": sorted(set(related_obj_ids) & set(child.get("object_ids", []))),
-        }
     if normalize_topic_label(topic_label) in PROTECTED_TOPIC_LABELS:
         if existing_root is not None:
             return _new_topic_assignment(
@@ -644,6 +654,20 @@ def _deterministic_assignment(
             topics=_topics(obj),
             related_obj_ids=related_obj_ids,
         )
+    candidate = _candidate_existing_topic(topic_tree, obj, relation_index=relation_index)
+    if candidate is not None and set(related_obj_ids) & set(candidate[1].get("object_ids", [])):
+        root, child, _score = candidate
+        return {
+            "action": "assign_existing",
+            "root_topic_id": str(root["topic_id"]),
+            "root_label": str(root["label"]),
+            "topic_id": str(child["topic_id"]),
+            "topic_label": str(child["label"]),
+            "previous_state": str(child.get("current_state", "") or ""),
+            "keywords": [str(keyword) for keyword in child.get("keywords", [])],
+            "assignment_method": "deterministic",
+            "linked_prior_obj_ids": sorted(set(related_obj_ids) & set(child.get("object_ids", []))),
+        }
     if existing_root is not None:
         return {
             "action": "new_l2",

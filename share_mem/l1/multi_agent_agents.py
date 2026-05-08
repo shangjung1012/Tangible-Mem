@@ -787,6 +787,9 @@ Only output durable long-term memory:
 - preserve requirement/scope clarifications when they resolve or constrain system behavior
   (for example whether a demo must be real-time); use finding/decision for resolved
   clarifications and open_issue only when the requirement still remains unresolved
+- preserve unresolved implementation questions about memory-object filtering,
+  discard as L1, or how the importance score is used; use open_issue when the
+  supplied scope does not resolve the question
 - for argument, preserve only reasoning that explains a meaningful tradeoff or choice
 - for open_question, preserve only questions that remain unresolved after the supplied scope
 - for proposal, preserve only suggested options or hypotheses that are not yet adopted

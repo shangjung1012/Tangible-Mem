@@ -77,6 +77,9 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "memory_retention_decay",
         (
             "retention",
+            "activation",
+            "static importance",
+            "dynamic activation",
             "recency",
             "decay",
             "delete",
@@ -124,6 +127,35 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "低 token",
             "延遲",
             "多跳",
+        ),
+    ),
+    (
+        "llm_as_judge_evaluation",
+        (
+            "llm-as-judge",
+            "llm as judge",
+            "llm judge",
+            "judge",
+            "binary correct/incorrect",
+            "correct/incorrect",
+            "correct or incorrect",
+            "semantic similarity",
+            "factually incorrect",
+            "對或錯",
+            "評審",
+        ),
+    ),
+    (
+        "precision_recall_chunking_evaluation",
+        (
+            "precision",
+            "recall",
+            "precision/recall",
+            "human-annotated",
+            "human annotated",
+            "important idea units",
+            "ground truth",
+            "chunking evaluation",
         ),
     ),
     (
@@ -364,6 +396,8 @@ SPECIFIC_SEMANTIC_ANCHORS = {
     "memory_retention_decay",
     "dataset_sourcing",
     "memo_rag_evaluation",
+    "llm_as_judge_evaluation",
+    "precision_recall_chunking_evaluation",
     "forgetting_mechanism",
     "adaptive_segmentation_tradeoff",
     "dynamic_chunking_evaluation",
@@ -387,6 +421,7 @@ SPECIFIC_SEMANTIC_ANCHORS = {
 EVIDENCE_DOMINANT_SEMANTIC_ANCHORS = {
     "memory_retention_decay",
     "memo_rag_evaluation",
+    "precision_recall_chunking_evaluation",
     "forgetting_mechanism",
 }
 
@@ -698,6 +733,13 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                 score.get("translation_evidence_anchor_overlap", 0.0) >= 1.0
                 and score.get("semantic_anchor_similarity", 0.0) >= 0.30
                 and score.get("evidence_similarity", 0.0) >= 0.28
+                and score.get("semantic_score", 0.0) >= 0.45
+            )
+            or (
+                score.get("evidence_dominant_anchor_overlap", 0.0) >= 1.0
+                and score.get("semantic_anchor_similarity", 0.0) >= 0.30
+                and score.get("evidence_similarity", 0.0) >= 0.28
+                and score.get("topic_similarity", 0.0) >= 0.10
                 and score.get("semantic_score", 0.0) >= 0.45
             )
         )

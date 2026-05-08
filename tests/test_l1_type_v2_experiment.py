@@ -132,6 +132,38 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertEqual(candidates[0].type, "finding")
         self.assertEqual(candidates[0].legacy_type, "result")
 
+    def test_v2_type_agent_prompt_preserves_l1_discard_and_importance_usage_questions(self) -> None:
+        runner = _PromptCaptureRunner()
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=120,
+                line_end=124,
+                text=(
+                    "What does discard as L1 mean? I thought every processed unit becomes an L1. "
+                    "We still need to inspect how the code uses the importance score."
+                ),
+                completeness="complete",
+            )
+        ]
+
+        l1_type_agent(
+            runner,
+            obj_type="open_issue",
+            idea_units=units,
+            existing_topics=[],
+            extraction_scope="B-001",
+            segment_ids=["S-1"],
+            taxonomy="v2-memory-roles",
+            include_legacy_type=True,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("discard as L1", prompt)
+        self.assertIn("importance score is used", prompt)
+        self.assertIn("open_issue", prompt)
+
     def test_reduce_v2_patch_preserves_type_and_legacy_type(self) -> None:
         _, memory_objects, quality_index = reduce_l1_patch(
             [
@@ -883,6 +915,241 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
             report["matches"][0]["candidate_obj_id"],
             "new-taxonomy-consolidation",
         )
+
+    def test_compare_l1_runs_matches_llm_as_judge_metric_consolidation(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0318",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-llm-judge",
+                            "type": "method_change",
+                            "content": (
+                                "A new evaluation method uses an LLM as a judge to "
+                                "produce a binary correct/incorrect score, avoiding "
+                                "semantic similarity metrics that can rate factually "
+                                "wrong answers highly."
+                            ),
+                            "importance": 0.78,
+                            "evidence": (
+                                "The performance metric gives the answer to an LLM judge; "
+                                "BERT-style semantic similarity can score Alice is seven "
+                                "and Alice is three as similar even though the answer is wrong."
+                            ),
+                            "related_topics": ["evaluation strategy", "model evaluation"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0318",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-llm-judge",
+                            "type": "finding",
+                            "legacy_type": "result",
+                            "content": (
+                                "The LOCOMO benchmark uses an LLM-as-judge binary "
+                                "correct/incorrect evaluation averaged over ten runs to "
+                                "avoid weaknesses of semantic similarity scores."
+                            ),
+                            "importance": 0.67,
+                            "evidence": (
+                                "It uses an LLM judge to mark answers correct or incorrect; "
+                                "semantic scoring can be high for factually incorrect answers."
+                            ),
+                            "related_topics": ["LOCOMO benchmark", "evaluation metrics", "LLM-as-judge"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-llm-judge")
+
+    def test_compare_l1_runs_matches_precision_recall_chunking_evaluation(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-precision-recall",
+                            "type": "method_change",
+                            "content": (
+                                "The chunking evaluation framework will use precision "
+                                "and recall against human-annotated important idea units "
+                                "as ground truth."
+                            ),
+                            "importance": 0.72,
+                            "evidence": (
+                                "Evaluate generated important idea units with precision "
+                                "and recall compared with human-labeled important idea units."
+                            ),
+                            "related_topics": ["evaluation strategy", "benchmarking"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-precision-recall",
+                            "type": "finding",
+                            "legacy_type": "result",
+                            "content": (
+                                "Generated chunks from different methods will be evaluated "
+                                "using precision and recall against a ground truth of "
+                                "human-annotated important idea units."
+                            ),
+                            "importance": 0.62,
+                            "evidence": (
+                                "The method compares important idea units with precision "
+                                "and recall using human annotations as ground truth."
+                            ),
+                            "related_topics": ["evaluation methodology", "evaluation metrics"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-precision-recall")
+
+    def test_compare_l1_runs_matches_importance_activation_parameter_separation(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0506",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-importance-activation",
+                            "type": "method_change",
+                            "content": (
+                                "The memory system separates static importance from "
+                                "dynamic activation. Importance is assigned at creation "
+                                "as intrinsic value, while activation decays over time "
+                                "to represent current accessibility."
+                            ),
+                            "importance": 0.76,
+                            "evidence": (
+                                "Importance should not be modified by decay because it "
+                                "records original value; activation or recency handles "
+                                "time decay."
+                            ),
+                            "related_topics": ["Memory Lifecycle", "Memory Representation"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0506",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-importance-activation",
+                            "type": "approach_change",
+                            "legacy_type": "method_change",
+                            "content": (
+                                "The memory schema defines importance as a static score "
+                                "at creation, relevance as semantic similarity for retrieval, "
+                                "and recency or activation as a dynamic time-decaying score."
+                            ),
+                            "importance": 0.89,
+                            "evidence": (
+                                "Importance is static; recency or activation decays over "
+                                "time so the original importance value remains meaningful."
+                            ),
+                            "related_topics": ["importance score", "memory management"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-importance-activation")
+
+    def test_compare_l1_runs_matches_low_lexical_importance_activation_translation(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0506",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-importance-activation-zh",
+                            "type": "method_change",
+                            "content": (
+                                "Project notes mention a dataset and topic-tree context, "
+                                "then define original significance separately from active access."
+                            ),
+                            "importance": 0.76,
+                            "evidence": (
+                                "The importance score should not be changed by decay; "
+                                "activation or recency score represents how active the memory is now."
+                            ),
+                            "related_topics": [
+                                "Memory Management",
+                                "Memory Representation",
+                                "Memory Lifecycle",
+                                "Dataset",
+                                "topic-tree",
+                            ],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0506",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-importance-activation-en",
+                            "type": "approach_change",
+                            "legacy_type": "method_change",
+                            "content": (
+                                "The memory model's schema defines three distinct metrics: "
+                                "importance as a static score at creation, relevance for "
+                                "retrieval similarity, and recency or activation as a dynamic "
+                                "time-decaying score."
+                            ),
+                            "importance": 0.89,
+                            "evidence": (
+                                "The importance score is intentionally static to serve as "
+                                "a historical record, while decay is handled separately by "
+                                "the recency or activation score."
+                            ),
+                            "related_topics": ["memory management", "importance score"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-importance-activation-en")
 
     def test_semantic_anchors_do_not_treat_memory_as_memo(self) -> None:
         tree = {
