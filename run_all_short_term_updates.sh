@@ -3,19 +3,18 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRANSCRIPT_DIR="${TRANSCRIPT_DIR:-"$ROOT_DIR/meeting_recording/transcript/grace"}"
-# TRANSCRIPT_DIR="${TRANSCRIPT_DIR:-"$ROOT_DIR/meeting_recording/transcript/ISCI"}"
-TRANSCRIPT_DIR="${1:-"$TRANSCRIPT_DIR"}"
+SNAPSHOT_DIR="${SNAPSHOT_DIR:-"$ROOT_DIR/share_mem/snapshots"}"
+SNAPSHOT_DIR="${1:-"$SNAPSHOT_DIR"}"
 START_FROM_RAW="${START_FROM:-}"
 START_FROM_MEETING=""
 
-if [[ ! -d "$TRANSCRIPT_DIR" ]]; then
-  echo "Transcript directory not found: $TRANSCRIPT_DIR" >&2
+if [[ ! -d "$SNAPSHOT_DIR" ]]; then
+  echo "Snapshot directory not found: $SNAPSHOT_DIR" >&2
   exit 1
 fi
 
 if [[ -n "$START_FROM_RAW" ]]; then
-  START_FROM_MEETING="${START_FROM_RAW%.txt}"
+  START_FROM_MEETING="${START_FROM_RAW%.json}"
 fi
 
 meeting_is_before_start() {
@@ -34,46 +33,47 @@ meeting_is_before_start() {
   [[ "$meeting_id" < "$start_id" ]]
 }
 
-transcripts=()
-while IFS= read -r transcript; do
-  transcripts+=("$transcript")
+snapshots=()
+while IFS= read -r snapshot; do
+  snapshots+=("$snapshot")
 done < <(
-  find "$TRANSCRIPT_DIR" -maxdepth 1 -type f -name '*.txt' | sort -V
+  find "$SNAPSHOT_DIR" -maxdepth 1 -type f -name '*_bridge_*.json' | sort -V
 )
 
-if [[ ${#transcripts[@]} -eq 0 ]]; then
-  echo "No .txt transcript files found in: $TRANSCRIPT_DIR" >&2
+if [[ ${#snapshots[@]} -eq 0 ]]; then
+  echo "No bridge snapshot JSON files found in: $SNAPSHOT_DIR" >&2
   exit 1
 fi
 
-selected_transcripts=()
-for transcript in "${transcripts[@]}"; do
-  meeting_file="$(basename "$transcript")"
-  meeting_id="${meeting_file%.txt}"
+selected_snapshots=()
+for snapshot in "${snapshots[@]}"; do
+  snapshot_file="$(basename "$snapshot")"
+  meeting_id="${snapshot_file##*_bridge_}"
+  meeting_id="${meeting_id%.json}"
   if meeting_is_before_start "$meeting_id" "$START_FROM_MEETING"; then
     continue
   fi
-  selected_transcripts+=("$transcript")
+  selected_snapshots+=("$snapshot")
 done
 
-if [[ ${#selected_transcripts[@]} -eq 0 ]]; then
-  echo "No transcript files matched after START_FROM=${START_FROM_MEETING:-<empty>}" >&2
+if [[ ${#selected_snapshots[@]} -eq 0 ]]; then
+  echo "No snapshot files matched after START_FROM=${START_FROM_MEETING:-<empty>}" >&2
   exit 1
 fi
 
-echo "Found ${#selected_transcripts[@]} transcript(s) in $TRANSCRIPT_DIR"
+echo "Found ${#selected_snapshots[@]} snapshot(s) in $SNAPSHOT_DIR"
 if [[ -n "$START_FROM_MEETING" ]]; then
   echo "Starting from ${START_FROM_MEETING}"
 fi
 
-for transcript in "${selected_transcripts[@]}"; do
+for snapshot in "${selected_snapshots[@]}"; do
   echo
-  echo "==> Processing $(basename "$transcript")"
+  echo "==> Processing $(basename "$snapshot")"
   (
     cd "$ROOT_DIR"
-    uv run short_term/update_memory.py --transcript "$transcript"
+    uv run short_term/update_memory.py --snapshot "$snapshot"
   )
 done
 
 echo
-echo "All transcript updates completed."
+echo "All snapshot updates completed."

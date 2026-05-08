@@ -81,6 +81,7 @@ paths=(
   "$SHORT_TERM_DIR/short_term_memory.db"
   "$SHORT_TERM_DIR/short_term_memory.db-wal"
   "$SHORT_TERM_DIR/short_term_memory.db-shm"
+  "$SHORT_TERM_DIR/short_term_memory.json"
   "$SHORT_TERM_DIR/current_memory.json"
 )
 
