@@ -1,0 +1,57 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0378-03-SR-03",
+        "U-S-0378-03-SR-04",
+        "U-S-0378-03-SR-05",
+        "U-S-0401-02-SR-04"
+      ],
+      "content": "一個已識別的關鍵失敗模式是「節點收斂」：當從單一大型文本塊更新多個記憶節點時，會導致它們變得越來越相似和冗餘。LLM 可能會綜合整個文本塊的資訊，並將其不當地應用於不相關的節點（例如，將海報的細節添加到預測節點）。",
+      "importance": 0.9,
+      "confidence": 1.0,
+      "rationale": "該問題被提出、用範例說明，並被明確證實為當前實作中的一個真實可能性。它代表了記憶更新邏輯中的一個重大缺陷。",
+      "related_topics": [
+        "Memory Management",
+        "Memory Representation",
+        "data fragmentation",
+        "failure_mode",
+        "incremental update"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0378-03-SR-06",
+        "U-S-0401-02-SR-02",
+        "U-S-0401-02-SR-03"
+      ],
+      "content": "節點收斂問題的根本原因在於，記憶體更新功能完全依賴 LLM (Gemini) 來解釋一個大的文本段落，並為每個節點生成更新的 `argument`，而沒有任何明確的約束、過濾或範圍界定機制來指導它。",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "討論中指出，更新邏輯完全由模型決定，模型在每次更新操作中處理完整的文本段落，這可能導致資訊洩漏。",
+      "related_topics": [
+        "Memory Management",
+        "LLM",
+        "design decision",
+        "data flow"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0378-03-SR-07",
+        "U-S-0401-02-SR-01"
+      ],
+      "content": "系統在處理單一大型文本段落時，如何防止記憶節點收斂並被無關資訊更新？討論過的潛在解決方案包括縮小輸入窗口大小或將文本預先分割成「想法單元」，儘管後者受到了質疑。",
+      "importance": 0.9,
+      "confidence": 1.0,
+      "rationale": "在識別並確認節點收斂問題後，團隊明確開始討論潛在的解決方案，表明這是需要解決的首要開放問題。",
+      "related_topics": [
+        "Memory Management",
+        "Memory Architecture",
+        "data fragmentation",
+        "design decision",
+        "development strategy"
+      ]
+    }
+  ]
+}

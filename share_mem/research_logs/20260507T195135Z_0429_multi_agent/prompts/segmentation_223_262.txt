@@ -1,0 +1,87 @@
+You are segmentation_agent for a long-term memory extraction pipeline.
+Return JSON only. Split the transcript window into topic-coherent segments.
+Use original line numbers.
+
+Create durable discussion segments, not sentence-level or checklist-like slices.
+Normally return 3-6 segments for an 80-line primary window.
+You may return up to 10 segments only when there are clear
+major topic shifts. Prefer 10-24 primary-window lines per segment.
+Do not split every small subpoint into a segment; downstream idea units will handle
+the smaller claims inside each durable segment.
+
+Meeting: 0429
+Primary window: 223-262
+
+Transcript lines:
+207: [SPEAKER_00]: 呃，它可以。
+208: [SPEAKER_02]: 沒有，譬如說像你要判斷該句是否是一個完整的主題，如果內容延續到下一段就繼續讀下一段再寫。當你已經確定小批更新時，就立即呼叫寫入該批，然後繼續讀下一段。嗯。
+209: [SPEAKER_02]: 不然就是這個任務的流程可能要再更specific。比如說下一段的逐字稿看起來它就沒有照著我們 follow 的做啊，對不對？因為它剛剛 1 到 40 句，它下一段根本不該從 31 開始啊。而且 1 到 40 裡面，其實我不知道裡面的 idea units 有幾個。在那個情況裡面，其實我們也不曉得它的 idea units 到底 40 行裡面是幾個，然後要做什麼事，對嗎？
+210: [SPEAKER_00]: 有沒有辦法知道，就是 print 出來它要做什麼事。因為我覺得，如果老師你現在的想法是，
+211: [SPEAKER_02]: 我想要做的事情是我不想要一件事情從頭到尾沒有任何中間可以 checkpoint 的事情。所以我想像的可能其中第一個簡單的 prompt，我先不要把全部任務做完，我甚至是我的逐字稿，既然我有一個 prompt，我可能先去測試說每一個句、每一個 turn 好了，你可以每個 turn 先給我想，你 predict 它的 line 它可以跳幾行。
+212: [SPEAKER_02]: 然後它就直接印出一個結果，然後我們就可以直接先去看說，我跑了這一個 step 之後，它做的那個預估，它預估的每一個句子跳的 line 是怎麼樣。那我們先去 check 這件事情，然後接下來 prompt，我看一下。
+213: [SPEAKER_00]: 因為我想確認的是，老師現在說的話，是實際在跑的時候要做的，還是只是我們在測試參數的時候要做的。
+214: [SPEAKER_02]: 應該是說，我會預期的是，它產生一些東西之後，它會寫到資料庫裡面去，對吧？
+215: [SPEAKER_00]: 它現在會寫啊。
+216: [SPEAKER_02]: 不是，我不是說它全部做完之後我再存到資料庫裡面去，就是我們之前譬如說像，我想想看喔。
+217: [SPEAKER_00]: 那中途拿到資料庫的目的是為了檢驗說它的 prompt 好不好，還是說檢驗它的 step 好不好嗎？
+218: [SPEAKER_02]: 就是你會知道說中間發生了一些什麼事情。
+219: [SPEAKER_00]: 可是其實從這邊也可以看到中間發生什麼事情啊，因為它確實後面的這個都是它實際跑的參數。所以我們只要照著這個流程跑一次，可以得出任何一個時間現在的 DB 長什麼樣子啊。
+220: [SPEAKER_00]: 我們甚至也可以看到就是說 1 到 50 行我們去看 1 到 50 行是什麼東西，然後它最後會寫入的這個東西就是 note 還是什麼。它不是直接寫進去的，它會有 print 的 log 出來，所以我們可以看到它到底是寫了什麼東西進去。
+221: [SPEAKER_00]: 因為它這個實際執行的 function，它裡面所帶的參數是我們看得到的，所以我們會知道 Gemini 在這一步它到底執行了什麼東西進去。像是我們可以看到，就比如說它一開始就是，我們可以讀完它的流程嘛，它應該讀了第一行到第五十行。
+222: [SPEAKER_00]: 那讀完 50 行之後，它接下來就直接去 update memory。那這 update memory，它就是 update 什麼呢？update 就是它可能這是 initial 的 meeting window，然後它可能就是這個 key point 是什麼啦，然後 meeting id 什麼的。所以我不知道，如果今天中途，老師剛剛那個目的，是為了要檢驗它的效能好不好，還是讓整個出現的流程我們可以更控制一點。
+223: [SPEAKER_02]: 我覺得是我們要可以更控制一點。因為你現在唯一能控制的，就是我那十個步驟它全部都做完了，那我在 output 看它最後你有讓它印的地方，對嗎？我們再回去原本的那個 prompt 看一下任務的流程。
+224: [SPEAKER_02]: 呼叫取得目前記憶總覽。就譬如說取得目前記憶的總覽這件事情，你這樣沒有任何在跟 database，在這邊取得目前記憶體的總覽，指的是什麼意思？
+225: [SPEAKER_00]: 就是它這個 overview 它會回傳就是說現在可能有那些幾個點，
+226: [SPEAKER_02]: 就是它是讀一個 file 嗎，還是什麼？
+227: [SPEAKER_00]: 它會讀目前的 DB 啊，就是會讀這個 short term 本身。然後它會去 DB，就是可能它會把我們目前的 memory 狀態，這個 agent memory 的狀態，會是一個 overview 的情況。就比如說可能會有哪些 action item 啊，然後 action item 的 title 是什麼，它就讀個大概而已。
+228: [SPEAKER_00]: 然後我們看一下，然後它讀完這個記憶總覽之後，因為我們有給它這個函數，這個函數是它會去調的。那調完之後，我們就回傳記憶總覽。
+229: [SPEAKER_02]: 現在這個任務是，現在這一個 file 它是 short-term memory 的嗎，還是是什麼？
+230: [SPEAKER_00]: 是 short-term memory 的。這個 file 是 short-term memory，是指就是從之前累積到現在的 short-term memory。
+231: [SPEAKER_00]: 然後現在你會去 update 到它的話，是說好，今天我一個新的 meeting record transcript 來了。對，然後它流程走一次的話，就是它我們一開始執行的時候，它會先執行這個去讀這個 short-term memory，然後讀到目前大概記憶之後，然後接下來第二個。我們也直接。所以它讀到它目前記憶之後，應該是說。
+232: [SPEAKER_02]: 取得目前記憶的總覽，所以我們就只能說相信它已經有目前記憶的總覽了，對不對？
+233: [SPEAKER_00]: 因為我們只要有在 prompt 裡面去下的話，都可以看到它一開始確實都會先執行這個。所以一開始我們回傳的東西就會先進去了。
+234: [SPEAKER_02]: 嗯，好。
+235: [SPEAKER_00]: 然後第二個就是我們就指定它會再叫這個，那就是這個是。transcript overview。那這個就是我們規定說，如果不加參數的話，就是會回傳行數跟一些預覽之類的。
+236: [SPEAKER_00]: 欸，這個 code 是在哪裡？所以你是在 code 裡面有寫過說，就是它如果沒有給 input 的話嗎？對對對，這個 function 是有寫好的。
+237: [SPEAKER_02]: OK，OK，OK。然後說如果沒有給，取得逐字稿的行數與頭尾，這是整個逐字稿是嗎？就是整個頭尾。
+238: [SPEAKER_00]: 對，就是只有大概的預覽而已。只是讓它，這個目的只是讓它知道行數跟一些預覽。
+239: [SPEAKER_02]: 它實際上，其實我的問題就是說，在這個 function 裡面啊，你不是就已經可以寫在我們的 code 裡面了嗎？
+240: [SPEAKER_02]: 就是 read transcript overview 這件事情，它不是可以直接寫在我們的程式碼裡面了嗎？
+241: [SPEAKER_00]: 對就是我們這個程式，這個函數要提供給它，然後這個函數其實是我們自己先已經寫好函數的行為是什麼。函數給它之後，它會回傳說希望我去調這個函數，那我會把這個函數的結果印出來之後，再返回給 Gemini。所以等於說流程是我們再到第二步，第二步就是。
+242: [SPEAKER_02]: Gemini 就會回傳說它希望我們去，就是它就是要叫這個函數。那這個函數不是就，雖然是 Gemini 要我們叫。所以這邊的逐字稿的函數跟頭尾這個地方，你就是。
+243: [SPEAKER_02]: 應該說這個部分，逐字稿的函數跟頭尾這件事情，我們直接讀，我們有一個 transcription file 過來了，這件事情是不是直接就有那個數、有那個 variable 了？
+244: [SPEAKER_00]: 對，所以這個東西是我們的，就是我們函數。就是它要這個的時候，我們就直接返回給它函數。那我們函數的實際上實作，也是去看那個逐字稿的函數，然後主要是讓 Gemini 知道而已。
+245: [SPEAKER_02]: 嗯嗯嗯，我應該說我看到這個，所以我現在有點試圖在想是說，有一些好像就是我們程式裡面，譬如說你 call read short-term memory 這件事情，你裡面就可以直接 call read transcript overview。然後裡面因為你有 input 一個 file，那它的逐字稿行數那個，就直接 function 裡面其實你去 call、你去跑了 read short-term memory 這件事情，它裡面在執行的過程當中，它就會再去呼叫 read transcript overview。
+246: [SPEAKER_00]: 可是這樣子的話，那個函數就不應該叫 Read Short-term Memory，因為如果 Read Short-term Memory 一定會去讀 Read Transcript Overview 的話，那這個 Read Short-term Memory 應該改名叫做 Read Short-term Memory and Transcript Overview。所以你的第一個步驟應該是 Read Transcript Overview，然後進來之後你要開始說我要 Read Short-term Memory。
+247: [SPEAKER_02]: 然後可能你也會最後如果要 long term 的話，有時候 read long-term memory 這件事情。就是應該是說，我現在會覺得，這部分我會覺得好像一切都 rely on。就當然說，這個我們以前都是寫在程式碼裡面的嘛，對不對？我 load 一個 transcription 之後，我第一個程式碼要做的事情是我要去 read short-term memory，然後我要開始去做一些 update。
+248: [SPEAKER_02]: 然後我去 read short-term memory 之後，我裡面會去 call read transcript lines 這個東西。那我想像是說，那在這個地方的時候，我可能會 call 一個 Gemini，做一個 API call。我會說現在 given 這個 text，我想要你 AI 做的事情是幫我去判斷，這個句子大概接下來你覺得會是幾個句子，你 output 出來給我。
+249: [SPEAKER_00]: 對啊，這個是在後面的部分吧。就是當然你一定可以把 code 全部都寫死說，你 read short-term memory 完之後。
+250: [SPEAKER_02]: 應該說不是寫死，這就是你的任務流程啊。這個流程，它本來你在這個 function calling，
+251: [SPEAKER_00]: 因為這個東西本來就是 function calling 的目的，就是讓一下 prompt，然後讓 Gemini 去執行這個函數。然後剛剛說的那個部分，是在接下來它第三個就會應該去叫 read transcript，然後就是每個 line 要怎麼讀，所以它要讀幾行。
+252: [SPEAKER_02]: 嗯
+253: [SPEAKER_00]: 所以就是 function calling，你知道嗎，用 prompt 來去限制它。
+254: [SPEAKER_02]: 嗯，有什麼樣的原因是不想要直接用我們的 function code？因為這就是一個我們的架構、它的流程嘛。那有什麼樣的原因是我們不想要就直接寫成它是這個架構，然後在需要的時候我們去 call Gemini 來去做這件事，而是要用 Gemini 來去做 function call？
+255: [SPEAKER_00]: 好，比如說好了，因為前兩個一定是固定的，那我們先不管。主要是這個。你看如果是這樣的部分的話，三、四這個行數，三、四的意思是說你要先 read transcript line，然後你讀完之後，你要先判斷說可不可以形成一個主題。那如果今天有，它就是去寫，就直接去 write 了；但如果今天沒有，它應該會繼續往下。如果我們自己去寫的話，如果我們自己用程式去寫的話，也是一樣讓 Gemini 來決定說我們現在讀完了嗎。
+256: [SPEAKER_02]: 對啊對啊，但是你會知道說，你在那個時候你 call 了一個 Gemini，然後它 output 回來、它 return 回來之後，你知道說 OK，那如果你的 Gemini return 是這個東西的話，那我會繼續進行下一個。就是一個是你是在 control 這個 system 要怎麼做事，那 Gemini 只是在幫你完成。
+257: [SPEAKER_00]: 就比如說你在做判斷的時候，我們自己控制的話，那我們應該要怎麼讓我們自己知道現在應該要往下。所以老師的意思就是說，Gemini 會傳個東西嘛。
+258: [SPEAKER_02]: 應該說在沒有 Gemini 的世界裡面，我們也可以做這件事情，對不對？在沒有 Large Language Model 的時候，我們可以做這個 project，對嗎？
+259: [SPEAKER_00]: 那如果你這樣要判斷一個主題是不是完整的，會比較不好判斷。
+260: [SPEAKER_02]: 對，所以我們現在因為有 Large Language Model 這件事情，所以以前其實也可以判斷是什麼主題啊，只是效果比較差，就是用那種比較傳統 NLP 的東西去做某一些相當的分析，word embedding，比較古老的東西。對，那但是現在來說，我們在判斷這些事情在這個步驟的時候，我們讓 AI 來幫我們直接做完。
+261: [SPEAKER_02]: 但是在整個系統的架構裡面。我覺得我們還是要把這個 system 寫好，就是這個流程你其實是可以很簡單，你的 function 直接先寫好，這其實是一樣的事情。對，但是這個任務流程這件事情，就是你丟進去之後，它只能，你這個地方沒有辦法做任何的 control，對不對？你甚至說我在裡面，你每次只要 call 到我這個 function 的時候，我要有個 variable，我要把它加 1。
+262: [SPEAKER_02]: 你都變成說你在這地方、你任務流程都要說，我在 read transcript lines 裡面有一個 variable，你要幫我加 1。因為譬如說我們要去算說，你 call 這個 function 幾次這件事情，你都變成每一件事你都要來這個地方去再叫 Gemini 去做一件事情，對嗎？
+263: [SPEAKER_02]: 我覺得就是我這樣有兩種方式，我覺得兩種是一樣的。那我先說我的理解上，老師是覺得說，我們 Gemini 可以分開 code，沒錯。
+264: [SPEAKER_02]: 就是 Gemini 它做的事情是一個任務，它不是把整個從頭到尾把它丟完這樣。
+265: [SPEAKER_00]: 沒有沒有，現在沒有整個丟完。就是老師你先聽我說，就是有兩個方法。第一個是老師現在覺得，就是在 tool calling 還沒有出現的時候，我們會找的方法是，就是讓這個讀一整行。那讀到這一整行的時候，我們拿到這個回覆嘛，我們拿這個回覆去問另外一個 Gemini，來說這個東西要不要打、要不要叫這個函數，對不對。
+266: [SPEAKER_00]: 那不就是讓 Gemini 返回說我要執行這個函數，那終究不是讓 Gemini 去決定說它到底要不要用嗎？那 Gemini 的 function calling 就是這個意思啊，就是它今天決定要不要用的時候，它就直接回來說它要用這個函數，這是一樣的意思吧。
+267: [SPEAKER_04]: 但它說它要用，它真的會去用。
+268: [SPEAKER_00]: 會啊，因為它這個架構是給定好的，就是它今天要用，它就是會回傳一個這個 function calling，就是是哪一個。
+269: [SPEAKER_04]: 我意思是說，這件事情其實還很吃它對你這個 prompt 的理解有多少。你在說你的問題是什麼？
+270: [SPEAKER_04]: 就是我說你這個 function calling 的過程，它其實很吃它對你這個 prompt 的理解有多少。
+271: [SPEAKER_00]: 嗯，然後呢？
+272: [SPEAKER_04]: 然後所以我覺得剛剛老師提出很多問題都在它解讀這個 prompt，它到底可以做到我們要它這個 prompt 做多少百分之多少的事情。沒有，我是說你剛剛說那一次更新那件事情，就是 Gemini 真的會不會去用這個 function 的問題。對啊，就是它到底有沒有真的接著去做。就是它如果好好回答。
+273: [SPEAKER_00]: 它有沒有接著做，什麼意思。
+274: [SPEAKER_04]: 就它知道下一步要做這個嗎？因為我如果有 code 寫，我們就會說好，如果它今天回傳什麼東西，我們一定就會讓我們程式裡寫好，可能 if else，I don't know，就會讓它繼續接著做這個 function。
+275: [SPEAKER_00]: 所以你的意思是 Gemini 它今天說它要用這個函數，但是它沒有用嗎？
+276: [SPEAKER_04]: 沒有沒有沒有，我的理解是，就是它今天對於這個 prompt，它沒有理解好到它知道好，我這個回傳了這個之後，我就要去 call 這個 function。
+277: [SPEAKER_00]: 沒有，Gemini 這個 function calling 不是這樣。它今天 Gemini 決定要用這個函數，就是會用到。
+278: [SPEAKER_04]: 它今天回傳不是。但它決定要用這個函數，是它基於這個 prompt 的理解，知道它這件事情要做下一個。但它如果對 prompt 的理解沒有那麼好，它是不是就不會知道它要做。

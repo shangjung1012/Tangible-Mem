@@ -1,0 +1,50 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0161-03-SR-01"
+      ],
+      "content": "短期記憶體代理人的處理流程是：首先讀取一個概覽（當前的記憶狀態/摘要），然後分塊讀取轉錄稿，最後將新資訊寫入記憶體。",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This describes the fundamental data processing flow for the short-term memory agent.",
+      "related_topics": [
+        "Short-Term Memory",
+        "data_flow",
+        "Memory Architecture"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0161-03-SR-04",
+        "U-S-0161-03-SR-05",
+        "U-S-0161-03-SR-07"
+      ],
+      "content": "系統採用動態分塊機制，由大型語言模型（Gemini）自主決定讀取轉錄稿的起始和結束行。提示僅提供一個建議範圍（例如40到80行），賦予模型選擇確切區塊大小的靈活性，這可能導致區塊重疊，而非由程式碼嚴格控制參數。",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This design was chosen to leverage the LLM's flexibility in determining semantically meaningful chunks. The alternative of hard-coding the read parameters was rejected to preserve this flexibility, despite observing potential inconsistencies like overlapping reads.",
+      "related_topics": [
+        "data_processing",
+        "LLM",
+        "design_decision",
+        "data_fragmentation"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0161-03-SR-05",
+        "U-S-0161-03-SR-07"
+      ],
+      "content": "在轉錄稿分塊的設計上存在一個權衡：讓大型語言模型（Gemini）控制讀取參數可以提供靈活性，但可能導致行為不一致（如讀取重疊）；而由團隊的程式碼控制參數雖能確保一致性，卻會犧牲模型定義語義區塊的自主性。最終決定傾向於保留模型的靈活性。",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This captures the core conflict between consistency and flexibility in the data ingestion process, explaining the reasoning behind the chosen design to prioritize LLM autonomy.",
+      "related_topics": [
+        "design_decision",
+        "development_strategy",
+        "data_processing"
+      ]
+    }
+  ]
+}

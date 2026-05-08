@@ -73,12 +73,12 @@ def _recency_score(
     delta_days = max(0, (query_date - meeting_dt).days)
     high_imp = importance >= 0.8
 
-    if obj_type in ("decision", "method_change", "argument"):
+    if obj_type in ("decision", "method_change", "approach_change", "argument"):
         return max(0.3, 1.0 - delta_days / 360)
-    if obj_type in ("result", "open_question"):
+    if obj_type in ("result", "finding", "open_question", "open_issue", "proposal"):
         floor = 0.3 if high_imp else 0.0
         return max(floor, 1.0 - delta_days / 180)
-    if obj_type == "todo":
+    if obj_type in ("todo", "action_item"):
         floor = 0.3 if high_imp else 0.0
         return max(floor, 1.0 - delta_days / 30)
 
@@ -176,6 +176,7 @@ def search_l1_semantic(
                     "phase_id": phase_id,
                     "obj_id": obj.get("obj_id", ""),
                     "type": obj_type,
+                    "legacy_type": obj.get("legacy_type", ""),
                     "content": obj.get("content", ""),
                     "importance": importance,
                     "evidence": obj.get("evidence", ""),

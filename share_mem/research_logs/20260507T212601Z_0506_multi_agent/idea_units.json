@@ -1,0 +1,389 @@
+[
+  {
+    "unit_id": "U-S-0001-01-SR-01",
+    "segment_id": "S-0001-01",
+    "line_start": 1,
+    "line_end": 1,
+    "text": "An earlier experiment using an 'adaptive window' for segmentation performed poorly. It increased the number of 'rejected' items and decreased 'verified' ones, indicating lower confidence in the output. The code for this experiment was subsequently overwritten.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-02",
+    "segment_id": "S-0001-01",
+    "line_start": 2,
+    "line_end": 2,
+    "text": "A discussion on improving segmentation included proposals for: 1) creating a ground truth dataset by manually labeling correct segmentation points to measure precision/recall, and 2) a hypothetical adaptive method where the model predicts topic length ('short' vs 'extensive') to adjust window size.",
+    "completeness": "uncertain",
+    "uncertainty_note": "These are hypothetical proposals for evaluation and future methods."
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-03",
+    "segment_id": "S-0001-01",
+    "line_start": 3,
+    "line_end": 5,
+    "text": "A debate on adaptive segmentation methods occurred. An objection was raised that if an adaptive window isn't perfectly precise, it still requires boundary adjustments, nullifying its benefits. A counter-proposal for a binary-search-like method was dismissed as having minimal benefit, as the downstream LLM can effectively process larger, less precise chunks.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-04",
+    "segment_id": "S-0001-01",
+    "line_start": 6,
+    "line_end": 6,
+    "text": "The segmentation process is expected to output a list specifying the start and end line IDs for each identified segment.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-05",
+    "segment_id": "S-0001-01",
+    "line_start": 7,
+    "line_end": 7,
+    "text": "The current pipeline architecture uses a 'context planner' to process the transcript in fixed 80-line chunks. A 'segment agent' then divides this chunk into semantic 'segments'. To handle topics that cross the 80-line boundary, the last segment is marked as incomplete to be merged with the subsequent chunk's content.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-06",
+    "segment_id": "S-0001-01",
+    "line_start": 8,
+    "line_end": 8,
+    "text": "The system's data hierarchy is defined with three levels of granularity: the transcript is first cut into 'segments' (broad topics), which in turn contain multiple 'idea units' (specific points or views).",
+    "completeness": "partial",
+    "uncertainty_note": "This definition of the current state is immediately questioned in the subsequent discussion, making it dependent on that context."
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-07",
+    "segment_id": "S-0001-01",
+    "line_start": 9,
+    "line_end": 12,
+    "text": "The 80-line chunk is a fixed window size. Within these chunks, after segmentation, 'idea units' are extracted. A verification step ensures full transcript coverage by identifying any missed lines ('gaps') and adding them back as raw, low-quality idea units, which are tagged accordingly.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-08",
+    "segment_id": "S-0001-01",
+    "line_start": 13,
+    "line_end": 14,
+    "text": "Missed lines ('gaps') in idea unit extraction are attributed to prompt issues in the current version, and a repair mechanism is planned for a future version. The origin of the prompt used for idea unit extraction is also currently unclear to the team.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The prompt issue is known but not yet fixed, and its origin is being investigated."
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-09",
+    "segment_id": "S-0001-01",
+    "line_start": 15,
+    "line_end": 15,
+    "text": "A suggestion was made to prepare slides containing all system prompts as a backup to answer questions during an upcoming presentation.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-10",
+    "segment_id": "S-0001-01",
+    "line_start": 15,
+    "line_end": 19,
+    "text": "A key design debate centers on the top-down architecture (segmenting before extracting idea units). This is questioned as being counter-intuitive compared to a traditional bottom-up approach (grouping idea units to form themes/segments). The conceptual distinction between a 'segment' and an 'idea unit' remains unresolved.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The team is still trying to clarify the distinction and the rationale for the current architecture."
+  },
+  {
+    "unit_id": "U-S-0001-01-SR-11",
+    "segment_id": "S-0001-01",
+    "line_start": 19,
+    "line_end": 19,
+    "text": "The primary rationale for processing the transcript in 80-line chunks is to make the system's output easier to check and debug.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-01",
+    "segment_id": "S-0001-02",
+    "line_start": 20,
+    "line_end": 20,
+    "text": "A discussion on segmentation strategy: using smaller scopes for segmentation reduces variability, but raises the question of whether these pre-defined segments still require explicit labeling.",
+    "completeness": "incomplete",
+    "uncertainty_note": "This is an unresolved design question raised during the discussion on segmentation."
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-02",
+    "segment_id": "S-0001-02",
+    "line_start": 21,
+    "line_end": 21,
+    "text": "A key design question is whether every idea unit is meant to update a memory node, either by creating a new one or updating an existing one.",
+    "completeness": "complete",
+    "uncertainty_note": "The speaker expresses doubt about this being the case."
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-03",
+    "segment_id": "S-0001-02",
+    "line_start": 22,
+    "line_end": 22,
+    "text": "The proposed processing pipeline is: idea units are sent in parallel to multiple agents (e.g., 'decision', 'to-do'), which generate 'candidates'. The system then consolidates and de-duplicates these candidates to determine their final categorization.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-04",
+    "segment_id": "S-0001-02",
+    "line_start": 23,
+    "line_end": 23,
+    "text": "A bottom-up approach to creating idea units ensures no information is missed, but it requires a subsequent step to filter out semantically meaningless units (e.g., filler words).",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-05",
+    "segment_id": "S-0001-02",
+    "line_start": 24,
+    "line_end": 25,
+    "text": "A repair mechanism is proposed for segments that are cut off by the fixed-size processing window. The incomplete segment is marked and later merged with the subsequent segment to form a complete unit, referred to as a 'batch', before being processed.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-06",
+    "segment_id": "S-0001-02",
+    "line_start": 26,
+    "line_end": 28,
+    "text": "There is an unresolved discussion on the definition of a 'batch'. One view is that it's simply a repaired, complete segment. Another is that it's a higher-level grouping of related segments to provide more conversational context for more accurate agent extraction.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The team is debating the definition and purpose of a 'batch'."
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-07",
+    "segment_id": "S-0001-02",
+    "line_start": 29,
+    "line_end": 29,
+    "text": "An alternative hierarchical data structure was proposed: idea units -> segments (theme-based) -> batches (cross-speaker topics). This contrasts with 'batch' as just a repaired segment. A related hypothetical retrieval strategy was also suggested: use batch summaries for long-term search and segment details for short-term search.",
+    "completeness": "uncertain",
+    "uncertainty_note": "This is a proposal and a hypothetical strategy, not a decided-upon design."
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-08",
+    "segment_id": "S-0001-02",
+    "line_start": 30,
+    "line_end": 30,
+    "text": "The fundamental unit for memory updates is the 'idea unit', which becomes a 'candidate' after being labeled by an agent. A process is needed to differentiate between candidates to prevent the resulting memory nodes from becoming too similar.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-09",
+    "segment_id": "S-0001-02",
+    "line_start": 31,
+    "line_end": 31,
+    "text": "The labeling process for an idea unit allows for multiple initial labels from different agents, but it is ultimately constrained to one, or at most two, final type labels.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-10",
+    "segment_id": "S-0001-02",
+    "line_start": 32,
+    "line_end": 32,
+    "text": "A design question for the search function is whether to first retrieve by the segment's 'theme' or the idea unit's 'type' (e.g., 'to-do'). It is suggested that both labels might be necessary.",
+    "completeness": "incomplete",
+    "uncertainty_note": "This is an open design question about the retrieval strategy."
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-11",
+    "segment_id": "S-0001-02",
+    "line_start": 33,
+    "line_end": 34,
+    "text": "It was confirmed that a 'segment' is not limited to a single speaker and can contain utterances from multiple people.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-02-SR-12",
+    "segment_id": "S-0001-02",
+    "line_start": 35,
+    "line_end": 35,
+    "text": "The current transcript data only preserves the sequence of utterances, not timestamps. This is identified as a loss of context, as it's impossible to know the duration of pauses. It's noted that Whisper could provide this timestamp data.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-01",
+    "segment_id": "S-0001-03",
+    "line_start": 37,
+    "line_end": 43,
+    "text": "The system logs all prompts and results for each agent interaction. There is a frontend inspector to view memory candidates, their importance scores, and the source text lines they were derived from. The agent checks against rules and uses an API to update the final memory node.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-02",
+    "segment_id": "S-0001-03",
+    "line_start": 41,
+    "line_end": 42,
+    "text": "Idea units are classified into six types common in meetings: Decision, To-Do, Method Change, Result, Argument, and Open Question. This classification helps determine how to merge them into the memory structure, though these six types are a starting point and not fixed.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-03",
+    "segment_id": "S-0001-03",
+    "line_start": 44,
+    "line_end": 45,
+    "text": "The memory update process involves adding new L1 nodes for idea units. Merging of similar nodes occurs within a single meeting's context, but nodes are not merged across different meetings, as each meeting is treated as a distinct unit.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-04",
+    "segment_id": "S-0001-03",
+    "line_start": 46,
+    "line_end": 47,
+    "text": "The system being discussed is for long-term memory, which is separate from short-term memory. The long-term memory has a three-level hierarchy: L1 nodes are granular units from a meeting, L2 nodes summarize contexts spanning multiple meetings (e.g., four), and L3 is the highest-level summary of all context.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-05",
+    "segment_id": "S-0001-03",
+    "line_start": 48,
+    "line_end": 48,
+    "text": "A proposal was made for a visualization tool to inspect the agent's memory. This tool would show the current structure of the L1, L2, and L3 layers and dynamically illustrate how the memory nodes change (e.g., a new L1 node is added, an L2 summary is updated) in real-time as new transcript data is processed.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-06",
+    "segment_id": "S-0001-03",
+    "line_start": 48,
+    "line_end": 49,
+    "text": "The 'importance' score is assigned to a memory node candidate by an LLM after it's determined to be stored, with no default value. The score can be boosted if a topic is mentioned frequently within a single meeting; this weighting applies to all idea units related to that topic.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-07",
+    "segment_id": "S-0001-03",
+    "line_start": 49,
+    "line_end": 49,
+    "text": "The system distinguishes between 'importance' and 'relevance'. Importance is an LLM-assigned score for a memory node's significance, while relevance is calculated based on semantic similarity during the retrieval process.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-08",
+    "segment_id": "S-0001-03",
+    "line_start": 50,
+    "line_end": 51,
+    "text": "An open question was raised about the meaning of \"discard as L1,\" as it was assumed all processed units become L1 nodes. There is also uncertainty regarding the implementation details of how the 'importance' score is used by the system.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The team is unsure about the meaning of a system behavior ('discard as L1') and the exact implementation of the importance score's application."
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-09",
+    "segment_id": "S-0001-03",
+    "line_start": 52,
+    "line_end": 52,
+    "text": "A major proposal is to create a human-in-the-loop system for memory curation. This would allow a user to manually adjust the 'importance' score initially assigned by the LLM, enabling human-AI collaboration to refine the memory's significance.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-10",
+    "segment_id": "S-0001-03",
+    "line_start": 52,
+    "line_end": 52,
+    "text": "To make the manual tuning process more efficient, it was proposed that when a user increases the importance of one idea unit, the system could use semantic similarity to find related units and prompt the user to apply the same importance increase to them as a batch operation.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-03-SR-11",
+    "segment_id": "S-0001-03",
+    "line_start": 52,
+    "line_end": 52,
+    "text": "A key feature of the human-in-the-loop proposal is that memories whose importance has been manually adjusted by a user should have a slower decay rate. This prioritizes human judgment over the default system logic for long-term memory retention and fading.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-01",
+    "segment_id": "S-0001-04",
+    "line_start": 53,
+    "line_end": 54,
+    "text": "The memory system distinguishes between 'importance' and 'activation'. 'Importance' is a static value set at creation to represent an idea's intrinsic worth, preserving its original evaluation. 'Activation' is a dynamic parameter that decays over time, representing current accessibility, to avoid altering the original importance score.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-02",
+    "segment_id": "S-0001-04",
+    "line_start": 55,
+    "line_end": 62,
+    "text": "One proposed memory architecture is a time-based hierarchy where each meeting generates a collection of L1 'objects'. These are grouped under an L2 node representing that specific meeting date. In this model, nodes from different meetings are initially independent, and higher-level structures (L3) emerge as more meetings are added.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The model is being defined and questioned during the conversation, and the exact mechanism for forming L2 and L3 layers is not fully resolved."
+  },
+  {
+    "unit_id": "U-S-0001-04-03",
+    "segment_id": "S-0001-04",
+    "line_start": 63,
+    "line_end": 63,
+    "text": "An alternative, topic-based memory architecture was proposed. In this model, the highest-level nodes are thematic categories (e.g., 'Time Considerations', 'Event Type', 'Personnel'). Lower-level idea units are then filed under the relevant topic, grouping them by subject matter rather than by meeting date.",
+    "completeness": "uncertain",
+    "uncertainty_note": "This was presented as a personal vision ('I was imagining...') in contrast to the time-based model, and it's not clear if it will be adopted."
+  },
+  {
+    "unit_id": "U-S-0001-04-04",
+    "segment_id": "S-0001-04",
+    "line_start": 63,
+    "line_end": 65,
+    "text": "In the topic-based model, new information similar to an existing L1 node would update that node rather than creating a new one. The update would add a new timestamp and content while boosting its 'recency', allowing the evolution of a single idea to be tracked within one node.",
+    "completeness": "uncertain",
+    "uncertainty_note": "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted."
+  },
+  {
+    "unit_id": "U-S-0001-04-05",
+    "segment_id": "S-0001-04",
+    "line_start": 64,
+    "line_end": 67,
+    "text": "A counterargument to updating nodes is to always create new L1 nodes. When retrieving information on a topic, the system would pull all related nodes from different meetings. An LLM could then reconstruct the chronological evolution from the distinct timestamps, preserving the full context of each meeting's discussion.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-06",
+    "segment_id": "S-0001-04",
+    "line_start": 68,
+    "line_end": 71,
+    "text": "There is a debate over the definition of 'context' (脈絡). One view is the chronological progression of decisions across meetings (time-based model). The other is the ability to trace a single topic's evolution across all meetings (topic-based model). The time-based model was criticized for potentially requiring a full scan to trace a topic's history.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt."
+  },
+  {
+    "unit_id": "U-S-0001-04-07",
+    "segment_id": "S-0001-04",
+    "line_start": 72,
+    "line_end": 72,
+    "text": "To clarify the architectural debate and present the system's functionality, a proposal was made to create a dynamic visualization. This animation would show how the memory graph grows and updates as idea units from successive meetings are processed.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-08",
+    "segment_id": "S-0001-04",
+    "line_start": 72,
+    "line_end": 72,
+    "text": "For a future presentation, the team should highlight three key features: the 'inspector' interface, the ability for human users to manually input or adjust 'importance' weights, and the specific formulas governing memory dynamics like decay and recency.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-09",
+    "segment_id": "S-0001-04",
+    "line_start": 72,
+    "line_end": 72,
+    "text": "The discussion identified a core design trade-off: either update a single node with new, related information (to track an idea's evolution) or create a new node for each mention (to preserve the unique context of each meeting). This conflict between the two architectural approaches remains unresolved.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize."
+  }
+]

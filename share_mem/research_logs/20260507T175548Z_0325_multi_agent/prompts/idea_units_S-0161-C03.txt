@@ -1,0 +1,49 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0161-C03
+Topic: Deep dive into modeling conversational style, including the difficulty of replicating interruptions / Defining a key research goal: tracking the evolution and abandonment of topics over multiple meetings / Reviewing papers on summarizing non-linear meetings and tracking consensus against an agenda
+
+Transcript lines:
+201: [SPEAKER_02]:	所以他是看文字的 他不是看說話的嗎?
+202: [SPEAKER_02]:	文字就是它不是Effort用講它是用文字說你要什麼講什麼這樣對對對所以它是沒有聲音跟情緒的它是就是吐文字出來的對對對OK那如果要風格要那麼強烈我自己做過很小的這個實驗是周星馳風格的回顧所以就是要風格這麼強烈這樣那你感覺應該蠻容易的因為那個風格在文字上要怎麼看
+203: [SPEAKER_03]:	其實也只能用LM去教就是如果要量化去評估的話那就是給一個他當時的在這個問題下的回覆跟我們方法生成的回覆去讓他評論分數然後再可能也有人來評論就中間一點所以像風格的話會是譬如說像是講話簡短或是說
+204: [SPEAKER_02]:	或是說講話會比披上我現在這樣子或是說他的講話的style都比較偏positive等等就是我蠻好奇是用文字要怎麼去定義那個一個人的風格這個好像沒有標準所以這個部分是應該說我蠻好奇是不是像那時候比如說LM你們去prong他說要風格的時候那時候有什麼樣子的prong就是說你要看
+205: [SPEAKER_02]:	還是說就是捐榮跟他說要類似的風格喔等等就是怎麼捐就跟他講類似的風格
+206: [SPEAKER_01]:	就是因為我那時候那個風格確實很麻煩而且那時候是Avatar會一直講話如果以Meeting來說Meeting的風格就是它有一方面比如說就是最我們都最想要做的就是可能老師會怎樣打斷但是對可能Avatar來說他就不會特別去針對打斷這件事情因為會議可能打斷蠻重要的就是比如說你講到什麼東西然後可能老師自己有哪裡聽不明白他會直接就是直接就是插進來問
+207: [SPEAKER_02]:	就是它不會是說我完整的譬如說我準備了今天要講這個東西以及下一個這個東西對 然後但是可能會在某個時刻講到一半的時候我就 欸這個地方我已經很確定等等的 對但是對 那個老師剛剛講的那個東西應該不會今天感覺比較像是文字會像是老師說的文字因為我現在炒的方向可以主要是像這樣但是我你說風格嘛不就不完整可以
+208: [SPEAKER_01]:	會不會影響一個?Translating比較麻煩因為Translating比較麻煩就是我們那時候有看一篇論文的解決方法是你要重新Change Model然後那個Model除了吐出文字之外它會另外吐出一個Flag那這個Flag就是代表該不該打斷
+209: [SPEAKER_01]:	因為就是這個海文啊所以我們想要讓的是文字先做記憶跟文字就是兩個那個是內容的正確跟就是第一個memory產出的東西然後再用這個outputs再去經過另外一個可能n之類的然後讓它比較像這個文字我細半一下這個我瞄到了一篇論文但我沒有很仔細看就是它是說這個要
+210: [SPEAKER_03]:	去模仿一個人的話可能可以就是猜中他很重大的決策但是那種比較小的決策很難中譬如說打斷 打斷的對 但是我可能可以知道說這個老師對於就是可能如果同學們要做演講老師的就會變成說我可能知道您這個
+211: [SPEAKER_02]:	槍枝永復的這個看法這樣子就比較大的東西就你會知道你戲班也要先進來對 又可能等一下要去開會要去開了好啊 那其實那就是我們今天就先講因為要上去開會是課程嗎對對對我也要去開課程你也要去開課程我也會好好好我等一下說我晚點到那你老師之後
+212: [SPEAKER_02]:	就是如果有就是有有時間的話可以再就是再可能就是再找找看再想完的東西之後可以再可能一起講好啊好啊好啊嗯好謝謝謝謝今天聽起來應該是都蠻蠻好的但其實就是在於某某評估還有可能就是甚至也可以把任務定的更好評估一點嗯有什麼下次好了我想問說有什麼樣可以因為的確像我們現在就是討論商非常發散
+213: [SPEAKER_02]:	對 然後我唯一想說的就是某一個東西我們之前講過但是其實現在沒有再要講了對 然後但是我們曾經講過對 就是能找到這個死掉的那個死掉的那個topic對 就譬如說如果我們要回憶說我們這個meeting我們的這一個project其實做了很多半年了中間我們有哪些曾經explored的東西然後後來就是我們
+214: [SPEAKER_02]:	沒有在做對 那以現在來說是我發現做不到這一次然後會去抓這個東西然後你還要找說曾經提到這個東西然後在後連職的meeting就說不要然後為什麼不要等等對 就是如果有這樣子的
+215: [SPEAKER_01]:	Answer在那邊等著我們找那就可以很直接去比說誰找得到誰找不到因為就是就是用reg沒有辦法很簡單抓這件事情因為用reg可能就我們想要的不只是就是相關因為我們有好幾次的meeting那你相關相關相關一定全部的meeting都會可能集中講在某個東西是相關的那這個如果你用reg找那可能
+216: [SPEAKER_01]:	就是你這邊有一個 這邊有一個 這邊有一個等於說這一連串都會差不多相反的嗯 或是說被講了五次 但最後寄送不要了對 這種有時間關聯的順序的線就是我們想要在彼此中做到的嗯
+217: [SPEAKER_00]:	如果是最後就是整理說我們最後最近的討論然後看是不是都有討論到或是他的討論是對的吧因為剛剛有一篇就是在呃我有投那個flag就是篇在Springer上面的欸
+218: [SPEAKER_00]:	叫這個但是在他最後評斷就是評斷說到底他們有沒有討論到就是真的就是這些呃共同決定的決策然後是不是對的就是是不是因為他有的人前面是我們是散的嘛他不是只是說我有討論他最後有個決定的就要記了就去那個對好我們之後再那個對然後謝謝葉老師今天非常非常有幫助謝謝對我們之後之後再看欸這個時間是比較有可能的
+219: [SPEAKER_02]:	就是剛好跟同學Meeting然後今天很多人請假OKOKOK好我們之後再找誰明明本來有課程我們三十四也有發一個三十四現在嗎這個正門的課程我們再看不然我們再看有沒有別的實驗室謝謝你也要去接
+220: [SPEAKER_00]:	然後另外一篇這個是Agenda還有Simonic就是剛剛說是那個通過資料集ICE什麼然後他這個就是看說因為我們討論跟老師之前說不是照著那個我的會議大綱是線性的然後所以他摘要的時候其實是很難做他就是我先也有好像先先給我有傳到那個slack上面有先給摘要然後呢
+221: [SPEAKER_00]:	它會最後就是會對到就是你可能在不是在要大綱就是你大綱的哪一部分這樣子不過以這種來說就是另外一個標準應該是就是它必須要是你有會議大綱所以我覺得這是consensors是在上面那邊更上面那邊這個是有沒有共鋪在那邊對
+222: [SPEAKER_00]:	那它評分就是有沒有大綱都有cover到這樣子但是它有一個先整理的因為它是最後是整理會議材料嘛所以它有個人整理的專家整理好的然後再去比對那這個部分應該是在說我們的譬如說long term的summarization的部分對對對就每個meeting我們最後要儲存的那個結構要是長什麼樣子
+223: [SPEAKER_00]:	或者是說可能他經過很多次然後他最終的會議整理是怎麼樣就是最後現在最終的決定目前的進度是怎麼樣這兩篇都是針對會議不是線性的處理

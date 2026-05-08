@@ -1,0 +1,686 @@
+[
+  {
+    "candidate_id": "C-B-010-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0128-03-SR-01",
+      "U-S-0128-03-SR-02",
+      "U-S-0128-03-SR-07",
+      "U-S-0128-03-SR-08",
+      "U-S-0128-03-SR-09"
+    ],
+    "content": "提出了一項實驗，旨在比較動態分塊策略與固定大小分塊策略。核心問題是確定兩者在計算成本（請求次數）和輸出品質（相對於人工標註的黃金標準的精確率和召回率）方面的權衡。假設是動態方法將產生更細粒度的結果，並具有更高的精確率和召回率。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "文本明確提出了一項實驗計畫，用以比較動態與固定大小分塊策略。該實驗有明確的假設、評估指標（計算成本、精確率、召回率）和比較基準。實驗的結果尚不確定，代表了一個關於如何選擇最佳資料處理分塊方法的關鍵未決問題。",
+    "related_topics": [
+      "data processing",
+      "experimental design",
+      "evaluation strategy",
+      "development methodology"
+    ],
+    "extraction_scope": "B-010",
+    "segment_ids": [
+      "S-0128-03"
+    ],
+    "evidence_lines": [
+      153,
+      154,
+      155,
+      156,
+      158,
+      163,
+      165,
+      166,
+      167
+    ],
+    "evidence_quote": "[SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。 [SPEAKER_02]: 對，然後我們...",
+    "support_score": 0.168,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.062, 'content_token_coverage': 0.198, 'evidence_token_coverage': 0.083, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'partial']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete",
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [
+      "uncertain_source_unit"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-014-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0161-05-SR-01",
+      "U-S-0161-05-SR-02",
+      "U-S-0161-05-SR-04",
+      "U-S-0161-05-SR-05",
+      "U-S-0161-05-SR-06",
+      "U-S-0223-C01-SR-01"
+    ],
+    "content": "關於是否需要讓代理人（agent）的執行流程更加細緻，以便於觀察和控制，目前尚未達成共識。一方提議代理人應分步執行並輸出中間結果，另一方則認為目前的日誌記錄已足夠。此提案的最終目標——是為了更好地評估代理人，還是為了實現更精細的執行流程控制——也仍是一個懸而未決的問題。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "文檔中明確提出了一個關於代理人執行可見性的問題（U-S-0161-05-SR-01），並討論了兩種不同的觀點：一方主張增加中間步驟和輸出以增強可見性（U-S-0161-05-SR-02, U-S-0161-05-SR-04），另一方則認為現有的函數調用日誌已經足夠（U-S-0161-05-SR-05）。討論最終歸結為一個未解決的問題，即此舉的根本目的是為了評估還是為了控制（U-S-0161-05-SR-06）。",
+    "related_topics": [
+      "debugging",
+      "development_methodology",
+      "evaluation_strategy",
+      "human-computer_interaction"
+    ],
+    "extraction_scope": "B-014",
+    "segment_ids": [
+      "S-0161-05",
+      "S-0223-C01"
+    ],
+    "evidence_lines": [
+      210,
+      211,
+      212,
+      214,
+      215,
+      216,
+      217,
+      218,
+      219,
+      220,
+      221,
+      222,
+      223
+    ],
+    "evidence_quote": "[SPEAKER_00]: 有沒有辦法知道，就是 print 出來它要做什麼事。因為我覺得，如果老師你現在的想法是， [SPEAKER_02]: 我想要做的事情是我不想要一件事情從頭到尾沒有任何中間可以 checkpoint 的事情。所以我想像的可能其中第一個簡單的 prompt，我先不要把全部任務做完，我甚至是我的逐字稿，既然我有一個 prompt，我可能先去測試說每一個句、每一個 turn 好了，你可以每個 turn 先給我想，你 predict 它的 line 它可以跳幾行。 [SPEAKER_02]: 然後它就直接印出一個結果，然後我們就可以直接先去看說，我跑了這一個 step 之後，它做的那個預估，它預估的每一個句子跳的 line 是怎麼樣。那我們先去 check 這件事情，然後接下來 prompt...",
+    "support_score": 0.166,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.055, 'content_token_coverage': 0.196, 'evidence_token_coverage': 0.072, 'span_inclusion': 0.0}; source_unit_completeness=['partial', 'complete', 'incomplete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "partial",
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [
+      "uncertain_source_unit"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-015-method_change-001",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0223-03-SR-01",
+      "U-S-0223-03-SR-05",
+      "U-S-0223-03-SR-07",
+      "U-S-0223-03-SR-09",
+      "U-S-0241-03-SR-03",
+      "U-S-0241-03-SR-04"
+    ],
+    "content": "討論了系統架構的根本設計抉擇：控制流程應由開發者編寫的程式碼管理，還是由大型語言模型（Gemini）來主導。開發者編碼的方法涉及一個固定的程式邏輯，該邏輯呼叫LLM作為服務來執行特定的分析任務。而LLM主導的方法則將控制權交給模型，由模型根據上下文動態決定函式呼叫的順序。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "開發者編碼的方法因其確定性的控制和簡單的狀態管理而受到青睞。LLM主導的方法被認為可能更具彈性，但存在可靠性問題，因為模型呼叫函式的決定取決於其對提示的解釋，而這並非完全可控。在LLM主導的流程中，管理簡單的內部程式狀態（如計數器）也被認為很麻煩。",
+    "related_topics": [
+      "design_decision",
+      "development_strategy",
+      "data_flow",
+      "code structure",
+      "LLM"
+    ],
+    "extraction_scope": "B-015",
+    "segment_ids": [
+      "S-0223-03",
+      "S-0241-03"
+    ],
+    "evidence_lines": [
+      245,
+      246,
+      247,
+      254,
+      256,
+      261,
+      262,
+      272,
+      273,
+      274,
+      275,
+      276,
+      277,
+      278,
+      279,
+      280
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯嗯嗯，我應該說我看到這個，所以我現在有點試圖在想是說，有一些好像就是我們程式裡面，譬如說你 call read short-term memory 這件事情，你裡面就可以直接 call read transcript overview。然後裡面因為你有 input 一個 file，那它的逐字稿行數那個，就直接 function 裡面其實你去 call、你去跑了 read short-term memory 這件事情，它裡面在執行的過程當中，它就會再去呼叫 read transcript overview。 [SPEAKER_00]: 可是這樣子的話，那個函數就不應該叫 Read Short-term Memory，因為如果 Read Short-term Memory 一定會去讀...",
+    "support_score": 0.162,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.053, 'content_token_coverage': 0.191, 'evidence_token_coverage': 0.069, 'span_inclusion': 0.0}; source_unit_completeness=['partial', 'complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "partial",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [
+      "uncertain_source_unit"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-015-result-001",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0223-03-SR-01",
+      "U-S-0223-03-SR-05",
+      "U-S-0223-03-SR-06",
+      "U-S-0223-03-SR-07",
+      "U-S-0223-03-SR-08"
+    ],
+    "content": "系統架構的核心爭論在於兩種設計之間的比較：1) 由開發者編寫固定的「任務流」(task flow)，程式邏輯是寫死的，僅在特定分析任務上呼叫LLM作為服務。2) 由LLM主導的流程，模型根據上下文動態決定要執行的函式呼叫順序。",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This captures the central, unresolved architectural debate presented in the text, contrasting a hardcoded approach with an LLM-orchestrated one. This is a fundamental design choice for the project.",
+    "related_topics": [
+      "design decision",
+      "code structure",
+      "data flow",
+      "LLM"
+    ],
+    "extraction_scope": "B-015",
+    "segment_ids": [
+      "S-0223-03",
+      "S-0241-03"
+    ],
+    "evidence_lines": [
+      245,
+      246,
+      247,
+      254,
+      255,
+      256,
+      258,
+      259,
+      260
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯嗯嗯，我應該說我看到這個，所以我現在有點試圖在想是說，有一些好像就是我們程式裡面，譬如說你 call read short-term memory 這件事情，你裡面就可以直接 call read transcript overview。然後裡面因為你有 input 一個 file，那它的逐字稿行數那個，就直接 function 裡面其實你去 call、你去跑了 read short-term memory 這件事情，它裡面在執行的過程當中，它就會再去呼叫 read transcript overview。 [SPEAKER_00]: 可是這樣子的話，那個函數就不應該叫 Read Short-term Memory，因為如果 Read Short-term Memory 一定會去讀...",
+    "support_score": 0.157,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.049, 'content_token_coverage': 0.184, 'evidence_token_coverage': 0.063, 'span_inclusion': 0.0}; source_unit_completeness=['partial', 'complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "partial",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [
+      "uncertain_source_unit"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-016-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0298-C01-SR-02",
+      "U-S-0298-C01-SR-03",
+      "U-S-0298-C01-SR-05",
+      "U-S-0298-C01-SR-06"
+    ],
+    "content": "採用「管理者/代理人」模型的理由是：雖然本質上是循序的，但它允許代理人更精細、智慧地處理任務，並可維護自身資源，且具備模組化、可替換的優點，從而簡化了管理者的角色。",
+    "importance": 0.8,
+    "confidence": 0.9,
+    "rationale": "This captures the key tradeoff and justification for adopting the manager/agent model, acknowledging its sequential nature but highlighting the benefits of specialization, modularity, and encapsulation. This reasoning is crucial for future design discussions.",
+    "related_topics": [
+      "design decision",
+      "development methodology",
+      "code structure",
+      "comparison",
+      "design_decision",
+      "development_methodology"
+    ],
+    "extraction_scope": "B-016",
+    "segment_ids": [
+      "S-0241-04",
+      "S-0298-C01"
+    ],
+    "evidence_lines": [
+      300,
+      301,
+      302,
+      303,
+      304,
+      305,
+      306,
+      308,
+      309,
+      310,
+      311,
+      312
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，然後回來之後就說我覺得你要跳多少。好，那我懂你的意思。那我的問題就是說，因為這個東西它沒有辦法並行地去用嘛。就是你今天一定要等待這個 agent 回傳之後，你才能去問那個 manager，就是你才能跟 manager 說你要跳幾行嘛，對吧？因為你要跳幾行，比如說你要跳 1 到 20 行，那你就不能同時跑兩個 agent 說。 [SPEAKER_00]: 呃，我可能就是因為它下一步一定是要遞片。那你這一步跑了多少嗎？那如果你今天去問另外一個 agent，為什麼不要把這個問題直接問原本的 manager 就好了？ [SPEAKER_02]: 什麼意思？ [SPEAKER_00]: 就是你剛剛說 manager 是指就是它會回傳一個假設 1 到 10 行嘛，那這一到十要看過一些 ag...",
+    "support_score": 0.129,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.037, 'content_token_coverage': 0.152, 'evidence_token_coverage': 0.046, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-019-method_change-001",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0321-C02-SR-03",
+      "U-S-0321-C02-SR-07",
+      "U-S-0321-C02-SR-11"
+    ],
+    "content": "為了便於單元測試和除錯，應將重要的任務拆分成獨立的代理（agents），以取代目前難以隔離問題來源的單體式流程。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The current monolithic process is hard to debug because effects are cumulative. A multi-agent architecture is proposed because it enables unit testing of each individual step, making it easier to isolate the source of problems.",
+    "related_topics": [
+      "development methodology",
+      "code structure",
+      "debugging",
+      "development strategy"
+    ],
+    "extraction_scope": "B-019",
+    "segment_ids": [
+      "S-0321-C02"
+    ],
+    "evidence_lines": [
+      341,
+      342,
+      347,
+      356
+    ],
+    "evidence_quote": "[SPEAKER_02]: 然後還有另外一個事情是因為以現在的話我們每一次做完的時候它都是1要跑到10嘛所以中間它每一個factor它中間的各種的effect它都是疊加在一起的譬如說我第一次的line切在哪裡它會影響到我後面去怎麼切idea unit會影響到我怎麼決定我要怎麼樣要不要update我的memory等等你一次跑完下去之後它是所有步驟都做完了 [SPEAKER_02]: 對 那今天如果說其實問題是idea units切的不好或是idea units判斷completed這件事情有問題的話那它一次都是每一個它都是接著去把它做完所以你其實你也不太知道說到底問題在哪個地方 [SPEAKER_00]: 跟他讀了幾行回去的時候他卻返回說他今天想要再讀那一行所以他每個步驟的prompt是分開的他今天的promp...",
+    "support_score": 0.174,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.037, 'content_token_coverage': 0.205, 'evidence_token_coverage': 0.043, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speaker's conclusion appears to contradict their preceding arguments, making the final stance unclear."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-020-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0321-05-SR-04",
+      "U-S-0321-05-SR-06",
+      "U-S-0378-C01-SR-05"
+    ],
+    "content": "系統的記憶體更新機制是讓大型語言模型（Gemini）讀取一個文本區塊，然後針對在該區塊中識別出的每個不同主題，發出一系列的單獨「寫入」指令。系統會確認每一次的寫入操作，模型才會繼續下一個，確保來自單一文本區塊的多個主題被當作獨立、連續的更新來處理。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "此順序性方法是當前處理單一處理區塊內多個主題的具體實作。它解決了基於相同來源文本更新不同記憶節點的需求。",
+    "related_topics": [
+      "data_flow",
+      "data_processing",
+      "memory management",
+      "design_decision"
+    ],
+    "extraction_scope": "B-020",
+    "segment_ids": [
+      "S-0321-05",
+      "S-0378-C01"
+    ],
+    "evidence_lines": [
+      365,
+      366,
+      367,
+      368,
+      375,
+      376,
+      394,
+      395
+    ],
+    "evidence_quote": "[SPEAKER_00]: 就它最后就是会回传这边所以你现在是假设80行它一定就是单一的一个unit这样吗没有因为我有在prong说它今天可以连续做三次的write所以它今天write的时候它可以去填说它今天想要的参数比如说 [SPEAKER_02]: 呃 不好意思 等等假设做80号 你是说呃 有点像你是说每一个section可以有multi label但你没有去切它是哪一个idea units这样吗 [SPEAKER_00]: 那你可以跑很多次的意思是说应该是说就是Gemini就是好假设我Gemini我们先用来回假设我他Gemini回给我说他要read的80行那我就会在我自己这边先从这边这个函数我自己在那边跑完之后跑出一个result然后返回给Gemini那Gemini看完这80行他会自己去他会去选择说那我...",
+    "support_score": 0.129,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.044, 'content_token_coverage': 0.152, 'evidence_token_coverage': 0.059, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'partial']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete",
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [
+      "uncertain_source_unit"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-020-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0321-05-SR-05",
+      "U-S-0321-05-SR-06"
+    ],
+    "content": "當在單一文本塊中識別出多個待更新的主題時，系統採用的策略是讓代理發出一系列獨立的 `write` 指令，每個指令針對一個主題。在每次寫入後，系統會等待確認訊息，然後再繼續下一個。此設計確保了每次記憶更新都是一個原子且獨立的操作，避免了單一複雜指令可能帶來的模糊性。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This describes the justification for the current implementation of the write/update mechanism, explaining how atomicity is maintained when handling complex inputs.",
+    "related_topics": [
+      "data flow",
+      "Memory Management",
+      "design decision",
+      "implementation plan"
+    ],
+    "extraction_scope": "B-020",
+    "segment_ids": [
+      "S-0321-05",
+      "S-0378-C01"
+    ],
+    "evidence_lines": [
+      369,
+      370,
+      371,
+      372,
+      373,
+      374,
+      375,
+      376
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我還要繼續write的意思是什麼 [SPEAKER_00]: 就是你剛剛說的啊就是他今天覺得三個就這一段話裡面有三個應該要write的東西所以就是說你說他如果覺得這裡面他不知道位置在哪裡 [SPEAKER_02]: 但他觉得这80行里面有不止一个 [SPEAKER_00]: 他知道会讲哪里因为他已经读完overview了 [SPEAKER_02]: 我知道我的意思是说他他只知道说这个80行里面我可能有三个三个memory都需要去update这样吗但是他在update时候他没有去特别的 [SPEAKER_02]: 分說是八十行的比如說前三十行是屬於什麼東西中間的二十行是屬於什麼東西後面的三十行是屬於哪一個memory的對 如果這樣的話他沒有分這件事情這樣嗎對他只是知道說這裡面有跟這三...",
+    "support_score": 0.145,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.061, 'content_token_coverage': 0.17, 'evidence_token_coverage': 0.087, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a question being explored in the conversation to clarify the system's behavior. The answer follows in the next unit."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-021-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0378-03-SR-07",
+      "U-S-0401-02-SR-01"
+    ],
+    "content": "系統在處理單一大型文本段落時，如何防止記憶節點收斂並被無關資訊更新？討論過的潛在解決方案包括縮小輸入窗口大小或將文本預先分割成「想法單元」，儘管後者受到了質疑。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "在識別並確認節點收斂問題後，團隊明確開始討論潛在的解決方案，表明這是需要解決的首要開放問題。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Architecture",
+      "data fragmentation",
+      "design decision",
+      "development strategy"
+    ],
+    "extraction_scope": "B-021",
+    "segment_ids": [
+      "S-0378-03",
+      "S-0401-02"
+    ],
+    "evidence_lines": [
+      414,
+      415,
+      416,
+      417,
+      418,
+      419,
+      420
+    ],
+    "evidence_quote": "[SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就呃因為現在這個方法其實跟如果你把先把80行直接去切就是你去再丟個一個另外一個agent去切idea unit也是有可能會發生因為他看的東西是一樣的也是由gemini去判斷所以如果你要這樣子避免這事情發生的話你就是把80行調小 [SPEAKER_02]: 調成什麼 [SPEAKER_00]: 就是呃就只能調小因為80行可能就太多為什麼為什麼你剛剛說把切成idea units還是會發生你說他沒有能力切出這是兩個不一樣的idea units嗎 [SP...",
+    "support_score": 0.163,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.056, 'content_token_coverage': 0.192, 'evidence_token_coverage': 0.074, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The discussion weighs two solutions but doesn't conclude which is better, instead transitioning to how the current system works."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-021-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0378-03-SR-06",
+      "U-S-0401-02-SR-02",
+      "U-S-0401-02-SR-03"
+    ],
+    "content": "節點收斂問題的根本原因在於，記憶體更新功能完全依賴 LLM (Gemini) 來解釋一個大的文本段落，並為每個節點生成更新的 `argument`，而沒有任何明確的約束、過濾或範圍界定機制來指導它。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "討論中指出，更新邏輯完全由模型決定，模型在每次更新操作中處理完整的文本段落，這可能導致資訊洩漏。",
+    "related_topics": [
+      "Memory Management",
+      "LLM",
+      "design decision",
+      "data flow"
+    ],
+    "extraction_scope": "B-021",
+    "segment_ids": [
+      "S-0378-03",
+      "S-0401-02"
+    ],
+    "evidence_lines": [
+      413,
+      421,
+      422,
+      423,
+      424,
+      425,
+      426,
+      427
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 可是我們現在沒有請它切啊我們現在不是都把segment丟進去去update兩個node嗎 [SPEAKER_00]: 沒有 這個update node的時候它今天它分別兩次write的時候它參數就是完全不一樣的啊 [SPEAKER_02]: 就是他说的不一样吗 [SPEAKER_00]: 不会一样啊我刚意思是说这个argum...",
+    "support_score": 0.175,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.058, 'content_token_coverage': 0.206, 'evidence_token_coverage': 0.075, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a direct question about the agent's internal mechanism that is not answered within the segment."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-021-open_question-002",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0401-02-SR-03",
+      "U-S-0378-03-SR-01",
+      "U-S-0401-02-SR-02"
+    ],
+    "content": "在記憶體更新操作中，用於更新的`argument`是如何生成的？目前尚不清楚大型語言模型（Gemini）是根據整個80行的文本區塊來生成每個更新的`argument`，還是會在內部對文本進行篩選或「剪裁」，只使用與特定記憶節點相關的資訊。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "文本直接提出了一個關於當前系統行為的關鍵不確定性：LLM在為特定節點生成更新參數時，是否會過濾輸入文本。這個問題的答案對於診斷和解決節點趨同問題至關重要。",
+    "related_topics": [
+      "Memory Management",
+      "LLM",
+      "data processing",
+      "data flow"
+    ],
+    "extraction_scope": "B-021",
+    "segment_ids": [
+      "S-0378-03",
+      "S-0401-02"
+    ],
+    "evidence_lines": [
+      402,
+      403,
+      404,
+      405,
+      406,
+      421,
+      422,
+      423,
+      424,
+      425,
+      426,
+      427
+    ],
+    "evidence_quote": "[SPEAKER_02]: 現在你在這個地方哪個地方你可以展示一下哪個地方你會控制說他只會update跟他直接相關的句子嗎 [SPEAKER_00]: 好這個update memory的他會長的我直接看一個我直接看一下他會怎麼他會怎麼update [SPEAKER_00]: 這個好這是一個update然後他就會直接update我先看上面一點點就是他會先讀section然後他就一直update說他這個note裡面這東西因為他這個裡面是一個dictionary所以他會直接去update成什麼樣子等一下動到這樣會很難看嗎 [SPEAKER_02]: 但你沒有回答我剛剛說的啊我剛剛在回答問的是說今天我在update的時候我會把這80句裡面只有跟這一個node節點直接相關的句子拿去update嗎還是我這80句我都會想想...",
+    "support_score": 0.175,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.063, 'content_token_coverage': 0.205, 'evidence_token_coverage': 0.084, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a direct question about the agent's internal mechanism that is not answered within the segment."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-022-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0401-03-SR-07"
+    ],
+    "content": "如果大型語言模型（LLM）足夠智能，可能就不需要預先將文本分割成想法單元。當模型呼叫寫入函數（write function）時，預期它能生成精確的參數，從而有效地從較大的文本塊中僅選取相關資訊來更新記憶節點，並忽略其餘部分。",
+    "importance": 0.75,
+    "confidence": 0.9,
+    "rationale": "此論點提出了一個對立觀點和潛在的流程簡化方案，它依賴 LLM 的函式呼叫能力，而非固定的預處理步驟，形成了一個在明確資料結構化與信任模型推理能力之間的權衡。",
+    "related_topics": [
+      "data_processing",
+      "LLM",
+      "design_decision",
+      "data_flow"
+    ],
+    "extraction_scope": "B-022",
+    "segment_ids": [
+      "S-0401-03"
+    ],
+    "evidence_lines": [
+      446,
+      447
+    ],
+    "evidence_quote": "[SPEAKER_00]: 但是Gemini今天在write的時候他就會去write出A的部分要寫到M1去啊你說他自己會切出C不對不是要update嗎 [SPEAKER_00]: 因為他呃就是他write Memory的參數不是那不是ABC一起丟進去的",
+    "support_score": 0.126,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.078, 'content_token_coverage': 0.148, 'evidence_token_coverage': 0.143, 'span_inclusion': 0.0}; source_unit_completeness=['partial']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This claim about the `write` function's behavior is central to the disagreement but its mechanism is not fully explained here."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-022-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0401-03-SR-01",
+      "U-S-0401-03-SR-04",
+      "U-S-0401-03-SR-06",
+      "U-S-0401-03-SR-07",
+      "U-S-0401-03-SR-08",
+      "U-S-0401-03-SR-09"
+    ],
+    "content": "一個核心的未解問題是，為了準確更新記憶，預先將文本分割成「想法單元」是否為必要步驟。爭論點在於，大型語言模型（LLM）是否能透過`WriteMemory`函數調用，從一個較大的文本塊中智能地辨別並僅使用相關資訊來更新特定的記憶節點，同時忽略無關的共存資訊。另一種觀點則認為，預先分割是防止無關數據污染記憶節點的關鍵。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "討論圍繞著記憶更新機制的核心分歧：是依賴LLM的智能從大文本塊中解析相關性（SPEAKER_00的觀點），還是透過預先分割成想法單元來強制確保相關性（SPEAKER_02的擔憂）。這個問題懸而未決，並指派了一項任務來證明前者的可行性。",
+    "related_topics": [
+      "Memory Management",
+      "data processing",
+      "design decision",
+      "data fragmentation",
+      "LLM"
+    ],
+    "extraction_scope": "B-022",
+    "segment_ids": [
+      "S-0401-03"
+    ],
+    "evidence_lines": [
+      430,
+      431,
+      432,
+      433,
+      436,
+      437,
+      438,
+      439,
+      443,
+      444,
+      445,
+      446,
+      447,
+      448,
+      449,
+      450,
+      451,
+      452,
+      453,
+      454,
+      455,
+      456,
+      457
+    ],
+    "evidence_quote": "[SPEAKER_00]: 就如果沒有去做切如果沒有直接去切這個8090的idea units的話我感覺上你感覺上是會發生這件事情的對不對是嗎因為它write它其實像它也可以直接去單獨改一個它可以它可以單獨去改現在的這個的這個部分就是怎麼說勒我想一下喔 [SPEAKER_02]: 因為現在我們要找到一個例子是他連續寫兩次write我看能不能找到就是所以現在目前說的八常八常都不存在有兩個idea units嗎看一下 [SPEAKER_00]: 所以如果他今天好那我今天改成說他會先切idea units的話那他應該也會就是他會也會看到現在的節點數嗎然後跟節點數指的是說memory的節點數還是是什麼呃就是 [SPEAKER_00]: 他今天切因為像剛剛說的就比如說他今天切idea units的時候確實就比如說在海報...",
+    "support_score": 0.163,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.058, 'content_token_coverage': 0.192, 'evidence_token_coverage': 0.077, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain', 'incomplete', 'complete', 'partial']; source_unit_uncertainty_notes=3",
+    "source_unit_completeness": [
+      "uncertain",
+      "incomplete",
+      "complete",
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory question about a hypothetical scenario, and the speaker is thinking through the logic.",
+      "This is a back-and-forth exchange that reveals the core of the speakers' misunderstanding but does not resolve it.",
+      "This claim about the `write` function's behavior is central to the disagreement but its mechanism is not fully explained here."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  }
+]

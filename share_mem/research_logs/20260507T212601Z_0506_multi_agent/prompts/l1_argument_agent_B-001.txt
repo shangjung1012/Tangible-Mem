@@ -1,0 +1,59 @@
+You are l1_argument_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: reasoning, tradeoff, constraint, or justification that explains why a decision or method direction is preferred.
+
+Read only the bounded idea units below and propose only argument candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid argument objects for that reason.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable argument memories. Return an empty list when
+the batch has no durable argument. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-001
+Segment IDs: S-0001-01
+Known related topics: API key management, Academia Sinica internship, Benchmarking, Data Processing, Data Quality, Design Decision, Development Plan, Evaluation Strategy, Experimental Design, ICSI dataset, Incremental Update, LLM, Literature Review, Long-Term Memory, Membrane, Memory Architecture, Memory Lifecycle, Memory Management, Memory Representation, Memory Retention, Memory Retrieval, Memory system, Memory_system, RAG, Short-Term Memory, Sustainable AI, UI design, WhisperX, batch_size, benchmarking, budgeting, code reuse, code structure, code_structure, comparison, contribution, data flow, data fragmentation, data lifecycle, data processing, data quality, data retention, data sourcing, data structure, data_flow, data_fragmentation, data_lifecycle, data_processing, data_quality, data_retention, data_sourcing, data_structure, dataset, dataset acquisition, debugging, demonstration, demonstration format, demonstration of value, demonstration plan, design decision, design_decision, development methodology, development plan, development standards, development strategy, development_methodology, development_plan, development_strategy, documentation, evaluation, evaluation strategy, evaluation_strategy, experimental design, experimental setup, experimental_design, failure_mode, feature rejection, history tracking, human-computer interaction, human-computer_interaction
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0429-039] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=An experiment is planned to compare the proposed 'dynamic' chunking method against 'fixed-size' chunking baselines (e.g., 3-turn or 1-turn chunks). The evaluation will measure both efficiency, by counting the number of LLM requests, and quality, using precision and recall against a ground truth.
+  [L1-0408-077] type=todo quality=strong activity=fading activation=0.46 reason=open_thread content=Devise a method to prove the value of the proposed memory architecture compared to a system without it.
+  [L1-0429-024] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=An ablation study is planned to validate the memory architecture. It will compare four conditions: a RAG-only baseline, a short-term memory only system, a long-term memory only system, and the full combined system. Working memory will be active in all conditions.
+  [L1-0429-066] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=An experiment is planned to compare a dynamic, content-aware chunking strategy against a fixed-size chunking baseline. To ensure a fair comparison, the fixed-size chunk will be set to the average length of the chunks produced by the dynamic method. The evaluation will measure both computational cost (e.g., number of computations) and performance, using precision and recall against a human-annotated ground truth. A successful outcome is considered a direct and significant project result.
+  [L1-0408-009] type=method_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=The retrieval strategy for the hierarchical memory involves first matching a query against detailed L1 nodes, and then including the corresponding L2 and L3 ancestor nodes in the results. This provides both specific details and high-level context.
+  [L1-0429-011] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=The evaluation strategy will be structured around three categories of questions: 1) short-term correctness of recent answers, 2) long-term evolution of a topic over time, and 3) the reasoning behind current decisions. The primary metric will be correctness and completeness, assessed by comparing the agent's output against a ground-truth answer.
+  [L1-0429-016] type=method_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=Evaluation questions will be divided into three categories: 1) Short-term: verifying the correctness of recent answers. 2) Long-term evolution: asking for the complete progression of a topic over time. 3) Decision reasoning: asking for the rationale behind current decisions based on past discussions.
+  [L1-0429-029] type=open_question quality=normal activity=active activation=0.97 reason=open_thread content=An experiment to compare the trade-offs of different long-term memory processing methods (incremental chunking, fixed-size chunking, and iterative sentence merging) was deferred. The team is proceeding with the incremental method on the assumption that it is effective, particularly at filtering out irrelevant chatter, but this has not been experimentally validated.
+  [L1-0422-028] type=todo quality=normal activity=resolved activation=0.42 reason=open_thread content=The system will process transcripts using a dynamic chunking mechanism instead of fixed-size chunks. An LLM, via Function Calling (e.g., a `Read(start_line, end_line)` function), will autonomously and iteratively determine the number of lines to read. The LLM's decision is based on achieving semantic completeness, ensuring that a full thought or dialogue exchange is captured within a chunk before processing.
+  [L1-0422-048] type=method_change quality=normal activity=active activation=1.00 reason=recent_high_importance content=A forgetting mechanism will be implemented for Long-Term Memory (LTM) where a node's relevancy score decays over time if not referenced. "Forgotten" nodes are not deleted but are deprioritized, and can be revived if the topic is mentioned again, causing their score to increase.
+  [L1-0408-008] type=method_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=To handle topics that fade and reappear, a memory node's 'recency' score decays over time, but its 'importance' score establishes a floor, preventing the recency from decaying to zero. This ensures that important but dormant topics remain retrievable.
+  [L1-0429-194] type=open_question quality=normal activity=active activation=0.97 reason=open_thread content=The team is debating whether to adopt a multi-agent architecture or continue with the current monolithic, tool-calling system. A proposed plan is to first try modifying the existing prompts to make the agent's behavior more explicit, and only then decide on the architecture.
+
+
+
+
+
+Bounded idea units:
+U-S-0001-01-SR-01 (1-1): An earlier experiment using an 'adaptive window' for segmentation performed poorly. It increased the number of 'rejected' items and decreased 'verified' ones, indicating lower confidence in the output. The code for this experiment was subsequently overwritten.
+U-S-0001-01-SR-02 (2-2): A discussion on improving segmentation included proposals for: 1) creating a ground truth dataset by manually labeling correct segmentation points to measure precision/recall, and 2) a hypothetical adaptive method where the model predicts topic length ('short' vs 'extensive') to adjust window size.
+U-S-0001-01-SR-03 (3-5): A debate on adaptive segmentation methods occurred. An objection was raised that if an adaptive window isn't perfectly precise, it still requires boundary adjustments, nullifying its benefits. A counter-proposal for a binary-search-like method was dismissed as having minimal benefit, as the downstream LLM can effectively process larger, less precise chunks.
+U-S-0001-01-SR-04 (6-6): The segmentation process is expected to output a list specifying the start and end line IDs for each identified segment.
+U-S-0001-01-SR-05 (7-7): The current pipeline architecture uses a 'context planner' to process the transcript in fixed 80-line chunks. A 'segment agent' then divides this chunk into semantic 'segments'. To handle topics that cross the 80-line boundary, the last segment is marked as incomplete to be merged with the subsequent chunk's content.
+U-S-0001-01-SR-06 (8-8): The system's data hierarchy is defined with three levels of granularity: the transcript is first cut into 'segments' (broad topics), which in turn contain multiple 'idea units' (specific points or views).
+U-S-0001-01-SR-07 (9-12): The 80-line chunk is a fixed window size. Within these chunks, after segmentation, 'idea units' are extracted. A verification step ensures full transcript coverage by identifying any missed lines ('gaps') and adding them back as raw, low-quality idea units, which are tagged accordingly.
+U-S-0001-01-SR-08 (13-14): Missed lines ('gaps') in idea unit extraction are attributed to prompt issues in the current version, and a repair mechanism is planned for a future version. The origin of the prompt used for idea unit extraction is also currently unclear to the team.
+U-S-0001-01-SR-09 (15-15): A suggestion was made to prepare slides containing all system prompts as a backup to answer questions during an upcoming presentation.
+U-S-0001-01-SR-10 (15-19): A key design debate centers on the top-down architecture (segmenting before extracting idea units). This is questioned as being counter-intuitive compared to a traditional bottom-up approach (grouping idea units to form themes/segments). The conceptual distinction between a 'segment' and an 'idea unit' remains unresolved.
+U-S-0001-01-SR-11 (19-19): The primary rationale for processing the transcript in 80-line chunks is to make the system's output easier to check and debug.

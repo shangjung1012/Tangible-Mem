@@ -1,0 +1,100 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-03",
+        "U-S-0081-C02-SR-09"
+      ],
+      "content": "The memory architecture will treat Short-Term Memory (STM) and Long-Term Memory (LTM) as separate databases that are updated independently from a common source, such as a new meeting transcript. This rejects a pipeline model where STM content would fade into LTM.",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This is a fundamental architectural decision that defines the data flow between memory layers. The chosen parallel update model prevents LTM from lagging behind recent developments and avoids the complexity of defining consolidation rules from STM.",
+      "related_topics": [
+        "Memory Architecture",
+        "Long-Term Memory",
+        "Short-Term Memory",
+        "data_flow",
+        "design_decision"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-04",
+        "U-S-0081-C02-SR-05"
+      ],
+      "content": "The \"STM-to-LTM pipeline\" model was rejected due to two main flaws: the difficulty of determining which information to consolidate into LTM and which to forget, and the fact that LTM would fail to keep up with the latest state of an evolving topic.",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This argument justifies the selection of an independent update architecture by documenting the critical weaknesses of the alternative pipeline model.",
+      "related_topics": [
+        "Memory Architecture",
+        "design_decision",
+        "feature rejection",
+        "Memory Lifecycle"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-02"
+      ],
+      "content": "There is an unresolved question regarding the internal structure of STM and LTM. It is undecided whether LTM should contain more, but briefer, nodes while STM has fewer, more detailed nodes, or if the opposite structure is more effective.",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This is a significant open design question that will impact memory representation and retrieval efficiency. The resolution will define the trade-off between breadth and depth in the different memory stores.",
+      "related_topics": [
+        "Memory Architecture",
+        "Memory Representation",
+        "data_structure",
+        "design_decision",
+        "Short-Term Memory",
+        "Long-Term Memory"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-07"
+      ],
+      "content": "The evolution of a project's topic over time—including the initial problem statement, subsequent changes, and the overall trajectory—is considered a good candidate for the content of Long-Term Memory.",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This decision defines a primary content type for LTM, focusing its purpose on tracking the high-level narrative and history of discussions, which is a core requirement for the system.",
+      "related_topics": [
+        "Long-Term Memory",
+        "Memory Representation",
+        "data_sourcing",
+        "history tracking"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-01"
+      ],
+      "content": "A proposed retrieval method involves a pre-processing step to determine whether to call the short-term memory (STM) or the long-term memory (LTM) retrieval function, treating them as separate processes.",
+      "importance": 0.75,
+      "confidence": 1,
+      "rationale": "This design decision for the retrieval mechanism aligns with the architectural choice to keep STM and LTM as separate databases, necessitating a routing layer to direct queries appropriately.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "data_flow",
+        "design_decision"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-06",
+        "U-S-0081-C02-SR-08"
+      ],
+      "content": "The criteria for information entering LTM are being designed to be more nuanced than simple metrics like frequency. Inspired by human memory, the system will consider factors like the intensity and consistency of discussion over time. Time alone is considered an insufficient criterion.",
+      "importance": 0.8,
+      "confidence": 0.9,
+      "rationale": "This establishes a guiding principle for the LTM update mechanism, aiming to capture a memory's 'state' based on its discussion history rather than simple heuristics. It's a key step toward a more sophisticated memory lifecycle.",
+      "related_topics": [
+        "Long-Term Memory",
+        "Memory Lifecycle",
+        "design_decision",
+        "Memory Management"
+      ]
+    }
+  ]
+}

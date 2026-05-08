@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-LONG_TERM_TREE_PATH = ROOT / "long_term" / "tree.json"
+LONG_TERM_TREE_PATH = ROOT / "share_mem" / "tree.json"
 LONG_TERM_DIR = ROOT / "long_term"
 
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(LONG_TERM_DIR) not in sys.path:
     sys.path.insert(0, str(LONG_TERM_DIR))
 

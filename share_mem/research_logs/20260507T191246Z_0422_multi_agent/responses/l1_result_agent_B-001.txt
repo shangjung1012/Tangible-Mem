@@ -1,0 +1,66 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-01"
+      ],
+      "content": "系統將使用 Gemini 的 Tool Calling 功能來動態訪問逐字稿。逐字稿以資料庫格式儲存，讓模型能自行決定一次要檢索多少行，從而避免了如何預先分塊數據的問題。",
+      "importance": 0.9,
+      "confidence": 1.0,
+      "rationale": "這是一項基礎性的架構決策，它規定了代理如何與原始逐字稿數據互動，從靜態推送模型（預先分塊）轉變為動態拉取模型（工具調用）。",
+      "related_topics": [
+        "design_decision",
+        "data_flow",
+        "LLM",
+        "Memory_system",
+        "data_sourcing"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-02"
+      ],
+      "content": "記憶體更新的數據處理流程始於 WhisperX 的逐字稿，該逐字稿按說話者輪次或句子進行分段。然後，這些分段會根據錄音進行手動審查和校正，並以逐行的方式儲存在資料庫或類似 CSV 的格式中，供 Gemini 存取。",
+      "importance": 0.75,
+      "confidence": 1.0,
+      "rationale": "這描述了在記憶系統使用源數據之前，準備和結構化數據的既定多步驟流程，並強調了為確保數據品質而進行的手動校正步驟。",
+      "related_topics": [
+        "data_processing",
+        "data_flow",
+        "data_quality",
+        "data_structure",
+        "WhisperX"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-03",
+        "U-S-0001-01-SR-05"
+      ],
+      "content": "LLM 與記憶體系統之間的互動圍繞兩個核心函數設計：一個用於從逐字稿和記憶體資料庫中檢索數據的 `Read` 函數，以及一個用於修改結構化記憶體資料庫的 `Write` 函數。",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "這定義了記憶體操作的基礎 API，在讀取源資訊和寫入結構化記憶體之間建立了明確的關注點分離。",
+      "related_topics": [
+        "Memory_system",
+        "design_decision",
+        "data_flow"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-05",
+        "U-S-0001-01-SR-04"
+      ],
+      "content": "記憶體更新的工作流程是一個兩步驟過程：首先，Gemini 讀取記憶體資料庫的當前狀態和相關的逐字稿區塊。其次，它會獲得一個 `Write` 函數來應用變更並更新結構化記憶體。",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "這概述了代理如何處理新資訊並將其整合到記憶體中的具體操作順序，闡明了從讀取到寫入的流程。",
+      "related_topics": [
+        "Memory Management",
+        "data_flow",
+        "Memory_system"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior. Do not dismiss these as
+filler.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted.
+
+For non_memory_context_ranges, include only lines that are purely filler,
+acknowledgements, local wording clarification, or social closing with no memory
+value.
+
+Segment: S-0001-C01
+Topic: Speaker Diarization and Data Source Challenges / Demonstration of the Memory Update Mechanism
+
+Transcript lines:
+1: [SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。
+2: [SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。
+3: [SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是 Zoom，你拿到 transcript 時，它會直接標出這段聲音是我這邊進來的，也就是我講的；維希講話就會標成維希。它會直接標好。可是我們現在的來源不是這樣。
+4: [SPEAKER_01]: 跑了一次之後，它會產生一個 Memory。這個 Memory 的樣子我還沒有仔細設計過。大概來說，首先它會為每一次 meeting 建一個 summary。
+5: [SPEAKER_01]: 像我剛剛跑了 16 跟 17 這兩次。原本是 16，現在是 17，它會更新這一邊，把它變成 2。meeting window 就是這一次的 summary。你會發現它會直接加一個 17 出來，接下來還有幾個 action items。
+6: [SPEAKER_01]: 這個 action items 主要是它會自己判斷哪一個事件需要記起來。比如說我們之前有一些持續性的內容，像是要調查 GPU 的東西。它還有一個特點，就是如果今天又講到上次提到的東西，它會把相關記憶更新。
+7: [SPEAKER_00]: 左邊是只有 16，右邊是跑完 17 之後的結果。它會去更新。你說哪一個是 16？左邊是 16，右邊是 17 嗎？左邊沒有 16 嗎？還是 16 是第一個？所以左邊這個 16，就是一次 meeting 完之後它建構出來的記憶架構。
+8: [SPEAKER_01]: 右邊現在等於是這個 model。
+9: [SPEAKER_00]: 你是說把 16、17 都當成 input 嗎？還是跑 17？
+10: [SPEAKER_01]: 第一次是 16，因為一開始什麼都沒有，所以 16 跑完之後會產生一個 memory。17 則是根據 16 去 update，它會判斷這個要不要更新。
+11: [SPEAKER_00]: 如果是第一次使用，它會從零生出一個吧。第二次使用時，它會根據現有的記憶體去更新。所以你現在想展現的是它怎麼更新，對不對？在 17 那邊，舊的節點都還在，然後像剛剛那樣長出一條線，因為某些東西是 16 所不存在的 item。
+12: [SPEAKER_01]: 對。現在這個 demo 是：如果 16 已經討論過某個東西，17 又再提到，它就會更新。其實如果 16 講過，17 又提到，它會把這個 item 的 meeting ID 加一，並補上一些內容。
+13: [SPEAKER_00]: 這邊要怎麼看出它是又被講過一次？那邊看起來好像是一樣的對話。
+14: [SPEAKER_01]: 以這個點來說，代表我們在下一次 meeting 的時候沒有解決它，也可能根本沒有提到它。
+15: [SPEAKER_00]: 那有沒有例子是某一件事情在兩次 meeting 都被提到？
+16: [SPEAKER_01]: 像這個 item 可能是標註的部分。原本 16 可能有提到你們先去標註什麼；在 17 裡，SPEAKER_02 會說它已經經過標註，並且觀察到一些問題之類的。
+17: [SPEAKER_00]: 所以同一件事情在 16 的時候有點像是 TODO，但 17 的時候有一些進展狀態。
+18: [SPEAKER_01]: 對。現在是這樣：它會有一個 item，這個 item 之後可以再設計，但目前會記錄這是什麼東西，有 title 跟一些記錄。16 這邊可能只是簡單說某件事要去做，17 就會更新相關進度。
+19: [SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。
+20: [SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。
+21: [SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。
+22: [SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。
+
+Current idea units:
+[
+  {
+    "unit_id": "U-S-0001-C01-01",
+    "line_start": 1,
+    "line_end": 3,
+    "text": "The project's context of physical, face-to-face meetings presents a difficult speaker diarization problem, as opposed to online meetings (e.g., Zoom) where speaker labels are automatically provided with the transcript.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-C01-02",
+    "line_start": 2,
+    "line_end": 2,
+    "text": "It was suggested that for experimental purposes, the team could simplify the process by assuming correct speaker identification, unless a tool like WhisperX proves to be highly accurate for their use case.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-C01-03",
+    "line_start": 4,
+    "line_end": 11,
+    "text": "The memory update mechanism was demonstrated: the first meeting (e.g., #16) generates an initial memory structure from scratch, while subsequent meetings (e.g., #17) take the existing memory as input and update it with new information.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-C01-04",
+    "line_start": 6,
+    "line_end": 18,
+    "text": "The system tracks action items over time. For example, a task assigned as a 'TODO' in meeting #16 can be updated in meeting #17 with progress reports, showing its evolution.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-C01-05",
+    "line_start": 12,
+    "line_end": 21,
+    "text": "When an item is revisited in a new meeting, its associated meeting ID is updated (e.g., from 16 to 17) and new content is added. The detailed structure of a memory item is not yet finalized but includes a title and records.",
+    "completeness": "partial",
+    "uncertainty_note": "The design of a memory item is explicitly stated as not yet finalized."
+  },
+  {
+    "unit_id": "U-S-0001-C01-06",
+    "line_start": 19,
+    "line_end": 21,
+    "text": "There was a design discussion about representing an item's history. A suggestion was made to use relative time (e.g., 'one week ago'), but the current implementation uses absolute meeting IDs to track when an item was last discussed.",
+    "completeness": "uncertain",
+    "uncertainty_note": "This captures an unresolved design discussion; it's unclear if the suggestion to use relative time will be adopted over the current meeting ID system."
+  },
+  {
+    "unit_id": "U-S-0001-C01-07",
+    "line_start": 21,
+    "line_end": 22,
+    "text": "The system has a memory retention policy: an item will be deleted if it is not discussed within a certain window, specified as three meetings.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  }
+]
+
+Validator report:
+{
+  "segment_id": "S-0001-C01",
+  "line_start": 1,
+  "line_end": 22,
+  "input_units": 7,
+  "output_units": 5,
+  "coverage_rate": 0.682,
+  "uncovered_ranges": [
+    {
+      "start_line": 12,
+      "end_line": 18
+    }
+  ],
+  "overlap_ranges": [
+    {
+      "start_line": 2,
+      "end_line": 2
+    },
+    {
+      "start_line": 21,
+      "end_line": 21
+    }
+  ],
+  "non_memory_context_ranges": [],
+  "deterministic_fallback_enabled": false,
+  "issues": [
+    {
+      "unit_id": "U-S-0001-C01-04",
+      "issue": "too_fat_line_span",
+      "line_span": 13
+    },
+    {
+      "unit_id": "U-S-0001-C01-05",
+      "issue": "too_fat_line_span",
+      "line_span": 10
+    },
+    {
+      "issue": "uncovered_line_ranges",
+      "uncovered_ranges": [
+        {
+          "start_line": 12,
+          "end_line": 18
+        }
+      ]
+    }
+  ],
+  "repairs": []
+}

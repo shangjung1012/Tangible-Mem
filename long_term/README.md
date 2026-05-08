@@ -1,5 +1,21 @@
 # Long-term Memory（時間記憶樹）
 
+Current L1 implementation note: canonical multi-agent L1 extraction code now
+lives in `share_mem/l1/`. This directory keeps temporal L2/L3, recall, legacy
+CLI entrypoints, and compatibility wrappers for older imports.
+
+Topic-tree is currently implemented as a `share_mem` sidecar/view, not as a
+replacement for this directory's temporal L2/L3 schema. Build it with
+`uv run share_mem/build_topic_view.py --tree share_mem/tree.json --mode hybrid --model gemini-2.5-pro`.
+
+L1 type v2 is also side-by-side only. Use an experiment output root and compare
+against canonical `share_mem/tree.json` before considering promotion:
+
+```bash
+uv run share_mem/build_tree.py --output-root share_mem_experiments/type_v2_legacy_<timestamp> --taxonomy v2-memory-roles --include-legacy-type --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
+uv run share_mem/compare_l1_runs.py --baseline share_mem/tree.json --candidate share_mem_experiments/type_v2_legacy_<timestamp>/tree.json --out share_mem_experiments/type_v2_legacy_<timestamp>/comparison
+```
+
 `long_term/` 是 Virtual Mentor 的跨會議記憶模組。它會把單場會議整理成 L1 記憶，再逐步彙整成 L2 phase 與 L3 project profile，供 recall 在回答問題時補上長期背景。
 
 ## 先看這裡
@@ -246,3 +262,16 @@ UV_CACHE_DIR=/tmp/uv-cache uv run long_term/cli.py eval-injection \
 - L2 / L3 redesign 筆記：`long_term/docs/L2_L3_REDESIGN_PLAN.md`
 
 如果只是要開始跑 long-term，優先記住 `uv run long_term/cli.py --help` 就夠了。
+
+## Current L1 Source
+
+New L1 memory work uses `share_mem/tree.json` as the canonical store. Rebuild it
+from the Grace transcripts with:
+
+```bash
+uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
+```
+
+This command always uses the `share_mem/l1` multi-agent L1 pipeline. The older
+`long_term/tree.json` temporal tree remains useful as a legacy L2/L3 reference,
+but new L1 recall should read from `share_mem/tree.json`.

@@ -1,0 +1,69 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-01"
+      ],
+      "content": "The system will use Gemini's Tool Calling feature to allow the model to dynamically decide how many lines of the transcript to retrieve at a time. This avoids the need for a fixed pre-chunking strategy by converting the transcript into a database format that the model can query.",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This describes a fundamental shift in data processing strategy, moving from a static, pre-processed input (pre-chunking) to a dynamic, model-driven retrieval process using Tool Calling. This is a core architectural choice for interacting with the transcript.",
+      "related_topics": [
+        "LLM",
+        "data processing",
+        "data_flow",
+        "Memory Retrieval",
+        "RAG"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-02"
+      ],
+      "content": "The input for memory updates is a WhisperX transcript, which is segmented by speaker turns or sentences. These segments are then manually reviewed and corrected against the audio before being stored in a row-by-row database format for the LLM to access.",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This defines the specific, multi-step data preparation and ingestion workflow, from raw transcript to a structured, corrected database format ready for the LLM. It's a concrete process definition.",
+      "related_topics": [
+        "data processing",
+        "data sourcing",
+        "data quality",
+        "WhisperX",
+        "data_structure"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-03",
+        "U-S-0001-01-SR-05"
+      ],
+      "content": "The memory update process is structured as a Read-Modify-Write cycle. The LLM is provided with `Read` and `Write` functions. It first uses `Read` to access the current state of the structured memory database and the relevant transcript portions, and then uses `Write` to apply modifications to the memory database.",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This outlines the core operational loop for memory modification. It's a fundamental architectural pattern (Read-Modify-Write) defining how the agent interacts with and alters its memory state, using specific `Read` and `Write` functions provided to the LLM.",
+      "related_topics": [
+        "Memory Management",
+        "Memory Lifecycle",
+        "data_flow",
+        "LLM",
+        "design decision"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-04"
+      ],
+      "content": "For long-term memory operations, the source transcript is split into chunks. A function is provided to the LLM that allows it to read from both these transcript chunks and the existing memory database. This chunking approach is also planned for future application to short-term memory.",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This specifies a concrete data handling method (chunking) for a specific part of the system (long-term memory) and indicates its planned extension. It's a durable decision about how to manage large source documents for memory processing.",
+      "related_topics": [
+        "Long-Term Memory",
+        "Short-Term Memory",
+        "data processing",
+        "data_fragmentation",
+        "Memory Management"
+      ]
+    }
+  ]
+}

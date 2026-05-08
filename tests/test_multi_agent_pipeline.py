@@ -592,8 +592,8 @@ class MultiAgentPipelineTests(unittest.TestCase):
             raise RuntimeError("segmentation exploded")
 
         with tempfile.TemporaryDirectory() as tmp:
-            with patch("multi_agent_pipeline.MultiAgentLLMRunner", FakePipelineRunner):
-                with patch("multi_agent_pipeline.segmentation_agent", broken_segmentation):
+            with patch("share_mem.l1.multi_agent_pipeline.MultiAgentLLMRunner", FakePipelineRunner):
+                with patch("share_mem.l1.multi_agent_pipeline.segmentation_agent", broken_segmentation):
                     with self.assertRaises(RuntimeError):
                         run_multi_agent_l1_pipeline(
                             model_name="gemini-test",

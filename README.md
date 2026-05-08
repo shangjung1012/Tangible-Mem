@@ -1,5 +1,38 @@
 # Virtual Mentor
 
+## Share Memory L1 Store
+
+`share_mem/` is the canonical L1 memory store for new work. The multi-agent L1
+implementation now lives under `share_mem/l1/`; `long_term/` keeps legacy
+wrappers and the L2/L3 temporal tools. Rebuild the Grace L1 store with:
+
+```bash
+uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
+```
+
+`long_term/tree.json` is a legacy temporal artifact for older L2/L3 work; new
+short-term and long-term views should use `share_mem/tree.json` as their L1
+source.
+
+The first topic-tree implementation is a sidecar view, not a replacement for
+raw L1. Build it after `share_mem/tree.json` exists:
+
+```bash
+uv run share_mem/build_topic_view.py --tree share_mem/tree.json --mode hybrid --model gemini-2.5-pro
+```
+
+This writes append-only per-meeting updates under `share_mem/topic_updates/`
+and replays them into `share_mem/topic_tree.json` plus
+`share_mem/topic_index.json`.
+
+L1 type v2 is currently only a side-by-side experiment. Keep canonical
+`share_mem/` untouched and write experiments to a separate root:
+
+```bash
+uv run share_mem/build_tree.py --output-root share_mem_experiments/type_v2_legacy_<timestamp> --taxonomy v2-memory-roles --include-legacy-type --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
+uv run share_mem/compare_l1_runs.py --baseline share_mem/tree.json --candidate share_mem_experiments/type_v2_legacy_<timestamp>/tree.json --out share_mem_experiments/type_v2_legacy_<timestamp>/comparison
+```
+
 
 ## 安裝
 
@@ -41,7 +74,7 @@ uv run app/main.py
 ## 子模組說明
 
 - 短期記憶：[`short_term/README.md`](short_term/README.md)
-- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；目前 L1 研究主線是 multi-agent bridge，full / incremental 保留作 baseline
+- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；目前 L1 研究主線是 `share_mem/l1` multi-agent bridge，full / incremental 保留作 baseline
 - 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
 
 ## Meeting Recording（摘要）

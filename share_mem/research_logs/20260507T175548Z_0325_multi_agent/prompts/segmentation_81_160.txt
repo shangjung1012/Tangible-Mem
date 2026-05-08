@@ -1,0 +1,107 @@
+You are segmentation_agent for a long-term memory extraction pipeline.
+Return JSON only. Split the transcript window into topic-coherent segments.
+Use original line numbers.
+
+Create durable discussion segments, not sentence-level or checklist-like slices.
+Normally return 3-6 segments for an 80-line primary window.
+You may return up to 10 segments only when there are clear
+major topic shifts. Prefer 10-24 primary-window lines per segment.
+Do not split every small subpoint into a segment; downstream idea units will handle
+the smaller claims inside each durable segment.
+
+Meeting: 0325
+Primary window: 81-160
+
+Transcript lines:
+75: [SPEAKER_01]:	像我之前就是上次之前做過的short term我用現在這個dataset去跑過然後就是大概長得像這樣有點雜亂但是我剛剛的感覺我用它這個
+76: [SPEAKER_02]:	但是我剛剛看了一下你們的那個structure的東西因為我記得你們在那個計畫書裡面寫說還要有personality比較強調他不會drift那件事情對那這個地方你們要怎麼去抓到他的personality
+77: [SPEAKER_01]:	就是他可以分開去處理就是我們那時候一開始最初的計畫是他會先記憶先generate出來然後再丟進Persona的Memory然後再等於說那是兩個步驟修製成符合這個Persona的說話方式然後再調整
+78: [SPEAKER_02]:	那這個Persona它的Personality它可能某方面某個類型的Vector對嗎 那它的那個Vector我要怎麼Update它或是我要用什麼樣的Input去去建構它那個Persona的Personality
+79: [SPEAKER_04]:	也是老師錄音檔
+80: [SPEAKER_02]:	欸?所以是用聲音嗎?就譬如說我是upbeat的人
+81: [SPEAKER_01]:	沒有,我們是拿聲音沒有錯,但是我們那時候在想就是
+82: [SPEAKER_02]:	文字有辦法找到personality嗎?
+83: [SPEAKER_01]:	呃,所以我們那時候語氣讀了就是說話的方式不會是語氣,就目前啦我們是因為譬如說講話的方式是指講話的內容的方式
+84: [SPEAKER_03]: 陳	是你本來會有你的口頭禪或你習慣怎麼問問題
+85: [SPEAKER_02]:	那那個部分它是會drift的嗎?就因為我們剛剛講的是說我們在你們的proposal裡面寫說我們會有personality drift這件事情那在我們傾向如果只是口頭禪上的話它會有我們要怎麼去證明說新的方式它比較不會drift
+86: [SPEAKER_03]:	你說測試evaluate的方式嗎?
+87: [SPEAKER_02]:	對
+88: [SPEAKER_02]:	就譬如說如果我甚至不需要寄到過去的Personality啊我拿最近的一次去抓出我最常講的話我就放進去我不用記過去所有東西它是不是也是也是
+89: [SPEAKER_01]:	這就像是你拿整個的Data去train 跟你只拿一次去train的差別就是就是你我們要去設計怎麼去去評估說它到底效果嗎
+90: [SPEAKER_02]:	所以可能會是
+91: [SPEAKER_03]:	評估的方式我們有想我們應該想的是真人性嗯
+92: [SPEAKER_02]:	某方面說最終如果真的沒有辦法可能真的也是要用去gen出一個就是dataset譬如說我可以想可以怎麼去evaluate這件事情
+93: 因為當初是想說如果用我們的錄音檔的話那就是找老師的學生來看這個agent做出來的感覺像不像語氣像不像老師然後
+94: [SPEAKER_02]:	所以你們可能會比較說如果我只用上一次嗎然後跟長期的你們有做StabilizePersonality的Persona的Vector的空間現在的話還沒
+95: [SPEAKER_01]:	因為我們現在主要是在做記憶的因為我們發現記憶比我們長的人沒那麼好就是就要考量的東西也蠻多的
+96: [SPEAKER_00]:	因為我看到比較新因為剛剛那一篇是在另外一個反正我查一個IEEE的它的更就是類應用的它好像比較多meeting summarization的一些我直接丟Google Scholar好了
+97: [SPEAKER_00]:	剛剛那個不是剛剛那IEEE那個比較多我記得你都不知道他們的關係但是有了有了有一個新的你開一下Google Scholar在然後它第一頁的你剛剛那一篇在第二頁的應該是第二頁第二頁的第一個第二個第二個對不起
+98: [SPEAKER_02]:	我看在其他类别都是有个什么train short infer long那个long是什么
+99: [SPEAKER_00]:	我刚刚几个看他都是在整理前面几篇都是整理那种比较长期的meeting记录怎么summarization
+100: [SPEAKER_01]:	所以看起來也不是因為拿這個資料集的大部分都是要嘛做這種語音轉換的因為這個資料集的賣點其實比較不是會議比較像是它有逐字稿跟錄音檔這兩個它同時都有給所以很多人主要會拿來做
+101: [SPEAKER_02]:	剛剛那個Meeting你剛剛這一篇是
+102: [SPEAKER_02]:	meet multi x看一下那個meet multi x看一下那個看一看view pdf看一下然後上面有一張圖下面有一張圖那個第四頁有一張圖看一下那個圖
+103: [SPEAKER_02]:	這什麼東西 就這個意思Summarize EvaluateScalar Factor 再往下看一下剛剛有一張很像是那種系統圖的有一篇不是這一篇是不是不是
+104: [SPEAKER_00]:	你說我剛剛我剛看的是你說這個嗎
+105: [SPEAKER_02]:	你剛開的某一篇 Chain of Interaction對對對對對
+106: [SPEAKER_02]:	對,Chain of Interaction..Chain of...往下往下那個Chain of Interaction喔!顏老師來了PDf那個往下往下Chain of...那個日文的上面那個對,日文上面那個這個是...這個是你們的...這...這...
+107: [SPEAKER_02]:	這三位是我們的專題同學你們自我介紹一下好了這位是顏安芝老師欸你們有修老師課嗎沒有沒有開大學部課嗎有自然語言處理 他們都大三對叫蔡三王就是尚榮 奕欣跟宥枕然後這是碩 碩班的同學在維新對
+108: [SPEAKER_05]:	他們都大三吧
+109: [SPEAKER_02]:	他們都大三對叫尚榮 奕欣跟宥禎然後這是碩 碩班的同學叫維新對
+110: [SPEAKER_02]:	你們就先講一下我們現在的你們想的我們的題目吧好啦不用開計畫書嘛反正其實大概就是我上次跟你講的那個題目然後我們現在就是在說就是一開始的初衷是想要說透過就是過去透過過去的連續的meeting的錄音檔然後去train出某一個就是最後可以對話的一個agent
+111: [SPEAKER_02]:	對,然後它的重點就會是說,那時候專題想你們那個project有三個重要的挑戰,那三個挑戰
+112: [SPEAKER_01]:	就是我們現在把東西主要分成兩部分去處理就是一個是記憶的部分,它是確保內容的正確記憶就是包括你之前會議的內容
+113: [SPEAKER_01]:	然後就是我們一開始他可能有分三個是就是working short term跟long term然後之後講出的話就是我們第一個部分memory出來的話是正確之後然後待會第二個部分是會把它調整成像是老師會說的話
+114: [SPEAKER_01]:	那那個Memory的話假設就是有三個一個是Working一個是Short-term一個是Long-term那Working它就有點像是我們當下的就比如說現在我們在講話的內容那就是一定要記得說可能上前10秒我剛說了什麼
+115: [SPEAKER_01]:	再來是long term,long term主要的意思是就是對,
+116: [SPEAKER_02]:	short term要不要先
+117: [SPEAKER_01]:	short term主要的意思是就是要記得近三次的會議就比如說你agent要記得說你上次的to do是什麼那你到今天的時候有沒有做了什麼更新之類的那我們的做法就是我們目前的做法是他會用LLM我們是打一個LLM去判斷然後他會回傳
+118: [SPEAKER_01]:	然後比如說它會是有點類似列點的方式那列點的方式如果今天我們就之前會有個目前的Memory嘛那我們會拿這次Meeting完之後的逐字稿去把它餵進去那餵進去之後它
+119: [SPEAKER_01]:	就是如果是相同的比如說上次的會議他會有個類似description那如果是description類似的話然後他會去比較然後比較完之後他會直接更新上去那我今天講過的事情是之前沒有講過的他就會類似append上去這是目前的short term
+120: [SPEAKER_01]:	會是這樣的方式去做然後因為每一個items他會記得就是他會去記錄說他上次用到上次更新是什麼時候就比如說就12345然後這一次是我們的第六次會議那第六次會議完之後會拿第六次的會議去把它update進去那如果今天有一個會議的item他上次記錄的最後一次更新是可能第一次或是第二次那代表
+121: [SPEAKER_01]:	近期都沒有提到過他那他會把他就踢掉這樣子
+122: [SPEAKER_02]:	我覺得你總地來講說應該是剛剛講的working memory就是現在正在進行然後short term我記得我們上次是說就是上一次就好那short term的話就是說他比較重視在直接會impact這個禮拜要找的事情因為他會直接是變to do那beyond上一次的話我們就當成是一個比較long term的一個東西
+123: [SPEAKER_02]:	那我覺得我們的Memory有個比較重要的點是因為我們討論的是在研究的情境底下然後所以有很多東西它其實會一直開枝然後在某些時刻它可能它不是線性的對 然後所以有些東西它其實在某個時刻它存在但是其實在某個時刻我們已經否決掉不要做這件事情了
+124: [SPEAKER_02]:	那如果是我們想像說一般的像比方說rag或什麼東西我知道說這個事情比如說本來覺得要做這個東西對他是在記憶裡的但是在某個時刻他其實已經變成是不要再做它了那所以那也許然後不同的事情比如說像我們一開始有一些不一樣的goal那現在說好我們聚焦到說memory這件事情那也不代表說personality或什麼東西不管對那當然那個東西會現在目前會丟在就是比較longterm的那個記憶裡面去
+125: [SPEAKER_02]:	對,然後,所以就有點像是這種,譬如說我要怎麼去在Long Term上的話,我要怎麼去Structure這種可能開枝散葉或是Iterative然後中間可能有些Dependency,那某些東西其實它雖然曾經被講過但是它是不應該再被執行等等的,這些Temporal的一些Formation對,就比較,然後這部分就是Long Term的地方嗯,
+126: [SPEAKER_04]:	Long Term這現在應該不是Dependency,現在比較像是靠retrieval去那個
+127: [SPEAKER_02]:	不知道顏老師對於我們現在這樣子的架構有沒有什麼想法 然後最近同學們就一直在看一些處理memory架構的paper
+128: [SPEAKER_01]:	我們最近主要是在看就很多Memory主要是解決的問題是在 context太大的時候然後很多人我們會把它去處理成一些樹狀的結構我們昨天有自己討論就是我們到底要怎麼去區分我們的short term 我們現在在想short term的形式搞不好可以改因為昨天測試下來之後short term會變得很龐大
+129: [SPEAKER_00]:	就是近一次跟近兩次可能要看他的就是有沒有很明顯的差別
+130: [SPEAKER_03]:	我們在想如果像可能他20場30場看剛剛我們用多長的話那他到底第一場他到第25場的時候他第一場他到底應該要記得多少就是他可能其實不需要像以現在大部分他們在做記憶架構上面那麼的詳細就他們比較像是說
+131: [SPEAKER_02]:	就long term上可能某些東西就可以fade out了這樣因為現在的結構
+132: [SPEAKER_04]:	就是大部分的樹狀結構因為你把記憶打散所以你的時間就沒有辦法放進你的每一個區塊裡面所以變成說你不會有時間造成權重的衰退的結構在這個樹狀結構裡面
+133: [SPEAKER_04]:	所以我在想是不是長期可以不一定要用這種樹狀結構就是用時間的方式讓它順著下來然後靠Retrieval的方式去抓住你想要的東西就是我們Retrieval後面你在算語意相似度
+134: [SPEAKER_04]:	你會得到這個語意相似度之後你後面有個分數是Retrieval的部分就是會有Residency的分數然後這個就是我們希望可以做到的關於時間衰退的重要性的那個權重但是如果有一些保障就是像如果你是很重要的資訊的話那你的那個Residency會有個Flow就是你不會降到最低不然它其實很重要但如果它在很久之前
+135: [SPEAKER_04]:	你如果沒有這個floor的話它會變成說它就會消失所以你可以設定這個然後就是Retrieval的公式主要是長這樣子
+136: [SPEAKER_02]:	這個是你們自己現在目前的想像就有點像是說現在好像大部分在處於那個longterm在說就是比如超過他的那個target記憶線度的時候會開始hallucinate然後大部分好像都是在說我要精準的抓住所有過去發生的事情
+137: [SPEAKER_02]:	然後在這邊我們會有點像是說我們要去有一個weight有一個trade off就是某些講太久的事情他其實就是他基本上就不要再被retrieve出來那但是很久之前但是其實還是蠻重要的事情然後他在某個時刻他可能還是可以跳出來而且大家知道說在那個時候發生了什麼事情類似這種
+138: [SPEAKER_05]:	現在還蠻make sense的然後如果是這個架構可能也許可以參考看看那個可不可以幫我開網頁搜尋什麼因為大家什麼the web對 然後 web c-a-g
+139: [SPEAKER_03]:	是這樣的嗎?我已經忘記那一篇是一篇論文嗎?對對對,這個嗎?有嗎?有像嗎?這個沒有像這些是搜尋作者中
+140: [SPEAKER_02]:	像這種比如說那種Decay就是比較早之前的這種Retrieval是有類似的model或類似的範文就是考慮它的重要性跟時間的長度然後去看就好就有這種類型的然後對Agent裡面的記憶
+141: [SPEAKER_00]:	我好像有看過一篇類似他就是在模仿人的記憶系統應該是有分長期跟短期
+142: [SPEAKER_02]:	Generative Agent是Sanford那一篇嗎就是那個small village
+143: [SPEAKER_00]:	是不是不是那一篇是個什麼Digital Human
+144: [SPEAKER_02]:	應該不是因為Digital那個他很因為他的Interaction只有他系統裡面所以其實很短 對 它沒有像這種大量的meeting
+145: [SPEAKER_05]:	他就是可以把一些資訊先翻出來
+146: [SPEAKER_04]:	那時候查RAG有看到這篇標題但沒有去細看
+147: [SPEAKER_05]:	就有些可能可以放在裡面比較新的資訊再搭配RAG
+148: [SPEAKER_04]:	它的主要內容大概是?
+149: [SPEAKER_05]:	應該是有一些比較就是會反覆被解鎖到的資訊先存到它的Cache裡面所以可能在比如說Working Memory的時候可能會是我們過去常常一直會在那邊提到的東西它在Working Memory的時候會一直出來
+150: [SPEAKER_04]:	感覺也是Working Memory的一種形式
+151: [SPEAKER_01]:	如果是這樣的話說不定可以把整個記憶只有一個然後等於說那Cache有點像是short term的感覺
+152: [SPEAKER_03]:	應該不太一樣吧Cache是你頻繁出去
+153: [SPEAKER_01]:	頻繁出去不就代表你就是如果你你short term就是你你頻繁出去
+154: [SPEAKER_04]:	可是我覺得working會比較乾淨
+155: [SPEAKER_03]:	可是working不是會餵整個逐字稿
+156: [SPEAKER_04]:	但搞不好他的cache夠大可以直接
+157: [SPEAKER_02]:	你說把short term直接變成一個超大型的cache
+158: [SPEAKER_03]:	因為他這個cache只是為了你存取比較快
+159: [SPEAKER_00]:	對 它是提高查詢效率但你查詢的對或錯你的價值
+160: [SPEAKER_02]:	它是效率的問題那你對或錯你還是要看語音對或錯
+161: [SPEAKER_01]:	我知道 它應該是有點像是查到之後就把它對 它把它放下去它是Retriever會比較快的意思對 它就是Retriever會比較快可是你怎麼比 你怎麼找它還是要自己就我們還是要做最初的還是要篩選然後
+162: [SPEAKER_02]:	你們順便黃漢勳你們那時候有找他有列在那個中研院裡面嗎胡老師嗎
+163: [SPEAKER_04]:	好像沒有
+164: [SPEAKER_02]:	他們都是列那個古倫維老師還有那個馬偉雲
+165: [SPEAKER_05]:	那可能找古老師好了
+166: [SPEAKER_02]:	你說他們的這個方向都是古老師嗎

@@ -1,0 +1,46 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0067-C01
+Topic: Proposing Gemini's function calling for memory retrieval / Clarifying the agent's operational mode: memory usage vs. memory update / Defining the agent's context: building and using a 'virtual mentor'
+
+Transcript lines:
+67: [SPEAKER_04]: 我們剛剛講的是，不要把 transcription 直接整個丟進去，讓它 black box 運算。關於怎麼丟，我有一個想法。先說目前記憶有一個取用方式，就是 Gemini 有 function calling 的功能。原本我們可能是想先把記憶找到，再把記憶和目前說的話餵給 Gemini。
+68: [SPEAKER_04]: 例如我講這句話，五個月前我們有討論類似內容，就會把這句話拿去餵記憶，記憶會回傳一個東西，再把這個東西和這句話一起餵給 Gemini。現在的做法是，你可以提供一個函數給 Gemini，讓 Gemini 自己判斷要不要呼叫這個函數。
+69: [SPEAKER_04]: 等於現在的做法是，我們把短期記憶和長期記憶的獲取方式交給 Gemini，讓它決定要不要用。
+70: [SPEAKER_04]: 例如我想問「上禮拜做了什麼？」這句話會先送給 Gemini 和兩個函數。這兩個函數一個是取短期記憶，一個是取長期記憶。丟給它之後，Gemini 可以判斷看到這個問題時想用短期記憶，然後短期記憶裡面的參數就是這句話。
+71: [SPEAKER_04]: 它會把這個呼叫回傳。程式收到之後就會自己執行那個函數和參數，得到結果後再回傳給 Gemini。假設我們提供長短期兩個函數，它就會決定要用長期還是短期。這可以讓 LLM 決定要用哪一個函數。這個函數指的是獲取短期記憶或獲取長期記憶。
+72: [SPEAKER_04]: 它其實就是兩個 function：取短期和取長期。這是我們自己寫的函數。裡面會有參數。短期記憶的架構可能就是這些參數，例如一句話。
+73: [SPEAKER_04]: 一開始記憶不是這樣嗎？你要給它一句話，它才會找到記憶儲存了什麼。這個 function 是用來取記憶內容的。當我們 build 記憶時，retrieval 的方式就是給一段話，然後它會返回記憶裡面的內容。
+74: [SPEAKER_00]: 那我們為什麼需要選擇短期跟長期？我們大腦運作時，短期記憶、長期記憶和工作記憶不是同時一直在動、一直被 update 嗎？你這樣等於是直接把它們混在一起嗎？
+75: [SPEAKER_04]: 沒有。我現在是在思考，你剛剛說要取用短期還是長期，這是什麼意思。一開始有一種方法是，一句話進來，不管是老師或其他人講的，這句話會經過短期記憶，也會經過長期記憶，然後把取出的東西再結合這一句話送給 LLM。
+76: [SPEAKER_04]: 然後 LLM 回一個東西出來，這個東西就是這個 agent 的回應。
+77: [SPEAKER_00]: 它應該會 update 短期記憶跟長期記憶。我的意思是回答的時候。你說它會吐出一個東西，是從記憶裡找出一些內容，再吐出回應。它同時應該會 update 一些東西嗎？應該不會 update。剛剛都是 update；現在假設我們開始執行這個 agent，例如我問一個問題。
+78: [SPEAKER_00]: 你所謂的執行，是指它要吐出 response 嗎？你現在是在講使用時的互動結構？
+79: [SPEAKER_04]: 對，現在不再更新，而是在用它。比如我問「這週 TODO 是什麼？」這類問題。
+80: [SPEAKER_04]: 那 TODO 查詢的時候，它不是應該先進來，然後去短期記憶和長期記憶找內容嗎？這是自己的程式找內容，找到後再把內容和這句話送給 LLM。現在的方式是，這句話可以先直接送給 LLM，讓 LLM 直接決定它想用哪一個函數。
+81: [SPEAKER_04]: 我只是跟大家講一下我那時候想的方式。我們或許可以把逐字稿直接全部存在。等一下，我先確認一下：我們現在想的是未來 demo 時，它是不是 real time？
+82: [SPEAKER_00]: 在 parse 我們講話的內容。不一定要 real time。我們現在是在講更新記憶，但之後還是會用它。用的時候，假設整個 system workflow 是：現在有一群人，其中一個人講了一句話，這句話進來了。後面的 model 裡面會有幾種記憶。
+83: [SPEAKER_00]: 長期記憶在某個地方，短期記憶在某個地方，還有工作記憶，基本上是隨時在 process 東西。假設有兩個人在講話，這裡面會根據過去對話歷程。這個規劃有點像一開始我們說的 mentor。如果我們要做虛擬 mentor，這個東西就是虛擬 mentor。學生會對它講話嗎？對，學生對它講話時，只會用到這個 mentor agent 裡面的記憶。
+84: [SPEAKER_00]: 我們先看怎麼建構這個 mentor。現在要建構 mentor agent，就是我們有很多對話內容，開始丟進去，建構出 mentor agent。建好了之後開始使用它。使用時，使用者是一個學生嗎？
+85: [SPEAKER_00]: 對，一開始的情境是學生。但這個東西是透過我們兩個人的互動去建構的，也就是由過去互動來建構。所以其中才會存在我們說的研究討論，以及 personality。現在還沒有 personality，先不管那個地方；某些人的 personality 也可能存在長期或短期裡。
+86: [SPEAKER_00]: 等一下再討論怎麼 update。假設現在建構好了，學生講了一句話丟出去，agent 收到之後，你說它會怎麼使用記憶？

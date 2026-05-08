@@ -1,0 +1,70 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0223-03-SR-05",
+        "U-S-0223-03-SR-07",
+        "U-S-0223-03-SR-08",
+        "U-S-0223-03-SR-09"
+      ],
+      "content": "應採用由開發者編寫固定程式碼來控制整體流程的架構，而非讓大型語言模型（LLM）來主導。在這種架構下，LLM 應作為一個被呼叫的服務，用於處理特定的分析任務。",
+      "importance": 0.9,
+      "confidence": 0.9,
+      "rationale": "讓 LLM 主導整個工作流程會導致難以管理程式的內部狀態（例如計數器），因為這需要透過繁瑣的提示詞來實現。此外，雖然 LLM 在某些自然語言處理任務上表現出色，但這並不構成將整個系統架構的控制權交給它的充分理由。由開發者控制的架構能提供更好的可控性和可預測性。",
+      "related_topics": [
+        "design decision",
+        "code structure",
+        "data flow",
+        "LLM"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0241-03-SR-02",
+        "U-S-0241-03-SR-03",
+        "U-S-0241-03-SR-04",
+        "U-S-0241-03-SR-05"
+      ],
+      "content": "在關鍵的控制流程中，不應完全依賴大型語言模型（LLM）的 Function Calling 功能，因為其可靠性存有疑慮。",
+      "importance": 0.9,
+      "confidence": 0.9,
+      "rationale": "LLM 是否會決定呼叫某個函式，高度依賴於它對提示詞的理解，而這種理解是無法被完全精確控制的。這與傳統程式碼（如 if-else）的確定性執行流程形成對比。如果無法接受這種由提示詞精確度帶來的不可控性，就應該考慮採用更結構化的方法。",
+      "related_topics": [
+        "design decision",
+        "LLM",
+        "failure_mode",
+        "development strategy"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0223-03-SR-06"
+      ],
+      "content": "讓大型語言模型（LLM）主導工作流程的一個優點是其能進行動態決策，提供比固定程式碼更高的靈活性。",
+      "importance": 0.8,
+      "confidence": 0.9,
+      "rationale": "舉例來說，LLM 可以自行讀取對話紀錄，然後根據內容動態決定是繼續讀取更多上下文，還是直接形成主題並寫入記憶。這種適應性是固定、硬編碼流程所缺乏的。",
+      "related_topics": [
+        "design decision",
+        "LLM",
+        "data flow",
+        "Memory Management"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0223-03-SR-01",
+        "U-S-0223-03-SR-02"
+      ],
+      "content": "在程式碼設計中，函式應被明確地依序呼叫，且其命名應反映其具體功能，避免隱含執行其他主要任務。",
+      "importance": 0.7,
+      "confidence": 0.9,
+      "rationale": "如果一個名為 `Read_Short-term_Memory` 的函式在內部自動執行了像 `read_transcript_overview` 這樣的其他重要操作，那麼這個函式名稱就具有誤導性。為了程式碼的清晰度和可維護性，應提倡函式功能的專一性和呼叫的明確性。",
+      "related_topics": [
+        "design decision",
+        "code structure",
+        "development standards"
+      ]
+    }
+  ]
+}

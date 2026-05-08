@@ -1,0 +1,69 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-02",
+        "U-S-0067-04-04",
+        "U-S-0067-04-05",
+        "U-S-0081-C02-SR-01"
+      ],
+      "content": "決定記憶體檢索策略，需在幾個方案中做出選擇：1) 讓 LLM 使用函數調用自行決定查詢短期或長期記憶體；2) 使用固定的前處理邏輯來決定；或 3) 根據查詢內容的啟發式規則來選擇。",
+      "importance": 0.85,
+      "confidence": 1,
+      "rationale": "The team needs to resolve the debate on how to select between short-term and long-term memory. Several competing methods have been proposed: letting the LLM decide via function calling, using a pre-processing step with fixed logic, or using content-based heuristics. This decision is fundamental to the memory retrieval architecture.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "design decision",
+        "Short-Term Memory",
+        "Long-Term Memory"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-02"
+      ],
+      "content": "解決關於短期記憶體（STM）和長期記憶體（LTM）結構的未決討論，特別是需要確定各自的節點密度和資訊詳細程度。",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "The transcript explicitly states there is an \"unresolved discussion\" about the structure of STM and LTM, with competing hypotheses about their respective node density and level of detail. This architectural decision needs to be resolved to proceed with implementation.",
+      "related_topics": [
+        "Memory Architecture",
+        "data structure",
+        "Short-Term Memory",
+        "Long-Term Memory",
+        "design decision"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-06",
+        "U-S-0067-04-08"
+      ],
+      "content": "探索並實作一種多步驟或可重試的記憶體檢索機制，允許 LLM 在初次查詢結果不佳時，能重新查詢或在不同記憶體層級間進行更精細的搜尋。",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "The idea units propose enhancing the retrieval process by allowing the LLM to perform multi-step retrieval (e.g., querying LTM then STM) or to retry a query if the initial results are insufficient. This represents a concrete follow-up action to improve retrieval robustness.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "implementation plan"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-07"
+      ],
+      "content": "評估一種替代的檢索模型：預設先搜尋較低解析度的長期記憶體，然後根據結果「放大」到相關的短期記憶體中，除非查詢明確指定近期時間範圍。",
+      "importance": 0.75,
+      "confidence": 1,
+      "rationale": "A specific alternative retrieval model was proposed where LTM is always searched first at a lower resolution, followed by a \"zoom-in\" to STM. This needs to be evaluated as a potential implementation path.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "evaluation",
+        "design decision"
+      ]
+    }
+  ]
+}

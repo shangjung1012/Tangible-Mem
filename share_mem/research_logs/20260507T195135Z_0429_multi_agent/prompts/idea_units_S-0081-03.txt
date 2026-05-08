@@ -1,0 +1,35 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0081-03
+Topic: Project Data Status, Quality, and Augmentation Strategies
+
+Transcript lines:
+99: [SPEAKER_04]: 我們這週主要是我們規劃了一些 evaluation 的方法，然後就是有參考之前看的幾篇 paper。然後我們現在累積的 data，應該是前面有從這個學期開始，比較就是有一直 focus 在研究上的，總共有五場。然後現在總計的時間大概是 180 分鐘。
+100: [SPEAKER_04]: 是已經 5 場，總共加起來 180 分鐘。對，然後每一場的長短不一樣，有半個小時，有到快一個小時這樣。對，然後我們有把這 5 場都去轉成逐字稿，但是因為那個錄音檔會有一些可能大家講話交雜的聲音，所以它轉出來的品質有一些部分是需要修改的。然後因為我們有在想說。
+101: [SPEAKER_04]: 五場的量，以現在 LLM 來說其實他們能力都蠻強，那這樣下去做實驗，不太確定這五場的內容夠不夠，所以我們在想是用 LLM 去做，先請 LLM 去修正。
+102: [SPEAKER_02]: 對話裡面有 context 在這個地方的話，你們說這個長度對於 LLM 來說不是一個問題，它是有什麼樣的根據嗎？因為這個地方如果你們在講這個專題的時候，你就要蠻明確地講說，以 Large Language Model 來說，在處理這種會議資料的時候最長。
+103: [SPEAKER_02]: 就是在多長。對，我們有要去嘗試大概多長，大概幾個 turn 是它的極限，那我們就是要做，還是幾個 term、是幾個字，它通常算的應該是，我覺得應該是看 token。對，應該是看 token。所以你可能要去查一下確切地說，以現在目前為止，就是在 agent 上面再定義成是 long context，大家講的是多 long，就是 largest 的現在是最長。
+104: [SPEAKER_04]: 對，然後用那個方式，我們才剛好可以回來看說，所以以我們的 transcription 裡面，先不管 180 分鐘，以那一個標準來看它是幾倍的長度這樣。嗯，然後我們有在想，就是如果今天這個不夠的話，那像有一些 paper 它是用給背景資料，然後請 AI 去對話，那我們現在想的做法是我們把我們的逐字稿送進去，請 AI 去幫忙增長這個對話。
+105: [SPEAKER_02]: 就是讓它的對話可以變得更長，就是 data 更大。或者是有另外一種方式是你可以把我們其他同學的會議錄音也放進去，你就把它變成說是以我作為一個 leader。
+106: [SPEAKER_02]: 然後你們想要來跟我去討論一些事情，那這樣就會存在說，譬如說我跟碩二的同學，我們大概有兩年的 meeting，對，然後就會有很長，就是我對於每個人，我們都有一些脈絡，然後一定有些東西曾經討論過，然後被丟棄。這些錄音都在嗎？應該是都在。對，我知道真盈，因為真盈她也是在弄會議分析，所以她的檔案一定是都在。
+107: [SPEAKER_02]: OK，所以可以去跟學姊拿。對對對，可以跟她要。然後我在想的是，以這樣來說，其實應該是說，你可能下次就要先確定一下，最就是 long context 的那個中值是多少，然後用那個方式去比較。因為這 180 分鐘感覺不是 agent 他們在定義 long 的那個中值，就沒有分鐘的概念。對，用那個方式我們大概會知道說，所以我們的資料的大小大概是多大這樣。嗯。

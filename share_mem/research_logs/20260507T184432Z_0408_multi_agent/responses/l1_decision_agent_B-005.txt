@@ -1,0 +1,99 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-01",
+        "U-S-0081-C02-SR-01"
+      ],
+      "content": "記憶檢索策略已從同時查詢短期和長期記憶，轉變為一種新的方法，即由一個預處理步驟首先決定要查詢短期記憶還是長期記憶。",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This changes the fundamental data flow for memory retrieval, moving from a parallel to a selective process.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "data_flow",
+        "design_decision"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-02",
+        "U-S-0067-04-04",
+        "U-S-0067-04-05"
+      ],
+      "content": "一個關鍵的未解決設計決策是，應該使用固定邏輯（例如，基於查詢內容的啟發式方法）還是將選擇查詢哪個記憶體（短期 vs. 長期）的任務委託給 LLM 本身，可能利用其函式呼叫能力。",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This decision determines who controls the retrieval flow—the system or the agent's core intelligence (LLM)—which has significant implications for flexibility and performance.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "design_decision",
+        "LLM"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-07"
+      ],
+      "content": "一個被提出的檢索模型是，總是先搜索解析度較低的長期記憶以獲取上下文，然後「放大」到相關的、更詳細的短期記憶中，除非查詢明確要求近期資訊（例如，「上週」）。",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This strategy provides a default pathway for retrieval that prioritizes broad context before diving into specifics, potentially improving efficiency.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "Short-Term Memory",
+        "Long-Term Memory"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-02",
+        "U-S-0067-04-06",
+        "U-S-0067-04-08"
+      ],
+      "content": "另一種檢索策略提議使用 LLM 的函式呼叫來決定要查詢哪個記憶體。這將允許進行多步驟檢索，LLM 可以先查詢 LTM，然後將其搜索範圍縮小到 STM，甚至可以重新措辭並重試那些資訊不足的查詢。",
+      "importance": 0.75,
+      "confidence": 1,
+      "rationale": "This approach leverages the LLM's reasoning capabilities to create a more dynamic and robust retrieval process that can adapt to the query and initial results.",
+      "related_topics": [
+        "Memory Retrieval",
+        "Memory Architecture",
+        "LLM"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0081-C02-SR-02"
+      ],
+      "content": "關於短期記憶（STM）與長期記憶（LTM）的內部結構，存在一個尚未解決的討論。對於 LTM 是否應包含更多但更簡潔的節點，而 STM 則包含較少但更詳細的節點，或者反之，存在著相互競爭的假設。",
+      "importance": 0.85,
+      "confidence": 1,
+      "rationale": "The structure of memory nodes (granularity, detail level) is a foundational aspect of the memory architecture that needs to be defined.",
+      "related_topics": [
+        "Memory Representation",
+        "Memory Architecture",
+        "data_structure",
+        "Short-Term Memory",
+        "Long-Term Memory"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-04-03"
+      ],
+      "content": "為了專案目的，已提出一個基於時間的記憶類型區分：短期記憶包含近期的重要事項（例如，過去兩個月），而長期記憶則保存較舊的資訊（例如，六個月前）。",
+      "importance": 0.6,
+      "confidence": 1,
+      "rationale": "This provides a concrete, time-based heuristic for differentiating between short-term and long-term memory content during development.",
+      "related_topics": [
+        "Short-Term Memory",
+        "Long-Term Memory",
+        "Memory Representation",
+        "design_decision"
+      ]
+    }
+  ]
+}

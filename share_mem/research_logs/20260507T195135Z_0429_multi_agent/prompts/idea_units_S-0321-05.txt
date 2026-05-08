@@ -1,0 +1,47 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0321-05
+Topic: Explaining the current system's read/write memory functions and handling of multiple updates
+
+Transcript lines:
+357: [SPEAKER_00]: 我既然都來到這邊 可以簡單講一下就是它這邊就是好 我先從好 直接講綠的再提差不多就是你Read的時候我是把這個函數跟它講裡面要哪些參數那剛剛它不是就是回來它今天 它今天你看這邊的那個Read short term memory它的section overview這個section是它裡面可以就是
+358: [SPEAKER_02]: 看一下喔
+359: [SPEAKER_00]: 它Default是Overview啦 Default是Overview然後它看是你現在讀然後這個Section就是那個你選定的可能一到八十行嗎 還是是一句Section 你說Section嗎Section這邊它就是它可以是For或是Meeting Window Action Item那這些東西就是剛剛在Database看到的這些部分
+360: [SPEAKER_00]: 然後它今天去Read的時候它就是會生成Resource完之後它今天會再把這個Resource直接Return所以Gemini就會拿到它生成這個
+361: [SPEAKER_02]: Resource是什麼
+362: [SPEAKER_00]: 就是Read完的結果OK
+363: [SPEAKER_02]: 這是在Read它的Memory的部分嗎
+364: [SPEAKER_00]: 對 這邊是read memory的部分然後他的memory是去讀 database裡面的東西對然後如果是write的話write就是參數也一樣就是update memory或者是note今天要記什麼東西嘛然後這邊就是有很多的一些就是確保的東西反正就是他寫完之後他最後就是會return說就是從這邊他蠻多的
+365: [SPEAKER_00]: 就它最后就是会回传这边所以你现在是假设80行它一定就是单一的一个unit这样吗没有因为我有在prong说它今天可以连续做三次的write所以它今天write的时候它可以去填说它今天想要的参数比如说
+366: [SPEAKER_02]: 呃 不好意思 等等假设做80号 你是说呃 有点像你是说每一个section可以有multi label但你没有去切它是哪一个idea units这样吗
+367: [SPEAKER_00]: 那你可以跑很多次的意思是说应该是说就是Gemini就是好假设我Gemini我们先用来回假设我他Gemini回给我说他要read的80行那我就会在我自己这边先从这边这个函数我自己在那边跑完之后跑出一个result然后返回给Gemini那Gemini看完这80行他会自己去他会去选择说那我接下来要选择是read还是选择是write
+368: [SPEAKER_00]: 那我今天弄完write之後他我覺得回傳說就是剛剛的return說喔好ok我回傳完了那他今天可以再去繼續write他可以再繼續write說喔那他回來的時候還是要繼續write那我就再回傳說我ok了
+369: [SPEAKER_02]: 我還要繼續write的意思是什麼
+370: [SPEAKER_00]: 就是你剛剛說的啊就是他今天覺得三個就這一段話裡面有三個應該要write的東西所以就是說你說他如果覺得這裡面他不知道位置在哪裡
+371: [SPEAKER_02]: 但他觉得这80行里面有不止一个
+372: [SPEAKER_00]: 他知道会讲哪里因为他已经读完overview了
+373: [SPEAKER_02]: 我知道我的意思是说他他只知道说这个80行里面我可能有三个三个memory都需要去update这样吗但是他在update时候他没有去特别的
+374: [SPEAKER_02]: 分說是八十行的比如說前三十行是屬於什麼東西中間的二十行是屬於什麼東西後面的三十行是屬於哪一個memory的對 如果這樣的話他沒有分這件事情這樣嗎對他只是知道說這裡面有跟這三個主題都有關係所以我這三個主題我都要把這八十行的東西update進去嗎
+375: [SPEAKER_00]: 對因為這件事情其實也有可能發生吧就比如說我們很常就是突然講到說剛剛說了什麼那現在又說了什麼然後剛剛說了什麼現在說什麼
+376: [SPEAKER_00]: 这件事情是有可能发生的所以他今天看完这八十行他自己决定说哎那这里面有三个三个讲到的事情比如说三个可能是我不知道什么停电或者是第二个就是什么write第三个是read那他今天读完这八十行他觉得哎就是有三个要writer那他今天第一步就会先writer停电那我今天说return ok第二步他又继续writer然后又回去嗯
+377: [SPEAKER_02]: OK

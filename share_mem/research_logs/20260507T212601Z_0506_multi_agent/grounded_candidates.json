@@ -1,0 +1,3406 @@
+[
+  {
+    "candidate_id": "C-B-001-decision-006",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-10"
+    ],
+    "content": "系統採用的由上至下（先分段再提取 idea units）的處理架構正受到質疑，因其被認為與傳統的由下至上（將 idea units 組合形成主題）方法相比不夠直觀。此外，「segment」與「idea unit」之間的概念區別也尚未解決。",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This is a critical, unresolved research question that challenges the fundamental architectural approach of the system. The ambiguity between 'segment' and 'idea unit' is a core conceptual problem.",
+    "related_topics": [
+      "design decision",
+      "memory architecture",
+      "data processing",
+      "development strategy"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+    "support_score": 0.192,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.07, 'content_token_coverage': 0.225, 'evidence_token_coverage': 0.092, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is still trying to clarify the distinction and the rationale for the current architecture."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-03"
+    ],
+    "content": "有論點指出，追求高精度的自適應分段方法可能效益不大，因為下游的 LLM 能夠有效處理較大、不夠精確的文本塊，這使得對邊界進行精細調整的需求降低。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a key argument that justifies the current design choice of not pursuing complex, high-precision segmentation methods. It explains the trade-off between segmentation precision and the capabilities of the downstream model.",
+    "related_topics": [
+      "design decision",
+      "data processing",
+      "LLM"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      3,
+      4,
+      5
+    ],
+    "evidence_quote": "[SPEAKER_03]: 就是我們想法是它就是它沒有辦法真正的判定到哪一個它只要沒有完全精準它基本上就沒有效果就是這個感覺就會很正常就連我們人應該也沒有辦法抓到這件事情就是我們單看這個狀況我們也沒有辦法完全的知道它大概會持續多久所以就是這個會造成問題是會讓效果變差的問題是就是它只要一沒有對到那它一定就是還要再往前一點嘛 那這個往前一點就是會讓這個adaptive 它的效果就是就有點像是把它的它前面的預估白費了因為它只要它沒有辦法預估得那麼精準那它一定就是它在往前跳那既然它要往前跳的話那我們就是弄fixed，我本來是想是說譬如說我現在前面假設有一個是假設我們總共100句好了對假設說100句好了 [SPEAKER_02]: 我現在想說好 譬如說 1 2 3 4 到 50 這樣好了對 然後 fixed 的話 當然...",
+    "support_score": 0.224,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.069, 'content_token_coverage': 0.263, 'evidence_token_coverage': 0.086, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "系統的資料層次結構被定義為三個層級：首先將逐字稿切割成「segments」（廣泛的主題），然後再從中包含多個「idea units」（具體的觀點或看法）。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This defines the fundamental data hierarchy (transcript -> segment -> idea unit), which is a core architectural design decision for memory representation.",
+    "related_topics": [
+      "data structure",
+      "memory representation",
+      "design decision",
+      "data processing"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      8
+    ],
+    "evidence_quote": "[SPEAKER_04]: segment, idea unit跟batch 是三個不同密度的切法就是segment 是一開始 transcript 進去第一個切成 segment然後它是比較像是一個討論的話題這樣像是你可以看到它是譬如說它是主題然後裡面會有裡面會有很多個 idea unit就是會有很多個觀點這樣所以像idea unit可能就會像這個舉例這樣",
+    "support_score": 0.278,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.134, 'content_token_coverage': 0.327, 'evidence_token_coverage': 0.185, 'span_inclusion': 0.0}; source_unit_completeness=['partial']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This definition of the current state is immediately questioned in the subsequent discussion, making it dependent on that context."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05",
+      "U-S-0001-01-SR-07",
+      "U-S-0001-01-SR-11"
+    ],
+    "content": "為了便於檢查和除錯，逐字稿會被以固定的 80 行文本塊進行處理。一個「segment agent」會將此文本塊分割成語義上的「segments」。為了處理跨越文本塊邊界的主題，最後一個 segment 會被標記為不完整，以便與下一個文本塊的內容合併。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This describes the current, stable data processing pipeline, including the fixed-chunking strategy, the rationale behind it (debugging), and the mechanism for handling boundary-crossing topics. It's a core method.",
+    "related_topics": [
+      "data processing",
+      "data flow",
+      "design decision",
+      "debugging",
+      "memory architecture"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      7,
+      9,
+      10,
+      11,
+      12,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+    "support_score": 0.228,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.083, 'content_token_coverage': 0.269, 'evidence_token_coverage': 0.107, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "先前一項使用「自適應窗口」進行分段的實驗表現不佳。該方法增加了「被拒絕」項目的數量，並減少了「已驗證」的項目，顯示其輸出結果的可信度較低。該實驗的程式碼後來已被覆蓋。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a finding from a past experiment that led to the rejection of a specific method ('adaptive window'). It's a durable piece of knowledge that prevents repeating failed approaches.",
+    "related_topics": [
+      "experimental design",
+      "data processing",
+      "feature rejection"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1
+    ],
+    "evidence_quote": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+    "support_score": 0.32,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.133, 'content_token_coverage': 0.377, 'evidence_token_coverage': 0.171, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-decision-005",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-07",
+      "U-S-0001-01-SR-08"
+    ],
+    "content": "為確保逐字稿的完整覆蓋，系統設有一驗證步驟來識別 idea unit 提取過程中遺漏的行（「gaps」）。這些遺漏的行會被作為原始、低品質的 idea units 加回，並計畫在未來版本中修復導致此問題的提示詞。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This describes a specific, implemented mechanism for ensuring data quality and handling a known failure mode in the idea unit extraction process. It also includes a note about a planned future improvement.",
+    "related_topics": [
+      "data quality",
+      "data processing",
+      "development plan",
+      "failure_mode"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "evidence_quote": "[SPEAKER_02]: 80行是我們的window size就是丟進去的window size用上了一個UI [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered th...",
+    "support_score": 0.182,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.07, 'content_token_coverage': 0.214, 'evidence_token_coverage': 0.094, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The prompt issue is known but not yet fixed, and its origin is being investigated."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-todo-003",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-10"
+    ],
+    "content": "需要解決目前系統架構中的一個核心設計爭議：釐清「段落」（segment）和「想法單元」（idea unit）之間的觀念區別，並重新評估目前由上而下（先分段再提取想法）的處理流程是否優於由下而上（先提取想法再分組）的方法。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The idea unit identifies a key, unresolved design debate regarding the top-down architecture and the conceptual difference between 'segments' and 'idea units', indicating a need for resolution.",
+    "related_topics": [
+      "Memory Architecture",
+      "design_decision",
+      "data_structure",
+      "data_flow"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+    "support_score": 0.165,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.06, 'content_token_coverage': 0.194, 'evidence_token_coverage': 0.08, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is still trying to clarify the distinction and the rationale for the current architecture."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-todo-001",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-02"
+    ],
+    "content": "為評估分段（segmentation）的品質，計畫建立一個帶有正確分段點標記的基準真相資料集（ground truth dataset），以便用來衡量精確率（precision）和召回率（recall）。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly proposes creating a ground truth dataset to measure the precision and recall of the segmentation process, which is a concrete plan for evaluation.",
+    "related_topics": [
+      "Data Quality",
+      "Evaluation Strategy",
+      "Data Processing",
+      "benchmarking",
+      "dataset"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      2
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為他已經你們那時候是寫一個 prompt 嗎跟他說就是讓它去讓它去測就是算是寫一個測試版去看看他的結果怎麼樣然後再就是因為效果不好所以他就因為他說我蠻好奇效果的地方是怎麼怎麼 measure，因為通常我想像效果的應該是說我現在有了 ground truth，像我有 data，我已經知道正確的切點在哪個地方 假設說這一個100行的data裡面真正切對的話總共會有20個點那如果用fixed 的話就可以直接算了嘛如果用fixed 的話我可以直接算出說所以它是它如果是用每三句一切的話它的precision/recall 會是多少那如果是用window 的話其實supposedly它應該就是我每一句話丟進去之後 它去predict 他未來還有多長然後我可以直接去算說他的prediction...",
+    "support_score": 0.306,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.094, 'content_token_coverage': 0.36, 'evidence_token_coverage': 0.113, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "These are hypothetical proposals for evaluation and future methods."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-todo-002",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-08"
+    ],
+    "content": "計畫修復「想法單元」(idea unit)提取過程中的遺漏行（gaps）問題，並調查目前效果不佳的提取提示（prompt）的來源。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit states that missed lines ('gaps') are attributed to prompt issues and that a repair mechanism is planned for a future version. It also notes that the origin of the prompt is unclear, implying a need for investigation.",
+    "related_topics": [
+      "data_processing",
+      "debugging",
+      "data_quality"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      13,
+      14
+    ],
+    "evidence_quote": "[SPEAKER_04]: 為什麼他會被漏掉就是那些漏掉那些prompt都是發生什麼事情我覺得應該是prompt判定的問題這個版本還沒有修改就是後面後面修改的版本那個fallback幾乎都被算是會被repair掉就是他會想辦法去變回上面那個idea unit或者下面那個idea unit但這個版本還沒有你們的idea unit是怎麼切的你們的prompt是用那個誰那個那個浩哲嗎浩哲的那個應該不是應該是我們自己 [SPEAKER_00]: 是之前的paper在切這種對話的idea unit 的東西嗎應該只是給他好像沒有浩哲怎麼切idea unit你們有嗎我們沒有因為他傳在Discord裡面他沒有傳在那個slide裡面OK OK",
+    "support_score": 0.27,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.082, 'content_token_coverage': 0.317, 'evidence_token_coverage': 0.099, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The prompt issue is known but not yet fixed, and its origin is being investigated."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-result-006",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-10"
+    ],
+    "content": "A key design debate remains unresolved regarding the system's top-down architecture (segmenting before extracting idea units), which is viewed as counter-intuitive compared to a traditional bottom-up approach. Consequently, the conceptual distinction between a 'segment' and an 'idea unit' is also unclear.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This captures a fundamental, unresolved architectural debate and conceptual ambiguity that will likely steer future design decisions and experimentation.",
+    "related_topics": [
+      "Design Decision",
+      "Memory Architecture",
+      "Development Strategy",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+    "support_score": 0.68,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.176, 'content_token_coverage': 0.8, 'evidence_token_coverage': 0.184, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is still trying to clarify the distinction and the rationale for the current architecture."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-result-004",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06",
+      "U-S-0001-01-SR-10"
+    ],
+    "content": "The system's data hierarchy is defined by a top-down architecture: the transcript is first divided into 'segments' (representing broad topics), which are then broken down into multiple 'idea units' (capturing specific points or views).",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This defines the fundamental data model and top-down processing flow of the memory system.",
+    "related_topics": [
+      "Memory Representation",
+      "Data Structure",
+      "Design Decision",
+      "data_structure",
+      "data_flow"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      8,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_04]: segment, idea unit跟batch 是三個不同密度的切法就是segment 是一開始 transcript 進去第一個切成 segment然後它是比較像是一個討論的話題這樣像是你可以看到它是譬如說它是主題然後裡面會有裡面會有很多個 idea unit就是會有很多個觀點這樣所以像idea unit可能就會像這個舉例這樣 [SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時...",
+    "support_score": 0.664,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.134, 'content_token_coverage': 0.781, 'evidence_token_coverage': 0.139, 'span_inclusion': 0.0}; source_unit_completeness=['partial', 'incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "partial",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This definition of the current state is immediately questioned in the subsequent discussion, making it dependent on that context.",
+      "The team is still trying to clarify the distinction and the rationale for the current architecture."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-result-001",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "An earlier experiment using an 'adaptive window' for segmentation performed poorly, resulting in an increased number of 'rejected' items and a decreased number of 'verified' ones, indicating lower confidence. The code for this approach was subsequently overwritten.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This result documents the failure of a specific segmentation approach, guiding future development away from similar 'adaptive window' methods.",
+    "related_topics": [
+      "Experimental Design",
+      "Data Processing",
+      "Failure Mode",
+      "feature rejection"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1
+    ],
+    "evidence_quote": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+    "support_score": 0.77,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.187, 'content_token_coverage': 0.906, 'evidence_token_coverage': 0.191, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-result-002",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-03"
+    ],
+    "content": "Adaptive segmentation methods were debated and ultimately dismissed. The reasoning was that an imperfectly precise adaptive window would still require boundary adjustments, nullifying its benefits, and that the downstream LLM is capable of effectively processing larger, less precise chunks.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This documents the reasoning for rejecting complex segmentation strategies, favoring a simpler approach that relies on the robustness of downstream components.",
+    "related_topics": [
+      "Design Decision",
+      "Data Processing",
+      "LLM",
+      "development_strategy"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      3,
+      4,
+      5
+    ],
+    "evidence_quote": "[SPEAKER_03]: 就是我們想法是它就是它沒有辦法真正的判定到哪一個它只要沒有完全精準它基本上就沒有效果就是這個感覺就會很正常就連我們人應該也沒有辦法抓到這件事情就是我們單看這個狀況我們也沒有辦法完全的知道它大概會持續多久所以就是這個會造成問題是會讓效果變差的問題是就是它只要一沒有對到那它一定就是還要再往前一點嘛 那這個往前一點就是會讓這個adaptive 它的效果就是就有點像是把它的它前面的預估白費了因為它只要它沒有辦法預估得那麼精準那它一定就是它在往前跳那既然它要往前跳的話那我們就是弄fixed，我本來是想是說譬如說我現在前面假設有一個是假設我們總共100句好了對假設說100句好了 [SPEAKER_02]: 我現在想說好 譬如說 1 2 3 4 到 50 這樣好了對 然後 fixed 的話 當然...",
+    "support_score": 0.55,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.118, 'content_token_coverage': 0.647, 'evidence_token_coverage': 0.126, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-result-003",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05",
+      "U-S-0001-01-SR-11"
+    ],
+    "content": "The current data processing pipeline operates on fixed 80-line chunks, a size chosen primarily to make the system's output easier to check and debug. To handle topics that cross this fixed boundary, the last segment of a chunk is marked as incomplete to be merged with the subsequent chunk's content.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "Describes the current, stable method for transcript processing, including the chunking strategy, its rationale (debuggability), and the mechanism for handling cross-boundary topics.",
+    "related_topics": [
+      "Data Processing",
+      "Data Flow",
+      "Design Decision",
+      "Debugging",
+      "data_fragmentation"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      7,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+    "support_score": 0.712,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.245, 'content_token_coverage': 0.837, 'evidence_token_coverage': 0.257, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-result-005",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-07",
+      "U-S-0001-01-SR-08"
+    ],
+    "content": "A known failure mode in the pipeline is the creation of 'gaps' (missed lines) during idea unit extraction, which is attributed to prompt issues. The current mitigation is to identify these gaps and add them back as raw, low-quality idea units to ensure full transcript coverage.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "Documents a known data quality issue, its suspected cause, and the current workaround, highlighting an area for future improvement.",
+    "related_topics": [
+      "Failure Mode",
+      "Data Quality",
+      "Data Processing",
+      "Debugging",
+      "data_quality"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "evidence_quote": "[SPEAKER_02]: 80行是我們的window size就是丟進去的window size用上了一個UI [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered th...",
+    "support_score": 0.632,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.171, 'content_token_coverage': 0.744, 'evidence_token_coverage': 0.181, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The prompt issue is known but not yet fixed, and its origin is being investigated."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-11"
+    ],
+    "content": "The primary rationale for processing the transcript in fixed 80-line chunks is to make the system's output easier to check and debug.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This explicitly states the justification for a core design choice in the data processing pipeline.",
+    "related_topics": [
+      "data processing",
+      "design_decision",
+      "debugging",
+      "development_methodology"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      19
+    ],
+    "evidence_quote": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+    "support_score": 0.81,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.14, 'content_token_coverage': 0.952, 'evidence_token_coverage': 0.141, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-10"
+    ],
+    "content": "A key design debate exists regarding the top-down processing architecture (segmenting before extracting idea units), which is considered counter-intuitive compared to a traditional bottom-up approach of grouping idea units to form segments.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This captures a fundamental, unresolved argument about the system's architectural design, highlighting a significant alternative perspective.",
+    "related_topics": [
+      "design_decision",
+      "Memory Architecture",
+      "data processing",
+      "data_flow"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+    "support_score": 0.685,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.139, 'content_token_coverage': 0.806, 'evidence_token_coverage': 0.144, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is still trying to clarify the distinction and the rationale for the current architecture."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-03"
+    ],
+    "content": "Complex adaptive segmentation methods, such as a binary-search-like approach, were dismissed as having minimal benefit. The rationale is that the downstream LLM can effectively process larger, less precise chunks, making the added complexity for precise boundary detection unnecessary.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a key tradeoff decision, justifying a simpler approach over a more complex one by evaluating the capabilities of downstream components.",
+    "related_topics": [
+      "data processing",
+      "development_strategy",
+      "design_decision",
+      "LLM"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      3,
+      4,
+      5
+    ],
+    "evidence_quote": "[SPEAKER_03]: 就是我們想法是它就是它沒有辦法真正的判定到哪一個它只要沒有完全精準它基本上就沒有效果就是這個感覺就會很正常就連我們人應該也沒有辦法抓到這件事情就是我們單看這個狀況我們也沒有辦法完全的知道它大概會持續多久所以就是這個會造成問題是會讓效果變差的問題是就是它只要一沒有對到那它一定就是還要再往前一點嘛 那這個往前一點就是會讓這個adaptive 它的效果就是就有點像是把它的它前面的預估白費了因為它只要它沒有辦法預估得那麼精準那它一定就是它在往前跳那既然它要往前跳的話那我們就是弄fixed，我本來是想是說譬如說我現在前面假設有一個是假設我們總共100句好了對假設說100句好了 [SPEAKER_02]: 我現在想說好 譬如說 1 2 3 4 到 50 這樣好了對 然後 fixed 的話 當然...",
+    "support_score": 0.59,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.135, 'content_token_coverage': 0.694, 'evidence_token_coverage': 0.144, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-argument-005",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-07"
+    ],
+    "content": "To ensure complete transcript coverage, any lines missed during idea unit extraction are identified as 'gaps' and re-inserted as raw, low-quality idea units. This serves as a data integrity mechanism.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This describes a specific design choice made to handle a known failure mode (incomplete extraction) and achieve a quality goal (full coverage).",
+    "related_topics": [
+      "data processing",
+      "data_quality",
+      "failure_mode",
+      "data_retention"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      9,
+      10,
+      11,
+      12
+    ],
+    "evidence_quote": "[SPEAKER_02]: 80行是我們的window size就是丟進去的window size用上了一個UI [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered th...",
+    "support_score": 0.469,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.105, 'content_token_coverage': 0.552, 'evidence_token_coverage': 0.114, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "An earlier 'adaptive window' segmentation method was abandoned after an experiment showed it performed poorly, increasing the number of 'rejected' items and decreasing 'verified' ones, indicating lower confidence in the output.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This provides the justification for rejecting a previously attempted method based on empirical evidence, which informs the current design direction.",
+    "related_topics": [
+      "experimental design",
+      "data processing",
+      "feature rejection",
+      "design_decision"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1
+    ],
+    "evidence_quote": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+    "support_score": 0.674,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.146, 'content_token_coverage': 0.793, 'evidence_token_coverage': 0.151, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-001-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-10"
+    ],
+    "content": "一個關鍵的設計爭論是關於採用自上而下（先分段再提取想法單元）還是自下而上（先提取想法單元再分組成分段）的架構。此外，「段落」(segment) 和「想法單元」(idea unit) 之間的觀念性區別也尚未解決。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states there is a 'key design debate' about the top-down vs. bottom-up architecture and that the conceptual distinction between 'segment' and 'idea unit' 'remains unresolved'.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "data structure",
+      "design_decision",
+      "development_methodology"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+    "support_score": 0.184,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.059, 'content_token_coverage': 0.217, 'evidence_token_coverage': 0.075, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is still trying to clarify the distinction and the rationale for the current architecture."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-open_question-002",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01",
+      "U-S-0001-01-SR-02",
+      "U-S-0001-01-SR-03"
+    ],
+    "content": "關於最佳分段方法的討論仍在進行中。先前一個「適應性窗口」的實驗表現不佳，但團隊仍在考慮新的適應性方法，例如預測主題長度或建立一個帶有標記的基準數據集來衡量精確度和召回率。然而，對於適應性方法是否真的優於當前固定大小區塊的處理方式，仍存在爭議。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The source units describe a failed experiment with an 'adaptive window' (SR-01), proposals for new adaptive methods and a ground truth dataset (SR-02), and an ongoing debate about the actual benefits of such methods compared to the current approach (SR-03). This indicates the question of the optimal segmentation strategy is unresolved.",
+    "related_topics": [
+      "data processing",
+      "data fragmentation",
+      "experimental design",
+      "evaluation strategy",
+      "data_quality"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "evidence_quote": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+    "support_score": 0.253,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.098, 'content_token_coverage': 0.298, 'evidence_token_coverage': 0.127, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "These are hypothetical proposals for evaluation and future methods."
+    ]
+  },
+  {
+    "candidate_id": "C-B-001-open_question-003",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-08"
+    ],
+    "content": "團隊目前不清楚用於提取想法單元的提示詞 (prompt) 的來源，這導致了錯過某些行的問題。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly states that 'the origin of the prompt used for idea unit extraction is also currently unclear to the team'.",
+    "related_topics": [
+      "data processing",
+      "debugging",
+      "LLM",
+      "data_quality"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      13,
+      14
+    ],
+    "evidence_quote": "[SPEAKER_04]: 為什麼他會被漏掉就是那些漏掉那些prompt都是發生什麼事情我覺得應該是prompt判定的問題這個版本還沒有修改就是後面後面修改的版本那個fallback幾乎都被算是會被repair掉就是他會想辦法去變回上面那個idea unit或者下面那個idea unit但這個版本還沒有你們的idea unit是怎麼切的你們的prompt是用那個誰那個那個浩哲嗎浩哲的那個應該不是應該是我們自己 [SPEAKER_00]: 是之前的paper在切這種對話的idea unit 的東西嗎應該只是給他好像沒有浩哲怎麼切idea unit你們有嗎我們沒有因為他傳在Discord裡面他沒有傳在那個slide裡面OK OK",
+    "support_score": 0.267,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.071, 'content_token_coverage': 0.314, 'evidence_token_coverage': 0.084, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The prompt issue is known but not yet fixed, and its origin is being investigated."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-decision-006",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02",
+      "U-S-0001-02-SR-08",
+      "U-S-0001-02-SR-10"
+    ],
+    "content": "仍有幾個基本設計問題待解決：1) 是否每個 idea unit 都應該更新一個記憶節點？ 2) 如何區分相似的 candidates 以避免記憶節點冗餘？ 3) 檢索時應優先考慮片段的 'theme' 還是 idea unit 的 'type'？",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "這捆綁了幾個關於最基本數據單元（'idea unit'）的生命週期和檢索的核心、未解決的問題，這些問題對系統設計至關重要。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Retrieval",
+      "Memory Representation",
+      "design decision",
+      "data_lifecycle"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      21,
+      30,
+      32
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candidates是說你要去這個idea units你要去更新你裡面的node還有candidate跟candidate之間agent吐出來他有沒有一些資訊要先去做明顯的區隔像老師說可能怕node跟node最後更新會更新到太像 [SPEAK...",
+    "support_score": 0.256,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.088, 'content_token_coverage': 0.302, 'evidence_token_coverage': 0.111, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speaker expresses doubt about this being the case.",
+      "This is an open design question about the retrieval strategy."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-03"
+    ],
+    "content": "提出一個處理流程：將 idea units 並行發送給多個專門的 agent（如 'decision', 'to-do'）。這些 agent 產生 'candidates'，然後系統將這些 candidates 進行整合和去重，以確定其最終分類。",
+    "importance": 0.9,
+    "confidence": 0.95,
+    "rationale": "這描述了記憶系統數據處理流程的一個基礎架構選擇。",
+    "related_topics": [
+      "Memory Architecture",
+      "data processing",
+      "data_flow",
+      "Memory Management",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+    "support_score": 0.386,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.148, 'content_token_coverage': 0.455, 'evidence_token_coverage': 0.18, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "'batch' 的定義尚未解決。一種觀點是它是一個修復後的完整片段。另一種提案則建議一個層次結構，其中 'batch' 是包含跨發言者主題的相關片段的更高層級分組，可用於長期搜尋。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "這捕捉了數據層次結構中一個關鍵的、需要決策的術語和結構衝突。",
+    "related_topics": [
+      "data structure",
+      "data_structure",
+      "design decision",
+      "Memory Representation",
+      "Memory Retrieval"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      26,
+      27,
+      28,
+      29
+    ],
+    "evidence_quote": "[SPEAKER_02]: 但是感覺這比較是 repair 說我把它掉了的尾巴 接起來 接回來對但為什麼會是一個新的我看起來它的解釋好像是不太一樣這邊 batch 說有一個或是多個相關的 segment 跟 idea units 就是它這個目的主要是為了避免就是segment 的內容是可能那時候的編輯處理如果萬一那個也沒有完成的話那靠這個就可以segment 它不是是在那個你切的那個batch window 裡面嗎對所以你是說以現在的結果來說是那一個window 裡面它會有可能譬如說譬如說兩個segment 假設最後結果是segment 1、segment 2然後這裡面可能有幾個 idea unit嗯有三個idea unit。idea unit它可能本來停在這邊那當你有把它合起來它會變成一個idea unit...",
+    "support_score": 0.192,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.061, 'content_token_coverage': 0.226, 'evidence_token_coverage': 0.077, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is debating the definition and purpose of a 'batch'.",
+      "This is a proposal and a hypothetical strategy, not a decided-upon design."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "為了解決因固定大小處理窗口造成的片段破碎問題，提出了一種修復機制。不完整的片段將被標記，並與後續的片段合併，形成一個完整的單元（'batch'），然後再進行處理。",
+    "importance": 0.8,
+    "confidence": 0.9,
+    "rationale": "這是一個針對處理過程中數據碎片化問題的具體、明確的解決方案。",
+    "related_topics": [
+      "data processing",
+      "data fragmentation",
+      "data_fragmentation",
+      "data_lifecycle",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      24,
+      25
+    ],
+    "evidence_quote": "[SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea unit合併成一個類似batch就是它會是一個話題交互的的一個區間就是會有可能會有上一個話題跟這個話題是有關聯它就把這兩個 [SPEAKER_01]: 就是剛剛說那個 segment 沒有結束就是他 他會標這個 segment 可能他跨到下一行他是沒有 他是被切掉 但他沒有結束因為他切 1 到 80但他那個 80 行有可能是被切掉這個時候他的 segment 就會去標他是 呃他是還沒有結束...",
+    "support_score": 0.308,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.112, 'content_token_coverage': 0.362, 'evidence_token_coverage': 0.14, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-decision-005",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-12"
+    ],
+    "content": "發現當前的轉錄稿數據缺乏時間戳，導致如停頓時長等上下文資訊的丟失。會議中提到像 Whisper 這樣的工具可以提供這些必要的數據。",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "這是一個關於數據品質限制的關鍵發現，並指向一個改善數據來源的具體解決方案。",
+    "related_topics": [
+      "data quality",
+      "data_quality",
+      "data sourcing",
+      "data_sourcing",
+      "WhisperX",
+      "dataset"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      35
+    ],
+    "evidence_quote": "[SPEAKER_02]: 他有時間嗎他最後其實是有時間的那個timestamp對不對應該只有順序而已現在沒有加進去你也只有順序而已就是誰先講誰會講但是其實可以抓時間對不對Whisper好像可以加上一下Whisper有時間因為我在看是說我不知道這個是連續還是說這個其實是這個然後中間其實漏了譬如說多少行譬如說這個中間是不是隔了兩分鐘",
+    "support_score": 0.238,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.1, 'content_token_coverage': 0.28, 'evidence_token_coverage': 0.135, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-09"
+    ],
+    "content": "確定一項設計決策：雖然一個 idea unit 可以從不同 agent 獲得多個初始標籤，但在整合後，最終只會被賦予一個，最多兩個最終的類型標籤。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "這是數據標記和整合過程的一條具體規則，定義了系統中的一個關鍵約束。",
+    "related_topics": [
+      "data processing",
+      "data structure",
+      "design_decision",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      31
+    ],
+    "evidence_quote": "[SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸",
+    "support_score": 0.295,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.152, 'content_token_coverage': 0.347, 'evidence_token_coverage': 0.212, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-todo-003",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08",
+      "U-S-0001-02-SR-03"
+    ],
+    "content": "A process is needed to differentiate and de-duplicate candidates generated by parallel agents to prevent the creation of overly similar memory nodes.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "Idea unit U-S-0001-02-SR-08 explicitly states that 'a process is needed to differentiate between candidates'. This is framed as a requirement for the memory system's integrity, following the parallel processing step described in U-S-0001-02-SR-03.",
+    "related_topics": [
+      "Memory Management",
+      "data processing",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      22,
+      30
+    ],
+    "evidence_quote": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+    "support_score": 0.657,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.102, 'content_token_coverage': 0.773, 'evidence_token_coverage': 0.105, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-todo-002",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "Implement the proposed repair mechanism where an incomplete segment, cut off by a fixed-size window, is marked and merged with the subsequent segment to form a complete 'batch' before processing.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The unit describes a specific 'proposed' repair mechanism to handle a data processing issue. The proposal implies a follow-up action to implement it.",
+    "related_topics": [
+      "data processing",
+      "data fragmentation",
+      "data lifecycle"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      24,
+      25
+    ],
+    "evidence_quote": "[SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea unit合併成一個類似batch就是它會是一個話題交互的的一個區間就是會有可能會有上一個話題跟這個話題是有關聯它就把這兩個 [SPEAKER_01]: 就是剛剛說那個 segment 沒有結束就是他 他會標這個 segment 可能他跨到下一行他是沒有 他是被切掉 但他沒有結束因為他切 1 到 80但他那個 80 行有可能是被切掉這個時候他的 segment 就會去標他是 呃他是還沒有結束...",
+    "support_score": 0.759,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.163, 'content_token_coverage': 0.893, 'evidence_token_coverage': 0.167, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-todo-001",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-04"
+    ],
+    "content": "A filtering step needs to be implemented to remove semantically meaningless idea units (e.g., filler words) that result from the bottom-up generation approach.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states that the bottom-up approach to creating idea units 'requires a subsequent step to filter out semantically meaningless units', which constitutes a clear work item.",
+    "related_topics": [
+      "data processing",
+      "data quality"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
+    "support_score": 0.496,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.108, 'content_token_coverage': 0.583, 'evidence_token_coverage': 0.117, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-todo-004",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-12"
+    ],
+    "content": "Investigate using Whisper to obtain utterance timestamps to address the current loss of context caused by not knowing the duration of pauses.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit identifies a specific data deficiency (lack of timestamps) and mentions a potential solution (using Whisper), which implies a clear follow-up action to investigate this improvement.",
+    "related_topics": [
+      "data sourcing",
+      "data quality",
+      "WhisperX"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      35
+    ],
+    "evidence_quote": "[SPEAKER_02]: 他有時間嗎他最後其實是有時間的那個timestamp對不對應該只有順序而已現在沒有加進去你也只有順序而已就是誰先講誰會講但是其實可以抓時間對不對Whisper好像可以加上一下Whisper有時間因為我在看是說我不知道這個是連續還是說這個其實是這個然後中間其實漏了譬如說多少行譬如說這個中間是不是隔了兩分鐘",
+    "support_score": 0.492,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.098, 'content_token_coverage': 0.579, 'evidence_token_coverage': 0.106, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-method_change-003",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-03",
+      "U-S-0001-02-SR-09"
+    ],
+    "content": "提出的處理流程為：idea units 被並行發送給多個專門的 agents（如 'decision', 'to-do'），這些 agents 生成 'candidates'。系統接著會對這些 candidates 進行整合與去重，以確定其最終分類，最終一個 idea unit 只會被賦予一到兩個類型標籤。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This defines the core data flow from raw transcript to structured memory, including the agent interaction model and the rules for final categorization, ensuring a consistent and non-ambiguous memory structure.",
+    "related_topics": [
+      "data processing",
+      "data flow",
+      "memory architecture",
+      "development methodology",
+      "data structure",
+      "memory representation"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      22,
+      31
+    ],
+    "evidence_quote": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+    "support_score": 0.345,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.14, 'content_token_coverage': 0.406, 'evidence_token_coverage': 0.176, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-method_change-001",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-04"
+    ],
+    "content": "生成 idea unit 的方法將採用由下而上（bottom-up）的策略以確保資訊不遺漏，但後續需要一個過濾步驟來移除無語義的單元（例如贅詞）。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This defines the initial stage of data processing, establishing a method to convert raw text into meaningful 'idea units' while addressing the noise inherent in a bottom-up strategy.",
+    "related_topics": [
+      "data processing",
+      "data quality",
+      "data sourcing"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
+    "support_score": 0.283,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.115, 'content_token_coverage': 0.333, 'evidence_token_coverage': 0.15, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-method_change-002",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "針對因固定處理窗口而被切斷的不完整片段，提出了一種修復機制。該不完整片段會被標記，並在後續與下一個片段合併成一個完整的單元（稱為'batch'），然後再進行處理。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a specific data handling procedure designed to prevent information loss and maintain semantic integrity when dealing with fixed-size processing chunks. It's a durable method for data pre-processing.",
+    "related_topics": [
+      "data processing",
+      "data fragmentation",
+      "data lifecycle",
+      "data quality",
+      "batch_size"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      24,
+      25
+    ],
+    "evidence_quote": "[SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea unit合併成一個類似batch就是它會是一個話題交互的的一個區間就是會有可能會有上一個話題跟這個話題是有關聯它就把這兩個 [SPEAKER_01]: 就是剛剛說那個 segment 沒有結束就是他 他會標這個 segment 可能他跨到下一行他是沒有 他是被切掉 但他沒有結束因為他切 1 到 80但他那個 80 行有可能是被切掉這個時候他的 segment 就會去標他是 呃他是還沒有結束...",
+    "support_score": 0.373,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.137, 'content_token_coverage': 0.439, 'evidence_token_coverage': 0.167, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-result-005",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "A hierarchical data structure was proposed, consisting of idea units -> theme-based segments -> cross-speaker topic batches. A corresponding retrieval strategy was also suggested: use batch summaries for long-term search and segment details for short-term search.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a significant architectural proposal that defines a multi-level data hierarchy and a retrieval strategy tailored to it, forming a core part of the memory system's design.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "Memory Retrieval",
+      "data_structure",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      29
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個...",
+    "support_score": 0.747,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.184, 'content_token_coverage': 0.879, 'evidence_token_coverage': 0.188, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a proposal and a hypothetical strategy, not a decided-upon design."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-result-003",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "The definition of a 'batch' is unresolved. One view defines it as a repaired, complete segment, while an alternative view sees it as a higher-level grouping of related segments to provide broader conversational context.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "This highlights a fundamental ambiguity in the data hierarchy. Resolving this is critical as it impacts the data structure, processing logic, and retrieval strategies.",
+    "related_topics": [
+      "data_structure",
+      "data_processing",
+      "Memory Representation",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      26,
+      27,
+      28,
+      29
+    ],
+    "evidence_quote": "[SPEAKER_02]: 但是感覺這比較是 repair 說我把它掉了的尾巴 接起來 接回來對但為什麼會是一個新的我看起來它的解釋好像是不太一樣這邊 batch 說有一個或是多個相關的 segment 跟 idea units 就是它這個目的主要是為了避免就是segment 的內容是可能那時候的編輯處理如果萬一那個也沒有完成的話那靠這個就可以segment 它不是是在那個你切的那個batch window 裡面嗎對所以你是說以現在的結果來說是那一個window 裡面它會有可能譬如說譬如說兩個segment 假設最後結果是segment 1、segment 2然後這裡面可能有幾個 idea unit嗯有三個idea unit。idea unit它可能本來停在這邊那當你有把它合起來它會變成一個idea unit...",
+    "support_score": 0.733,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.135, 'content_token_coverage': 0.862, 'evidence_token_coverage': 0.138, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is debating the definition and purpose of a 'batch'.",
+      "This is a proposal and a hypothetical strategy, not a decided-upon design."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-result-001",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-03"
+    ],
+    "content": "A proposed processing pipeline involves sending idea units in parallel to multiple specialized agents (e.g., 'decision', 'to-do'), which generate 'candidates'. The system then consolidates and de-duplicates these candidates to determine their final categorization.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This describes the core data flow for how raw information is processed and categorized by multiple agents before becoming a structured memory item. It's a fundamental architectural design.",
+    "related_topics": [
+      "Data Processing",
+      "Memory Management",
+      "data_flow",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+    "support_score": 0.747,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.203, 'content_token_coverage': 0.879, 'evidence_token_coverage': 0.209, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-result-006",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08",
+      "U-S-0001-02-SR-09"
+    ],
+    "content": "The 'idea unit' is established as the fundamental unit for memory updates. The labeling process is constrained to assign only one, or at most two, final type labels to a candidate, consolidating proposals from multiple agents.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This establishes a core principle for the memory system, defining the atomic unit of information and the rule for its categorization, which prevents label ambiguity and proliferation.",
+    "related_topics": [
+      "Memory Representation",
+      "data_structure",
+      "data_processing",
+      "Memory Management"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      30,
+      31
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candidates是說你要去這個idea units你要去更新你裡面的node還有candidate跟candidate之間agent吐出來他有沒有一些資訊要先去做明顯的區隔像老師說可能怕node跟node最後更新會更新到太像 [SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸",
+    "support_score": 0.685,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.155, 'content_token_coverage': 0.806, 'evidence_token_coverage': 0.161, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-result-004",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-12"
+    ],
+    "content": "A limitation was identified in the current transcript data: it only preserves the sequence of utterances and lacks timestamps. This results in a loss of context, such as the duration of pauses. It was noted that Whisper could provide this data.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "This finding identifies a specific deficiency in the source data that impacts contextual understanding. It also suggests a potential path for improvement.",
+    "related_topics": [
+      "data_quality",
+      "data_sourcing",
+      "WhisperX",
+      "dataset"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      35
+    ],
+    "evidence_quote": "[SPEAKER_02]: 他有時間嗎他最後其實是有時間的那個timestamp對不對應該只有順序而已現在沒有加進去你也只有順序而已就是誰先講誰會講但是其實可以抓時間對不對Whisper好像可以加上一下Whisper有時間因為我在看是說我不知道這個是連續還是說這個其實是這個然後中間其實漏了譬如說多少行譬如說這個中間是不是隔了兩分鐘",
+    "support_score": 0.658,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.216, 'content_token_coverage': 0.774, 'evidence_token_coverage': 0.231, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-result-002",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "A repair mechanism is proposed for segments that are cut off by a fixed-size processing window. The incomplete segment is marked and later merged with the subsequent segment to form a complete unit, referred to as a 'batch', before processing.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a specific technical solution to the problem of data fragmentation that occurs when using a fixed-size window for processing continuous dialogue.",
+    "related_topics": [
+      "Data Processing",
+      "data_fragmentation",
+      "data_lifecycle",
+      "Memory Management"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      24,
+      25
+    ],
+    "evidence_quote": "[SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea unit合併成一個類似batch就是它會是一個話題交互的的一個區間就是會有可能會有上一個話題跟這個話題是有關聯它就把這兩個 [SPEAKER_01]: 就是剛剛說那個 segment 沒有結束就是他 他會標這個 segment 可能他跨到下一行他是沒有 他是被切掉 但他沒有結束因為他切 1 到 80但他那個 80 行有可能是被切掉這個時候他的 segment 就會去標他是 呃他是還沒有結束...",
+    "support_score": 0.85,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.22, 'content_token_coverage': 1.0, 'evidence_token_coverage': 0.22, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "一種分層數據結構（idea units -> segments -> batches）被提出，其理由是它可以支持雙重檢索策略：使用批次摘要進行長期搜索，使用段落細節進行短期搜索。",
+    "importance": 0.75,
+    "confidence": 0.9,
+    "rationale": "This provides the reasoning for a proposed hierarchical data structure by linking its design to specific functional advantages in memory retrieval for different time scales.",
+    "related_topics": [
+      "Memory Representation",
+      "Memory Retrieval",
+      "data structure",
+      "design decision",
+      "data_structure",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      29
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個...",
+    "support_score": 0.217,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.068, 'content_token_coverage': 0.255, 'evidence_token_coverage': 0.084, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a proposal and a hypothetical strategy, not a decided-upon design."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "需要一個流程來區分由 idea units 產生的候選記憶（candidates），以防止最終生成的記憶節點過於相似或冗餘。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This justifies the need for a candidate consolidation and de-duplication process by explaining that without it, the memory system would be populated with redundant nodes.",
+    "related_topics": [
+      "Memory Management",
+      "data processing",
+      "design decision",
+      "data_processing",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      30
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candidates是說你要去這個idea units你要去更新你裡面的node還有candidate跟candidate之間agent吐出來他有沒有一些資訊要先去做明顯的區隔像老師說可能怕node跟node最後更新會更新到太像",
+    "support_score": 0.268,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.091, 'content_token_coverage': 0.316, 'evidence_token_coverage': 0.113, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-04"
+    ],
+    "content": "採用自下而上的方法來創建 idea units 是為了確保不會遺漏任何資訊，儘管這需要一個後續步驟來過濾掉無語義的單位（例如，贅詞）。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This explains the tradeoff in adopting a bottom-up approach for generating idea units: completeness is prioritized over initial signal-to-noise ratio, justifying the need for a subsequent filtering stage.",
+    "related_topics": [
+      "data processing",
+      "data quality",
+      "design decision",
+      "data_processing",
+      "data_quality",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
+    "support_score": 0.294,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.122, 'content_token_coverage': 0.345, 'evidence_token_coverage': 0.158, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-12"
+    ],
+    "content": "應考慮從 Whisper 等來源獲取帶有時間戳的轉錄數據，因為當前僅保留話語順序的數據會丟失上下文，例如無法得知停頓的時長。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This argues for improving data sourcing by highlighting a specific deficiency (lack of timestamps) in the current data and explaining the value of the lost context (e.g., pause duration).",
+    "related_topics": [
+      "data sourcing",
+      "data quality",
+      "WhisperX",
+      "data_sourcing",
+      "data_quality"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      35
+    ],
+    "evidence_quote": "[SPEAKER_02]: 他有時間嗎他最後其實是有時間的那個timestamp對不對應該只有順序而已現在沒有加進去你也只有順序而已就是誰先講誰會講但是其實可以抓時間對不對Whisper好像可以加上一下Whisper有時間因為我在看是說我不知道這個是連續還是說這個其實是這個然後中間其實漏了譬如說多少行譬如說這個中間是不是隔了兩分鐘",
+    "support_score": 0.255,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.108, 'content_token_coverage': 0.3, 'evidence_token_coverage': 0.144, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-argument-005",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01"
+    ],
+    "content": "在進行文本分段時，採用較小的範圍是有利的，因為這樣可以減少變異性。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This provides a direct justification for a specific segmentation strategy (using smaller scopes) by stating its primary advantage (reduced variability).",
+    "related_topics": [
+      "data processing",
+      "design decision",
+      "data_processing",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      20
+    ],
+    "evidence_quote": "[SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他",
+    "support_score": 0.319,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.111, 'content_token_coverage': 0.375, 'evidence_token_coverage': 0.136, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an unresolved design question raised during the discussion on segmentation."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-open_question-002",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "關於「batch」的定義存在未解的討論：它僅僅是一個修復後、完整的 segment，還是一個更高層次、用於提供上下文的相關 segment 組合？這也關係到 idea unit -> segment -> batch 的整體數據結構層次。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The text explicitly states there is an 'unresolved discussion' on the definition of a 'batch', presenting two competing views: a repaired segment versus a higher-level contextual grouping. This decision impacts the fundamental data structure and processing flow.",
+    "related_topics": [
+      "data_structure",
+      "data_processing",
+      "Memory Representation",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      26,
+      27,
+      28,
+      29
+    ],
+    "evidence_quote": "[SPEAKER_02]: 但是感覺這比較是 repair 說我把它掉了的尾巴 接起來 接回來對但為什麼會是一個新的我看起來它的解釋好像是不太一樣這邊 batch 說有一個或是多個相關的 segment 跟 idea units 就是它這個目的主要是為了避免就是segment 的內容是可能那時候的編輯處理如果萬一那個也沒有完成的話那靠這個就可以segment 它不是是在那個你切的那個batch window 裡面嗎對所以你是說以現在的結果來說是那一個window 裡面它會有可能譬如說譬如說兩個segment 假設最後結果是segment 1、segment 2然後這裡面可能有幾個 idea unit嗯有三個idea unit。idea unit它可能本來停在這邊那當你有把它合起來它會變成一個idea unit...",
+    "support_score": 0.283,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.087, 'content_token_coverage': 0.333, 'evidence_token_coverage': 0.105, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is debating the definition and purpose of a 'batch'.",
+      "This is a proposal and a hypothetical strategy, not a decided-upon design."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "一個關鍵的設計問題是，是否每一個「idea unit」都應該觸發記憶節點的更新（創建新節點或更新現有節點）？",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The transcript explicitly raises the question of whether every single idea unit should result in a memory update, which is a fundamental decision for the memory lifecycle and the system's granularity.",
+    "related_topics": [
+      "Memory Management",
+      "Memory Lifecycle",
+      "data_lifecycle",
+      "design_decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      21
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧",
+    "support_score": 0.275,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.115, 'content_token_coverage': 0.324, 'evidence_token_coverage': 0.151, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speaker expresses doubt about this being the case."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-open_question-005",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "如何設計一個流程來區分由 idea units 生成的相似「候選（candidates）」，以防止最終的記憶節點過於雷同或重複？",
+    "importance": 0.8,
+    "confidence": 0.95,
+    "rationale": "The source unit states that 'a process is needed to differentiate between candidates to prevent the resulting memory nodes from becoming too similar.' This directly frames an open problem that requires a solution.",
+    "related_topics": [
+      "Memory Management",
+      "data_processing",
+      "data_quality"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      30
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candidates是說你要去這個idea units你要去更新你裡面的node還有candidate跟candidate之間agent吐出來他有沒有一些資訊要先去做明顯的區隔像老師說可能怕node跟node最後更新會更新到太像",
+    "support_score": 0.223,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.08, 'content_token_coverage': 0.262, 'evidence_token_coverage': 0.104, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-002-open_question-003",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-10"
+    ],
+    "content": "搜尋功能的設計問題：檢索時應優先考慮 segment 的「主題」，還是 idea unit 的「類型」（如「待辦事項」）？",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The transcript explicitly frames this as a 'design question for the search function,' debating the priority between two different labels ('theme' vs. 'type') for retrieval.",
+    "related_topics": [
+      "Memory Retrieval",
+      "design_decision",
+      "data_structure"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      32
+    ],
+    "evidence_quote": "[SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的label我覺得可能就是要兩個 label都在還是找一個 label",
+    "support_score": 0.378,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.11, 'content_token_coverage': 0.444, 'evidence_token_coverage': 0.127, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an open design question about the retrieval strategy."
+    ]
+  },
+  {
+    "candidate_id": "C-B-002-open_question-004",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-12"
+    ],
+    "content": "目前的轉錄稿數據缺乏時間戳，導致無法得知停頓時長等上下文資訊。是否應考慮使用 Whisper 等工具來獲取並整合時間戳數據？",
+    "importance": 0.7,
+    "confidence": 0.9,
+    "rationale": "The text identifies a 'loss of context' due to missing timestamps and notes that a tool (Whisper) could provide this data, raising the implicit but clear question of whether to incorporate this richer data source into the processing pipeline.",
+    "related_topics": [
+      "data_sourcing",
+      "data_quality",
+      "data_processing",
+      "WhisperX"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      35
+    ],
+    "evidence_quote": "[SPEAKER_02]: 他有時間嗎他最後其實是有時間的那個timestamp對不對應該只有順序而已現在沒有加進去你也只有順序而已就是誰先講誰會講但是其實可以抓時間對不對Whisper好像可以加上一下Whisper有時間因為我在看是說我不知道這個是連續還是說這個其實是這個然後中間其實漏了譬如說多少行譬如說這個中間是不是隔了兩分鐘",
+    "support_score": 0.159,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.063, 'content_token_coverage': 0.188, 'evidence_token_coverage': 0.087, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-04"
+    ],
+    "content": "長期記憶系統採用三層式階層架構：L1節點是單次會議的細粒度單元，L2節點總結跨越多個會議的上下文，L3則提供最高層級的整體摘要。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "此決策定義了長期記憶的基礎結構，是專案的核心架構設計。",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "Long-Term Memory",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      46,
+      47
+    ],
+    "evidence_quote": "[SPEAKER_02]: 那那個memory上面現在的話是有會分成short term跟long term的嗎? [SPEAKER_01]: 對 這個是long term的系統這是分開的然後現在這個是在做long term的系統所以L1是long term然後short term是什麼 L2嗎因為它的L1是long term的Long term的每一個unit就是這個然後我們會我們上次說大概四個 四場會議會抓出一個L2就是這四場他比較大的脈絡會在這裡然後L3會是現在所有的脈絡再抓一個出來所以這邊他只會去",
+    "support_score": 0.196,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.079, 'content_token_coverage': 0.231, 'evidence_token_coverage': 0.107, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-09",
+      "U-S-0001-03-SR-11"
+    ],
+    "content": "提出了一個人機協作（human-in-the-loop）的記憶策展系統。該系統允許使用者手動調整記憶節點的「重要性」分數，且經由人類調整過的記憶將有較慢的衰退率。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "這是一項關於人機協作系統以優化記憶重要性的重大提案，它將人類的判斷優先於系統的預設保留邏輯。",
+    "related_topics": [
+      "human-computer_interaction",
+      "Memory Management",
+      "Memory Retention",
+      "UI design",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.185,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.062, 'content_token_coverage': 0.218, 'evidence_token_coverage': 0.079, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-decision-005",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-07"
+    ],
+    "content": "系統明確區分「重要性」（importance）與「相關性」（relevance）。「重要性」是由LLM賦予的內在分數，代表記憶的顯著程度；「相關性」則是在檢索過程中，根據與查詢的語義相似度動態計算的分數。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "此定義釐清了兩個支配記憶儲存和檢索的核心概念，闡明了系統的內部邏輯。",
+    "related_topics": [
+      "Memory Representation",
+      "Memory Retrieval",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      49
+    ],
+    "evidence_quote": "[SPEAKER_04]: 它會有一個viewpoint的table如果它頻繁地提到的話那它之後的evolve會有一點點的加權頻繁指的是說同一次meeting不是跨meeting同一次meeting裡面它被講到了比較多次那所有有這個viewpoint的idea units 它都會增加它的就譬如說它可能不屬於同一個idea units對然後它都有提到就是你每次的update的時候你會去看所有目前有的idea units 然後如果它們有重複被提到那可能這三個idea unit它的importance都會加成一點點那它會有個default importance的值嗎?譬如說我今天第一個idea unit進來了它的importance的...那個importance都是在...importance在L2還是在L3?在...",
+    "support_score": 0.108,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.04, 'content_token_coverage': 0.127, 'evidence_token_coverage': 0.055, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-03"
+    ],
+    "content": "新的 idea unit 會被新增為 L1 節點。相似節點的合併僅限於單次會議的上下文中；節點不會跨會議進行合併。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "此規則為記憶合併過程建立了明確的邊界，將每次會議視為一個獨立的單元以保留其特定上下文。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Lifecycle",
+      "data_processing",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      44,
+      45
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units",
+    "support_score": 0.375,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.097, 'content_token_coverage': 0.441, 'evidence_token_coverage': 0.111, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-08"
+    ],
+    "content": "對於記憶生命週期仍有未解問題，特別是關於「作為L1被丟棄」的意義（因為原先假設所有單元都會成為L1節點），以及「重要性」分數在系統中具體的實作細節。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "此問題點出了當前對記憶創建和評分機制的理解存在關鍵缺口，需要解決才能進行後續開發。",
+    "related_topics": [
+      "Memory Lifecycle",
+      "Memory Management",
+      "data_retention",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      50,
+      51
+    ],
+    "evidence_quote": "[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1 [SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡",
+    "support_score": 0.183,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.074, 'content_token_coverage': 0.215, 'evidence_token_coverage': 0.102, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is unsure about the meaning of a system behavior ('discard as L1') and the exact implementation of the importance score's application."
+    ]
+  },
+  {
+    "candidate_id": "C-B-003-decision-006",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-10"
+    ],
+    "content": "作為人機協作系統的一部分，提議當使用者調整一個單元的「重要性」時，系統可利用語義相似性找到相關單元，並提示使用者進行批次調整。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "此功能旨在透過利用語義相似性進行批次調整，使手動策展過程更有效率。",
+    "related_topics": [
+      "human-computer_interaction",
+      "UI design",
+      "data_processing"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.166,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.053, 'content_token_coverage': 0.196, 'evidence_token_coverage': 0.067, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-todo-002",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-09",
+      "U-S-0001-03-SR-10",
+      "U-S-0001-03-SR-11"
+    ],
+    "content": "建立一個「人在迴路」(human-in-the-loop) 的記憶體策展系統，允許使用者手動調整記憶的「重要性」分數。該系統還應能建議對相關項目進行批次更新，並對手動調整過的記憶採用較慢的衰減率。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "一項重要提案是引入人機協作來進行記憶體策展。這包括允許使用者覆蓋 LLM 分配的重要性分數，並提供簡化流程的功能（批次更新）以及在記憶保留中優先考慮人類判斷（較慢的衰減率）。",
+    "related_topics": [
+      "human-computer interaction",
+      "Memory Management",
+      "Memory Retention",
+      "UI design",
+      "data_lifecycle"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.155,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.051, 'content_token_coverage': 0.182, 'evidence_token_coverage': 0.067, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-todo-001",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-05"
+    ],
+    "content": "提議建立一個視覺化工具來檢查代理人的記憶體，該工具將顯示 L1、L2 和 L3 層級的結構，並即時展示隨著新轉錄稿數據的處理，記憶節點如何動態變化。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "有人提議開發一個視覺化工具，以即時洞察分層記憶體結構及其動態更新，這對於調試和理解系統行為非常有價值。",
+    "related_topics": [
+      "UI design",
+      "Memory Architecture",
+      "human-computer interaction",
+      "demonstration"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      48
+    ],
+    "evidence_quote": "[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...",
+    "support_score": 0.205,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.067, 'content_token_coverage': 0.241, 'evidence_token_coverage': 0.085, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-todo-003",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-08"
+    ],
+    "content": "需釐清「作為 L1 丟棄」的確切含義，並定義「重要性」分數在系統中被使用的具體實作細節。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "會議中對丟棄 L1 節點的過程以及「重要性」分數影響系統的確切機制表示不確定，這表明需要對其進行定義和文件化。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Representation",
+      "data_lifecycle",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      50,
+      51
+    ],
+    "evidence_quote": "[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1 [SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡",
+    "support_score": 0.218,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.06, 'content_token_coverage': 0.256, 'evidence_token_coverage': 0.073, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is unsure about the meaning of a system behavior ('discard as L1') and the exact implementation of the importance score's application."
+    ]
+  },
+  {
+    "candidate_id": "C-B-003-method_change-002",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-03",
+      "U-S-0001-03-SR-04"
+    ],
+    "content": "The long-term memory system uses a three-level hierarchy: L1 (granular units from a single meeting), L2 (summaries spanning multiple meetings), and L3 (highest-level summary). A key processing rule is that memory nodes are only merged within the context of a single meeting, not across different meetings.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This defines the core data structure of the memory system and a fundamental constraint on the memory update process, establishing how context is segregated and aggregated.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Management",
+      "Data Structure",
+      "Data Lifecycle"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      44,
+      45,
+      46,
+      47
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units [SPEAKER_02]: 那那個memory上面現...",
+    "support_score": 0.701,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.192, 'content_token_coverage': 0.825, 'evidence_token_coverage': 0.2, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-method_change-004",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-09",
+      "U-S-0001-03-SR-11"
+    ],
+    "content": "A human-in-the-loop system is proposed for memory curation, allowing users to manually adjust the LLM-assigned 'importance' score. A key feature is that memories with user-adjusted importance will have a slower decay rate, prioritizing human judgment in long-term retention.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This proposes a significant shift in the memory management process, introducing a collaborative human-AI curation model where human input directly influences the long-term data lifecycle.",
+    "related_topics": [
+      "Memory Management",
+      "Data Lifecycle",
+      "Data Retention",
+      "Human-Computer Interaction"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.712,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.196, 'content_token_coverage': 0.838, 'evidence_token_coverage': 0.204, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-method_change-003",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-06",
+      "U-S-0001-03-SR-07"
+    ],
+    "content": "A memory node's 'importance' is a score assigned by an LLM, which is distinct from 'relevance' calculated via semantic similarity during retrieval. The importance score for all idea units related to a specific topic can be boosted if that topic is mentioned frequently within a single meeting.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This defines the method for assigning an intrinsic significance value to memory items, which is a core part of the memory management and evaluation strategy.",
+    "related_topics": [
+      "Evaluation Strategy",
+      "Memory Management",
+      "Data Processing"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...",
+    "support_score": 0.744,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.189, 'content_token_coverage': 0.875, 'evidence_token_coverage': 0.194, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-method_change-006",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-05"
+    ],
+    "content": "A proposal was made for a visualization tool to inspect the agent's memory in real-time. It would display the L1, L2, and L3 memory structure and dynamically illustrate changes, such as node additions or summary updates, as new transcript data is processed.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "This proposes a new method for observing and debugging the memory system's behavior by providing a real-time, dynamic visualization of its hierarchical structure and updates.",
+    "related_topics": [
+      "UI design",
+      "Debugging",
+      "Demonstration",
+      "Memory Architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      48
+    ],
+    "evidence_quote": "[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...",
+    "support_score": 0.697,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.186, 'content_token_coverage': 0.821, 'evidence_token_coverage': 0.194, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-method_change-001",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-02"
+    ],
+    "content": "Idea units are classified into six types to guide their processing into the memory structure: Decision, To-Do, Method Change, Result, Argument, and Open Question. This classification is considered a starting point and may evolve.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This describes the initial categorization step in the data processing pipeline, which influences subsequent memory management actions.",
+    "related_topics": [
+      "Data Processing",
+      "Memory Representation",
+      "Data Structure"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      41,
+      42
+    ],
+    "evidence_quote": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+    "support_score": 0.664,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.202, 'content_token_coverage': 0.781, 'evidence_token_coverage': 0.214, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-method_change-005",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-10"
+    ],
+    "content": "To improve the efficiency of manual curation, a feature was proposed where if a user adjusts the importance of one idea unit, the system will use semantic similarity to find related units and prompt the user to apply the same change as a batch operation.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This describes a proposed method to make the human-in-the-loop curation process more efficient by enabling batch updates based on semantic similarity.",
+    "related_topics": [
+      "Human-Computer Interaction",
+      "UI design",
+      "Memory Management"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.631,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.182, 'content_token_coverage': 0.743, 'evidence_token_coverage': 0.194, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-result-001",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-03",
+      "U-S-0001-03-SR-04"
+    ],
+    "content": "The long-term memory system utilizes a three-level hierarchy: L1 nodes are granular units from a single meeting, L2 nodes summarize contexts across multiple meetings, and L3 provides the highest-level summary. Merging of similar nodes only occurs within a single meeting's context; nodes are not merged across different meetings.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This describes the fundamental, stable architecture and update rules of the long-term memory system.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Management",
+      "Memory Representation",
+      "data_structure",
+      "data_lifecycle"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      44,
+      45,
+      46,
+      47
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units [SPEAKER_02]: 那那個memory上面現...",
+    "support_score": 0.786,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.22, 'content_token_coverage': 0.925, 'evidence_token_coverage': 0.224, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-result-002",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-09",
+      "U-S-0001-03-SR-10",
+      "U-S-0001-03-SR-11"
+    ],
+    "content": "A human-in-the-loop system for memory curation was proposed. It would allow users to manually adjust the 'importance' score assigned by the LLM. This system would also feature batch importance updates for semantically similar items and a slower decay rate for memories that have been manually adjusted by a user.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a major design proposal that would significantly alter the memory curation process by incorporating human judgment, potentially steering future development.",
+    "related_topics": [
+      "Memory Management",
+      "UI design",
+      "human-computer interaction",
+      "data_retention",
+      "design_decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.726,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.188, 'content_token_coverage': 0.854, 'evidence_token_coverage': 0.194, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-result-003",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-06",
+      "U-S-0001-03-SR-07"
+    ],
+    "content": "The system distinguishes between 'importance' and 'relevance'. 'Importance' is an LLM-assigned score for a memory node's significance, which can be boosted if a topic is frequently mentioned in a meeting. 'Relevance' is calculated during retrieval based on semantic similarity.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This finding clarifies the definitions of two core concepts that are fundamental to the memory management and retrieval mechanisms.",
+    "related_topics": [
+      "Memory Management",
+      "Memory Retrieval",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...",
+    "support_score": 0.801,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.181, 'content_token_coverage': 0.943, 'evidence_token_coverage': 0.183, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-result-004",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-08"
+    ],
+    "content": "An open question was raised regarding the process of \"discard as L1,\" as it was previously assumed all processed units become L1 nodes. There is also uncertainty about the specific implementation of how the 'importance' score is used by the system.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This identifies a key ambiguity in the understanding of the memory processing pipeline that requires clarification for future development.",
+    "related_topics": [
+      "Memory Management",
+      "data_processing",
+      "data_lifecycle"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      50,
+      51
+    ],
+    "evidence_quote": "[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1 [SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡",
+    "support_score": 0.773,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.214, 'content_token_coverage': 0.909, 'evidence_token_coverage': 0.219, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is unsure about the meaning of a system behavior ('discard as L1') and the exact implementation of the importance score's application."
+    ]
+  },
+  {
+    "candidate_id": "C-B-003-result-005",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-02"
+    ],
+    "content": "Idea units are classified into six initial types to guide their merging into the memory structure: Decision, To-Do, Method Change, Result, Argument, and Open Question.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This finding describes the taxonomy used by the system to categorize inputs, which is a fundamental part of its data processing logic.",
+    "related_topics": [
+      "Memory Representation",
+      "data_processing",
+      "data_structure"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      41,
+      42
+    ],
+    "evidence_quote": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+    "support_score": 0.708,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.165, 'content_token_coverage': 0.833, 'evidence_token_coverage': 0.171, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-09"
+    ],
+    "content": "建立一個「人在迴路」的系統，讓使用者手動調整由大型語言模型（LLM）賦予的重要性分數，其理由是為了實現人機協作以完善記憶的顯著性。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "此單元提出了一個核心的系統設計理念，即引入「人在迴路」以允許人類與AI協作，共同完善記憶的重要性，這是一個重要的設計決策。",
+    "related_topics": [
+      "human-computer interaction",
+      "Memory Management",
+      "design decision",
+      "UI design"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.212,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.082, 'content_token_coverage': 0.25, 'evidence_token_coverage': 0.109, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-11"
+    ],
+    "content": "經由使用者手動調整過重要性的記憶，其衰退速率應該較慢。此舉的理由是為了在長期記憶的保留與淡忘機制中，優先採納人類的判斷，而非系統的預設邏輯。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "此單元明確闡述了一個關鍵機制的理由（經人類調整的記憶衰退較慢），其基本原則是：在記憶保留方面，人類的判斷應優先於系統的預設邏輯。",
+    "related_topics": [
+      "Memory Retention",
+      "Memory Lifecycle",
+      "human-computer interaction",
+      "design decision"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.121,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.048, 'content_token_coverage': 0.143, 'evidence_token_coverage': 0.067, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-03"
+    ],
+    "content": "記憶節點不應跨會議進行合併，其理由是每次會議都被視為一個獨立的單元。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "此單元為記憶更新過程中的一個關鍵限制提供了明確的理由：由於每次會議都是一個獨立的背景，因此不應跨會議合併節點。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Architecture",
+      "data lifecycle",
+      "data fragmentation"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      44,
+      45
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units",
+    "support_score": 0.372,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.092, 'content_token_coverage': 0.438, 'evidence_token_coverage': 0.104, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-02"
+    ],
+    "content": "將想法單元分為六種類型（決策、待辦事項、方法變更、結果、論點、開放問題）的理由是，這種分類有助於決定如何將它們合併到記憶結構中。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "此單元明確說明了將想法單元分類的理由，解釋了它如何指導記憶合併過程，這是一個核心的設計決策。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Representation",
+      "data processing",
+      "data structure"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      41,
+      42
+    ],
+    "evidence_quote": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+    "support_score": 0.179,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.074, 'content_token_coverage': 0.211, 'evidence_token_coverage': 0.103, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-argument-005",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-10"
+    ],
+    "content": "在手動調整重要性分數時，系統應利用語義相似性來建議對相關單元進行批次更新，理由是這樣可以使調整過程更有效率。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "此單元為一個特定功能（基於語義相似性的批次更新）提供了明確的論點，說明其好處是使手動調整過程更有效率。",
+    "related_topics": [
+      "human-computer interaction",
+      "UI design",
+      "Memory Management"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      52
+    ],
+    "evidence_quote": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
+    "support_score": 0.191,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.064, 'content_token_coverage': 0.224, 'evidence_token_coverage': 0.082, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-003-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-03-SR-08"
+    ],
+    "content": "關於L1節點的創建標準存在一個開放問題，特別是「作為L1丟棄」的含義，因為之前假設所有處理過的單元都會成為L1節點。此外，對於「重要性」分數在系統中具體如何被使用的實施細節也存在不確定性。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "該來源單元明確指出了兩個不確定點：一是「作為L1丟棄」的含義，二是有關「重要性」分數如何被使用的實施細節。這代表了對核心記憶創建和管理過程的理解存在差距。",
+    "related_topics": [
+      "data_lifecycle",
+      "Memory Management",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "evidence_lines": [
+      50,
+      51
+    ],
+    "evidence_quote": "[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1 [SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡",
+    "support_score": 0.204,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.096, 'content_token_coverage': 0.241, 'evidence_token_coverage': 0.139, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The team is unsure about the meaning of a system behavior ('discard as L1') and the exact implementation of the importance score's application."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-02",
+      "U-S-0001-04-03",
+      "U-S-0001-04-04",
+      "U-S-0001-04-05",
+      "U-S-0001-04-06",
+      "U-S-0001-04-09"
+    ],
+    "content": "一個核心的架構設計選擇尚未解決，涉及兩種對立模型。模型一（基於主題）：將相似資訊更新到現有節點，以追蹤單一想法的演變。模型二（基於時間）：為每次討論創建新節點以保留會議脈絡，之後再由 LLM 重建時間演變。這兩種方法在如何定義和追蹤「脈絡」（context）上存在根本分歧。",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This captures the central, unresolved debate about the memory system's architecture, encompassing the trade-offs between topic-based updating and time-based creation of new nodes.",
+    "related_topics": [
+      "Memory Architecture",
+      "design decision",
+      "data structure",
+      "data lifecycle"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72
+    ],
+    "evidence_quote": "[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...",
+    "support_score": 0.252,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.088, 'content_token_coverage': 0.296, 'evidence_token_coverage': 0.111, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain', 'complete']; source_unit_uncertainty_notes=5",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The model is being defined and questioned during the conversation, and the exact mechanism for forming L2 and L3 layers is not fully resolved.",
+      "This was presented as a personal vision ('I was imagining...') in contrast to the time-based model, and it's not clear if it will be adopted.",
+      "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted.",
+      "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt.",
+      "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-01"
+    ],
+    "content": "記憶系統將區分'重要性'（importance）和'活躍度'（activation）。'重要性'是在創建時設定的靜態值，代表想法的內在價值；'活躍度'是隨時間衰減的動態參數，代表當前的可及性，以避免改變原始的重要性評分。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a fundamental design principle for the memory system's dynamics, separating intrinsic worth from current relevance.",
+    "related_topics": [
+      "Memory Management",
+      "Memory Representation",
+      "design decision"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      53,
+      54
+    ],
+    "evidence_quote": "[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...",
+    "support_score": 0.368,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.135, 'content_token_coverage': 0.433, 'evidence_token_coverage': 0.164, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-07"
+    ],
+    "content": "為了闡明記憶體架構的運作方式，決定創建一個動態視覺化動畫，展示記憶圖譜如何隨著新會議的資訊單元被處理而增長和更新。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a concrete action item decided upon to resolve ambiguity and aid in presenting the system's design.",
+    "related_topics": [
+      "demonstration plan",
+      "development plan",
+      "human-computer interaction"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+    "support_score": 0.278,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.092, 'content_token_coverage': 0.327, 'evidence_token_coverage': 0.114, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-08"
+    ],
+    "content": "在未來的簡報中，團隊應重點展示三個關鍵功能：'inspector' 介面、使用者手動輸入或調整 '重要性' 權重的能力，以及管理記憶動態（如衰減和新近度）的具體公式。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This is a specific decision about the content and focus of a future demonstration, outlining key features to be highlighted.",
+    "related_topics": [
+      "demonstration plan",
+      "demonstration of value",
+      "UI design"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+    "support_score": 0.226,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.087, 'content_token_coverage': 0.266, 'evidence_token_coverage': 0.114, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-todo-001",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-04-09",
+      "U-S-0001-04-04",
+      "U-S-0001-04-05"
+    ],
+    "content": "Resolve the core design trade-off between updating a single existing node with new, related information versus creating a new node for each mention. This decision will determine whether the system prioritizes tracking a single idea's evolution within one object or preserving the unique context of each meeting's discussion.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "Unit U-S-0001-04-09 explicitly identifies the unresolved conflict between updating nodes (U-S-0001-04-04) and creating new nodes (U-S-0001-04-05) as a core design trade-off. This represents a major pending decision.",
+    "related_topics": [
+      "Memory Architecture",
+      "design_decision",
+      "data_lifecycle",
+      "Memory Representation"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      63,
+      64,
+      65,
+      66,
+      67,
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
+    "support_score": 0.668,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.15, 'content_token_coverage': 0.786, 'evidence_token_coverage': 0.156, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain', 'complete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize.",
+      "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-todo-002",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-04-07"
+    ],
+    "content": "Create a dynamic visualization or animation to demonstrate how the memory graph grows and updates as idea units from successive meetings are processed. This is intended to help clarify the architectural debate between time-based and topic-based models.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states a proposal was made to create a visualization to clarify the architectural debate.",
+    "related_topics": [
+      "Memory Architecture",
+      "UI design",
+      "demonstration",
+      "design_decision"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+    "support_score": 0.607,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.157, 'content_token_coverage': 0.714, 'evidence_token_coverage': 0.168, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-todo-003",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-04-08"
+    ],
+    "content": "For a future presentation, prepare materials to highlight three key system features: the 'inspector' interface, the ability for users to manually set 'importance' weights, and the specific formulas governing memory dynamics (e.g., decay, recency).",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly lists three features that \"the team should highlight\" for a future presentation.",
+    "related_topics": [
+      "demonstration_plan",
+      "Memory Management",
+      "human-computer_interaction"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+    "support_score": 0.685,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.161, 'content_token_coverage': 0.806, 'evidence_token_coverage': 0.168, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-method_change-001",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-04-01"
+    ],
+    "content": "記憶系統將區分「重要性」(importance) 和「活化度」(activation) 兩個參數。「重要性」是在創建時設定的靜態值，代表概念的內在價值；「活化度」則是動態參數，會隨時間衰減，代表當前的可及性。此舉可避免原始的重要性評分被改變。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "此方法將記憶的內在價值與其當前相關性分開，從而實現更細緻的遺忘機制，使得重要但休眠的主題得以保留。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Representation",
+      "Memory Lifecycle",
+      "Memory Retention"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      53,
+      54
+    ],
+    "evidence_quote": "[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...",
+    "support_score": 0.312,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.124, 'content_token_coverage': 0.368, 'evidence_token_coverage': 0.157, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-method_change-002",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-04-02",
+      "U-S-0001-04-06"
+    ],
+    "content": "一種被提出的記憶體架構是按時間序的層級結構。來自單次會議的 L1 想法單元會被歸類到代表該會議日期的 L2 節點下。隨著會議次數增加，更高層級的結構 (L3) 會逐漸浮現。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "此模型清晰地保留了每次會議的上下文。然而，有人指出，追蹤單一主題的演變可能需要掃描多次會議的紀錄。",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "data_structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      68,
+      69,
+      70,
+      71
+    ],
+    "evidence_quote": "[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...",
+    "support_score": 0.255,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.079, 'content_token_coverage': 0.3, 'evidence_token_coverage': 0.097, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The model is being defined and questioned during the conversation, and the exact mechanism for forming L2 and L3 layers is not fully resolved.",
+      "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-method_change-003",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-04-03",
+      "U-S-0001-04-06"
+    ],
+    "content": "另一種被提出的記憶體架構是基於主題的層級結構。最高層級的節點是主題類別（例如「時間考量」、「人員」），而新的想法單元會被歸檔到相關主題下，按主題而非會議來分組。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "此模型透過將相關資訊分組，有助於追蹤單一主題在所有會議中的演變過程。",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "data_structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      63,
+      68,
+      69,
+      70,
+      71
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
+    "support_score": 0.383,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.119, 'content_token_coverage': 0.45, 'evidence_token_coverage': 0.14, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain', 'incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "uncertain",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This was presented as a personal vision ('I was imagining...') in contrast to the time-based model, and it's not clear if it will be adopted.",
+      "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-method_change-004",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-04-04",
+      "U-S-0001-04-05",
+      "U-S-0001-04-09"
+    ],
+    "content": "一個核心設計決策是如何處理與現有主題相關的新資訊。一種方法是更新現有的 L1 節點，增加新的時間戳和內容，在單一實體內追蹤其演變。另一種方法是每次提及都創建一個新的 L1 節點，以保留每次會議的獨特脈絡，並在檢索時依賴 LLM 重建主題歷史。此選擇尚未解決。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "這個權衡在於：是在單一合併節點內追蹤想法的演變，還是在獨立節點中保留每次討論的獨特背景。前者簡化了主題歷史的檢索，後者則保持了每次會議記錄的完整性。",
+    "related_topics": [
+      "Memory Management",
+      "Memory Lifecycle",
+      "data_lifecycle",
+      "design_decision"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      63,
+      64,
+      65,
+      66,
+      67,
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
+    "support_score": 0.264,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.103, 'content_token_coverage': 0.311, 'evidence_token_coverage': 0.133, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain', 'complete', 'incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "uncertain",
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted.",
+      "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-method_change-005",
+    "type": "method_change",
+    "source_unit_ids": [
+      "U-S-0001-04-07",
+      "U-S-0001-04-08"
+    ],
+    "content": "為展示記憶系統，將創建一個動態視覺化動畫，顯示記憶圖譜如何隨著新想法單元的處理而增長和更新。簡報也將重點介紹「檢視器」(inspector) 介面、手動輸入「重要性」權重，以及記憶動態（如衰減和新近度）的具體公式。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "提出以視覺化和功能為重點的演示方法，旨在向利害關係人闡明複雜的架構選擇和系統功能。",
+    "related_topics": [
+      "demonstration",
+      "demonstration plan",
+      "demonstration format",
+      "UI design"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+    "support_score": 0.254,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.1, 'content_token_coverage': 0.299, 'evidence_token_coverage': 0.131, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-result-003",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-04-04",
+      "U-S-0001-04-05",
+      "U-S-0001-04-09"
+    ],
+    "content": "A core, unresolved design trade-off was identified: either update a single node with new, related information to track an idea's evolution, or create a new node for each mention to preserve the unique context of each meeting, relying on an LLM to reconstruct the history later.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This identifies a fundamental, unresolved conflict between two architectural approaches that will steer future design decisions.",
+    "related_topics": [
+      "Memory Management",
+      "Data Lifecycle",
+      "Design Decision",
+      "Incremental Update",
+      "Memory Architecture"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      63,
+      64,
+      65,
+      66,
+      67,
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
+    "support_score": 0.763,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.163, 'content_token_coverage': 0.897, 'evidence_token_coverage': 0.166, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain', 'complete', 'incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "uncertain",
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted.",
+      "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-result-002",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-04-02",
+      "U-S-0001-04-03",
+      "U-S-0001-04-06"
+    ],
+    "content": "A comparison of two memory architectures was discussed: 1) A time-based hierarchy where L1 objects are grouped by meeting date (L2), preserving chronological context. 2) A topic-based model where idea units are filed under thematic categories. The time-based model was criticized for potentially requiring a full scan to trace a single topic's history.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This captures a major architectural debate between two competing models for organizing memory.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "Data Structure",
+      "Design Decision",
+      "comparison"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      68,
+      69,
+      70,
+      71
+    ],
+    "evidence_quote": "[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...",
+    "support_score": 0.718,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.177, 'content_token_coverage': 0.844, 'evidence_token_coverage': 0.183, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=3",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The model is being defined and questioned during the conversation, and the exact mechanism for forming L2 and L3 layers is not fully resolved.",
+      "This was presented as a personal vision ('I was imagining...') in contrast to the time-based model, and it's not clear if it will be adopted.",
+      "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-result-001",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-04-01"
+    ],
+    "content": "The memory system's design distinguishes between 'importance' and 'activation'. 'Importance' is a static value representing an idea's intrinsic worth, set at creation. 'Activation' is a dynamic, time-decaying parameter representing current accessibility, which avoids altering the original importance score.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a stable, foundational design principle for the memory system's dynamics.",
+    "related_topics": [
+      "Memory Management",
+      "Memory Representation",
+      "Memory Lifecycle",
+      "Design Decision"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      53,
+      54
+    ],
+    "evidence_quote": "[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...",
+    "support_score": 0.747,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.178, 'content_token_coverage': 0.879, 'evidence_token_coverage': 0.182, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-result-004",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-04-07",
+      "U-S-0001-04-08"
+    ],
+    "content": "To clarify the architectural debate, a proposal was made to create a dynamic visualization of the memory graph's growth. For a future presentation, it was decided to highlight the 'inspector' interface, the ability for users to manually set 'importance', and the formulas governing memory dynamics.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a concrete outcome and plan for demonstrating the system and clarifying its core concepts.",
+    "related_topics": [
+      "Demonstration Plan",
+      "Demonstration Format",
+      "UI design",
+      "Development Plan"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+    "support_score": 0.725,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.16, 'content_token_coverage': 0.853, 'evidence_token_coverage': 0.165, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-04",
+      "U-S-0001-04-05",
+      "U-S-0001-04-09"
+    ],
+    "content": "在處理與現有節點相關的新資訊時，存在一個核心的設計權衡：一種方法是更新單一節點，以便在一個實體內追蹤想法的演變；另一種方法則是為每次提及都創建一個新的 L1 節點。後者的理由是為了完整保留每次會議討論的獨特脈絡，之後再由 LLM 根據各節點的時間戳來重構主題的演變歷史。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "These units describe a central, unresolved design conflict between two memory update strategies: updating existing nodes versus creating new ones. This tradeoff between tracking evolution within a single node and preserving the unique context of each discussion is a critical architectural decision.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "data structure",
+      "data lifecycle",
+      "history tracking",
+      "design decision"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      63,
+      64,
+      65,
+      66,
+      67,
+      72
+    ],
+    "evidence_quote": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
+    "support_score": 0.336,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.135, 'content_token_coverage': 0.396, 'evidence_token_coverage': 0.171, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain', 'complete', 'incomplete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "uncertain",
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted.",
+      "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-02",
+      "U-S-0001-04-03",
+      "U-S-0001-04-06"
+    ],
+    "content": "反對純粹以時間為基礎的記憶體架構的論點是，追蹤單一主題的歷史演變會變得沒有效率，可能需要掃描所有會議記錄。因此，偏好採用以主題為基礎的架構，將相關想法歸類在一起，使得追蹤特定主題的歷史脈絡更為直接。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "This unit presents a clear argument against a time-based hierarchy and in favor of a topic-based one. The reasoning is based on the efficiency of retrieving a topic's full history, which is a key function of the memory system. This is a durable argument supporting a major design direction.",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Retrieval",
+      "design decision",
+      "data structure",
+      "history tracking"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      68,
+      69,
+      70,
+      71
+    ],
+    "evidence_quote": "[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...",
+    "support_score": 0.253,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.085, 'content_token_coverage': 0.297, 'evidence_token_coverage': 0.106, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=3",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The model is being defined and questioned during the conversation, and the exact mechanism for forming L2 and L3 layers is not fully resolved.",
+      "This was presented as a personal vision ('I was imagining...') in contrast to the time-based model, and it's not clear if it will be adopted.",
+      "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt."
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-01"
+    ],
+    "content": "記憶系統將「重要性」與「活化度」分開處理，是為了一個關鍵的設計理由：「重要性」是創建時設定的靜態值，代表一個想法的內在價值，以保存其原始評價；而「活化度」是一個隨時間衰減的動態參數，代表當前的可及性。這樣做可以避免因時間流逝而改變對一個想法價值的根本判斷。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for a core design decision in the memory system: separating the concepts of intrinsic worth (importance) from current relevance (activation). This is a durable architectural principle.",
+    "related_topics": [
+      "Memory Management",
+      "Memory Representation",
+      "Memory Retention",
+      "data structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      53,
+      54
+    ],
+    "evidence_quote": "[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...",
+    "support_score": 0.336,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.161, 'content_token_coverage': 0.395, 'evidence_token_coverage': 0.214, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": []
+  },
+  {
+    "candidate_id": "C-B-004-open_question-001",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0001-04-02",
+      "U-S-0001-04-03",
+      "U-S-0001-04-04",
+      "U-S-0001-04-05",
+      "U-S-0001-04-06",
+      "U-S-0001-04-09"
+    ],
+    "content": "A core, unresolved design decision exists regarding the memory architecture. The choice is between a time-based hierarchy (grouping ideas by meeting) and a topic-based structure (grouping ideas by theme). This decision is tied to how the system handles updates: either by creating new nodes for each mention to preserve the context of each meeting, or by updating a single existing node to track an idea's evolution over time. The team is debating which approach better represents the \"context\" (脈絡) of discussions.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "The provided units describe two competing memory architectures (time-based vs. topic-based) and their corresponding update mechanisms (create new vs. update existing). Unit U-S-0001-04-09 explicitly identifies this as an unresolved core design trade-off, and U-S-0001-04-06 frames it as a debate over the definition of \"context\" (脈絡).",
+    "related_topics": [
+      "Memory Architecture",
+      "Memory Representation",
+      "Memory Management",
+      "data structure",
+      "design decision",
+      "data_lifecycle"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72
+    ],
+    "evidence_quote": "[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...",
+    "support_score": 0.603,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.158, 'content_token_coverage': 0.71, 'evidence_token_coverage': 0.169, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain', 'complete']; source_unit_uncertainty_notes=5",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The model is being defined and questioned during the conversation, and the exact mechanism for forming L2 and L3 layers is not fully resolved.",
+      "This was presented as a personal vision ('I was imagining...') in contrast to the time-based model, and it's not clear if it will be adopted.",
+      "This mechanism is part of the proposed topic-based model, which is hypothetical and not yet adopted.",
+      "The speakers are presenting two conflicting definitions of a key project goal, and the discussion does not resolve which definition to adopt.",
+      "The speakers acknowledge this is a key trade-off but do not reach a decision on which approach to prioritize."
+    ]
+  }
+]

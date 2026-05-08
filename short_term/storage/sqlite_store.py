@@ -315,8 +315,11 @@ def export_db_snapshot(
 
     with _connect(db_path) as source_conn:
         source_conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
-        with sqlite3.connect(str(snapshot_path)) as target_conn:
+        target_conn = sqlite3.connect(str(snapshot_path))
+        try:
             source_conn.backup(target_conn)
+        finally:
+            target_conn.close()
 
     return snapshot_path
 

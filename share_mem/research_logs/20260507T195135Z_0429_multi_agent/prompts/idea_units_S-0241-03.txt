@@ -1,0 +1,45 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0241-03
+Topic: Concerns about the reliability and controllability of Gemini's function calling based on prompt interpretation
+
+Transcript lines:
+263: [SPEAKER_02]: 我覺得就是我這樣有兩種方式，我覺得兩種是一樣的。那我先說我的理解上，老師是覺得說，我們 Gemini 可以分開 code，沒錯。
+264: [SPEAKER_02]: 就是 Gemini 它做的事情是一個任務，它不是把整個從頭到尾把它丟完這樣。
+265: [SPEAKER_00]: 沒有沒有，現在沒有整個丟完。就是老師你先聽我說，就是有兩個方法。第一個是老師現在覺得，就是在 tool calling 還沒有出現的時候，我們會找的方法是，就是讓這個讀一整行。那讀到這一整行的時候，我們拿到這個回覆嘛，我們拿這個回覆去問另外一個 Gemini，來說這個東西要不要打、要不要叫這個函數，對不對。
+266: [SPEAKER_00]: 那不就是讓 Gemini 返回說我要執行這個函數，那終究不是讓 Gemini 去決定說它到底要不要用嗎？那 Gemini 的 function calling 就是這個意思啊，就是它今天決定要不要用的時候，它就直接回來說它要用這個函數，這是一樣的意思吧。
+267: [SPEAKER_04]: 但它說它要用，它真的會去用。
+268: [SPEAKER_00]: 會啊，因為它這個架構是給定好的，就是它今天要用，它就是會回傳一個這個 function calling，就是是哪一個。
+269: [SPEAKER_04]: 我意思是說，這件事情其實還很吃它對你這個 prompt 的理解有多少。你在說你的問題是什麼？
+270: [SPEAKER_04]: 就是我說你這個 function calling 的過程，它其實很吃它對你這個 prompt 的理解有多少。
+271: [SPEAKER_00]: 嗯，然後呢？
+272: [SPEAKER_04]: 然後所以我覺得剛剛老師提出很多問題都在它解讀這個 prompt，它到底可以做到我們要它這個 prompt 做多少百分之多少的事情。沒有，我是說你剛剛說那一次更新那件事情，就是 Gemini 真的會不會去用這個 function 的問題。對啊，就是它到底有沒有真的接著去做。就是它如果好好回答。
+273: [SPEAKER_00]: 它有沒有接著做，什麼意思。
+274: [SPEAKER_04]: 就它知道下一步要做這個嗎？因為我如果有 code 寫，我們就會說好，如果它今天回傳什麼東西，我們一定就會讓我們程式裡寫好，可能 if else，I don't know，就會讓它繼續接著做這個 function。
+275: [SPEAKER_00]: 所以你的意思是 Gemini 它今天說它要用這個函數，但是它沒有用嗎？
+276: [SPEAKER_04]: 沒有沒有沒有，我的理解是，就是它今天對於這個 prompt，它沒有理解好到它知道好，我這個回傳了這個之後，我就要去 call 這個 function。
+277: [SPEAKER_00]: 沒有，Gemini 這個 function calling 不是這樣。它今天 Gemini 決定要用這個函數，就是會用到。
+278: [SPEAKER_04]: 它今天回傳不是。但它決定要用這個函數，是它基於這個 prompt 的理解，知道它這件事情要做下一個。但它如果對 prompt 的理解沒有那麼好，它是不是就不會知道它要做。
+279: [SPEAKER_00]: 所以你的問題還是在 prompt 上嗎？你的問題還是在 prompt 今天精不精準嗎？而不是在今天 Gemini 要不要用這個 function，它是不是真的會用到。
+280: [SPEAKER_04]: 但它 prompt 精不精準、它理解多少這件事情，感覺有點沒有那麼可控。
+281: [SPEAKER_00]: 所以就是 prompt 精不精準嘛。但所以如果它今天不可控的話，你今天 prompt 再加，你覺得你 prompt 再加多少都不可控的話，那你能做的事不就是用 information entropy 的方式嗎？如果你不相信，就是你覺得今天 prompt 精不精準是一回事，如果你今天覺得 prompt 再怎麼精準就沒有辦法做出正確的回答的話，那不就代表你覺得用 information entropy 是比較好。

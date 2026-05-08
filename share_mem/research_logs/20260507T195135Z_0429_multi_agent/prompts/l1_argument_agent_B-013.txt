@@ -1,0 +1,57 @@
+You are l1_argument_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: reasoning, tradeoff, constraint, or justification that explains why a decision or method direction is preferred.
+
+Read only the bounded idea units below and propose only argument candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid argument objects for that reason.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable argument memories. Return an empty list when
+the batch has no durable argument. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-013
+Segment IDs: S-0161-04
+Known related topics: API key management, Academia Sinica internship, Design Decision, ICSI dataset, LLM, Literature Review, Long-Term Memory, Membrane, Memory Architecture, Memory Lifecycle, Memory Management, Memory Representation, Memory Retention, Memory Retrieval, Memory system, Memory_system, RAG, Short-Term Memory, Sustainable AI, UI design, WhisperX, batch_size, benchmarking, budgeting, code reuse, code structure, comparison, contribution, data flow, data fragmentation, data lifecycle, data processing, data quality, data retention, data sourcing, data structure, data_flow, data_fragmentation, data_lifecycle, data_processing, data_quality, data_retention, data_sourcing, data_structure, dataset, dataset acquisition, debugging, demonstration, demonstration format, demonstration of value, demonstration plan, design decision, design_decision, development methodology, development plan, development standards, development strategy, development_methodology, development_plan, development_strategy, documentation, evaluation, evaluation strategy, evaluation_strategy, experimental design, experimental setup, experimental_design, failure_mode, feature rejection, history tracking, human-computer interaction, human-computer_interaction, implementation plan, implementation status, incremental update, information persistence, lab administration, lab funding, lab_operations, large-v3
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-126] type=todo quality=strong activity=fading activation=0.46 reason=open_thread content=The team should investigate the "Digital Meme" paper, which uses a scoring system to evaluate if the AI's statements about its recent plans, self-introduction, and high-level opinions are correct.
+  [L1-0325-095] type=open_question quality=strong activity=fading activation=0.58 reason=open_thread content=The biggest identified problem is how to appropriately weight and combine the results from the three memory layers (working, short-term, long-term) when the agent needs to generate a response.
+  [L1-0325-109] type=todo quality=strong activity=fading activation=0.46 reason=open_thread content=A key research goal is to develop a system that can track the lifecycle of topics across meetings, specifically to identify abandoned topics ("dead topics") and the reasons for their abandonment. Standard Retrieval-Augmented Generation (RAG) is considered insufficient for this task because it cannot discern the temporal sequence or the final decision to abandon a topic.
+  [L1-0325-088] type=open_question quality=strong activity=fading activation=0.58 reason=open_thread content=A core challenge is devising an evaluation method to prove that the three-layer memory architecture is superior to a system without it, especially since a baseline of feeding the entire transcript to a model is considered infeasible.
+  [L1-0325-030] type=todo quality=strong activity=fading activation=0.46 reason=open_thread content=A proposed method for evaluating the system with real meeting data is to retrieve the specific meeting segment the model references and manually assess its relevance to the current discussion.
+  [L1-0408-077] type=todo quality=strong activity=fading activation=0.46 reason=open_thread content=Devise a method to prove the value of the proposed memory architecture compared to a system without it.
+  [L1-0325-028] type=method_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=The agent's personality will be implemented via a two-step process: first, generate a response from memory, then use a 'Persona Memory' module to adjust the output. This personality will be constructed from textual content like catchphrases and question styles from transcribed audio, not acoustic features.
+  [L1-0422-028] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=The system will process transcripts using a dynamic chunking mechanism instead of fixed-size chunks. An LLM, via Function Calling (e.g., a `Read(start_line, end_line)` function), will autonomously and iteratively determine the number of lines to read. The LLM's decision is based on achieving semantic completeness, ensuring that a full thought or dialogue exchange is captured within a chunk before processing.
+  [L1-0408-009] type=method_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=The retrieval strategy for the hierarchical memory involves first matching a query against detailed L1 nodes, and then including the corresponding L2 and L3 ancestor nodes in the results. This provides both specific details and high-level context.
+  [L1-0325-054] type=todo quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key design requirement for Long-Term Memory is to track the status of ideas (e.g., discussed, negated, deprioritized), distinguishing it from standard RAG by accounting for the non-linear evolution of research discussions.
+  [L1-0422-048] type=method_change quality=normal activity=active activation=1.00 reason=recent_high_importance content=A forgetting mechanism will be implemented for Long-Term Memory (LTM) where a node's relevancy score decays over time if not referenced. "Forgotten" nodes are not deleted but are deprioritized, and can be revived if the topic is mentioned again, causing their score to increase.
+  [L1-0408-008] type=method_change quality=strong activity=reactivated activation=1.00 reason=recent_high_importance content=To handle topics that fade and reappear, a memory node's 'recency' score decays over time, but its 'importance' score establishes a floor, preventing the recency from decaying to zero. This ensures that important but dormant topics remain retrievable.
+
+
+
+
+
+Bounded idea units:
+U-S-0161-04-SR-03 (197-198): An example of a multi-step process is given: first, the agent should judge the scope of a topic from a sentence and estimate the number of related sentences.
+U-S-0161-04-SR-01 (197-200): Speaker 02 expresses concern that the current approach, using a single large prompt for an entire task, offers no control and makes it difficult to check the agent's intermediate steps.
+U-S-0161-04-SR-02 (197-201): As a solution, it is proposed to break down the task into a sequence of smaller steps, each with its own separate prompt, to enable better control and verification.
+U-S-0161-04-SR-04 (202-202): An alternative control method is suggested: using an external program to manage the state, for instance, by tracking processed sentences with boolean variables and then calling the agent for each new sentence.
+U-S-0161-04-SR-05 (203-207): A disagreement arises about whether step-by-step control is possible with the current system; Speaker 02 believes the prompts must be separated to enable this, while Speaker 00 suggests it might already be achievable.
+U-S-0161-04-SR-06 (206-206): The current uncontrollable process is described with the metaphor of giving a "recipe" (the prompt) and passively waiting for the final result, with no ability to intervene.
+U-S-0161-04-SR-07 (208-208): Speaker 02 reads from the prompt's instructions, which detail how the agent should handle topic continuity and batch updates, to set up a contrast with its actual behavior.
+U-S-0161-04-SR-08 (209-209): A specific failure is cited as evidence for the lack of control: after processing lines 1-40, the agent incorrectly started the next chunk from line 31, violating the expected sequential processing.
+U-S-0161-04-SR-09 (209-209): The process is also criticized for its opacity, as it's impossible to know how many idea units the agent identified within a given chunk (e.g., lines 1-40) or what its internal actions were.

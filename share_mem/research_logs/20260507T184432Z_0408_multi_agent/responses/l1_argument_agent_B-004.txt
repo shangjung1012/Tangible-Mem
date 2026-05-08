@@ -1,0 +1,65 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0067-C01-SR-01",
+        "U-S-0067-C01-SR-02",
+        "U-S-0067-C01-SR-06"
+      ],
+      "content": "一個記憶檢索的設計選項是，不預先抓取記憶，而是提供給大型語言模型（如Gemini）存取短期和長期記憶的函式，讓模型透過其函式呼叫能力自行決定何時以及使用哪種記憶。",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This is a core architectural decision for the memory retrieval system, proposing to delegate the retrieval logic to the LLM itself rather than using a pre-programmed approach.",
+      "related_topics": [
+        "Memory Retrieval",
+        "design_decision",
+        "data_flow"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-C01-SR-04",
+        "U-S-0067-C01-SR-06"
+      ],
+      "content": "另一個記憶檢索的設計選項是，由一個程式預先處理傳入的查詢，從短期和長期記憶系統中檢索內容，將檢索到的內容與原始句子結合，然後將整合後的結果發送給大型語言模型以生成回應。",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This is the primary alternative to the function-calling approach, representing a key tradeoff where retrieval logic is handled by a separate program before the LLM is invoked.",
+      "related_topics": [
+        "Memory Retrieval",
+        "design_decision",
+        "data_flow"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-C01-SR-03"
+      ],
+      "content": "有人反對讓模型在短期和長期記憶之間做出選擇的設計，理由是類比於人腦，不同類型的記憶似乎是同時運作和更新的，這暗示了一個更整合或平行的檢索過程可能更為有效。",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This is a significant counter-argument to the function-calling design, raising a fundamental objection based on an analogy to human cognition that could influence the final architectural choice.",
+      "related_topics": [
+        "Memory Retrieval",
+        "design_decision",
+        "human-computer_interaction"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0067-C01-SR-05",
+        "U-S-0067-C01-SR-08",
+        "U-S-0067-C01-SR-10"
+      ],
+      "content": "目前的設計討論應專注於記憶系統的「使用」階段，即一個已經建立好的「虛擬導師」代理如何在其內部記憶的基礎上回答用戶問題，而不是記憶的「更新」或「建立」階段。",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This is a justification for constraining the scope of the current design problem, clarifying that the focus is on how the agent uses its memory, which separates it from the distinct problem of how memory is built and updated.",
+      "related_topics": [
+        "design_decision",
+        "development_strategy",
+        "Memory Lifecycle"
+      ]
+    }
+  ]
+}

@@ -15,6 +15,8 @@ from schema import DEFAULT_MODEL_NAME, RECALL_PLAN_SCHEMA
 TODO_KEYWORDS = {
     "待辦",
     "todo",
+    "action item",
+    "action_item",
     "任務",
     "還沒做",
     "需要做",
@@ -129,11 +131,11 @@ def _contains_todo_intent(query: str) -> bool:
 
 
 def _apply_todo_type_filter(plan: dict[str, Any], query: str) -> dict[str, Any]:
-    """For TODO-like queries, constrain long-term retrieval to todo objects."""
+    """For TODO-like queries, constrain long-term retrieval to follow-up objects."""
     if not _contains_todo_intent(query):
         return plan
 
-    plan["type_filter"] = ["todo"]
+    plan["type_filter"] = ["todo", "action_item"]
 
     targets = plan.get("search_targets", [])
     if not isinstance(targets, list):

@@ -1,0 +1,153 @@
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior. Do not dismiss these as
+filler.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted.
+
+For non_memory_context_ranges, include only lines that are purely filler,
+acknowledgements, local wording clarification, or social closing with no memory
+value.
+
+Segment: S-0001-04
+Topic: Prior Research on the ICSI Dataset and Use of Simulated Data
+
+Transcript lines:
+50: [SPEAKER_02]:	.那因為這蠻早期所以後續引用這個data set的work裡面你們有去看一下說有人用這個data set做什麼事情嗎
+51: [SPEAKER_01]:	主要是做NLP方面的
+52: [SPEAKER_02]:	比如說記憶之類的嗎
+53: [SPEAKER_01]:	應該比較不是記憶應該是比較像做
+54: [SPEAKER_02]:	因為我會蠻好奇的因為它是一個published dataset那所以那時候感覺蠻久以前那到2025年一定會有人去用它的dataset那你去google scholar裡面看然後打這一個dataset
+55: [SPEAKER_02]:	是這一篇嗎?
+56: [SPEAKER_01]:	很多都用到,像這個人有用到這個人也有用到這邊的人應該都是有用到的
+57: [SPEAKER_01]:	像這個人應該是在做 speech to text對
+58: [SPEAKER_02]:	那 speech to text 這個字如果再往下一點它會不會可以你去點那個叫做2022以後就是有large language model出來之後的像這個
+59: [SPEAKER_00]:	它被引用了491次喔 491次喔在ACL上面喔欸  我應該去Google Scholar你把這個貼給那個好了欸
+60: [SPEAKER_01]:	那個是一個論文對不對對啊 但是不是它這個語音資料庫是指論文被用了491次
+61: [SPEAKER_02]:	等一下你把這個link傳到那個群組裡面去
+62: [SPEAKER_02]:	然後你看一下ㄗ最近你看2022以後
+63: [SPEAKER_00]:	32天前
+64: [SPEAKER_02]:	好像沒有一個太在講
+65: [SPEAKER_02]:	但現在目前我本來想像中是會有很多人會去想要試圖想要去什麼記憶就是因為它是長期的對話的那個嘛Data set
+66: [SPEAKER_03]:	可是現在大部分做記憶都是用Locomo
+67: [SPEAKER_02]:	OK
+68: [SPEAKER_03]:	他們現在都是用LLM模擬的對話去做記憶他們沒有用
+69: [SPEAKER_02]:	為什麼不用真的人的meeting
+70: [SPEAKER_02]:	喔我覺得就是你可以控制你要生成的對話是什麼東西
+71: [SPEAKER_01]:	然後也比較可以知道到底有沒有記得對
+72: [SPEAKER_02]:	 因為你可以有dataset 之後 ground truth你可以設計問題
+73: [SPEAKER_01]:	像我們現在有個就是有個小問題就是不知道他記得是不是對的就知道可能...我們要去看這三...大概二十...
+74: [SPEAKER_02]:	你們能夠做的事情就是說如果真的是用在我們自己的meeting對話上的話你最後就可以調出那個meeting的片段看他是不是...就調出那個片段然後就直接問說這個這一段的東西跟我現在討論的是不是相關的
+
+Current idea units:
+[
+  {
+    "unit_id": "U-S-0001-04-01",
+    "line_start": 50,
+    "line_end": 57,
+    "text": "The team investigated prior work using the ICSI dataset, noting it's an old dataset primarily used for NLP tasks like speech-to-text, but likely not for memory research.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-02",
+    "line_start": 59,
+    "line_end": 60,
+    "text": "The paper introducing the ICSI dataset has been cited 491 times on ACL, though this refers to the paper itself, not necessarily direct use of the audio database.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-03",
+    "line_start": 62,
+    "line_end": 65,
+    "text": "Contrary to expectations, a search for recent papers (post-2022, after LLMs emerged) did not show significant use of the ICSI dataset for memory research, despite it being a long-term conversational dataset.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-04",
+    "line_start": 66,
+    "line_end": 68,
+    "text": "It was noted that most current memory research (e.g., Locomo) uses dialogues simulated by LLMs rather than real human meeting data.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-05",
+    "line_start": 69,
+    "line_end": 72,
+    "text": "The rationale for using simulated data in memory research is that it allows for control over the dialogue content, making it easier to establish ground truth and design specific questions to verify memory.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-06",
+    "line_start": 73,
+    "line_end": 73,
+    "text": "A current challenge with using their own real meeting data is the difficulty of verifying if the model's memory is correct, which requires manually reviewing long conversation segments.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0001-04-07",
+    "line_start": 74,
+    "line_end": 74,
+    "text": "A proposed method for evaluating their system is to retrieve the specific meeting segment the model references and manually assess its relevance to the current discussion.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  }
+]
+
+Validator report:
+{
+  "segment_id": "S-0001-04",
+  "line_start": 50,
+  "line_end": 74,
+  "input_units": 7,
+  "output_units": 7,
+  "coverage_rate": 0.92,
+  "uncovered_ranges": [
+    {
+      "start_line": 58,
+      "end_line": 58
+    },
+    {
+      "start_line": 61,
+      "end_line": 61
+    }
+  ],
+  "overlap_ranges": [],
+  "non_memory_context_ranges": [],
+  "deterministic_fallback_enabled": false,
+  "issues": [
+    {
+      "issue": "uncovered_line_ranges",
+      "uncovered_ranges": [
+        {
+          "start_line": 58,
+          "end_line": 58
+        },
+        {
+          "start_line": 61,
+          "end_line": 61
+        }
+      ]
+    }
+  ],
+  "repairs": []
+}

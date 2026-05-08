@@ -1,0 +1,42 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0001-03
+Topic: Defining Short-Term vs. Long-Term Memory Architecture
+
+Transcript lines:
+23: [SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？
+24: [SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。
+25: [SPEAKER_00]: 三次內的重要事情，這是 short term。Long term 是陳佑貞那邊主要負責。我覺得如果是這樣，佑貞剛剛看的那篇所謂 long term，應該不是我們一般想像中大腦裡的 long term，對不對？
+26: [SPEAKER_02]: 對，所以我們才想說要挑戰它。我們現在會覺得它抓得很瑣碎、很知識點，是因為它本身的設定比較沒有 focus 在跨時間軸要抓什麼。
+27: [SPEAKER_00]: 它抓的是時間問題嗎？它比較像是抓今天這個資訊本身，或是資訊有沒有被推翻。我們在看那一篇時，我猜它比較是從 large language model 相關 work 延伸出來的。所以他們講 long term 的時候，跟我們講的 long term 應該會滿不一樣。
+28: [SPEAKER_00]: 我覺得還是有一點相近。相近的是概念，但情境跟做法不一樣。看起來那篇的情境其實也是在處理短期記憶，只是不是 real time。
+29: [SPEAKER_01]: 因為我自己覺得那篇的問題是，如果上下文太長，model 會忘記前面的內容。但我們目前的架構在 short term 的部分只會記得三次；如果超過三次，它會覺得不重要就刪掉。可是如果今天我們曾經提過某些東西，我現在有點不知道距離怎麼定義。
+30: [SPEAKER_00]: 因為你現在做的東西，某方面對我來說就像 long term memory 了，已經超過這一次 session 的記憶。你說 session 是什麼意思？16 是上週五的 meeting，17 是現在的 meeting。你可以想像我們今天講三次 meeting，就是 17、16、15。這個機制其實某方面已經比剛才佑貞那篇還要長，因為你的歷史更長。
+31: [SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。
+32: [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。
+33: [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所以到最後，long term 跟 short term 應該會需要結合。
+34: [SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。
+35: [SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用到最多的資訊。
+36: [SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。
+37: [SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。在做 update 時，我們現在的 Short Term Memory 會做快速 update；但是 Long Term Memory 在適時的時候，應該要可以調一些東西出來，然後改變我們 real time 要講的內容。像我們現在的 Long Term 應該是從 script 調出來。
+38: [SPEAKER_01]: Short term 的 memory 說不定也可以，但現在 long term 是直接讀每一次的組織稿。那 working 呢？Working 真的只有 real time，對不對？對，因為是 real time，所以我們的想法就是單純記錄現在講了什麼。

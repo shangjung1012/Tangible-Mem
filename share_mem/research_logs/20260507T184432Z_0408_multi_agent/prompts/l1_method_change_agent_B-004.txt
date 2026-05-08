@@ -1,0 +1,58 @@
+You are l1_method_change_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: change in method, process, procedure, strategy, data handling, or evaluation approach.
+
+Read only the bounded idea units below and propose only method_change candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid method_change objects for that reason.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable method_change memories. Return an empty list when
+the batch has no durable method_change. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-004
+Segment IDs: S-0067-C01
+Known related topics: API key management, Academia Sinica internship, Design Decision, ICSI dataset, Literature Review, Long-Term Memory, Membrane, Memory Architecture, Memory Lifecycle, Memory Management, Memory Representation, Memory Retention, Memory Retrieval, Memory system, Memory_system, RAG, Short-Term Memory, Sustainable AI, UI design, WhisperX, batch_size, benchmarking, budgeting, code structure, comparison, contribution, data flow, data lifecycle, data quality, data retention, data sourcing, data structure, data_flow, data_fragmentation, data_quality, data_sourcing, data_structure, dataset, dataset acquisition, debugging, demonstration, demonstration format, demonstration of value, design decision, design_decision, development methodology, development plan, development standards, development strategy, development_plan, development_strategy, evaluation, evaluation strategy, evaluation_strategy, experimental design, experimental setup, experimental_design, failure_mode, feature rejection, history tracking, human-computer interaction, human-computer_interaction, implementation plan, implementation status, incremental update, information persistence, lab administration, lab funding, lab_operations, large-v3, literature review, literature_review, long-term memory, long-term memory architecture, meeting transcription, memory architecture, memory evaluation, memory history, memory integration, memory lifecycle
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-126] type=todo quality=strong activity=active activation=0.86 reason=open_thread content=The team should investigate the "Digital Meme" paper, which uses a scoring system to evaluate if the AI's statements about its recent plans, self-introduction, and high-level opinions are correct.
+  [L1-0325-109] type=todo quality=strong activity=active activation=0.86 reason=open_thread content=A key research goal is to develop a system that can track the lifecycle of topics across meetings, specifically to identify abandoned topics ("dead topics") and the reasons for their abandonment. Standard Retrieval-Augmented Generation (RAG) is considered insufficient for this task because it cannot discern the temporal sequence or the final decision to abandon a topic.
+  [L1-0325-095] type=open_question quality=strong activity=active activation=0.86 reason=open_thread content=The biggest identified problem is how to appropriately weight and combine the results from the three memory layers (working, short-term, long-term) when the agent needs to generate a response.
+  [L1-0307-034] type=todo quality=strong activity=reactivated activation=0.82 reason=open_thread content=The project's goal is not perfect replication but to show a tangible difference in agent behavior. When using open-source code, the final work must highlight the specific improvements made, such as demonstrating long-term memory.
+  [L1-0325-088] type=open_question quality=strong activity=active activation=0.86 reason=open_thread content=A core challenge is devising an evaluation method to prove that the three-layer memory architecture is superior to a system without it, especially since a baseline of feeding the entire transcript to a model is considered infeasible.
+  [L1-0325-030] type=todo quality=strong activity=active activation=0.86 reason=open_thread content=A proposed method for evaluating the system with real meeting data is to retrieve the specific meeting segment the model references and manually assess its relevance to the current discussion.
+  [L1-0325-028] type=method_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=The agent's personality will be implemented via a two-step process: first, generate a response from memory, then use a 'Persona Memory' module to adjust the output. This personality will be constructed from textual content like catchphrases and question styles from transcribed audio, not acoustic features.
+  [L1-0325-054] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=A key design requirement for Long-Term Memory is to track the status of ideas (e.g., discussed, negated, deprioritized), distinguishing it from standard RAG by accounting for the non-linear evolution of research discussions.
+  [L1-0307-033] type=todo quality=normal activity=resolved activation=0.42 reason=open_thread content=Design a "before and after" demonstration with specific questions to show the tangible difference in an agent's behavior with the new memory architecture compared to a vanilla agent.
+  [L1-0325-116] type=open_question quality=normal activity=active activation=0.86 reason=open_thread content=The team needs to revisit and redefine the memory architecture, building upon the existing framework, to better structure long-term meeting memory.
+  [L1-0307-029] type=todo quality=normal activity=resolved activation=0.42 reason=open_thread content=The team must investigate and present how the reference papers evaluate their models' performance in order to find or create suitable benchmarks to prove the memory architecture's effectiveness.
+  [L1-0307-030] type=method_change quality=strong activity=active activation=0.92 reason=recent_high_importance content=The development plan is to first build the update methods for the three memory types, and then work on the retrieval/access methods.
+
+
+
+
+
+Bounded idea units:
+U-S-0067-C01-SR-01 (67-69): A new approach for memory retrieval is proposed: instead of pre-fetching memory before calling the LLM, provide Gemini with functions to access short-term and long-term memory and let Gemini's function calling capability decide when and which to use.
+U-S-0067-C01-SR-02 (70-73): The proposed function calling workflow involves sending a user query and memory access functions to Gemini. Gemini can then decide to issue a function call (e.g., for short/long-term memory) with the query as a parameter. The system executes this call, retrieves the memory content, and returns it to Gemini to formulate a final response.
+U-S-0067-C01-SR-03 (74-74): An objection was raised regarding the need for the model to choose between short-term and long-term memory, questioning the design by analogy to the human brain where different memory types seem to operate and update simultaneously.
+U-S-0067-C01-SR-04 (75-76): An alternative memory retrieval architecture is described for comparison: an incoming sentence is processed by both short-term and long-term memory retrieval systems, the retrieved content is combined with the original sentence, and the result is sent to the LLM to generate a response.
+U-S-0067-C01-SR-05 (77-79): A distinction is made between the agent's operational modes: the current discussion on memory retrieval (e.g., answering "What is this week's TODO?") is about the "usage" phase, not the "memory update" or "building" phase.
+U-S-0067-C01-SR-06 (80-80): The core design choice is restated: either have a program pre-fetch content from short/long-term memory before calling the LLM, or send the query directly to the LLM and let it decide which memory retrieval function to call.
+U-S-0067-C01-SR-07 (81-81): The discussion pivots with a question about a key project constraint: whether the system needs to operate in real-time for the demo. A brief, undeveloped idea to store the entire transcript is also mentioned.
+U-S-0067-C01-SR-08 (82-84): The overall project goal is to build a "virtual mentor" agent. This agent is first constructed by processing conversation transcripts, and then it is used by a student. The agent's functionality relies on its internal memory system (long-term, short-term, and working memory).
+U-S-0067-C01-SR-09 (85-85): The virtual mentor is constructed from the speakers' own past interactions, which is the source for its knowledge, research discussion history, and potentially its personality traits (which would also be stored in memory).
+U-S-0067-C01-SR-10 (86-86): The discussion is refocused on the core question of memory usage: assuming the mentor agent is already built, how does it specifically use its memory when a student poses a question to it?

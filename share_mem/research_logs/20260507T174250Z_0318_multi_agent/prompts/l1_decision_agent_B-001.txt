@@ -1,0 +1,55 @@
+You are l1_decision_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: high-level conclusion, adoption, rejection, focus choice, or resolved direction.
+
+Read only the bounded idea units below and propose only decision candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid decision objects for that reason.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable decision memories. Return an empty list when
+the batch has no durable decision. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-001
+Segment IDs: S-0001-01
+Known related topics: API key management, Academia Sinica internship, Long-Term Memory, Membrane, Memory Architecture, Memory Retrieval, Memory system, Memory_system, Short-Term Memory, UI design, WhisperX, batch_size, benchmarking, budgeting, code structure, contribution, data flow, data lifecycle, data quality, data retention, data sourcing, data structure, data_fragmentation, data_sourcing, dataset, dataset acquisition, debugging, demonstration, demonstration format, demonstration of value, design decision, development methodology, development plan, development standards, development strategy, development_strategy, evaluation, evaluation strategy, experimental design, experimental setup, failure_mode, feature rejection, history tracking, human-computer interaction, implementation plan, implementation status, incremental update, information persistence, lab administration, lab funding, lab_operations, large-v3, literature review, long-term memory, long-term memory architecture, meeting transcription, memory architecture, memory history, memory integration, memory lifecycle, memory management, memory mechanism, memory representation, memory retention, memory retrieval, memory system architecture, methodology, model evaluation, open source, open-source, open-source usage, open_source, procurement, project administration, project deliverable, project goals, project management, project scope, purchasing process, research methodology
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0307-034] type=todo quality=strong activity=active activation=0.86 reason=open_thread content=The project's goal is not perfect replication but to show a tangible difference in agent behavior. When using open-source code, the final work must highlight the specific improvements made, such as demonstrating long-term memory.
+  [L1-0307-033] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=Design a "before and after" demonstration with specific questions to show the tangible difference in an agent's behavior with the new memory architecture compared to a vanilla agent.
+  [L1-0307-029] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=The team must investigate and present how the reference papers evaluate their models' performance in order to find or create suitable benchmarks to prove the memory architecture's effectiveness.
+  [L1-0307-030] type=method_change quality=strong activity=active activation=0.92 reason=recent_high_importance content=The development plan is to first build the update methods for the three memory types, and then work on the retrieval/access methods.
+  [L1-0307-021] type=open_question quality=normal activity=active activation=0.86 reason=open_thread content=The specific contents of the long-term memory are still being defined. Ideas include high-level, coarse-grained information such as the overall research trajectory, architectural changes, goals, and project milestones.
+  [L1-0307-006] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=評估 WhisperX 在實體會議場景下的說話人標記（speaker diarization）準確性，以決定是否可以在實驗中簡化處理，直接假設說話人身份正確。
+  [L1-0307-027] type=open_question quality=normal activity=active activation=0.86 reason=open_thread content=The design of the memory 'retrieve' phase is an open task. This mechanism is needed to use stored information from memory to influence real-time behavior and generate content for future interactions.
+  [L1-0307-020] type=open_question quality=normal activity=active activation=0.86 reason=open_thread content=The mechanism for integrating short-term memory (information from the last three meetings) with the long-term memory system is currently undefined, though it is acknowledged as a necessary step.
+  [L1-0307-003] type=method_change quality=normal activity=active activation=0.92 reason=recent_high_importance content=已設定記憶保留策略：如果一個記憶項目在連續三次會議中未被討論，該項目將被刪除。
+  [L1-0307-028] type=decision quality=normal activity=active activation=0.92 reason=recent_high_importance content=The project's primary goal is not a perfect replication of reference papers, but to observe how the enhanced memory agent affects human interaction. The minimum requirement is to implement the basic architecture and demonstrate a tangible behavioral difference.
+  [L1-0307-032] type=method_change quality=strong activity=active activation=0.92 reason=recent_high_importance content=A shared lab account and API key will be established to centralize project expenses, which are reimbursable.
+  [L1-0307-001] type=decision quality=normal activity=active activation=0.92 reason=recent_high_importance content=The memory system is designed to update existing memory entries when a topic is revisited in subsequent meetings. Instead of creating a new item, the system appends new content and updates the associated meeting ID, allowing for the tracking of a topic's evolution over time (e.g., from a 'TODO' to a progress report).
+
+
+
+
+
+Bounded idea units:
+U-S-0001-01-SR-01 (2-4): A paper is discussed that uses a sequential agent-based method for long-text processing. The method involves splitting a document into chunks, where each agent summarizes its chunk while also incorporating the output from the previous agent in the sequence.
+U-S-0001-01-SR-02 (3-3): The speaker speculates that the 'long context' handled by this method is likely not as long as what their own team is working with.
+U-S-0001-01-SR-03 (5-5): A key criticism of the sequential method is the risk of hallucinations propagating down the chain from one agent to the next.
+U-S-0001-01-SR-04 (5-6): Another critique is that agents lack a global understanding of the text. A proposed solution is to add a 'shared blackboard' accessible by all agents to provide a global view.
+U-S-0001-01-SR-05 (6-6): The method's chunking strategy is criticized for being random (e.g., based on sentence count), which can split sentences and destroy meaning.
+U-S-0001-01-SR-06 (7-13): Despite being a 2024 paper, the technique is dismissed as 'old technology' due to the rapid pace of AI model development.
+U-S-0001-01-SR-07 (8-13): The speakers discuss the system's final output, which uses a 'manager agent' for integration rather than just producing a summary. The speaker is uncertain about the manager agent's exact function and how it processes inputs, admitting to not having examined its role in detail.

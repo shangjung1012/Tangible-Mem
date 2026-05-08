@@ -1,0 +1,83 @@
+You are segmentation_agent for a long-term memory extraction pipeline.
+Return JSON only. Split the transcript window into topic-coherent segments.
+Use original line numbers.
+
+Create durable discussion segments, not sentence-level or checklist-like slices.
+Normally return 3-6 segments for an 80-line primary window.
+You may return up to 10 segments only when there are clear
+major topic shifts. Prefer 10-24 primary-window lines per segment.
+Do not split every small subpoint into a segment; downstream idea units will handle
+the smaller claims inside each durable segment.
+
+Meeting: 0318
+Primary window: 1-68
+
+Transcript lines:
+1: [SPEAKER_02]: 喔，那個圖是他們自己畫的喔。
+2: [SPEAKER_01]: 他們畫了一個蠻可愛的動畫，就是他基本上他們也是在處理長文字
+3: [SPEAKER_01]: 但我覺得他們的 Long Context 應該都弄不到像我們那麼 long 吧。
+4: [SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。
+5: [SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要有一個 shared blackboard，因為每個 agent 現在都只有自己那個 chunk，然後還有前一個 agent summarize 過來的東西，但他們沒有一個 global 的理解。
+6: [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看到某一句話下面一半，那根本就抓不起來人們的意思。
+7: [SPEAKER_01]: 然後這是 2024 年。
+8: [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？
+9: [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。
+10: [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？
+11: [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。
+12: [SPEAKER_01]: 然後呢，這個比如 agent 這個人，他是一直會去有一個把 chunk 丟進去。我覺得他沒有自己看完這一邊，這個 manager 感覺最後他就是做什麼 worker agent segmentation、manager agent 的 integration。他是回答問題，只是我不知道他接 input preparation agent、channel agent communication。
+13: [SPEAKER_01]: 他這個反正他就是個 chatbot 嘛，然後我還沒有仔細看他的 manager 是要做什麼事情，對。但是 anyway，這一篇也是 2024 年了啦，所以以現在的這種 model 來說，2024 年是這個老技術，對。
+14: [SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。
+15: [SPEAKER_01]: NAACL嗎
+16: [SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conversations，10 個對話，然後裡面大概有 600 個 dialogue turns，然後 total 是 26000 個 tokens，一個 session 這樣。然後 LOCOMO 它自己有產生大概 200 個問題。
+17: [SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。
+18: [SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？
+19: [SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。
+20: [SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。
+21: [SPEAKER_01]: 像是什麼，
+22: [SPEAKER_02]: 我想要問哪一部電影的導演的出生地，就是這個。他去找就要跳兩次，他不是一個很直接的問題。他要先找到這部電影的導演是誰，然後再去找這部導演的出生地是哪裡，類似這種概念。然後 one-hop 就是他可以直接馬上，就是不用跳一跳，就可以直接問這個問題、直接得到這個問題的解答。
+23: [SPEAKER_01]: OK。
+24: [SPEAKER_01]: 所以他是以 linguistic 上來說，他這個回答是需要跳幾個嗎？Linguistic 是指就譬如說是語言上面說，譬如說我媽媽的我媽媽的哥哥。
+25: [SPEAKER_02]: 應該不是，應該是子問題，就是它的答案需要跳過、需要幾個子問題的答案。
+26: [SPEAKER_01]: 那那個子問題指的是說，它的 conversation data 裡面它是有幾個連續問題這件事情嘛？譬如說譬如說我問
+27: [SPEAKER_02]: 也不會是連續問題，只要是斷，他只要是斷點。
+28: [SPEAKER_01]: 所以 conversation 指的是 chatbot 的 conversation，還是是什麼的 conversation？
+29: [SPEAKER_02]: Chatbot 他做了兩個 LLM，然後去對話，他的兩個 agent 對話。所以 single-hop 的意思應該就是說，我丟一個問題，然後我直接找一個答案。
+30: [SPEAKER_01]: 然後 multi-hop 是說，我丟了一個問題，然後我要中間經過幾次的對答，然後得到一個答案這樣。
+31: [SPEAKER_02]: 應該不是幾次對答，是你那個問題的問題本身。就比如說有個問題是，我們這邊會議的 mentor 是誰，就是你們；或者是他有個問題是，我們這個會議的 mentor 的的什麼兒子是誰這種。所以我們之前有討論到老師的兒子是誰，他會找 mentor 是你，然後他會說找到你之後，他再問你是那個兒子。
+32: [SPEAKER_01]: 那這個部分是他自己本身，他的 model 裡面的 reasoning 這件事情，他們要跳幾個 hop 這樣，對不對？你不是說他會問說你的 mentor 是誰，然後他回答說是 Grace，他說那 Grace 的小孩是誰。他這邊的 hop 只是說背後的 reasoning 裡面有。
+33: [SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？
+34: [SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。
+35: [SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？
+36: [SPEAKER_02]: 對
+37: [SPEAKER_01]: Temporal Reasoning。然後 open domain 是就開放性問題。所以它的 scale，它是，所以它的這個 dataset 基本上就是有這一些對話的內容，然後它的 question types 就是說，這些內容裡面包含這一種類型的 questions。所以他們在比什麼？
+38: [SPEAKER_02]: 然後就是它有從 full context，就是完全 raw 的逐字稿，餵進 LLM 回答；或是它有比有做 RAG 的，然後它還有比本來 LOCOMO 它自己就有去測市面上的 LLM 的 benchmark，就 LOCOMO 自己提供的測完的結果。
+39: [SPEAKER_01]: LOCOMO 是哪一年啊？
+40: [SPEAKER_02]: 2024
+41: [SPEAKER_01]: 所以那時候應該只有到 GPT-4 吧？
+42: [SPEAKER_02]: 它是用 3.0 Turbo，然後 open source 就是 GitHub 上面開源的。然後 memory provider 是平台提供的是有一個做圖像的 Zep 的，就是它們這些都有 GitHub 的版本，跟它有包好的套件的版本，所以它這個用的是套件的版本。然後 proprietary model 是 GPT 內建，GPT 有一個嵌入式的記憶可以用。對，GPT 自家記憶加 GPT 自家記憶。
+43: [SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 model 都跑了十次去得到平均的分數，就是可能二十個問題，那她答對了幾個，它跑了十次這樣。
+44: [SPEAKER_02]: 然後它後面還有比一些 latency 跟它花的 token 這樣。它跟其他花的 token，因為這一篇主要它要主打一個就是它 token 花比較少。對，就它的 highlight 比較是在它 token 比較少。因為它在 multi-hop 的問題上就沒有贏 RAG 跟其他的方式。OK，然後下一篇是 MIRIX，就是 MEM 0 之後的。
+45: [SPEAKER_02]: 然後它有比一個比較特別，是它有比圖像的記憶，就是它截了，它請三個學生去截大概五千到兩萬張的螢幕截圖，大概使用週期有一週的，然後有十五天，然後有一個月的。
+46: [SPEAKER_01]: 這是哪個學校的啊？是 Stanford 嗎？
+47: [SPEAKER_02]: UCSD。
+48: [SPEAKER_01]: 但是它是感覺是一個小公司，
+49: [SPEAKER_02]: 我不知道
+50: [SPEAKER_01]: 看起來是一個公司。因為張永儒老師他們就是在做 screenshots 啊，然後他們就是在外面。為什麼這兩個名字都非常的熟悉？我看一下喔，所以這是一個公司嗎？還是
+51: [SPEAKER_02]: 他好像是他是一個開源套件，你可以直接查這個，
+52: [SPEAKER_01]: 有查得到他是誰啊？他是一個學生嗎？UCSD。
+53: [SPEAKER_01]: 王昱。他這個教授 Google Scholar，對，你看 Google Scholar，他是誰？是這個嗎？應該很多人叫王昱。你打 UCSD 下面紅方，UCSD。
+54: [SPEAKER_01]: 對，應該是這裡。所以它應該是一個比如說 Robinson 或是 Sorensen 之類的。所以它最近的，最近的看一下這個？By year。Memory, not changing reasoning, for listening to memory, a mechanism for motivation. 它就一直要做 memory, a second age. 好。
+55: [SPEAKER_01]: OK，不過這都是 arXiv paper。這是他 UCSD，對，UCSD。那個他的名字看起來像有點年紀，他應該是那個啦，這應該是他的碩論，還是說你開這個看看，這個這個這個，對。
+56: [SPEAKER_01]: 這應該是，你打開看，他應該是剛畢業的這個 XAI。
+57: [SPEAKER_01]: 因為講到 screenshots，我也想到說 Stanford 他們有一個 team，他們就專門在做 screenshot 的那個延續動作的分析，他們在做影片的分析。
+58: [SPEAKER_02]: 所以它比就比兩個，一個比 screenshot，一個比 task-based，然後它兩個用的模型不一樣。Screenshot 它一個是用 Gemini，因為 Gemini 可以直接吃圖片，然後還有用 visual 的 RAG，這個是圖片的 RAG。所以它並沒有把圖片轉文字，它是直接餵圖片。
+59: [SPEAKER_02]: 然後 task-based 的話，就是之前有看到的一些一樣的模型。然後他一樣是跟在裡面，他用 LLM 去當 judge。然後我不是很知道為什麼他其他的 baseline 跑一次，然後 MIRIX 跟 full-context 跑三次，然後選 average。
+60: [SPEAKER_02]: 這個我沒有很，就是我不太知道為什麼，它也沒有什麼解釋。
+61: [SPEAKER_01]: 其實它這裡是一個 arXiv paper，它可能就是它做完之後就放上去一下這樣。
+62: [SPEAKER_02]: 然後對，它還有算它的 storage size 這樣。
+63: [SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。
+64: [SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。
+65: [SPEAKER_01]: 然後同一件事情，你用 Google search 跟用 GPT 問它的耗電量會差非常多。但其實成果上，你現在我看 Google 會一直弄成是變 GPT，我就覺得很沒有必要。就有時候我就只問一個簡單到不行的問題，它就一直要把它變成 GPT。但其實有時候那個也有點好處，那個我覺得還蠻好，有的時候是有好處的，但是有的時候其實是沒有必要的，對。然後我們就在講說，因為現在一直在講節能嘛，因為現在越來越多東西被丟到 general model 裡面去。
+66: [SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。
+67: [SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實像這方面的時候也是在 compute 這個它需要的。那因為它是做晶體的，所以它就說好，我們要回去計算預估那個。你們記得錄影喔，你們有錄嗎？我這邊有錄到，因為我後面記得繼續錄。
+68: [SPEAKER_01]: 對，反正也以為就是現在我們有一個那個題，我們看到這個現在其實很多記憶體。

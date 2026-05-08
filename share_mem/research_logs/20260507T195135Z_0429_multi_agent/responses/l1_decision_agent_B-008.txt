@@ -1,0 +1,67 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0128-01-01"
+      ],
+      "content": "由於5月12日的截止日期，比較不同分塊策略（例如，固定大小與迭代合併）的實驗將被推遲。目前的增量式工具調用方法被認為在當前是有效的。",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "為了應對即將到來的截止日期，團隊決定優先使用當前可行的解決方案，而不是花時間進行關於分塊方法的實驗。",
+      "related_topics": [
+        "development plan",
+        "experimental design",
+        "data processing",
+        "incremental update"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0128-01-05",
+        "U-S-0128-01-07",
+        "U-S-0128-01-06"
+      ],
+      "content": "系統目前採用固定大小（約20行）的文本塊來讀取對話紀錄。此方法因其簡單且性能足夠而被採用，取代了先前考慮但未實現的動態調整大小機制。輸入塊的大小被認為不那麼關鍵，因為模型能夠在內部對內容進行分段，從單個塊中識別出多個不同的對象。",
+      "importance": 0.75,
+      "confidence": 1.0,
+      "rationale": "模型在內部解析和分段給定文本塊的能力，降低了在輸入階段需要複雜動態分塊機制的必要性。一個簡單的固定大小文本塊已足夠。",
+      "related_topics": [
+        "design decision",
+        "data processing",
+        "data fragmentation",
+        "LLM"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0128-01-03"
+      ],
+      "content": "系統通過一個稱為「issues」的更細粒度的機制來追蹤記憶「objects」的重要性。當一個與某個 object 相關聯的 issue 被反覆提及時，該父 object 的重要性分數就會增加。",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "此機制允許系統根據對特定相關細節（issues）的重複討論，來更新更廣泛主題（objects）的重要性。",
+      "related_topics": [
+        "Memory Management",
+        "Memory Representation",
+        "data structure",
+        "design decision"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0128-01-04"
+      ],
+      "content": "記憶對象的創建過程是增量式的。`create_object` 函數首先生成一個「候選」對象。隨著系統繼續處理後續文本，它會檢查新內容是否與候選對象相關，如果發現關聯，則將其合併。",
+      "importance": 0.7,
+      "confidence": 1.0,
+      "rationale": "這種合併過程允許從對話紀錄中出現的零散信息片段逐步構建一個完整的記憶對象。",
+      "related_topics": [
+        "Memory Management",
+        "Memory Representation",
+        "data processing",
+        "incremental update",
+        "design decision"
+      ]
+    }
+  ]
+}

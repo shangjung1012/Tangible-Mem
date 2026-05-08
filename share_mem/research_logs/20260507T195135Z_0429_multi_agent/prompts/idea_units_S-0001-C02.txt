@@ -1,0 +1,50 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0001-C02
+Topic: Defining Evaluation Metrics and the Concept of Memory Fade-Out / Technical Mechanisms for Implementing 'Forgetting' in LLMs
+
+Transcript lines:
+18: [SPEAKER_04]: 然后我们现在evaluate的question主要分三类一个是short term就是至少是要确定他短期短期的回答是正确的然后long term的evolution就是可能会问他说我们这整个某一件事情的研究的方法从过去到现在完整的演进是什么
+19: [SPEAKER_04]: 然後還有一個是decision reasoning就是很會問他說我們為什麼現在是做這個決定當初是什麼討論讓我們今天這件事情決定這樣子嘛
+20: [SPEAKER_02]: 所以這個evaluation的意思是說第二個的話它的重點是正確率嗎
+21: [SPEAKER_04]: 對就是他不能漏掉context他不能漏掉其中某個meeting講過的東西就可能我們在三個meeting講提過這件事情然後三個meeting都有不同討論的點但他只講到了其中兩場meeting或者是他自己胡亂的生了一些就是我們meeting裡面並沒有講到的事情嗯
+22: [SPEAKER_04]: 所以在我们的data里面我们基本上就是要非常明确的知道说我们里面总共有哪一些answer而且哪些东西是不对的就在evaluate的时候所以那就是评分的方式参考就是也是之前前面的paper就是我们会给他我们的答案还有我们的这个agent生出来的答案然后请他去比对大概的正确率
+23: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說某一件東西他不應該在 short term在我不知道這是 dialogue 的時候不應該要出現但是他知道他忘記了就是他知道他有這個東西他是不記得但是他在對話的時候他不會突出這個東西
+24: [SPEAKER_04]: 嗯嗯嗯好
+25: [SPEAKER_02]: 然後呃因為我覺得這是一個還蠻特別的一個地方因為過去的agent應該從來沒有人在測這件事情就是有點像說language model在in turn在real time 跟你回答的時候它會避免輸出一些它其實long term但應該要被fade out的東西但是但是你刻意的去挖它那個挖它的那個丟失裡面的話它是存在的
+26: [SPEAKER_02]: 對然後他就是在等著某一期就是他因為我們不是說他被有點像是inactive的某一些idea在那個地方就是太久又太不重要的都會被丟到那個地方去那所以說我們要怎麼去處就是在一般對話的時候不應該觸發然後在講某一句話的時候他應該要去觸發他調起來這個記憶
+27: [SPEAKER_02]: 對 應該是說我們在一般對話的時候它不會出現然後但是你用某一種 function code去叫它列出你的 long term memory 裡面現在有哪些是 inactive 的 idea那它會 它是列在那個地方的但是它會刻意的不出現在現在正在進行的對話裡那那它要在被 activate 的情況下就是譬如說它必須要出現在short term meeting 裡面出現到了幾次之後它的那個它會慢慢的會從那個地方又再慢慢的fade out
+28: [SPEAKER_04]: 那應該就是我們之前有做就是我们做我们会去算他的weight会算他的importance我们应该会从这个地方去切一个就是几分以下他是在一般的对话中不会出现然后我们在每一次如果像老师说short term一直提到他的话那他那个分数应该会往上所以他就会再重新所以被LLM会在对话中提到这样
+29: [SPEAKER_02]: 這個東西有記的遺忘這件事情現在有人在開始在做應該蠻多人做的可是他們做的應該都是以就是人類的遺忘曲線就是可能多久這樣子但是如果是
+30: [SPEAKER_02]: 他們有人在做嗎因為Large Language Model已經自己很會遺忘啦他們現在他們是怎麼樣子的人類遺忘的曲線我感覺Large Language Model的遺忘感覺是是Sensitive資料的去除嗎那一種類型的遺忘
+31: [SPEAKER_04]: 我有看過 我記得Time Memory還是哪一篇 它是有模仿它是有做遺忘的機制喔
+32: [SPEAKER_02]: 你可以把那一篇 等一下貼到那個chat
+33: [SPEAKER_04]: 但我還要找一下
+34: [SPEAKER_02]: 好好就是 對我覺得他們的遺忘都是直接全部忘掉就是不可能再retrieve回來就是它不會因為你一直提到再出現這樣他們的遺忘是怎麼樣他們是他們的遺忘是如何遺忘
+35: [SPEAKER_02]: 是在某種方式把他probability上面直接把它就是negate這樣回去讓他不記得這個連結嗎還是他們那邊的遺忘是怎麼樣的遺忘還是他用prompt的方式說你不記得這件事情就是他們的話遺忘的方式是怎麼樣的遺忘
+36: [SPEAKER_04]: 應該就是直接在就是我們都會後面都是有資料庫還在資料庫裡面直接把它踢掉就像RAG它是會有那個向量建設它直接把那個資料就是刪掉這樣
+37: [SPEAKER_04]: 所以他就不会再找到所以他比较像是在RAG上面的时候就像因为就像我们也会拆很多的我们会逐字稿送进来我们会记to do什么什么啊如果这个to do一直都没有被提到他们可能就是会把这一笔就是删掉这样那他下次在找的时候他不会找到这个
+38: [SPEAKER_02]: 因為我在想的是因為language model它在跟人的對話過程當中它其實就算你慢慢把external那個拔掉之後它已經慢慢的就被捲進它的language model裡面了對不對所以它如果真的要我不知道它那邊所謂的去所以我本來想像中的時候我要去除這個language model裡面的記憶的話就是你就必須要想辦法把比如說A跟B曾經有連接我想你忘記A跟B的連接
+39: [SPEAKER_02]: 我就是必須要用反正某種Nigate的方法我要把A跟B直接的關聯直接去掉讓你的Language Model裡面它就不存在他們的觀聯性我不知道過去的遺忘是這種Model本身Fundamentally的去動它的Model還是是RAG上面的說我在External裡面不存在這一個資料聽起來是External的Database目前我們看到沒有人去處理說就是Language Model整個Fundamentally把這一個Knowledge就是解掉拆解掉這樣OK
+40: [SPEAKER_04]: 那個應該蠻數學的應該蠻數學的
+41: [SPEAKER_02]: 我覺得這可能就是沒關係我們就先不我們就先以一個那以 literature 的部分就是也把最相關的這些 work就都把它列出來

@@ -1,0 +1,100 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-01"
+      ],
+      "content": "An earlier experiment using an 'adaptive window' for segmentation performed poorly, resulting in an increased number of 'rejected' items and a decreased number of 'verified' ones, indicating lower confidence. The code for this approach was subsequently overwritten.",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "This result documents the failure of a specific segmentation approach, guiding future development away from similar 'adaptive window' methods.",
+      "related_topics": [
+        "Experimental Design",
+        "Data Processing",
+        "Failure Mode",
+        "feature rejection"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-03"
+      ],
+      "content": "Adaptive segmentation methods were debated and ultimately dismissed. The reasoning was that an imperfectly precise adaptive window would still require boundary adjustments, nullifying its benefits, and that the downstream LLM is capable of effectively processing larger, less precise chunks.",
+      "importance": 0.8,
+      "confidence": 1.0,
+      "rationale": "This documents the reasoning for rejecting complex segmentation strategies, favoring a simpler approach that relies on the robustness of downstream components.",
+      "related_topics": [
+        "Design Decision",
+        "Data Processing",
+        "LLM",
+        "development_strategy"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-05",
+        "U-S-0001-01-SR-11"
+      ],
+      "content": "The current data processing pipeline operates on fixed 80-line chunks, a size chosen primarily to make the system's output easier to check and debug. To handle topics that cross this fixed boundary, the last segment of a chunk is marked as incomplete to be merged with the subsequent chunk's content.",
+      "importance": 0.75,
+      "confidence": 1.0,
+      "rationale": "Describes the current, stable method for transcript processing, including the chunking strategy, its rationale (debuggability), and the mechanism for handling cross-boundary topics.",
+      "related_topics": [
+        "Data Processing",
+        "Data Flow",
+        "Design Decision",
+        "Debugging",
+        "data_fragmentation"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-06",
+        "U-S-0001-01-SR-10"
+      ],
+      "content": "The system's data hierarchy is defined by a top-down architecture: the transcript is first divided into 'segments' (representing broad topics), which are then broken down into multiple 'idea units' (capturing specific points or views).",
+      "importance": 0.9,
+      "confidence": 1.0,
+      "rationale": "This defines the fundamental data model and top-down processing flow of the memory system.",
+      "related_topics": [
+        "Memory Representation",
+        "Data Structure",
+        "Design Decision",
+        "data_structure",
+        "data_flow"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-07",
+        "U-S-0001-01-SR-08"
+      ],
+      "content": "A known failure mode in the pipeline is the creation of 'gaps' (missed lines) during idea unit extraction, which is attributed to prompt issues. The current mitigation is to identify these gaps and add them back as raw, low-quality idea units to ensure full transcript coverage.",
+      "importance": 0.7,
+      "confidence": 1.0,
+      "rationale": "Documents a known data quality issue, its suspected cause, and the current workaround, highlighting an area for future improvement.",
+      "related_topics": [
+        "Failure Mode",
+        "Data Quality",
+        "Data Processing",
+        "Debugging",
+        "data_quality"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0001-01-SR-10"
+      ],
+      "content": "A key design debate remains unresolved regarding the system's top-down architecture (segmenting before extracting idea units), which is viewed as counter-intuitive compared to a traditional bottom-up approach. Consequently, the conceptual distinction between a 'segment' and an 'idea unit' is also unclear.",
+      "importance": 0.95,
+      "confidence": 1.0,
+      "rationale": "This captures a fundamental, unresolved architectural debate and conceptual ambiguity that will likely steer future design decisions and experimentation.",
+      "related_topics": [
+        "Design Decision",
+        "Memory Architecture",
+        "Development Strategy",
+        "Memory Representation"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "idea_units": [
+    {
+      "line_start": 21,
+      "line_end": 21,
+      "text": "A key design question is whether every idea unit is meant to update a memory node, either by creating a new one or updating an existing one.",
+      "completeness": "complete",
+      "uncertainty_note": "The speaker expresses doubt about this being the case."
+    },
+    {
+      "line_start": 22,
+      "line_end": 22,
+      "text": "The proposed processing pipeline is: idea units are sent in parallel to multiple agents (e.g., 'decision', 'to-do'), which generate 'candidates'. The system then consolidates and de-duplicates these candidates to determine their final categorization.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 23,
+      "line_end": 23,
+      "text": "A bottom-up approach to creating idea units ensures no information is missed, but it requires a subsequent step to filter out semantically meaningless units (e.g., filler words).",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 24,
+      "line_end": 25,
+      "text": "A repair mechanism is proposed for segments that are cut off by the fixed-size processing window. The incomplete segment is marked and later merged with the subsequent segment to form a complete unit, referred to as a 'batch', before being processed.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 26,
+      "line_end": 28,
+      "text": "There is an unresolved discussion on the definition of a 'batch'. One view is that it's simply a repaired, complete segment. Another is that it's a higher-level grouping of related segments to provide more conversational context for more accurate agent extraction.",
+      "completeness": "incomplete",
+      "uncertainty_note": "The team is debating the definition and purpose of a 'batch'."
+    },
+    {
+      "line_start": 29,
+      "line_end": 29,
+      "text": "An alternative hierarchical data structure was proposed: idea units (sentences) -> segments (a speaker's turn on a single theme) -> batch (a cross-speaker, cross-window topic). This is contrasted with the current 'batch' concept which seems to be just a revised segment.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 29,
+      "line_end": 29,
+      "text": "A hypothetical memory retrieval strategy was raised: use 'batch' summaries for long-term memory search and 'segment' details for short-term memory search.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This is a hypothetical exploration of how different data layers could be used for memory retrieval."
+    },
+    {
+      "line_start": 30,
+      "line_end": 30,
+      "text": "The fundamental unit for memory updates is the 'idea unit', which becomes a 'candidate' after being labeled by an agent. A process is needed to differentiate between candidates to prevent the resulting memory nodes from becoming too similar.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 31,
+      "line_end": 31,
+      "text": "The labeling process for an idea unit allows for multiple initial labels from different agents, but it is ultimately constrained to one, or at most two, final type labels.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 32,
+      "line_end": 32,
+      "text": "A design question for the search function is whether to first retrieve by the segment's 'theme' or the idea unit's 'type' (e.g., 'to-do'). It is suggested that both labels might be necessary.",
+      "completeness": "incomplete",
+      "uncertainty_note": "This is an open design question about the retrieval strategy."
+    },
+    {
+      "line_start": 33,
+      "line_end": 34,
+      "text": "It was confirmed that a 'segment' is not limited to a single speaker and can contain utterances from multiple people.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 35,
+      "line_end": 35,
+      "text": "The current transcript data only preserves the sequence of utterances, not timestamps. This is identified as a loss of context, as it's impossible to know the duration of pauses. It's noted that Whisper could provide this timestamp data.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    }
+  ]
+}

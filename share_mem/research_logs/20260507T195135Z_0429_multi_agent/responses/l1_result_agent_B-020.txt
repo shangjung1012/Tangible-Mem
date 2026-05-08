@@ -1,0 +1,69 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0321-05-SR-04",
+        "U-S-0321-05-SR-05",
+        "U-S-0321-05-SR-06"
+      ],
+      "content": "The system's memory update process handles multiple topics within a single text block by having the LLM issue a sequence of separate `write` commands. After identifying multiple topics, it will issue a `write` for the first topic, wait for an 'ok' confirmation, and then proceed to the next topic.",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This describes the concrete implementation for resolving the ambiguity of how to apply updates when a single block of text refers to multiple distinct memory nodes. It is a core design decision for the data processing flow.",
+      "related_topics": [
+        "Memory Management",
+        "data flow",
+        "design decision",
+        "implementation plan"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0378-C01-SR-01"
+      ],
+      "content": "The initial approach of feeding the entire transcript to the agent for memory updates was abandoned due to the large context size and the difficulty in reliably getting the agent to output in a required fixed JSON format.",
+      "importance": 0.75,
+      "confidence": 1,
+      "rationale": "This finding explains the historical design choice that led to the current chunk-based processing architecture, highlighting the practical limitations of using very large contexts for structured data extraction.",
+      "related_topics": [
+        "data processing",
+        "design decision",
+        "LLM",
+        "Memory Architecture"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0378-C01-SR-02",
+        "U-S-0378-C01-SR-03"
+      ],
+      "content": "A key identified failure mode is that using large, un-segmented text chunks to update multiple related memory nodes could cause the nodes to converge and lose their distinctiveness. The core problem is the agent's inability to determine the specific \"update boundary\" within the text for each node.",
+      "importance": 0.85,
+      "confidence": 1,
+      "rationale": "This finding defines a fundamental problem ('node convergence') that the system's memory update architecture is designed to prevent, justifying the need for more granular update mechanisms over naive chunking.",
+      "related_topics": [
+        "failure_mode",
+        "Memory Management",
+        "data fragmentation",
+        "data quality"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0378-C01-SR-04",
+        "U-S-0378-C01-SR-05",
+        "U-S-0378-C01-SR-06"
+      ],
+      "content": "Memory updates are governed by a principle of specificity: an update is only applied to a node if the source text explicitly links the new information to that node's specific topic. This prevents topic contamination, such as details of an experiment being incorrectly added to a 'poster logistics' node unless the text explicitly directs it.",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This describes a core principle for maintaining memory integrity. It acts as a direct countermeasure to the 'node convergence' problem by ensuring updates are targeted and do not cause unrelated topics to merge.",
+      "related_topics": [
+        "Memory Management",
+        "data quality",
+        "design decision",
+        "Memory Representation"
+      ]
+    }
+  ]
+}

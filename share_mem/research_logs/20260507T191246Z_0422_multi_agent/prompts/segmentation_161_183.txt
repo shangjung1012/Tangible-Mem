@@ -1,0 +1,44 @@
+You are segmentation_agent for a long-term memory extraction pipeline.
+Return JSON only. Split the transcript window into topic-coherent segments.
+Use original line numbers.
+
+Create durable discussion segments, not sentence-level or checklist-like slices.
+Normally return 3-6 segments for an 80-line primary window.
+You may return up to 10 segments only when there are clear
+major topic shifts. Prefer 10-24 primary-window lines per segment.
+Do not split every small subpoint into a segment; downstream idea units will handle
+the smaller claims inside each durable segment.
+
+Meeting: 0422
+Primary window: 161-183
+
+Transcript lines:
+155: [SPEAKER_00]: 就可以設定可能可以用這種方式去 argue 他們對，那當然可以說我們這個是在 real time 的 interaction 的話可能 potentially the advantage就是我把過去的譬如一年的 meeting 裡面內容我現在只需要去抓跟我的現在討論的東西有相關的那些節點對，那但是會後之後這些的內容還是會一直就 update 所有的節點。那那些本來已經到 forget 的那些節點它可能會根據因為好像又被提起來
+156: [SPEAKER_00]: 他的 weight 會慢慢增加然後某個時刻他會再跑回來到是重要的節點。這部分可能可以想一下是說就是譬如說是以 Efficiency 來說對那以 Efficiency 來說呢還有可能是以譬如說以 Practicality 好像就是某些主題因為我們有 Importance 的那個嘛，那 Importance 啊可以怎麼去計算這樣對
+157: [SPEAKER_01]: 好我們有一個問題是我們不知道就是那個evaluate我們是要用我們自己的dataset嗎，因為我們dataset的話看起來真的有比較是在討論這個東西，然後有method change的表示可能從這學期開始的四次包含這次第五次那我們就你們可以看
+158: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到
+159: [SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西
+160: [SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。但它現在重要性已經非常低那在我們的 memory 裡面它已經 fade out
+161: [SPEAKER_01]: 那我們又要去做其他的 dataset 了嗎還是就只做我們 dataset
+162: [SPEAKER_00]: 如果說這個 dataset 夠用的話其實也是可以但你們可能就要找到裡面的某一個可以 demo 的環節
+163: [SPEAKER_00]: 其實你們可以自己去組自己去生成那個可以自己去生成那個對話環節，譬如說你可以在我們在Meeting的內容裡面多塞一些就是假設譬如說那個那你就可以講說Long term memory。假設我們總共有譬如說30場的會議然後也許你說每一場用半小時左右就好了那你可以把我們一開始的Meeting的時候
+164: [SPEAKER_00]: 我覺得一定有那種我們那時候講到但是後來再也沒有提到的東西應該是有
+165: [SPEAKER_01]: 應該近五次就已經有了就是我們就這五次裡面就已經有一些method change
+166: [SPEAKER_02]: 應該有一些被否決的東西只是就是
+167: [SPEAKER_01]: 因為我想說我們因為我們原本目的是做比較長時間跨度然後怕五場可能數量不夠
+168: [SPEAKER_00]: 你可以看五場因為五場我覺得還是比較靠近短期
+169: [SPEAKER_00]: 那你去看真的那種譬如說二十場Meeting之外的我們之前Meeting沒有講一個東西
+170: [SPEAKER_02]: 我們應該沒有十場沒有
+171: [SPEAKER_00]: 你去抓到某一件事情然後你如果可以展示出你一般的 Language Model你用RAG的方法，那我們去提到說這件事情的話那它的結果會有怎麼樣不一樣
+172: [SPEAKER_00]: 對然後所以這是其中一個然後另外一個是另外一個就是這個跳躍就是去打包那個idea unit這個東西。那我覺得以這樣來說的話如果說兩件事情的話以五月專題展有可能會夠吧
+173: [SPEAKER_01]: 嗯嗯應該可以吧是要夠都來得及嗎
+174: [SPEAKER_00]: 但我覺得這就叫一個很好的故事，那我覺得以這個故事來說我覺得還蠻我跟很多人講每個人都蠻有興趣的。對那就是說這件事情應該說我們把這個做好之後在上面可以蓋上去的東西有很多
+175: [SPEAKER_00]: 對那什麼樣的情況非常非常的重要。那當然也可以想到說那有些人會說啊怎麼可是搞不好一年前我講的東西很重要啊那你不就忘記了嗎，什麼什麼因為那所以我們的機制有要講說說我們在real time中
+176: [SPEAKER_00]: 我們可以在就是在抓取重要的 memory 的時候我們會根據它當前重要的那種 relevancy 去抓對那但是就會後之後我們會慢慢 update就如果某一個題某一個主題一年前講過對，那今天又被講起來那個當下它其實並不會影響我現在的 interaction 它有一些假設它是忘記的
+177: [SPEAKER_01]: 我們有說如果 importance 多高它是永遠不會 fade out
+178: [SPEAKER_02]: 他有個 flow
+179: [SPEAKER_00]: 我最近有聽到一個就是我UIUC學弟他在講一個他在Berkeley的老闆他在做一個蠻有趣的事。他在做遺忘Large Language Model的遺忘，然後他在講的是說譬如說像現在有些重要的個資，譬如說誰的誰說他讀到了某一些資訊對，那他希望的是這個Memory這個Large Language Model他最後忘記這個人真實的名字或電話，可是他記得這件事情
+180: [SPEAKER_00]: 所以就是說我記得有一個人他有在做一個什麼事情或是我記得有一個人他當時發生一件什麼事情他記得這件事，可是他刻意讓他遺忘
+181: [SPEAKER_01]: 他選擇性的遺忘
+182: [SPEAKER_00]: 對，你要記得那個架構但是他忘他必須要忘記一些sensitive information，所以他不能全部遺忘他不能不記得這件事情他要記得這件事情可是他忘記那個那個sensitive的內容
+183: [SPEAKER_00]: 好那就先這樣

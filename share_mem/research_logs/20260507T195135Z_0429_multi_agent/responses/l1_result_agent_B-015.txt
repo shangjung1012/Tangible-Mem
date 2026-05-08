@@ -1,0 +1,68 @@
+{
+  "candidates": [
+    {
+      "source_unit_ids": [
+        "U-S-0223-03-SR-01",
+        "U-S-0223-03-SR-05",
+        "U-S-0223-03-SR-06",
+        "U-S-0223-03-SR-07",
+        "U-S-0223-03-SR-08"
+      ],
+      "content": "系統架構的核心爭論在於兩種設計之間的比較：1) 由開發者編寫固定的「任務流」(task flow)，程式邏輯是寫死的，僅在特定分析任務上呼叫LLM作為服務。2) 由LLM主導的流程，模型根據上下文動態決定要執行的函式呼叫順序。",
+      "importance": 0.95,
+      "confidence": 1.0,
+      "rationale": "This captures the central, unresolved architectural debate presented in the text, contrasting a hardcoded approach with an LLM-orchestrated one. This is a fundamental design choice for the project.",
+      "related_topics": [
+        "design decision",
+        "code structure",
+        "data flow",
+        "LLM"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0223-03-SR-09"
+      ],
+      "content": "由LLM主導工作流程的一個關鍵缺點是難以管理程式內部狀態。例如，像遞增計數器這樣的簡單操作，必須透過提示(prompt)明確指示LLM執行，這被認為是繁瑣且低效的。",
+      "importance": 0.9,
+      "confidence": 1.0,
+      "rationale": "This identifies a specific, significant technical drawback of the LLM-orchestration approach, which strongly influences the architectural decision.",
+      "related_topics": [
+        "design decision",
+        "failure_mode",
+        "LLM",
+        "code structure"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0241-03-SR-02",
+        "U-S-0241-03-SR-03",
+        "U-S-0241-03-SR-04"
+      ],
+      "content": "結論是，LLM函式呼叫的不可靠性根源於模型在「決定是否」呼叫函式時對提示(prompt)的理解，而非執行機制本身的問題。對模型決策過程無法完全控制被視為核心問題。",
+      "importance": 0.9,
+      "confidence": 1.0,
+      "rationale": "This is a key finding that clarifies the source of unreliability in using LLM function calling, shifting the focus from the tool's execution to the model's interpretation.",
+      "related_topics": [
+        "LLM",
+        "design decision",
+        "failure_mode"
+      ]
+    },
+    {
+      "source_unit_ids": [
+        "U-S-0241-03-SR-05"
+      ],
+      "content": "如果認定無法透過提示(prompt)的精確性來保證LLM函式呼叫的正確性，提出的替代方案是採用更結構化的方法，即所謂的「資訊熵」(information entropy)方法。",
+      "importance": 0.85,
+      "confidence": 1.0,
+      "rationale": "This captures a concrete alternative proposed as a result of identifying the limitations of the current approach, representing a potential future direction for the project.",
+      "related_topics": [
+        "design decision",
+        "LLM",
+        "development strategy"
+      ]
+    }
+  ]
+}

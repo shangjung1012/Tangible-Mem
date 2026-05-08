@@ -1,0 +1,68 @@
+You are segmentation_agent for a long-term memory extraction pipeline.
+Return JSON only. Split the transcript window into topic-coherent segments.
+Use original line numbers.
+
+Create durable discussion segments, not sentence-level or checklist-like slices.
+Normally return 3-6 segments for an 80-line primary window.
+You may return up to 10 segments only when there are clear
+major topic shifts. Prefer 10-24 primary-window lines per segment.
+Do not split every small subpoint into a segment; downstream idea units will handle
+the smaller claims inside each durable segment.
+
+Meeting: 0325
+Primary window: 75-95
+
+Transcript lines:
+59: [SPEAKER_00]:	它被引用了491次喔 491次喔在ACL上面喔欸  我應該去Google Scholar你把這個貼給那個好了欸
+60: [SPEAKER_01]:	那個是一個論文對不對對啊 但是不是它這個語音資料庫是指論文被用了491次
+61: [SPEAKER_02]:	等一下你把這個link傳到那個群組裡面去
+62: [SPEAKER_02]:	然後你看一下ㄗ最近你看2022以後
+63: [SPEAKER_00]:	32天前
+64: [SPEAKER_02]:	好像沒有一個太在講
+65: [SPEAKER_02]:	但現在目前我本來想像中是會有很多人會去想要試圖想要去什麼記憶就是因為它是長期的對話的那個嘛Data set
+66: [SPEAKER_03]:	可是現在大部分做記憶都是用Locomo
+67: [SPEAKER_02]:	OK
+68: [SPEAKER_03]:	他們現在都是用LLM模擬的對話去做記憶他們沒有用
+69: [SPEAKER_02]:	為什麼不用真的人的meeting
+70: [SPEAKER_02]:	喔我覺得就是你可以控制你要生成的對話是什麼東西
+71: [SPEAKER_01]:	然後也比較可以知道到底有沒有記得對
+72: [SPEAKER_02]:	 因為你可以有dataset 之後 ground truth你可以設計問題
+73: [SPEAKER_01]:	像我們現在有個就是有個小問題就是不知道他記得是不是對的就知道可能...我們要去看這三...大概二十...
+74: [SPEAKER_02]:	你們能夠做的事情就是說如果真的是用在我們自己的meeting對話上的話你最後就可以調出那個meeting的片段看他是不是...就調出那個片段然後就直接問說這個這一段的東西跟我現在討論的是不是相關的
+75: [SPEAKER_01]:	像我之前就是上次之前做過的short term我用現在這個dataset去跑過然後就是大概長得像這樣有點雜亂但是我剛剛的感覺我用它這個
+76: [SPEAKER_02]:	但是我剛剛看了一下你們的那個structure的東西因為我記得你們在那個計畫書裡面寫說還要有personality比較強調他不會drift那件事情對那這個地方你們要怎麼去抓到他的personality
+77: [SPEAKER_01]:	就是他可以分開去處理就是我們那時候一開始最初的計畫是他會先記憶先generate出來然後再丟進Persona的Memory然後再等於說那是兩個步驟修製成符合這個Persona的說話方式然後再調整
+78: [SPEAKER_02]:	那這個Persona它的Personality它可能某方面某個類型的Vector對嗎 那它的那個Vector我要怎麼Update它或是我要用什麼樣的Input去去建構它那個Persona的Personality
+79: [SPEAKER_04]:	也是老師錄音檔
+80: [SPEAKER_02]:	欸?所以是用聲音嗎?就譬如說我是upbeat的人
+81: [SPEAKER_01]:	沒有,我們是拿聲音沒有錯,但是我們那時候在想就是
+82: [SPEAKER_02]:	文字有辦法找到personality嗎?
+83: [SPEAKER_01]:	呃,所以我們那時候語氣讀了就是說話的方式不會是語氣,就目前啦我們是因為譬如說講話的方式是指講話的內容的方式
+84: [SPEAKER_03]: 陳	是你本來會有你的口頭禪或你習慣怎麼問問題
+85: [SPEAKER_02]:	那那個部分它是會drift的嗎?就因為我們剛剛講的是說我們在你們的proposal裡面寫說我們會有personality drift這件事情那在我們傾向如果只是口頭禪上的話它會有我們要怎麼去證明說新的方式它比較不會drift
+86: [SPEAKER_03]:	你說測試evaluate的方式嗎?
+87: [SPEAKER_02]:	對
+88: [SPEAKER_02]:	就譬如說如果我甚至不需要寄到過去的Personality啊我拿最近的一次去抓出我最常講的話我就放進去我不用記過去所有東西它是不是也是也是
+89: [SPEAKER_01]:	這就像是你拿整個的Data去train 跟你只拿一次去train的差別就是就是你我們要去設計怎麼去去評估說它到底效果嗎
+90: [SPEAKER_02]:	所以可能會是
+91: [SPEAKER_03]:	評估的方式我們有想我們應該想的是真人性嗯
+92: [SPEAKER_02]:	某方面說最終如果真的沒有辦法可能真的也是要用去gen出一個就是dataset譬如說我可以想可以怎麼去evaluate這件事情
+93: 因為當初是想說如果用我們的錄音檔的話那就是找老師的學生來看這個agent做出來的感覺像不像語氣像不像老師然後
+94: [SPEAKER_02]:	所以你們可能會比較說如果我只用上一次嗎然後跟長期的你們有做StabilizePersonality的Persona的Vector的空間現在的話還沒
+95: [SPEAKER_01]:	因為我們現在主要是在做記憶的因為我們發現記憶比我們長的人沒那麼好就是就要考量的東西也蠻多的
+96: [SPEAKER_00]:	因為我看到比較新因為剛剛那一篇是在另外一個反正我查一個IEEE的它的更就是類應用的它好像比較多meeting summarization的一些我直接丟Google Scholar好了
+97: [SPEAKER_00]:	剛剛那個不是剛剛那IEEE那個比較多我記得你都不知道他們的關係但是有了有了有一個新的你開一下Google Scholar在然後它第一頁的你剛剛那一篇在第二頁的應該是第二頁第二頁的第一個第二個第二個對不起
+98: [SPEAKER_02]:	我看在其他类别都是有个什么train short infer long那个long是什么
+99: [SPEAKER_00]:	我刚刚几个看他都是在整理前面几篇都是整理那种比较长期的meeting记录怎么summarization
+100: [SPEAKER_01]:	所以看起來也不是因為拿這個資料集的大部分都是要嘛做這種語音轉換的因為這個資料集的賣點其實比較不是會議比較像是它有逐字稿跟錄音檔這兩個它同時都有給所以很多人主要會拿來做
+101: [SPEAKER_02]:	剛剛那個Meeting你剛剛這一篇是
+102: [SPEAKER_02]:	meet multi x看一下那個meet multi x看一下那個看一看view pdf看一下然後上面有一張圖下面有一張圖那個第四頁有一張圖看一下那個圖
+103: [SPEAKER_02]:	這什麼東西 就這個意思Summarize EvaluateScalar Factor 再往下看一下剛剛有一張很像是那種系統圖的有一篇不是這一篇是不是不是
+104: [SPEAKER_00]:	你說我剛剛我剛看的是你說這個嗎
+105: [SPEAKER_02]:	你剛開的某一篇 Chain of Interaction對對對對對
+106: [SPEAKER_02]:	對,Chain of Interaction..Chain of...往下往下那個Chain of Interaction喔!顏老師來了PDf那個往下往下Chain of...那個日文的上面那個對,日文上面那個這個是...這個是你們的...這...這...
+107: [SPEAKER_02]:	這三位是我們的專題同學你們自我介紹一下好了這位是顏安芝老師欸你們有修老師課嗎沒有沒有開大學部課嗎有自然語言處理 他們都大三對叫蔡三王就是尚榮 奕欣跟宥枕然後這是碩 碩班的同學在維新對
+108: [SPEAKER_05]:	他們都大三吧
+109: [SPEAKER_02]:	他們都大三對叫尚榮 奕欣跟宥禎然後這是碩 碩班的同學叫維新對
+110: [SPEAKER_02]:	你們就先講一下我們現在的你們想的我們的題目吧好啦不用開計畫書嘛反正其實大概就是我上次跟你講的那個題目然後我們現在就是在說就是一開始的初衷是想要說透過就是過去透過過去的連續的meeting的錄音檔然後去train出某一個就是最後可以對話的一個agent
+111: [SPEAKER_02]:	對,然後它的重點就會是說,那時候專題想你們那個project有三個重要的挑戰,那三個挑戰

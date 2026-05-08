@@ -1,0 +1,131 @@
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior. Do not dismiss these as
+filler.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted.
+
+For non_memory_context_ranges, include only lines that are purely filler,
+acknowledgements, local wording clarification, or social closing with no memory
+value.
+
+Segment: S-0081-02
+Topic: Literature Search for Meeting Summarization and Interaction Models
+
+Transcript lines:
+96: [SPEAKER_00]:	因為我看到比較新因為剛剛那一篇是在另外一個反正我查一個IEEE的它的更就是類應用的它好像比較多meeting summarization的一些我直接丟Google Scholar好了
+97: [SPEAKER_00]:	剛剛那個不是剛剛那IEEE那個比較多我記得你都不知道他們的關係但是有了有了有一個新的你開一下Google Scholar在然後它第一頁的你剛剛那一篇在第二頁的應該是第二頁第二頁的第一個第二個第二個對不起
+98: [SPEAKER_02]:	我看在其他类别都是有个什么train short infer long那个long是什么
+99: [SPEAKER_00]:	我刚刚几个看他都是在整理前面几篇都是整理那种比较长期的meeting记录怎么summarization
+100: [SPEAKER_01]:	所以看起來也不是因為拿這個資料集的大部分都是要嘛做這種語音轉換的因為這個資料集的賣點其實比較不是會議比較像是它有逐字稿跟錄音檔這兩個它同時都有給所以很多人主要會拿來做
+101: [SPEAKER_02]:	剛剛那個Meeting你剛剛這一篇是
+102: [SPEAKER_02]:	meet multi x看一下那個meet multi x看一下那個看一看view pdf看一下然後上面有一張圖下面有一張圖那個第四頁有一張圖看一下那個圖
+103: [SPEAKER_02]:	這什麼東西 就這個意思Summarize EvaluateScalar Factor 再往下看一下剛剛有一張很像是那種系統圖的有一篇不是這一篇是不是不是
+104: [SPEAKER_00]:	你說我剛剛我剛看的是你說這個嗎
+105: [SPEAKER_02]:	你剛開的某一篇 Chain of Interaction對對對對對
+106: [SPEAKER_02]:	對,Chain of Interaction..Chain of...往下往下那個Chain of Interaction喔!顏老師來了PDf那個往下往下Chain of...那個日文的上面那個對,日文上面那個這個是...這個是你們的...這...這...
+
+Current idea units:
+[
+  {
+    "unit_id": "U-S-0081-02-01",
+    "line_start": 96,
+    "line_end": 97,
+    "text": "SPEAKER_00 is trying to find a newer IEEE paper on Google Scholar that is more application-oriented and focuses on meeting summarization.",
+    "completeness": "partial",
+    "uncertainty_note": "The speaker is actively searching for the paper and describing its location in search results, but the paper itself is not yet identified."
+  },
+  {
+    "unit_id": "U-S-0081-02-02",
+    "line_start": 98,
+    "line_end": 98,
+    "text": "A question was raised about the meaning of the concept \"train short infer long\" which was observed in other categories of papers.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0081-02-03",
+    "line_start": 99,
+    "line_end": 99,
+    "text": "Several of the papers being reviewed are about methods for summarizing long-term meeting records.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0081-02-04",
+    "line_start": 100,
+    "line_end": 100,
+    "text": "It was suggested that the dataset being discussed is primarily used for voice conversion tasks because its main selling point is the availability of both transcripts and audio files, not its suitability for meeting summarization.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0081-02-05",
+    "line_start": 102,
+    "line_end": 103,
+    "text": "The team is examining a diagram on page 4 of a paper (possibly named 'meet multi x') that seems to be a system diagram involving 'Summarize', 'Evaluate', and 'Scalar Factor'.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The team is in the process of analyzing the diagram and has not reached a conclusion about its meaning or relevance."
+  },
+  {
+    "unit_id": "U-S-0081-02-06",
+    "line_start": 105,
+    "line_end": 106,
+    "text": "The team identified a specific paper of interest titled 'Chain of Interaction' that they had previously opened.",
+    "completeness": "incomplete",
+    "uncertainty_note": "The discussion about why this paper is interesting was cut off."
+  }
+]
+
+Validator report:
+{
+  "segment_id": "S-0081-02",
+  "line_start": 96,
+  "line_end": 106,
+  "input_units": 6,
+  "output_units": 6,
+  "coverage_rate": 0.818,
+  "uncovered_ranges": [
+    {
+      "start_line": 101,
+      "end_line": 101
+    },
+    {
+      "start_line": 104,
+      "end_line": 104
+    }
+  ],
+  "overlap_ranges": [],
+  "non_memory_context_ranges": [],
+  "deterministic_fallback_enabled": false,
+  "issues": [
+    {
+      "issue": "uncovered_line_ranges",
+      "uncovered_ranges": [
+        {
+          "start_line": 101,
+          "end_line": 101
+        },
+        {
+          "start_line": 104,
+          "end_line": 104
+        }
+      ]
+    }
+  ],
+  "repairs": []
+}

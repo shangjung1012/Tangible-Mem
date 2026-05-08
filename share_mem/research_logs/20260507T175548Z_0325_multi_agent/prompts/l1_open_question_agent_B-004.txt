@@ -1,0 +1,67 @@
+You are l1_open_question_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: unresolved research question, blocker, uncertainty, or decision point that still needs clarification.
+
+Read only the bounded idea units below and propose only open_question candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid open_question objects for that reason.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable open_question memories. Return an empty list when
+the batch has no durable open_question. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-004
+Segment IDs: S-0001-04, S-0075-C01
+Known related topics: API key management, Academia Sinica internship, Long-Term Memory, Membrane, Memory Architecture, Memory Retrieval, Memory system, Memory_system, RAG, Short-Term Memory, Sustainable AI, UI design, WhisperX, batch_size, benchmarking, budgeting, code structure, comparison, contribution, data flow, data lifecycle, data quality, data retention, data sourcing, data structure, data_flow, data_fragmentation, data_quality, data_sourcing, dataset, dataset acquisition, debugging, demonstration, demonstration format, demonstration of value, design decision, design_decision, development methodology, development plan, development standards, development strategy, development_strategy, evaluation, evaluation strategy, experimental design, experimental setup, failure_mode, feature rejection, history tracking, human-computer interaction, implementation plan, implementation status, incremental update, information persistence, lab administration, lab funding, lab_operations, large-v3, literature review, literature_review, long-term memory, long-term memory architecture, meeting transcription, memory architecture, memory evaluation, memory history, memory integration, memory lifecycle, memory management, memory mechanism, memory representation, memory retention, memory retrieval, memory system, memory system architecture, memory_architecture, methodology, model evaluation, open source, open-source
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0307-034] type=todo quality=strong activity=fading activation=0.46 reason=open_thread content=The project's goal is not perfect replication but to show a tangible difference in agent behavior. When using open-source code, the final work must highlight the specific improvements made, such as demonstrating long-term memory.
+  [L1-0307-033] type=todo quality=normal activity=reactivated activation=0.82 reason=open_thread content=Design a "before and after" demonstration with specific questions to show the tangible difference in an agent's behavior with the new memory architecture compared to a vanilla agent.
+  [L1-0307-029] type=todo quality=normal activity=reactivated activation=0.82 reason=open_thread content=The team must investigate and present how the reference papers evaluate their models' performance in order to find or create suitable benchmarks to prove the memory architecture's effectiveness.
+  [L1-0307-030] type=method_change quality=strong activity=active activation=0.92 reason=recent_high_importance content=The development plan is to first build the update methods for the three memory types, and then work on the retrieval/access methods.
+  [L1-0307-027] type=open_question quality=normal activity=fading activation=0.42 reason=open_thread content=The design of the memory 'retrieve' phase is an open task. This mechanism is needed to use stored information from memory to influence real-time behavior and generate content for future interactions.
+  [L1-0307-021] type=open_question quality=normal activity=fading activation=0.42 reason=open_thread content=The specific contents of the long-term memory are still being defined. Ideas include high-level, coarse-grained information such as the overall research trajectory, architectural changes, goals, and project milestones.
+  [L1-0307-006] type=todo quality=normal activity=reactivated activation=0.82 reason=open_thread content=評估 WhisperX 在實體會議場景下的說話人標記（speaker diarization）準確性，以決定是否可以在實驗中簡化處理，直接假設說話人身份正確。
+  [L1-0307-020] type=open_question quality=normal activity=fading activation=0.42 reason=open_thread content=The mechanism for integrating short-term memory (information from the last three meetings) with the long-term memory system is currently undefined, though it is acknowledged as a necessary step.
+  [L1-0318-002] type=todo quality=normal activity=active activation=0.86 reason=open_thread content=A reviewed sequential agent-based method for long-text processing was found to have significant flaws, including the risk of hallucination propagation, a lack of global understanding by individual agents, and a naive chunking strategy that can destroy semantic meaning.
+  [L1-0318-011] type=decision quality=normal activity=active activation=1.00 reason=recent_high_importance content=The main claimed advantage of the MEMO system is lower token consumption and reduced latency. However, it did not outperform the RAG baseline on multi-hop questions.
+  [L1-0307-003] type=method_change quality=normal activity=active activation=0.92 reason=recent_high_importance content=已設定記憶保留策略：如果一個記憶項目在連續三次會議中未被討論，該項目將被刪除。
+  [L1-0307-028] type=decision quality=normal activity=active activation=0.92 reason=recent_high_importance content=The project's primary goal is not a perfect replication of reference papers, but to observe how the enhanced memory agent affects human interaction. The minimum requirement is to implement the basic architecture and demonstrate a tangible behavioral difference.
+
+
+
+Split-family scope metadata (not evidence):
+- parent_batch_id=PB-004; split_index=1/2
+- split_reason=idea_unit_count exceeded 14
+- If this batch is part of a split family, avoid creating a partial candidate solely because the chunk boundary cuts a larger idea.
+- Overlap idea units may be cited as normal bounded evidence when they appear below.
+- Do not cite sibling metadata or infer from unseen sibling batches.
+- overlap_unit_ids=U-S-0075-C01-SR-03, U-S-0075-C01-SR-04
+- semantic_parent_segment_ids=S-0001-04, S-0075-C01, S-0081-02
+
+Bounded idea units:
+U-S-0001-04-R01 (50-57): [SPEAKER_02]:	.那因為這蠻早期所以後續引用這個data set的work裡面你們有去看一下說有人用這個data set做什麼事情嗎 [SPEAKER_01]:	主要是做NLP方面的 [SPEAKER_02]:	比如說記憶之類的嗎 [SPEAKER_01]:	應該比較不是記憶應該是比較像做 [SPEAKER_02]:	因為我會蠻好奇的因為它是一個published dataset那所以那時候感覺蠻久以前那到2025年一定會有人去用它的dataset那你去google scholar裡面看然後打這一個dataset [SPEAKER_02]:	是這一篇嗎? [SPEAKER_01]:	很多都用到,像這個人有用到這個人也有用到這邊的人應該都是有用到的 [SPEAKER_01]:	像這個人應該是在做 speech to text對
+U-S-0001-04-R02 (58-58): [SPEAKER_02]:	那 speech to text 這個字如果再往下一點它會不會可以你去點那個叫做2022以後就是有large language model出來之後的像這個
+U-S-0001-04-SR-02 (59-60): The paper introducing the ICSI dataset has been cited 491 times on ACL, though this refers to the paper itself, not necessarily direct use of the audio database.
+U-S-0001-04-SR-03 (62-65): Contrary to expectations, a search for recent papers (post-2022) did not show significant use of the ICSI dataset for memory research, despite it being a long-term conversational dataset.
+U-S-0001-04-SR-04 (66-68): It was noted that most current memory research (e.g., Locomo) uses dialogues simulated by LLMs rather than real human meeting data.
+U-S-0001-04-SR-05 (69-72): The rationale for using simulated data in memory research is that it allows for control over the dialogue content, making it easier to establish ground truth and design specific questions to verify memory.
+U-S-0001-04-SR-06 (73-73): A current challenge with using their own real meeting data is the difficulty of verifying if the model's memory is correct, which requires manually reviewing long conversation segments.
+U-S-0001-04-SR-07 (74-74): A proposed method for evaluating their system with real meeting data is to retrieve the specific meeting segment the model references and manually assess its relevance to the current discussion.
+U-S-0075-C01-SR-01 (75-75): A previous experiment running the short-term memory model on the current dataset produced messy results.
+U-S-0075-C01-SR-02 (76-77): The project proposal emphasizes creating a personality that does not drift, and the initial plan was a two-step process: first generate a response from memory, then use a 'Persona Memory' module to adjust the output to match the persona's speaking style.
+U-S-0075-C01-SR-03 (78-84): The agent's 'personality' is to be constructed from the textual content of speech, such as catchphrases and question-phrasing styles, rather than acoustic features like tone of voice. The source data for this would be transcribed audio recordings.
+U-S-0075-C01-SR-04 (85-87): A key unresolved question is how to evaluate personality drift and prove that a new method is more stable.

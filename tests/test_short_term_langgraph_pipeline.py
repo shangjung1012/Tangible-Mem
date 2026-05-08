@@ -1141,7 +1141,8 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                     for event in events
                 )
             )
-            with sqlite3.connect(str(memory_db)) as conn:
+            conn = sqlite3.connect(str(memory_db))
+            try:
                 canonical_rows = conn.execute(
                     """
                     SELECT name
@@ -1150,6 +1151,8 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                     AND name IN ('memory_meta', 'meeting_window')
                     """
                 ).fetchall()
+            finally:
+                conn.close()
             self.assertEqual(canonical_rows, [])
 
     def test_langgraph_refuses_to_persist_without_meeting_summary(self) -> None:
@@ -1216,7 +1219,8 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                     }
                 )
 
-            with sqlite3.connect(str(memory_db)) as conn:
+            conn = sqlite3.connect(str(memory_db))
+            try:
                 canonical_rows = conn.execute(
                     """
                     SELECT name
@@ -1225,6 +1229,8 @@ class ShortTermLangGraphPipelineTests(unittest.TestCase):
                     AND name IN ('memory_meta', 'meeting_window')
                     """
                 ).fetchall()
+            finally:
+                conn.close()
             self.assertEqual(canonical_rows, [])
 
     def test_langgraph_runner_shape_with_fake_agents(self) -> None:

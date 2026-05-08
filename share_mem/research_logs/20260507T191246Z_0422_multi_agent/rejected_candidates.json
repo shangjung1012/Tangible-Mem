@@ -1,0 +1,366 @@
+[
+  {
+    "candidate_id": "C-B-002-todo-002",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-03",
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "定義在一個「想法單元」定案後，觸發對短期和長期記憶體進行工具呼叫的具體條件和邏輯，並考慮所選的分割方法（迭代式 vs. 預處理式）帶來的影響。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "討論中明確質疑一個完整的想法單元何時會觸發對記憶體的工具呼叫(U-S-0001-02-SR-03)，以及預處理方法將如何改變此過程(U-S-0001-02-SR-06)。這需要在想法單元形成後定義後續的動作。",
+    "related_topics": [
+      "Memory Management",
+      "data flow",
+      "implementation plan",
+      "design decision"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      16,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "evidence_quote": "[SPEAKER_00]: 對好那現在假設說有一個節點，假設說有兩個節點好了對那你們可以講一下說 tool calling 你什麼樣的節點的狀態他是會需要 call 只是譬如說他會在call long term還是 short term ，還是說他是這可以舉個例子嗎譬如說像是在講到什麼的時候如果他找到一包這個idea tool calling 你會 call 這個那如果idea他是做這個的話他的 tool calling 你會 call 哪一個這樣 [SPEAKER_00]: 那其實就是像我剛剛講的那個，就是我剛剛是講一句一句我就是在我在包成包成一個東西之前我會直接去判斷說這句跟上一句是在講同是在延續同一個話題嗎，所以那如果說有先做這個 preprocess 的部分的話那這個部分後面的這個 tool call...",
+    "support_score": 0.115,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.04, 'content_token_coverage': 0.136, 'evidence_token_coverage': 0.053, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'partial']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The question is posed but not answered in this segment.",
+      "This introduces the core comparison and a question that is explored in the following lines."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-08"
+    ],
+    "content": "資料處理方法的長期目標是能夠處理並連接橫跨極大時間範圍的資訊。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "這個目標為開發能夠處理長距離依賴關係的複雜處理方法提供了正當性。",
+    "related_topics": [
+      "long-term memory",
+      "data processing",
+      "development_plan"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      63
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對 因為說我很long term希望可以做到稍微比較有時間跨度的東西",
+    "support_score": 0.126,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.057, 'content_token_coverage': 0.148, 'evidence_token_coverage': 0.085, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-result-001",
+    "type": "result",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-06",
+      "U-S-0001-04-SR-07",
+      "U-S-0001-04-SR-05",
+      "U-S-0001-04-SR-09",
+      "U-S-0001-04-SR-02"
+    ],
+    "content": "針對逐字稿的處理方法，對比了迭代式與單次遍歷式兩種方法。迭代式方法可以在文本中來回移動，能夠將非連續或遠距離但相關的句子分組，這被視為優於簡單的順序合併。然而，有人提出反論，認為單次遍歷方法也可以透過創建初始節點，然後使用全域向量進行後續的關聯單元合併，來處理長距離依賴關係。",
+    "importance": 0.85,
+    "confidence": 0.95,
+    "rationale": "文本明確對比了一種可以「來回調動」的迭代方法和一種「單次遍歷」方法。它詳細說明了迭代方法在處理非順序關係方面的優勢，同時也提出了一個關於單次遍歷方法如何可能實現類似結果的反論。",
+    "related_topics": [
+      "comparison",
+      "data processing",
+      "development methodology",
+      "data structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      48,
+      49,
+      50,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      64
+    ],
+    "evidence_quote": "[SPEAKER_02]: 他就會一直來回調動一直來回調動調動到最後調到最後一行，然後就會結束 [SPEAKER_00]: 來回調動是什麼意思也 [SPEAKER_02]: 就是來回調動就是他會從上到下然後如果他要往回看他就可以往回看可是他的整體進度也是慢慢往下這樣然後直到看完最後 [SPEAKER_01]: 因為我們就因為像之前的paper還蠻多他們都是切一個trunk一個trunk一個trunk丟進去，那我們是讓他做可以iterate的他可以往上找他可以往下找 [SPEAKER_00]: 那這個的好處跟他我們剛剛講的一個parts下去可能會有什麼? [SPEAKER_01]: 我現在想的是就是節點跟節點之間它可能會overlap如果你直接這樣下去好從這裡切一個節點再往下套那它上面可能一樣它有提到的地方它上...",
+    "support_score": 0.173,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.069, 'content_token_coverage': 0.204, 'evidence_token_coverage': 0.095, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speaker was cut off while elaborating on this alternative, so the full idea and its resolution are not captured."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-004-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-09"
+    ],
+    "content": "針對迭代處理方法的一個反論是，單次遍歷方法也可能處理長距離依賴關係。這可以透過先創建初始節點，然後使用一個全域向量來檢查所有節點間的關聯，從而在後處理階段合併相關單元。",
+    "importance": 0.7,
+    "confidence": 0.9,
+    "rationale": "文本明確提出了一個反論，認為單次遍歷方法也可以透過創建初始節點，然後進行全域向量檢查以在後續步驟中合併相關節點，從而實現類似的長距離依賴處理效果。",
+    "related_topics": [
+      "data processing",
+      "development methodology",
+      "design decision",
+      "comparison"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "evidence_lines": [
+      64
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我在想的是原本那個做法其實也是可以做得到啦，就是你譬如我包完這一包之後我還是有一個global的一個vector在check說現在目前我有我的每一個node的idea裡面它有哪一些key information。那我如果在後面找到的時候我還是可以說就是under這一個主題下面有兩個unit對，那我在想的是fixed number的話好所以我猜的就是因為你",
+    "support_score": 0.175,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.085, 'content_token_coverage': 0.206, 'evidence_token_coverage': 0.127, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speaker was cut off while elaborating on this alternative, so the full idea and its resolution are not captured."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-005-todo-001",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-09"
+    ],
+    "content": "應評估一種單次處理（single-pass）的方法來處理長期依賴性，該方法透過創建初始節點，然後使用一個全域向量來檢查所有節點中的關鍵資訊，從而實現事後合併相關單元。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "文本中提出了一個與當前方法相對的計策，建議了一種處理長距離依賴關係的替代方法，這應當被納入考量或進行評估。",
+    "related_topics": [
+      "Memory Architecture",
+      "data processing",
+      "comparison",
+      "design decision"
+    ],
+    "extraction_scope": "B-005",
+    "segment_ids": [
+      "S-0001-04",
+      "S-0065-01"
+    ],
+    "evidence_lines": [
+      64
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我在想的是原本那個做法其實也是可以做得到啦，就是你譬如我包完這一包之後我還是有一個global的一個vector在check說現在目前我有我的每一個node的idea裡面它有哪一些key information。那我如果在後面找到的時候我還是可以說就是under這一個主題下面有兩個unit對，那我在想的是fixed number的話好所以我猜的就是因為你",
+    "support_score": 0.153,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.069, 'content_token_coverage': 0.18, 'evidence_token_coverage': 0.1, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The speaker was cut off while elaborating on this alternative, so the full idea and its resolution are not captured."
+    ],
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-006-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0065-C02-SR-07",
+      "U-S-0065-C02-SR-01"
+    ],
+    "content": "決定對新的動態分塊方法進行評估，將其與兩種基線方法（固定大小分塊、逐句處理）進行比較。評估應著重於準確性、處理時間和 API 調用次數之間的權衡。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "A clear evaluation plan was established to benchmark the newly proposed dynamic chunking method against two standard baselines (fixed-size and sentence-by-sentence), focusing on key performance trade-offs like accuracy, processing time, and API calls.",
+    "related_topics": [
+      "evaluation",
+      "evaluation_strategy",
+      "benchmarking",
+      "experimental_design",
+      "data processing"
+    ],
+    "extraction_scope": "B-006",
+    "segment_ids": [
+      "S-0065-C02"
+    ],
+    "evidence_lines": [
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      100,
+      101
+    ],
+    "evidence_quote": "[SPEAKER_00]: 欸那這個跟我如果每次就是我就是讀一句然後再下一句，如果我覺得還沒有完那我就再多加一句 [SPEAKER_02]: 次數會多很多就是來回的次數會變得非常的多 [SPEAKER_00]: 所以你這個地方是有點像想要它加快跳躍這樣嗎。 [SPEAKER_02]: 因為感覺LLM一次的上下文數量也沒有少到只有一句的感覺 [SPEAKER_00]: 喔我是說我們人講話這個這個是句子吧人講話的句子turn我的意思說一種是說我不管說我要跳到哪裡去我一次就看一個turn [SPEAKER_00]: 或是我一次看一句到句點這句話，那這個方式你說一五一七這件事情跟我們平常說我就是先讀第一句到第二句還沒結束然後變成第一句到第三句然後第四句第五句 [SPEAKER_03]: 你的意思是就是一二三四五六七八...",
+    "support_score": 0.104,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.032, 'content_token_coverage': 0.123, 'evidence_token_coverage': 0.041, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-006-todo-002",
+    "type": "todo",
+    "source_unit_ids": [
+      "U-S-0065-C02-SR-07",
+      "U-S-0065-C02-SR-01",
+      "U-S-0065-C02-SR-05"
+    ],
+    "content": "設計並執行一項評估，將基於資訊熵的動態分塊方法與兩種基線（固定大小分塊和逐句處理）進行比較。評估應衡量準確性、處理時間和 API 調用次數之間的權衡。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "會議中提出了一個具體的評估計畫，旨在將新的動態分塊方法與固定大小和逐句處理的基線進行比較，重點關注準確性、時間和成本之間的權衡。",
+    "related_topics": [
+      "evaluation strategy",
+      "benchmarking",
+      "data processing",
+      "experimental design"
+    ],
+    "extraction_scope": "B-006",
+    "segment_ids": [
+      "S-0065-C02"
+    ],
+    "evidence_lines": [
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      93,
+      94,
+      95,
+      96,
+      100,
+      101
+    ],
+    "evidence_quote": "[SPEAKER_00]: 欸那這個跟我如果每次就是我就是讀一句然後再下一句，如果我覺得還沒有完那我就再多加一句 [SPEAKER_02]: 次數會多很多就是來回的次數會變得非常的多 [SPEAKER_00]: 所以你這個地方是有點像想要它加快跳躍這樣嗎。 [SPEAKER_02]: 因為感覺LLM一次的上下文數量也沒有少到只有一句的感覺 [SPEAKER_00]: 喔我是說我們人講話這個這個是句子吧人講話的句子turn我的意思說一種是說我不管說我要跳到哪裡去我一次就看一個turn [SPEAKER_00]: 或是我一次看一句到句點這句話，那這個方式你說一五一七這件事情跟我們平常說我就是先讀第一句到第二句還沒結束然後變成第一句到第三句然後第四句第五句 [SPEAKER_03]: 你的意思是就是一二三四五六七八...",
+    "support_score": 0.128,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.036, 'content_token_coverage': 0.15, 'evidence_token_coverage': 0.045, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-006-open_question-002",
+    "type": "open_question",
+    "source_unit_ids": [
+      "U-S-0065-C02-SR-01",
+      "U-S-0065-C02-SR-02",
+      "U-S-0065-C02-SR-05",
+      "U-S-0065-C02-SR-07"
+    ],
+    "content": "考慮到準確性、處理時間和API調用次數之間的權衡，將轉錄稿分割成想法單元的最佳方法是什麼？正在考慮的選項包括逐句處理、固定大小分塊和基於信息熵的動態方法。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "討論中概述了幾種轉錄稿分塊方法（逐句、固定大小、動態熵基），並明確指出需要根據準確性、處理時間和成本（函數調用）之間的權衡對其進行評估。",
+    "related_topics": [
+      "data processing",
+      "data fragmentation",
+      "evaluation strategy",
+      "budgeting",
+      "design decision"
+    ],
+    "extraction_scope": "B-006",
+    "segment_ids": [
+      "S-0065-C02"
+    ],
+    "evidence_lines": [
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      93,
+      94,
+      95,
+      96,
+      100,
+      101
+    ],
+    "evidence_quote": "[SPEAKER_00]: 欸那這個跟我如果每次就是我就是讀一句然後再下一句，如果我覺得還沒有完那我就再多加一句 [SPEAKER_02]: 次數會多很多就是來回的次數會變得非常的多 [SPEAKER_00]: 所以你這個地方是有點像想要它加快跳躍這樣嗎。 [SPEAKER_02]: 因為感覺LLM一次的上下文數量也沒有少到只有一句的感覺 [SPEAKER_00]: 喔我是說我們人講話這個這個是句子吧人講話的句子turn我的意思說一種是說我不管說我要跳到哪裡去我一次就看一個turn [SPEAKER_00]: 或是我一次看一句到句點這句話，那這個方式你說一五一七這件事情跟我們平常說我就是先讀第一句到第二句還沒結束然後變成第一句到第三句然後第四句第五句 [SPEAKER_03]: 你的意思是就是一二三四五六七八...",
+    "support_score": 0.135,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.036, 'content_token_coverage': 0.159, 'evidence_token_coverage': 0.045, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "unit_quality_warnings": [],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  }
+]
