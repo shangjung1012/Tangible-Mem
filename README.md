@@ -16,6 +16,17 @@ pipeline are archived under `long_term/archive/legacy_temporal_l2_l3/`; new
 short-term and long-term views should use `share_mem/tree.json` as their L1
 source.
 
+Build the active long-term L2 view from the canonical L1 store:
+
+```bash
+uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
+uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
+```
+
+`long_term/l2/` is a generated view over L1, not a replacement for
+`share_mem/tree.json`. It links durable long-term directions and may leave
+low-value or isolated L1 objects unlinked.
+
 The first topic-tree implementation is a sidecar view, not a replacement for
 raw L1. Build it after `share_mem/tree.json` exists:
 

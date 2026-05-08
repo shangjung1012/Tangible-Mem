@@ -1,40 +1,364 @@
-"""Reserved entrypoint for validating the active long_term L2 view."""
+"""Validate the active long_term L2 view against canonical share_mem L1 evidence."""
 
 from __future__ import annotations
 
 import argparse
+import json
+import sys
 from pathlib import Path
+from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from build_l2_view import (
+    GENERIC_LABELS,
+    L2_INDEX_FILE_NAME,
+    L2_UNLINKED_FILE_NAME,
+    L2_VIEW_FILE_NAME,
+    TYPE_LIKE_LABELS,
+    load_l2_index,
+    load_l2_view,
+)
+from share_mem.store import build_l1_index, load_share_tree
+
+
+def _write_json(path: Path, data: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _load_json(path: Path) -> Any:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _issue(
+    code: str,
+    severity: str,
+    message: str,
+    **details: Any,
+) -> dict[str, Any]:
+    return {
+        "code": code,
+        "severity": severity,
+        "message": message,
+        **details,
+    }
+
+
+def _view_link_map(l2_view: dict[str, Any]) -> dict[str, set[str]]:
+    links: dict[str, set[str]] = {}
+    for node in l2_view.get("l2_nodes", []):
+        if not isinstance(node, dict):
+            continue
+        l2_id = str(node.get("l2_id", "") or "")
+        links[l2_id] = {str(obj_id) for obj_id in node.get("linked_obj_ids", [])}
+    return links
+
+
+def _validate_l2_nodes(l2_view: dict[str, Any], l2_index: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    indexed_obj_ids = set(l2_index)
+    seen_ids: set[str] = set()
+    for node in l2_view.get("l2_nodes", []):
+        if not isinstance(node, dict):
+            continue
+        l2_id = str(node.get("l2_id", "") or "")
+        label = str(node.get("label", "") or "").strip().lower()
+        if not l2_id:
+            issues.append(_issue("missing_l2_id", "severe", "L2 node is missing l2_id."))
+        if l2_id in seen_ids:
+            issues.append(_issue("duplicate_l2_id", "severe", "Duplicate L2 node id.", l2_id=l2_id))
+        seen_ids.add(l2_id)
+        if not label:
+            issues.append(_issue("missing_l2_label", "severe", "L2 node is missing a label.", l2_id=l2_id))
+        if label in GENERIC_LABELS or label in TYPE_LIKE_LABELS:
+            issues.append(
+                _issue(
+                    "generic_l2_label",
+                    "severe",
+                    "L2 label is too generic or type-like.",
+                    l2_id=l2_id,
+                    label=label,
+                )
+            )
+        linked_ids = [str(obj_id) for obj_id in node.get("linked_obj_ids", [])]
+        for obj_id in linked_ids:
+            if obj_id not in indexed_obj_ids:
+                issues.append(
+                    _issue(
+                        "linked_obj_missing_from_index",
+                        "severe",
+                        "L2 node links an object that is absent from l2_index.",
+                        l2_id=l2_id,
+                        obj_id=obj_id,
+                    )
+                )
+            else:
+                indexed_l2_id = str(l2_index[obj_id].get("l2_id", "") or "")
+                if indexed_l2_id != l2_id:
+                    issues.append(
+                        _issue(
+                            "linked_obj_index_l2_mismatch",
+                            "severe",
+                            "L2 node link and l2_index disagree on the object's L2 id.",
+                            l2_id=l2_id,
+                            indexed_l2_id=indexed_l2_id,
+                            obj_id=obj_id,
+                        )
+                    )
+        if len(linked_ids) > 60:
+            issues.append(
+                _issue(
+                    "large_l2_topic",
+                    "warning",
+                    "L2 node has many linked L1 objects and should be manually reviewed.",
+                    l2_id=l2_id,
+                    label=label,
+                    linked_count=len(linked_ids),
+                )
+            )
+    return issues
+
+
+def _validate_l2_index(l2_view: dict[str, Any], l2_index: dict[str, Any], l1_index: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    view_links = _view_link_map(l2_view)
+    l2_ids = set(view_links)
+    for obj_id, entry in l2_index.items():
+        if obj_id not in l1_index:
+            issues.append(
+                _issue(
+                    "index_obj_missing_from_share_mem",
+                    "severe",
+                    "l2_index references an obj_id absent from share_mem.",
+                    obj_id=obj_id,
+                )
+            )
+        l2_id = str(entry.get("l2_id", "") or "")
+        if l2_id not in l2_ids:
+            issues.append(
+                _issue(
+                    "index_l2_missing_from_view",
+                    "severe",
+                    "l2_index references an L2 id absent from l2_view.",
+                    obj_id=obj_id,
+                    l2_id=l2_id,
+                )
+            )
+        elif obj_id not in view_links[l2_id]:
+            issues.append(
+                _issue(
+                    "index_obj_missing_from_view_node",
+                    "severe",
+                    "l2_index references an object absent from its L2 node linked_obj_ids.",
+                    obj_id=obj_id,
+                    l2_id=l2_id,
+                )
+            )
+    return issues
+
+
+def _validate_unlinked(
+    unlinked_report: dict[str, Any],
+    l2_index: dict[str, Any],
+    l1_index: dict[str, Any],
+) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    unlinked_items = [
+        item for item in unlinked_report.get("unlinked_objects", []) if isinstance(item, dict)
+    ]
+    unlinked_ids = {str(item.get("obj_id", "") or "") for item in unlinked_items}
+    indexed_ids = set(l2_index)
+    source_ids = set(l1_index)
+
+    for obj_id in sorted(unlinked_ids & indexed_ids):
+        issues.append(
+            _issue(
+                "unlinked_obj_also_indexed",
+                "severe",
+                "An L1 object appears in both unlinked_objects and l2_index.",
+                obj_id=obj_id,
+                l2_id=str(l2_index[obj_id].get("l2_id", "") or ""),
+            )
+        )
+
+    missing_ids = source_ids - indexed_ids - unlinked_ids
+    for obj_id in sorted(missing_ids):
+        issues.append(
+            _issue(
+                "l1_missing_from_l2_outputs",
+                "severe",
+                "A share_mem L1 object is absent from both l2_index and unlinked_objects.",
+                obj_id=obj_id,
+            )
+        )
+
+    extra_unlinked_ids = unlinked_ids - source_ids
+    for obj_id in sorted(extra_unlinked_ids):
+        issues.append(
+            _issue(
+                "unlinked_obj_missing_from_share_mem",
+                "severe",
+                "unlinked_objects references an obj_id absent from share_mem.",
+                obj_id=obj_id,
+            )
+        )
+
+    for item in unlinked_items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            importance = float(item.get("importance", 0.0))
+        except (TypeError, ValueError):
+            importance = 0.0
+        if importance >= 0.7 or item.get("review_required"):
+            issues.append(
+                _issue(
+                    "high_importance_unlinked",
+                    "warning",
+                    "High-importance or review-required L1 is not linked to any L2.",
+                    obj_id=str(item.get("obj_id", "") or ""),
+                    meeting_id=str(item.get("meeting_id", "") or ""),
+                    importance=importance,
+                    reason=str(item.get("reason", "") or ""),
+                )
+            )
+
+    review_ids = {
+        str(item.get("obj_id", "") or "")
+        for item in unlinked_report.get("review_queue", [])
+        if isinstance(item, dict)
+    }
+    stale_review_ids = review_ids - unlinked_ids
+    for obj_id in sorted(stale_review_ids):
+        issues.append(
+            _issue(
+                "review_queue_obj_missing_from_unlinked",
+                "warning",
+                "review_queue references an object that is not present in unlinked_objects.",
+                obj_id=obj_id,
+            )
+        )
+    return issues
+
+
+def _markdown_report(report: dict[str, Any]) -> str:
+    lines = [
+        "# L2 Validation Report",
+        "",
+        f"- L2 count: {report['l2_count']}",
+        f"- Linked L1 count: {report['linked_l1_count']}",
+        f"- Issue count: {report['issue_count']}",
+        f"- Severe count: {report['severe_count']}",
+        f"- Warning count: {report['warning_count']}",
+        "",
+        "## Issues",
+    ]
+    if not report["issues"]:
+        lines.append("")
+        lines.append("No issues.")
+    else:
+        for issue in report["issues"]:
+            lines.append(
+                f"- [{issue['severity']}] {issue['code']}: {issue['message']}"
+            )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def validate_l2_view_outputs(
+    *,
+    share_mem_root: Path | str = REPO_ROOT / "share_mem",
+    root: Path | str = REPO_ROOT / "long_term" / "l2",
+    out: Path | str | None = None,
+) -> dict[str, Any]:
+    share_root = Path(share_mem_root)
+    l2_root = Path(root)
+    out_root = Path(out) if out is not None else l2_root / "validation"
+    share_tree = load_share_tree(share_root)
+    l1_index = build_l1_index(share_tree)
+    l2_view = load_l2_view(l2_root)
+    l2_index = load_l2_index(l2_root)
+    unlinked_report = _load_json(l2_root / L2_UNLINKED_FILE_NAME)
+
+    issues = [
+        *_validate_l2_nodes(l2_view, l2_index),
+        *_validate_l2_index(l2_view, l2_index, l1_index),
+        *_validate_unlinked(
+            unlinked_report if isinstance(unlinked_report, dict) else {},
+            l2_index,
+            l1_index,
+        ),
+    ]
+    manual_queue = [
+        issue
+        for issue in issues
+        if issue["code"] in {"high_importance_unlinked", "large_l2_topic", "generic_l2_label"}
+    ]
+    severe_count = sum(1 for issue in issues if issue["severity"] == "severe")
+    warning_count = sum(1 for issue in issues if issue["severity"] == "warning")
+    report = {
+        "schema_version": 1,
+        "share_mem_root": str(share_root.resolve()),
+        "l2_root": str(l2_root.resolve()),
+        "l2_view_path": str((l2_root / L2_VIEW_FILE_NAME).resolve()),
+        "l2_index_path": str((l2_root / L2_INDEX_FILE_NAME).resolve()),
+        "l2_count": len(l2_view.get("l2_nodes", [])),
+        "linked_l1_count": len(l2_index),
+        "issue_count": len(issues),
+        "severe_count": severe_count,
+        "warning_count": warning_count,
+        "issues": issues,
+        "manual_review_count": len(manual_queue),
+    }
+    _write_json(out_root / "l2_validation_report.json", report)
+    _write_json(out_root / "manual_l2_review_queue.json", manual_queue)
+    (out_root / "l2_validation_report.md").write_text(_markdown_report(report), encoding="utf-8")
+    return report
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    project_root = Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(
         description="Validate a generated L2 view against canonical share_mem L1 evidence."
     )
     parser.add_argument(
         "--share-mem-root",
-        default=str(project_root / "share_mem"),
+        default=str(REPO_ROOT / "share_mem"),
         help="Root containing canonical share_mem L1 outputs.",
     )
     parser.add_argument(
         "--root",
-        default=str(project_root / "long_term" / "l2"),
+        default=str(REPO_ROOT / "long_term" / "l2"),
         help="Root containing generated L2 view artifacts.",
     )
     parser.add_argument(
         "--out",
-        default=str(project_root / "long_term" / "l2" / "validation"),
+        default=str(REPO_ROOT / "long_term" / "l2" / "validation"),
         help="Validation output directory.",
     )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> None:
-    parse_args(argv)
-    raise SystemExit(
-        "long_term validate-l2-view is reserved for the next L2 implementation. "
-        "This archive cleanup only prepares the active CLI surface."
+    args = parse_args(argv)
+    report = validate_l2_view_outputs(
+        share_mem_root=args.share_mem_root,
+        root=args.root,
+        out=args.out,
     )
+    print(
+        "[long_term] L2 validation complete: "
+        f"{report['severe_count']} severe, {report['warning_count']} warnings"
+    )
+    print(f"Report: {Path(args.out) / 'l2_validation_report.json'}")
+    if report["severe_count"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

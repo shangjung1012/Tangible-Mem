@@ -10,13 +10,15 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 
 - Repository canonical state is the current `main` branch plus this handoff file; device-specific local worktree artifacts are tracked separately below.
 - `share_mem/` is the new canonical L1 store for shared short-term and long-term memory work. Rebuild it from Grace transcripts with `uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean`.
-- Canonical multi-agent L1 extraction code now lives under `share_mem/l1/`. `long_term/` keeps the active recall surface plus reserved L2 view entrypoints; the old temporal L1/L2/L3 pipeline is archived.
+- Canonical multi-agent L1 extraction code now lives under `share_mem/l1/`. `long_term/` keeps the active recall surface plus the generated L2 view entrypoints; the old temporal L1/L2/L3 pipeline is archived.
 - `long_term/tree.json` is now archived under `long_term/archive/legacy_temporal_l2_l3/tree.json`, not the source of truth for new L1 recall. New L2 work should use `share_mem/tree.json` or `share_mem/meetings/` as its L1 base.
 - The current L1 research mainline is still multi-agent extraction. `full` / `monolithic` and `incremental` remain baselines or references, not the primary development path.
 - Multi-agent L1 is a staged prompt pipeline, not autonomous long-lived agents: `prior_context_pack -> context_planner -> segmentation -> repair/coarsening -> boundary refinement -> idea units -> bounded type agents -> grounding -> conflict resolution -> verifier -> reducer -> persist L1 -> relation/activity sidecars`.
-- Canonical L1 still defaults to the six v1 memory object types: `decision`, `todo`, `method_change`, `result`, `open_question`, and `argument`.
-- L1 type v2 is implemented only as a side-by-side experiment: run `uv run share_mem/build_tree.py --output-root share_mem_experiments/type_v2_legacy_<timestamp> --taxonomy v2-memory-roles --include-legacy-type --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean`, then compare with `uv run share_mem/compare_l1_runs.py --baseline share_mem/tree.json --candidate share_mem_experiments/type_v2_legacy_<timestamp>/tree.json --out share_mem_experiments/type_v2_legacy_<timestamp>/comparison`. Do not promote it without manual review of the comparison reports.
-- The v2 experiment uses `decision`, `action_item`, `open_issue`, `proposal`, `argument`, `finding`, and `approach_change` as `type`, while retaining `legacy_type` for compatibility diffing only.
+- Canonical Grace L1 currently uses v2 memory roles in `type`: `decision`, `action_item`, `open_issue`, `proposal`, `argument`, `finding`, and `approach_change`.
+- `legacy_type` is retained on canonical Grace L1 objects for compatibility diffing and rollback checks only.
+- Additional L1 type experiments should still write to separate `share_mem_experiments/...` roots and be compared before promotion.
+- The first active L2 view is implemented under `long_term/l2/`: build with `uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean`, then validate with `uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation`.
+- `long_term/l2/l2_view.json` and `long_term/l2/l2_index.json` are generated views over clean immutable L1 evidence. They do not replace `share_mem/tree.json`, and the builder may intentionally leave low-value or isolated L1 objects unlinked.
 - The first topic-tree implementation is now an append-only sidecar view over `share_mem` L1: build it with `uv run share_mem/build_topic_view.py --tree share_mem/tree.json --mode hybrid --model gemini-2.5-pro`. It writes `topic_updates/<meeting_id>.json`, `topic_tree.json`, and `topic_index.json`.
 - Topic-tree remains a view, not the canonical raw L1 store. `share_mem/tree.json` and `meetings/<meeting_id>.json` remain immutable evidence; topic state is rebuildable from `topic_updates/`.
 - Recall should start from semantic L1 retrieval over `share_mem/tree.json`. Temporal parent-chain expansion is legacy context and must not be required for the first `share_mem` path to work.
@@ -24,7 +26,7 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 - Multi-agent research logs now include structured `api_calls/` artifacts in addition to `prompts/` and `responses/`; keep them out of commits when they contain raw prompts/responses or sensitive local paths.
 - Legacy `summarize phase`, `bridge`, `build-tree`, and old temporal snapshots are archived under `long_term/archive/legacy_temporal_l2_l3/` for historical reference only.
 - Local generated stores and research outputs such as embedding caches, incremental DBs, Grace outputs, and research logs are working artifacts unless explicitly promoted through documentation.
-- Topic-tree L2/L3 is not adopted as a replacement. The current topic-tree implementation is a sidecar/view only; temporal compact L2/L3 remains canonical until the topic-tree branch is evaluated and explicitly promoted.
+- Topic-tree remains a sidecar/view only. The active long-term L2 direction view now lives under `long_term/l2/`; future L3 work should build on `share_mem` L1 plus this L2 view unless a later evaluation explicitly promotes another structure.
 
 ## Windows Local Worktree State
 
@@ -40,6 +42,8 @@ uv sync
 uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
 uv run share_mem/build_topic_view.py --tree share_mem/tree.json --mode hybrid --model gemini-2.5-pro
 uv run long_term/cli.py --help
+uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
+uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
 uv run long_term/cli.py build-l2-view --help
 uv run long_term/cli.py validate-l2-view --help
 uv run python -m unittest discover -s tests
@@ -49,13 +53,15 @@ uv run python -m unittest discover -s tests
 
 | Status | Priority | Task | Canonical next step |
 | --- | --- | --- | --- |
-| active | P0 | Rebuild canonical L1 under `share_mem/` from Grace transcripts. | Run `uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean`, then inspect `share_mem/manifest.json`, `share_mem/tree.json`, per-meeting files, and multi-agent research logs. |
-| active | P0 | Decide whether the L2/L3 topic-tree proposal should complement or replace the current temporal parent chain. | Evaluate a hybrid design: topic tree for cross-meeting topic evolution, plus meeting timeline nodes for per-meeting direction. Compare against current temporal L2/L3 on retrieve precision, context continuity, ability to show meeting flow, and migration cost. Do not change schema until this comparison is written down. |
+| active | P0 | Wire active recall to the new `long_term/l2` upward context. | Start from semantic L1 hits in `share_mem/tree.json`, then use `long_term/l2/l2_index.json` and `l2_view.json` for compact L2 direction context. Keep unlinked L1 behavior non-fatal. |
+| active | P0 | Decide how L3 should sit above the current L2 direction view. | Evaluate whether L3 should be project-state summaries, major research-area roots, meeting timeline summaries, or a hybrid. Keep L1 immutable and keep L2 generated from `share_mem` rather than rerunning L1 extraction. |
 | active | P1 | Validate current multi-agent L1 plus sidecars on real Grace/ICSI meetings. | Run a small repeatable set, inspect `status.json`, `run_summary.json`, `metrics_summary.json`, `l1_quality_index.json`, relation/activity sidecars, and final `tree.json` diffs. |
 | active | P1 | Tighten recall behavior around L1 -> L2/L3 parent-chain context. | Check whether retrieved answers get enough high-level context without flooding prompts. Prefer compact L2/L3 plus linked sidecar context before inventing a new retrieval store. |
 | active | P2 | Keep multi-agent cost and failure visibility under control. | When a run is slow or interrupted, inspect per-run `status.json` and `run_summary.json` first. Add targeted fixes only where artifacts show a bottleneck. |
 | active | P2 | Fix Windows full unittest SQLite cleanup locks. | Investigate temp SQLite connection cleanup in incremental and short-term tests after the topic-tree comparison path is clear. This is local test hygiene, not a P0 topic-tree blocker. |
 | done | P0 | Merge the selected long-term Codex chats into one canonical handoff flow. | Use this `codex.md` as the single entrypoint for future chats. |
+| done | P0 | Rebuild canonical L1 under `share_mem/` from Grace transcripts. | Current canonical Grace `share_mem` has 7 meetings and 545 v2 L1 objects with `legacy_type` compatibility metadata. |
+| done | P0 | Add active share_mem-based L2 view under `long_term/l2`. | Current L2 view has 17 directions, 428 linked L1 objects, 117 intentionally unlinked low-review L1 objects, and 0 severe validation issues. |
 | done | P1 | Adopt semantic L1 retrieval with parent-chain expansion. | Treat `long_term/archive/legacy_temporal_l2_l3/docs/RETRIEVE_IMPLEMENTATION_PLAN.md` as historical implementation context; current code/docs are the source of truth. |
 | done | P1 | Adopt compact L2/L3 schema. | Temporal L2/L3 remains canonical unless the topic-tree branch is explicitly promoted. |
 | done | P2 | Keep incremental bridge as a reference path. | SQLite issue tables are working state for incremental mode only; do not migrate `tree.json` to SQL just because incremental mode uses SQLite internally. |
@@ -224,12 +230,13 @@ Evaluation question:
 
 - `codex.md` is the canonical cross-device handoff; raw Codex JSONL is private backup only.
 - Keep `share_mem/tree.json` as the canonical L1 store. `long_term/archive/legacy_temporal_l2_l3/tree.json` is a legacy temporal artifact and SQLite remains working state for archived incremental extraction only.
-- Keep temporal L2/L3 as legacy context until topic-tree is implemented and evaluated over `share_mem` L1.
+- Keep old temporal L2/L3 as legacy context only. The active generated L2 direction view is `long_term/l2/`, built from `share_mem` L1.
 - Retrieve should start from L1 because L1 has concrete evidence. New L1 retrieval should read `share_mem/tree.json`; L2/L3 expansion is optional context, not a requirement for first-pass `share_mem` recall.
 - Preserve meeting flow by keeping temporal containment or explicit meeting timeline nodes available even if topic-oriented views are later added.
 - If topic-tree L2/L3 is adopted, use many L3 topic roots and L2 subtopic/state nodes; keep any global project/topic overview separate from those roots.
 - A topic-tree implementation must not make old L1 objects mutable. Append new timestamped topic events/state versions and update only materialized topic-level state/digests.
 - `share_mem/topic_updates/` is the source of truth for topic evolution. `share_mem/topic_tree.json` and `share_mem/topic_index.json` are rebuildable materialized views.
+- `long_term/l2/` is a generated long-term direction view, not the raw evidence store. It can intentionally omit low-value or isolated L1 objects; validator review queues should catch important misses.
 - Keep L1 object schema clean and put quality/relation/activity metadata in sidecars. Sidecars may influence summarize/recall conservatively but should not become hidden canonical truth.
 - Treat `argument` as an independent L1 object for now because it helps answer "why did we decide this?" without bloating `decision` / `method_change` content.
 - Use compact L2/L3 prompt context. Avoid reintroducing large flattened method timelines unless a benchmark shows recall quality needs them.
@@ -311,6 +318,14 @@ Cross-device restore rule:
 - Do not depend on Codex UI session import as the only handoff mechanism; session formats and local auth state can change.
 
 ## Handoff Log
+
+### 2026-05-09 - Implement Active L2 Direction View
+
+- Added `long_term/build_l2_view.py` and `long_term/validate_l2_view.py` as active CLI-backed workflows over canonical `share_mem` L1 evidence.
+- The builder writes `long_term/l2/l2_view.json`, `l2_index.json`, per-meeting `l2_updates/`, `unlinked_l1_report.json`, and a manifest. It is deterministic in the first version and does not call Gemini.
+- The generated Grace L2 view currently has 17 L2 directions, 428 linked L1 objects, and 117 intentionally unlinked low-review L1 objects. Validation reports 0 severe issues and 4 large-topic warnings for broad long-running directions.
+- L2 assignment now treats L1 `content` and curated `related_topics` aliases as primary signals, uses `evidence` only as fallback, and rejects arbitrary related-topic labels so administrative or incidental topics do not become L2 directions.
+- Next work: wire recall to retrieve upward L2 direction context from `long_term/l2/l2_index.json`, then decide the L3 layer above these directions.
 
 ### 2026-05-08 - Add Append-Only Topic-Tree View
 

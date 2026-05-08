@@ -20,6 +20,9 @@ new `long_term` L2/L3 retrieval and `short_term` context loading.
 - `share_mem/topic_tree.json`, `share_mem/topic_updates/<meeting_id>.json`, and
   `share_mem/topic_index.json` are a sidecar topic-tree view, not a replacement
   for raw L1.
+- `long_term/l2/` is the active generated L2 view over `share_mem` L1. It is
+  meant for long-term retrieval context and does not require every L1 object to
+  be linked.
 
 ## Stable Enough For Partner Work
 
@@ -56,6 +59,9 @@ Partner guidance:
   or equivalent reads from `share_mem/tree.json`.
 - Do not mutate old L1 objects to represent updates. Add new L1 evidence and
   use sidecars/views to express evolution.
+- New `long_term` L2 integration can use `long_term/l2/l2_index.json` for
+  `obj_id -> L2 direction` lookup and `long_term/l2/l2_view.json` for compact
+  upward context.
 - The old temporal `long_term/tree.json`, snapshots, build-tree, bridge, and
   summarize pipeline are archived under
   `long_term/archive/legacy_temporal_l2_l3/`.
@@ -71,6 +77,7 @@ force a core JSON format break:
 - Topic-tree assignment quality.
 - Topic labels and topic paths.
 - `current_state` and `timeline_digest` wording in topic-tree nodes.
+- L2 labels and deterministic assignment rules.
 - Validator thresholds for large topics and expected concept links.
 
 Current generated state:
@@ -80,6 +87,9 @@ Current generated state:
 - Topic-tree sidecar: exists, with 54 topics and 545 topic events.
 - Topic validation: 0 severe issues; current warnings are large-topic review
   diagnostics, not schema blockers.
+- Long-term L2 view: exists under `long_term/l2/`, with 17 L2 directions, 428
+  linked L1 objects, 117 intentionally unlinked low-review L1 objects, and 0
+  severe validation issues.
 
 These files should be treated as generated outputs:
 
@@ -131,6 +141,13 @@ Validate topic-tree sidecar:
 
 ```powershell
 uv run share_mem/validate_topic_view.py --root share_mem --out share_mem/topic_validation
+```
+
+Build and validate long-term L2 view:
+
+```powershell
+uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
+uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
 ```
 
 Compare an experiment against canonical:
