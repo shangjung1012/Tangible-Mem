@@ -1,0 +1,136 @@
+{
+  "sequence": 2,
+  "timestamp_utc": "2026-05-08T08:04:22Z",
+  "stage": "segmentation_81_160",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "segments": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_start": {
+                "type": "integer"
+              },
+              "line_end": {
+                "type": "integer"
+              },
+              "topic_label": {
+                "type": "string"
+              },
+              "needs_more_context": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "line_start",
+              "line_end",
+              "topic_label",
+              "needs_more_context"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "segments"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "segments": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "properties": {
+            "line_start": {
+              "type": "integer"
+            },
+            "line_end": {
+              "type": "integer"
+            },
+            "topic_label": {
+              "type": "string"
+            },
+            "needs_more_context": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "line_start",
+            "line_end",
+            "topic_label",
+            "needs_more_context"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "segments"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are segmentation_agent for a long-term memory extraction pipeline.\nReturn JSON only. Split the transcript window into topic-coherent segments.\nUse original line numbers.\n\nCreate durable discussion segments, not sentence-level or checklist-like slices.\nNormally return 3-6 segments for an 80-line primary window.\nYou may return up to 10 segments only when there are clear\nmajor topic shifts. Prefer 10-24 primary-window lines per segment.\nDo not split every small subpoint into a segment; downstream idea units will handle\nthe smaller claims inside each durable segment.\n\nMeeting: 0422\nPrimary window: 81-160\n\nTranscript lines:\n75: [SPEAKER_03]: 所以這就是Function Calling的目的，因為這個Function 它比如說它我們叫做Read然後它參數是第一行到第五行，它有兩個參數，然後因為是從頭到尾，Gemini 一開始可以先問這個那你之後然後你回傳嘛，那 Gemini 如果覺得一到五行不夠或是這個不夠\n76: [SPEAKER_00]: 是不是覺得有點像薇新我們那個我們這學期那個Machine Learning的作業，就是那個會說它是不是End\n77: [SPEAKER_00]: 一個人工智慧概論他們現在作業不是說我一個句子它是不是結束，就有點像那個概念對那所以就有點像說我現在這一包資訊過去我去判斷它結束了沒\n78: [SPEAKER_03]: 可以自己決定就是 LM 覺得這句話還沒結束的話，它可以繼續因為這兩個參數都是 LLM 可以自己決定的所以。它可以比如說它想要覺得這不夠它可以是 1 到 7 這種它可以再看一次 1 到 7 是怎樣第 1 行到第 7 行是怎樣然後這個參數是完全可以用 Gemini 去決定。所以 1 到 7 行如果它覺得它已經結束了那它可以繼續往下等嘛那就是\n79: [SPEAKER_00]: 欸那這個跟我如果每次就是我就是讀一句然後再下一句，如果我覺得還沒有完那我就再多加一句\n80: [SPEAKER_02]: 次數會多很多就是來回的次數會變得非常的多\n81: [SPEAKER_00]: 所以你這個地方是有點像想要它加快跳躍這樣嗎。\n82: [SPEAKER_02]: 因為感覺LLM一次的上下文數量也沒有少到只有一句的感覺\n83: [SPEAKER_00]: 喔我是說我們人講話這個這個是句子吧人講話的句子turn我的意思說一種是說我不管說我要跳到哪裡去我一次就看一個turn\n84: [SPEAKER_00]: 或是我一次看一句到句點這句話，那這個方式你說一五一七這件事情跟我們平常說我就是先讀第一句到第二句還沒結束然後變成第一句到第三句然後第四句第五句\n85: [SPEAKER_03]: 你的意思是就是一二三四五六七八照順序讀然後一二然後發現一樣繼續讀三四然後五然後發現這句話結束了然後接下來下一句讀六的時候再開始一個新的\n86: [SPEAKER_00]: 這方法我想像的話可能會是譬如說一個類似像 Information Entropy 的東西我加這一句話進來之後有增加其他的 Topic 的討論的方式嗎，如果沒有的話就代表它應該是同一個 Idea Unit然後但是我再加下一個東西下一句進來的時候發現那個 Entropy 變大了就代表說這一句它可能是一個很不一樣的題目，那我可能覺得好，那我切在這裡對。但那個的問題可能就會是。就會是我如果有一萬句我就要跑一萬次\n87: [SPEAKER_00]: 對 那我在想是這個話題 我覺得這蠻有趣的 應該是這個後面這個parameter的地方假設說今天我說 我現在讀了三句好了他是不是可以判斷說 我覺得照這個聽起來大概還會再有十句都會跟這個有關那他可能就直接說 你現在接下來就直接先抓十句\n88: [SPEAKER_00]: 然後如果十句抓進來之後發現那個 information entropy 其實都沒有動還沒有出一個新的題目過來，那我就再抓可能本來是十句他說那我再抓八句那當然說我十句抓進來之後發現那 entropy 變超大就說這十句可能太多了可能刮太多了。那我說我變少變五句切譬如切一半就有點像我去試圖要去 approach 用最快的方式去找到那個切點\n89: [SPEAKER_00]: 然後過去大部分的那個 language model 他們都是 fixed 嘛我就是切通常都是 iterative 我先切這樣子，然後一直很大的問題都會是你會切到一半的東西。那所以你們可以說我們現在的重點就是我們不要切到一半的東西，然後可能我不知道這是在我不知道這算不算 novelty 就是我去 predict我要往後看的句數根據我現在的這個主題\n90: [SPEAKER_00]: 我大概知道會是多少譬如說像我們剛剛有專題的我類似這樣那應該很短對那但是如果還沒結束那可能就是說那我再多抓個兩句看看但是如果我們講的是譬如說model譬如說剛剛講說過去的一些work他們這樣都是fix去切\n91: [SPEAKER_00]: 那就這個題目下去他有可能接下來還會有十句都是在講這件事情那我一次先去挑十句，那我把這十句全部弄起來之後我去看說前面原本的這三句跟我加進來十句之後這十三句我們的 topic 的 diversity\n92: [SPEAKER_00]: 如果沒有變動就代表說這十句都在講這件事情，我就把它預設它是同一件事情對。那但如果十句就像剛剛講如果十句加進去之後我們開始突然又開始在講然後就是專題展我們要怎麼做海報它可能topic突然變一個很新的東西，就那十句可能掛太多了那我就要往裡面去往裡面去切，這樣就是動態的去切那個那個size\n93: [SPEAKER_00]: 不過那個部分的話就是你的運算會變得比較大，因為本來fix切的話是你不需要任何Compute你就是切切切，對那有一些Limitation但是它就很快但這的話就變成是我在切的時候我要去一個Compute我去計算我要往後看多少\n94: [SPEAKER_03]: 但這部分就是 Gemini 能給出一個數字來\n95: [SPEAKER_00]: 對我的意思是它還是個 compute就是你要算的那個你需要的算力的資源就比較大或是時間可能會比較久因為你要去計算對，所以它可能會有個 trade-off對\n96: [SPEAKER_00]: 不過我覺得這個還蠻有趣就是說根據我現在講的主題然後我去預估我可以多快往前看多少句應該都是在講同一個主題它有可能是一個我不知道這可能要去看一下有沒有Literature在講這件事情好\n97: [SPEAKER_00]: 但是最終這個結果就是會是會是把一個Transcription它會變成一個有點像是Dictionary這樣嗎，就是有講怎麼主題然後裡面有幾個Unit，比如說unit的ID這樣\n98: [SPEAKER_01]: 會回到我們有在long term裡面定義我們要的object會變成很多的memory object\n99: [SPEAKER_00]: 欸那個memory object的結構是什麼是long term的嗎\n100: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長\n101: [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個\n102: [SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般的普通的那個RAG相比如果把所有的Transcription就是用某種方式變成就是記憶起來，然後等你們有去分Long-term Short-term的話，它不然它比我跑的方式會有什麼樣不一樣然後有什麼樣的有什麼樣的好處對\n103: [SPEAKER_02]: long term 的一個Outjet大概就是這樣像這樣，會有你的Type是什麼然後內容是什麼Evidence就是他從哪裡去找出這個然後還有一些Related Topics，就是讓他後面在Retrieve的時候關鍵字可能可以找到\n104: [SPEAKER_00]: 這些Evidence是他的內容嗎對\n105: [SPEAKER_02]: 就是原本逐字稿的內容\n106: [SPEAKER_00]: 然後 Content跟Evidence有差別嗎\n107: [SPEAKER_02]: Content 應該是已經總結過了，就是它已經它是根據那個 evidence 去總結出來比較精簡\n108: [SPEAKER_00]: 這個中英文都不會影響它的 performance 嗎?\n109: [SPEAKER_02]: 現在看起來是還好\n110: [SPEAKER_00]: 所以這個是 long term 的 memory，所以我可以透過 object id 去找到那個錄音檔里面那个段落是吗\n111: [SPEAKER_03]: 他会直接给吧看起来是他会直接直接放上去\n112: [SPEAKER_00]: 那 short term 的话呢\n113: [SPEAKER_03]: short term 是这样\n114: [SPEAKER_03]: 他現在長得就是其實是類似我用這個來看這是一樣的就是他只是把DB轉 json了而已，他現在長得就是這樣子他會有分meeting window就是他會就是有點類似總結最近的會議，然後action item才是就是那個item是什麼就是要記住的item是什麼\n115: [SPEAKER_03]: 這個ActionItem就是像這樣它就是一個一個Item一個一個Item它就沒有像 long term 一樣是樹狀的就是一個一個離散然後這個是這個是，我找一個例子\n116: [SPEAKER_00]: 你是說短期記憶裡面才會有action item 長期記憶不會有action item\n117: [SPEAKER_02]: 因為長期比較特別是它會往上總結成L2跟L3就是它會有月度總結跟整個大脈絡總結，然後你在找到L1 match的時候它會往上帶出L2跟L3\n118: [SPEAKER_02]: 理論上它就可以有脈絡的那個成分在這個裡面在這個過程中\n119: [SPEAKER_00]: L1,2,3是什麼?\n120: [SPEAKER_02]: L1就是我們剛剛看到那個Memory Adjunct都在Long Term的Memory Adjunct\n121: [SPEAKER_00]: 所以L1的話是最High Level的還是最Low Level的?\n122: [SPEAKER_02]: 最 low level 的\n123: [SPEAKER_00]: 然後但是他接下來會有L2,L3，所以如果我想要看這個Agent他的 Long term 的一些大結構我會上 L3 去看，然後在 L3 它會去連到 L2 的節點然後再去連到 L1 的節點\n124: [SPEAKER_00]: 然後短期記憶的話看起來這邊就會有action item嗎?還是\n125: [SPEAKER_03]: 是action item，然後比如說就是它會有這個比如說這個它就是會有history然後history就是可能最近講過的東西就是它同樣的一件事情然後最近會講過的講到過的事情\n126: [SPEAKER_00]: 那Long Term 沒有 History 嗎?\n127: [SPEAKER_00]: Long Term 的話譬如說 L3 有一個大的節點然後他有好幾次不同的 Meeting他時間軸上不一樣都被提到那在 Long Term 裡面他是看得出來的嗎?\n128: [SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM的時候他看到同樣的時間點然後有類似的論點然後可能這裡被推翻，他應該就可以靠這個新的時間點知道說它是就是要採用的那個東西\n129: [SPEAKER_00]: OK\n130: [SPEAKER_00]: 然後所以短期跟長期的差異在哪裡？短期它最大的差異儲存的方式不一樣嘛\n131: [SPEAKER_03]: 嗯 對 然後長期還是會比較精簡短期感覺會短期還是比較精 就是會比較詳細一點然後\n132: [SPEAKER_00]; 還有短期的話它會側重在action嗎側重在action嗎不\n133: [SPEAKER_03]: 不一定 它就是都包含就，短期的重點應該是在它是就是就是前一次 就最近兩次然後是比較呃就是一個點的感覺就最近兩次有提到這點，他就會把它記著\n134: [SPEAKER_01]: 長期是我們只調我們列出來那幾個object去抓因為\n135: [SPEAKER_00]: 我先想一下假設說我把所有東西都用都用你們現在L123的方式去儲存我不要分短期跟長期，就是沒有短期記憶的差會在哪裡\n136: [SPEAKER_00]: 因为我長期記憶最终也是可以得到所有的最后的road data对不对对所以没有短期的话\n137: [SPEAKER_03]: 理论上是但是呃，會不會太瑣碎的東西他會沒有記得但其實你還會需要講到會有這種情況嗎\n138: [SPEAKER_00]: 太瑣碎是什麼意思\n139: [SPEAKER_01]: 就是或者是他就像我們可能前兩次我們會記得比較細節的對話或是比較短暫曾經提過什麼事情，但是長期來看我們可能不會記得3月7號的meeting我們講過什麼很細節的東西但我們會記得3月7號大概是在我們大概講到哪些方法這樣子\n140: [SPEAKER_03]: 其實我覺得老實說那種方法也不是不行因為如果是樹狀的話其實說不定可以把長短期\n141: [SPEAKER_01]: 但長期現在雖然它是樹狀但我們是想要盡量讓它扁平就是不要那麼多\n142: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡\n143: [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的\n144: [SPEAKER_00]: 譬如說長期就是短期這件事情我們不會去考慮飛到這件事情，短期的話我們就是 capture 我們現在的最重要的事情但是長期的話可能就是你那部分，我們進長期的話我們可能會有一個很不一樣的機構是我們會隨著時間的\n145: [SPEAKER_00]: 我們可能長期的話可能就是會它跟短期機制不一樣就是我們每個一個一次的Meeting的時間每一個節點如果短期記憶裡面不存在它的relevancy或是什麼東西它可能會decay，所以當某一些idea的時候它其實已經就是它短期記憶裡面完全都沒有出現的時候它就會被decay到非常的嚴重到就是慢慢就像我們人類的微微會忘記\n146: [SPEAKER_00]: 那當然因為它不會真的不見所以如果說今天我想去調出，那些被我忘記的東西我可以把它調出來對那但是呢再也許說那我在我們之後再比如在調。如果在real time的時候，那些forget的那些节点我可能就会把它放很低我可能就只会去看那些relevancy还是很高的那些点有\n147: [SPEAKER_01]: 我们那个时候调的时候我们会有一个公司去看它的importance跟relevance\n148: [SPEAKER_00]: 所以是不是可以去argue说for可以去比较就是时序性的去调动资讯会比较快速吗\n149: [SPEAKER_00]: 有可能比較快速嗎就是我不需要去比對說還有哪一些就是某一些節點其實他已經forget了應該是某一個threshold，比如說我們用threshold到多少比如0.2以下那些節點我們就是assume他是目前已經被forget的東西。\n150: [SPEAKER_02]: 但速度應該都蠻快的因為那個relevancy是靠語意跟關鍵字去找那個有技術就不用靠LLM他是有一個模型在跑，那個速度理論上應該就蠻快的\n151: [SPEAKER_00]: 我意思是說最後我們在 real time 的去要給 conversation 的時候。那今天假如說 meeting 的內容假設一年內容會超級龐大的那我們平常如果是真的在 real time 最終就是真的在對話的時候我要去抓過去的 memory 的話，他是不是他要 traverse 他要去抓到的記憶的那個東西時間會比較長\n152: [SPEAKER_00]: 如果以我們的情況下說過去的一年然後我們的long term memory裡面雖然說假設有100個不同的節點但是它有不同的它的那個forgiveness它的那個level不一樣relevancy跟importance可能不一樣，對好那在這樣的情況下我們在real time中我們假設說我們只看重要的東西\n153: [SPEAKER_00]: 那有些東西其實雖然可能就是你會後再去update的時候他會update到那些被forget的節點可是在那個當下的時候你就會快速很多，你可能只會看就是最就long term memory現在還是還是還存在一定重要性的，然後你會想要在短期記憶裡面的內容那些long 飛到的那些東西你可能就又坦承你完全不會去處理它\n154: [SPEAKER_02]: 嗯 是可以\n155: [SPEAKER_00]: 就可以設定可能可以用這種方式去 argue 他們對，那當然可以說我們這個是在 real time 的 interaction 的話可能 potentially the advantage就是我把過去的譬如一年的 meeting 裡面內容我現在只需要去抓跟我的現在討論的東西有相關的那些節點對，那但是會後之後這些的內容還是會一直就 update 所有的節點。那那些本來已經到 forget 的那些節點它可能會根據因為好像又被提起來\n156: [SPEAKER_00]: 他的 weight 會慢慢增加然後某個時刻他會再跑回來到是重要的節點。這部分可能可以想一下是說就是譬如說是以 Efficiency 來說對那以 Efficiency 來說呢還有可能是以譬如說以 Practicality 好像就是某些主題因為我們有 Importance 的那個嘛，那 Importance 啊可以怎麼去計算這樣對\n157: [SPEAKER_01]: 好我們有一個問題是我們不知道就是那個evaluate我們是要用我們自己的dataset嗎，因為我們dataset的話看起來真的有比較是在討論這個東西，然後有method change的表示可能從這學期開始的四次包含這次第五次那我們就你們可以看\n158: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到\n159: [SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西\n160: [SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。但它現在重要性已經非常低那在我們的 memory 裡面它已經 fade out\n161: [SPEAKER_01]: 那我們又要去做其他的 dataset 了嗎還是就只做我們 dataset\n162: [SPEAKER_00]: 如果說這個 dataset 夠用的話其實也是可以但你們可能就要找到裡面的某一個可以 demo 的環節\n163: [SPEAKER_00]: 其實你們可以自己去組自己去生成那個可以自己去生成那個對話環節，譬如說你可以在我們在Meeting的內容裡面多塞一些就是假設譬如說那個那你就可以講說Long term memory。假設我們總共有譬如說30場的會議然後也許你說每一場用半小時左右就好了那你可以把我們一開始的Meeting的時候\n164: [SPEAKER_00]: 我覺得一定有那種我們那時候講到但是後來再也沒有提到的東西應該是有\n165: [SPEAKER_01]: 應該近五次就已經有了就是我們就這五次裡面就已經有一些method change\n166: [SPEAKER_02]: 應該有一些被否決的東西只是就是",
+  "raw_response": "{\n  \"segments\": [\n    {\n      \"line_start\": 81,\n      \"line_end\": 96,\n      \"topic_label\": \"Dynamic text chunking using information entropy to predict lookahead sentence count\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 97,\n      \"line_end\": 102,\n      \"topic_label\": \"Evaluation strategy comparing dynamic chunking and the long-term/short-term memory architecture against alternatives\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 103,\n      \"line_end\": 118,\n      \"topic_label\": \"Explanation of long-term and short-term memory object structures, including the L1-L3 hierarchy\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 119,\n      \"line_end\": 129,\n      \"topic_label\": \"Clarification of the L1-L3 hierarchical memory structure and timeline handling\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 130,\n      \"line_end\": 141,\n      \"topic_label\": \"Discussion on the fundamental differences and necessity of separating short-term and long-term memory\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 142,\n      \"line_end\": 156,\n      \"topic_label\": \"Proposing 'forgetting' and 'decay' of importance as a key advantage for long-term memory retrieval efficiency\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 157,\n      \"line_end\": 160,\n      \"topic_label\": \"Planning the evaluation and demo using their own dataset to showcase the memory decay mechanism\",\n      \"needs_more_context\": false\n    }\n  ]\n}",
+  "parsed_json": {
+    "segments": [
+      {
+        "line_start": 81,
+        "line_end": 96,
+        "topic_label": "Dynamic text chunking using information entropy to predict lookahead sentence count",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 97,
+        "line_end": 102,
+        "topic_label": "Evaluation strategy comparing dynamic chunking and the long-term/short-term memory architecture against alternatives",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 103,
+        "line_end": 118,
+        "topic_label": "Explanation of long-term and short-term memory object structures, including the L1-L3 hierarchy",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 119,
+        "line_end": 129,
+        "topic_label": "Clarification of the L1-L3 hierarchical memory structure and timeline handling",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 130,
+        "line_end": 141,
+        "topic_label": "Discussion on the fundamental differences and necessity of separating short-term and long-term memory",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 142,
+        "line_end": 156,
+        "topic_label": "Proposing 'forgetting' and 'decay' of importance as a key advantage for long-term memory retrieval efficiency",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 157,
+        "line_end": 160,
+        "topic_label": "Planning the evaluation and demo using their own dataset to showcase the memory decay mechanism",
+        "needs_more_context": false
+      }
+    ]
+  },
+  "latency_sec": 25.765,
+  "success": true,
+  "error": null
+}

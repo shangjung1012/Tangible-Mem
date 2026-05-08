@@ -1,0 +1,1783 @@
+[
+  {
+    "candidate_id": "C-B-001-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "The memory system is designed to track items by `meeting ID` rather than using relative time. This makes dynamic temporal updates (e.g., changing \"this meeting\" to \"last week's meeting\") infeasible.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text explicitly identifies this as a key feature of the current system design, contrasting it with a rejected alternative proposal.",
+    "related_topics": [
+      "memory model",
+      "item tracking"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "The system includes a forgetting mechanism that deletes memory items that have not been discussed within a predefined window, such as three meetings.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is described as the second key feature of the current system design, representing a core decision about how memory is managed over time.",
+    "related_topics": [
+      "memory model",
+      "forgetting mechanism"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "For the purpose of experiments, the problem of speaker diarization will be treated as solved, either by using platforms that automatically handle speaker attribution (like Zoom or Google Meet) or by relying on a high-accuracy model like WhisperX.",
+    "importance": 0.8,
+    "confidence": 0.9,
+    "rationale": "The text states that for experiments, the problem can be simplified by assuming it's solved, which is a clear methodological decision to unblock other work.",
+    "related_topics": [
+      "speaker diarization",
+      "experimental setup"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05"
+    ],
+    "content": "Implement dynamic time tracking, where an item's temporal reference (e.g., \"this meeting\") would automatically update to \"one week ago\" in the following week's meeting.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "A specific feature implementation was suggested, which represents a potential future task. The text states 'A suggestion was made to implement dynamic time tracking'.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-001-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05",
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "A suggestion for dynamic time tracking (e.g., updating \"this meeting\" to \"one week ago\") is infeasible with the current system design, which tracks items by `meeting ID` rather than relative time. This presents a design conflict, as updating an item changes its associated meeting ID (e.g., from 16 to 17), preventing stable relative time references.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The text explicitly contrasts a proposed feature for dynamic temporal references with the current system's limitation of tracking items by meeting ID, highlighting an unresolved design challenge.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05"
+    ],
+    "content": "建議實現動態時間追蹤，讓項目的時間參考（例如「本次會議」）在下週會議中自動更新為「一週前」。這需要在整合新會議記憶時更新所有與時間相關的參考。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states a suggestion to implement dynamic time tracking for memory items, which would require updating all time-related references when a new meeting's memory is integrated.",
+    "related_topics": [
+      "memory model",
+      "temporal references"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "為了實驗目的，可以簡化實體會議中的說話者日誌（speaker diarization）問題，假設該問題已解決，或依賴像WhisperX這樣的高精度模型。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit proposes a specific simplification for handling speaker diarization in experiments, either by assuming it's a solved problem or using a high-accuracy model.",
+    "related_topics": [
+      "speaker diarization",
+      "experimental setup"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05",
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "動態時間追蹤（例如將「本次會議」自動更新為「一週前」）的建議是不可行的，因為目前的系統設計是透過`會議ID`而非相對時間來追蹤項目，當項目更新時，其ID會從舊會議更新為新會議，此機制與相對時間更新不相容。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "該單元明確指出，由於系統以會議ID而非相對時間來追蹤項目，因此動態時間更新的提議在當前架構下是不可行的，這是一個關於系統設計限制的關鍵論點。",
+    "related_topics": [
+      "memory model",
+      "system architecture",
+      "time tracking"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "為了實驗目的，可以簡化實體會議中的說話者分段問題，理由是線上會議平台已能自動對應發言者，或可依賴如WhisperX等高準確度模型來處理。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "該單元為簡化說話者分段問題提供了明確的理由，指出可以參照現有技術（線上會議平台）或使用高準確度模型（WhisperX）作為權宜之計，這是一個方法論上的論證。",
+    "related_topics": [
+      "speaker diarization",
+      "experimental setup"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "當前系統設計有兩個關鍵特點：1) 項目通過`meeting ID`而非相對時間進行追踪，因此當項目更新時，其ID會從上一個會議（如16）變更為當前會議（如17）。2) 系統包含一個遺忘機制，會刪除在預設時間窗口（如三次會議）內未被再次討論的項目。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit clearly outlines two fundamental design characteristics of the current system: tracking items by meeting ID and implementing a forgetting mechanism for items not discussed within a specific window.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "為了簡化實驗，實體會議中的說話者日誌（speaker diarization）問題被視為已解決，其假設是依賴如Zoom或Google Meet等線上平台自動附加的說話者資訊，或使用如WhisperX等高準確度模型。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states a simplifying assumption made for experiments, treating speaker diarization as a solved problem by relying on platform data or high-accuracy models.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-02",
+      "U-S-0001-01-SR-04"
+    ],
+    "content": "記憶模型的工作流程是處理單次會議以生成摘要和行動項目。當先前會議的某個主題在後續會議中被再次討論時，系統會更新相應的記憶條目以反映新的進展，並將其關聯的會議ID更新為當前會議的ID。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "These idea units describe the core workflow of the memory model, where it processes meetings sequentially and updates existing memory items when a topic is revisited, also updating the associated meeting ID.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-04",
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "Memory items are tracked using the `meeting ID` as a reference, not relative time (e.g., 'last week'). When an item is updated, its associated meeting ID is changed to that of the current meeting.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The units explicitly describe this as a key design feature of the current system, which makes dynamic temporal updates infeasible.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "The system incorporates a forgetting mechanism that automatically deletes memory items that have not been discussed within a specified window, such as three meetings.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly identifies this as one of the two key features of the current system design for managing memory items.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-02",
+      "U-S-0001-01-SR-03",
+      "U-S-0001-01-SR-04"
+    ],
+    "content": "The memory model operates sequentially: it processes a meeting transcript to generate summaries and action items, creating an initial memory. When a subsequent meeting discusses a topic from a previous one, the system updates the corresponding memory entry.",
+    "importance": 0.9,
+    "confidence": 0.95,
+    "rationale": "These units collectively describe the fundamental, adopted workflow for how the memory model processes meeting data and updates its state over time.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "For experiments, the speaker diarization problem is simplified by assuming it is already solved, either by using data from platforms like Zoom/Google Meet or by employing a high-accuracy model like WhisperX.",
+    "importance": 0.8,
+    "confidence": 0.9,
+    "rationale": "The unit explicitly states a methodological simplification adopted for experiments to handle speaker diarization.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "決定將長期記憶（LTM）設計為一個獨立的、更粗粒度的架構，旨在跨越長期的專案週期（例如一年），以捕捉研究的整體敘事、目標、主題和里程碑。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The team defined a high-level vision for LTM as a separate, coarser-grained system for tracking the project's long-term narrative. This is a future-steering architectural decision.",
+    "related_topics": [
+      "long-term memory",
+      "memory architecture",
+      "project narrative"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-03",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "目前的短期記憶（STM）被定義為記住過去三次會議中的重要資訊，超過三次會議的項目將被視為不重要而被刪除。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The team established a clear, operational definition for the current STM, setting a 3-session rolling window to keep information current and relevant. This defines the current state of a key architectural component.",
+    "related_topics": [
+      "short-term memory",
+      "memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "目前的記憶系統實作決定僅專注於「更新」階段（在會議後將資訊添加到記憶中），而「檢索」階段的設計則被推遲。",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The team made a pragmatic decision to scope the current implementation to only the 'update' phase of the memory system, deferring the 'retrieve' phase. This defines the current project priorities and capabilities.",
+    "related_topics": [
+      "memory implementation",
+      "system architecture",
+      "project scope"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "團隊評估了一篇關於「長期記憶」的外部論文，並決定其方法不適用，因為它過於細粒度，且專注於單次會話內的長上下文處理，而非團隊所需的跨時間線資訊追蹤。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The team made a decision to reject an alternative approach presented in an external paper because its focus on single-session long context was misaligned with their need for cross-session memory.",
+    "related_topics": [
+      "long-term memory",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "Design the integration between the short-term memory (STM) and long-term memory (LTM) systems, as this is not yet defined. The STM is a rolling 3-session window, while the LTM is envisioned as a separate, coarser-grained architecture for long-term project history.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript explicitly states that the integration between STM and LTM has not yet been designed. It also describes the distinct characteristics of each system, highlighting the need for a dedicated design to make them work together.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-002-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "Design and implement the 'retrieve' phase for the memory system. This mechanism, which is currently not designed, should use stored memory from both STM and LTM to decide what to say in future meetings and influence real-time conversation.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript clearly identifies that the retrieval mechanism, which is essential for the memory system to be functional, is a missing component that needs to be designed and built. It is specified that this should apply to both STM and LTM.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-002-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "Design the future architectural process for periodically processing information from the rolling short-term memory (STM) and converting it into the long-term memory (LTM) structure.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The transcript proposes a specific future architectural task: creating a process to migrate important information from the temporary, rolling STM into the permanent LTM to ensure long-term retention.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-05",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "The integration between the short-term memory (STM), which holds information from the last three sessions, and the long-term memory (LTM), designed for project-level history, has not yet been designed. A future architecture is envisioned where STM information is periodically processed and converted into the LTM structure.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript explicitly states that the integration between STM and LTM is not yet designed (SR-01) and describes a future vision for how they might connect (SR-05, SR-08), making this a clear, high-importance open architectural issue.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "The 'retrieve' phase of the memory system has not been designed. While the system can currently update its memory after a meeting, the mechanism for using this stored information from both STM and LTM to decide what to say in a future meeting is an open design question.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript clearly states that the 'retrieve' phase of the memory system has not been designed (SR-06), which is a fundamental gap in the system's functionality. SR-08 reinforces that LTM retrieval to influence conversation is a future goal.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-03"
+    ],
+    "content": "An unresolved question exists regarding how to define 'distance' for recalling information that was mentioned more than three sessions ago and has thus been deleted from the current short-term memory (STM) architecture.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly identifies this as an 'unresolved question' related to the 3-session limit of the current STM, making it a clear open issue for the design of the memory recall system.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year), capturing the overall research narrative, including structural changes, goals, major themes, and milestones.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text explicitly states a vision for a long-term memory system that is architecturally distinct and serves a different purpose than short-term memory, focusing on high-level project narrative over a long timeline.",
+    "related_topics": [
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "A future architecture is proposed where information from the rolling short-term memory (STM) will be periodically processed and converted into the long-term memory (LTM) structure, and LTM will be retrievable to influence real-time conversation.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text proposes a specific architectural plan for how short-term memory will feed into long-term memory over time and how LTM will be used, which is a concrete design suggestion for the system's future.",
+    "related_topics": [
+      "long-term memory architecture",
+      "STM-LTM integration"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The long-term memory (LTM) must be a separate, coarser-grained architecture to effectively capture the overall research narrative, including goals, major themes, and milestones, over a long project duration like a year.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The idea unit presents a core design principle for the LTM, justifying the need for a coarse-grained architecture by defining its specific long-term purpose, which is distinct from other memory components.",
+    "related_topics": [
+      "long-term memory",
+      "system architecture",
+      "project goals"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "An external paper's approach to 'long-term memory' was deemed unsuitable because its model is too granular and focuses on handling long contexts within a single session, whereas the project requires tracking information across a long timeline of multiple sessions.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly critiques an external paper, providing clear reasoning for why its approach does not align with the project's needs for cross-session memory.",
+    "related_topics": [
+      "long-term memory",
+      "system architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-04"
+    ],
+    "content": "The current short-term memory (STM) is considered a valid form of cross-session memory because its three-meeting span provides a longer history than the system described in a critiqued external paper.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit makes a direct comparison to an external system to justify the value and classification of the current STM implementation as a form of cross-session memory.",
+    "related_topics": [
+      "short-term memory",
+      "system architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "The design of short-term memory (STM) holding key information from the last three meetings is justified by its analogy to how the human brain keeps the most current and important information active during a conversation.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit provides a conceptual justification for the STM's design by drawing an analogy to human cognitive processes, explaining the reasoning behind its limited but focused scope.",
+    "related_topics": [
+      "short-term memory",
+      "system architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The established vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to capture the overall research narrative over a long project duration (e.g., a year), including goals, major themes, and milestones.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a high-level, future-steering finding that defines the core design philosophy for the long-term memory system.",
+    "related_topics": [
+      "long-term memory architecture",
+      "project goals"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "The current memory system implementation is incomplete; it only includes the 'update' phase for adding information to memory after a meeting. The 'retrieve' phase, which would use this memory to influence real-time conversation, has not been designed.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a key finding about the current state and limitations of the system's implementation.",
+    "related_topics": [
+      "memory system implementation",
+      "retrieval phase"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-03",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "Short-term memory (STM) is currently defined as storing important information from the last three sessions, after which items are deleted. The integration between this rolling STM and a future long-term memory (LTM) has not yet been designed.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This defines the current architecture and limitations of the short-term memory component, which is a foundational aspect of the system.",
+    "related_topics": [
+      "short-term memory",
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "An external paper on 'long-term memory' was evaluated and found to be unsuitable for the project's needs. The paper's model was too granular, focusing on handling long contexts within a single session rather than tracking information across a long timeline.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a literature finding that informs the project's direction and distinguishes its approach from others.",
+    "related_topics": [
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year). It will capture the overall research narrative, including structural changes, goals, major themes, and milestones, and will eventually need to be integrated with STM.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly defines the high-level architectural approach for LTM, distinguishing it from STM and setting the long-term direction for memory development.",
+    "related_topics": [
+      "long-term memory architecture",
+      "short-term memory"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "The planned architecture for memory integration involves periodically processing information from the rolling Short-Term Memory (STM) and converting it into the Long-Term Memory (LTM) structure. LTM will also be designed to be retrievable to influence real-time conversation content.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "This unit describes the adopted future process for how STM and LTM will interact, defining the data flow between memory components and the retrieval requirement for LTM.",
+    "related_topics": [
+      "long-term memory architecture",
+      "short-term memory",
+      "memory retrieval"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-07",
+      "U-S-0001-02-SR-09"
+    ],
+    "content": "The memory system's architecture is defined with three distinct components: 1) Working Memory for real-time conversation tracking, 2) Short-Term Memory (STM) for holding important information from the last three sessions, and 3) Long-Term Memory (LTM) for the project's historical narrative.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "These units collectively establish a clear, adopted definition and separation of the different memory components (Working, STM, LTM), which is a fundamental architectural schema for the project.",
+    "related_topics": [
+      "long-term memory architecture",
+      "short-term memory",
+      "working memory"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "The current implementation of the memory system is focused solely on the 'update' phase (adding information post-meeting), with the 'retrieve' phase (using memory in a future meeting) not yet designed.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit defines the current, adopted implementation strategy, which is to build the memory system in phases, starting with 'update' and deferring 'retrieve'.",
+    "related_topics": [
+      "memory retrieval",
+      "implementation strategy"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "The project's primary goal is defined as understanding the impact of a memory-enhanced agent on human interaction, rather than a full replication of the reference paper. The minimum viable product (MVP) is to implement the basic architecture and demonstrate a noticeable behavioral difference.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-05 explicitly redefines the project's main goal and sets the criteria for the minimum viable step, which is a major strategic decision.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-005",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02",
+      "U-S-0001-C03-SR-04"
+    ],
+    "content": "The team will investigate and adopt the evaluation methods from the reference paper to benchmark the memory architecture's performance against a standard LLM.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-02 advises the team to investigate the reference paper's evaluation methods, and U-S-0001-C03-SR-04 confirms this has been taken on as an action item, indicating a decision to proceed with this approach.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "Modifying open-source code is permitted on the condition that the team can clearly demonstrate the added value of their changes, such as making the effects of long-term memory visible.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-07 establishes a clear rule and requirement for the project's development process when using open-source code.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The development plan will prioritize building the update methods for the three memory types first, before addressing the more challenging retrieval component.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-01 explicitly states the team's plan to first build update methods and then address retrieval, establishing a clear development sequence.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-06"
+    ],
+    "content": "A shared lab account and API key will be established for project use, and associated API costs will be reimbursable to prevent personal expenses.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-06 details a concrete logistical decision regarding shared resources and expense reimbursement for the project.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The team will first build the update methods for the three memory types and then address retrieval, which requires further thought on the memory structure and architecture.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly outlines the immediate technical implementation plan for the project, breaking it down into two main phases: building update methods and then tackling retrieval.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02",
+      "U-S-0001-C03-SR-04"
+    ],
+    "content": "For the next meeting, the team is to present how the reference papers prove their models' performance, in order to establish how to demonstrate the memory architecture is necessary and superior.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-04 explicitly states this as an action item for the next meeting. U-S-0001-C03-SR-02 provides the context and reason for this task, which is to understand how to prove the value of the memory architecture.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-06"
+    ],
+    "content": "A shared lab account and API key will be established for project use to manage and reimburse API key costs.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This unit describes a concrete logistical action to be taken to facilitate the project's technical work by setting up shared resources and handling expenses.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02",
+      "U-S-0001-C03-SR-05",
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "A key challenge for the project is to establish a method for evaluating the memory-enhanced agent's performance to prove its necessity and superiority over a standard LLM.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript highlights the need to investigate how to prove the model's performance (SR-02) to demonstrate a noticeable difference (SR-05) and show added value (SR-07). This represents a critical, unresolved methodological issue for the project.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The design of the retrieval mechanism for the memory architecture is a significant challenge that requires further consideration, as it is considered the more difficult part of the implementation.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly identifies retrieval as the \"more challenging part\" of the project that requires \"further thought on the memory structure and architecture,\" making it a clear, unresolved technical issue.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-003",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "專案的最小可行步驟是實現基本的記憶體架構並展示代理行為的顯著差異，而非完全複製參考論文。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This statement defines the minimum viable scope of the project, proposing a focus on demonstrating a noticeable difference in agent behavior rather than a full replication. This is a high-level proposal that steers the project's core objective.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-03",
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "建議的演示策略是通過設計特定問題來對比普通代理和記憶增強代理，以突顯短期和長期記憶的存在與效果，從而清晰地展示新架構的附加價值。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The user suggests a specific strategy for demonstrating the project's value by contrasting a memory-enhanced agent with a vanilla one to make the impact of the new architecture visible. This is a durable proposal for how to prove the project's success.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-004",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "建議研究並可能採用參考論文中的模型性能評估方法，以證明記憶體架構的必要性和優越性。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The user is advised to investigate how the reference paper proves its model's performance. This is a proposal to adopt a specific methodology (benchmarking, standardized tests) for evaluating the project's outcome.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "開發計畫將首先建立三種記憶體類型的更新方法，然後再處理更具挑戰性的檢索部分。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The user states a clear, sequential plan for development, proposing to tackle the update methods before the more complex retrieval architecture. This is a durable proposal for the project's implementation strategy.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "專案的主要目標不是完全複製論文，而是理解記憶增強型代理如何影響人類互動與感知。因此，最小可行步驟是實現基本架構並展示代理行為的顯著差異。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit provides a fundamental argument that defines the project's scope and success criteria, justifying the decision to focus on a minimum viable implementation rather than a full replication.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "為了證明記憶架構的必要性和優越性，團隊應研究參考論文如何評估其模型性能，可能涉及標準化測試、特定數據集和基準測試。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for a specific course of action (investigating the paper's evaluation methods) by linking it to a core project goal (proving the architecture's value).",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "如果修改開源代碼，就必須清楚地展示其附加價值，例如，通過突顯新架構如何展現原代理所不具備的長期記憶能力，讓差異在演示中清晰可見。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit presents a key argument for how to approach development when using open-source code, establishing a requirement to demonstrate clear, added value.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-03"
+    ],
+    "content": "一個有效的演示策略是，通過設計能引出不同答案的特定問題，來對比無記憶的普通代理和有記憶的增強代理，從而展示短期和長期記憶的存在與效果。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit presents a reasoned approach for demonstrating the project's core feature (memory), justifying a specific demo strategy.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "專案的主要目標非完全複製論文，而是理解記憶體增強型代理如何影響人類互動與感知。最小可行步驟是實作基本架構並展示代理行為的顯著差異。",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This is a project-level finding that clarifies the core objective and scope. It steers the project's direction towards understanding human-agent interaction rather than pure technical replication, defining the MVP's success criteria.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "為了證明記憶體架構的必要性和優越性，應參考論文中的模型評估方法，可能包括標準化測試、特定數據集和基準測試。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a finding about the project's evaluation methodology, establishing that the reference paper's performance tests are the standard for proving the value of the new architecture.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-003-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "修改開源代碼時，關鍵要求是清楚地展示附加價值，例如，透過突顯新架構如何展現原代理所沒有的長期記憶能力。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a stable finding that sets a key success criterion for the development work: any modifications to existing code must result in a clearly demonstrable value-add, specifically in showing enhanced memory capabilities.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "在記憶體架構的實作中，檢索（retrieval）被認為是比更新方法更具挑戰性的部分，需要對記憶體結構和架構進行更深入的思考。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a stable observation about a key technical challenge within the project, identifying retrieval as the more difficult component compared to memory updates.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "The project's primary goal is not a full replication of the reference paper, but to implement a minimum viable architecture sufficient to demonstrate a noticeable difference in agent behavior for studying human interaction and perception.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit clarifies the project's core objective, shifting focus from a complete technical replication to achieving a minimum viable product that demonstrates a behavioral difference. This is a fundamental strategic decision steering the project's direction.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "To prove the memory architecture is necessary and superior, the team will investigate and likely adopt the evaluation methods from the reference paper, which may include standardized tests, specific datasets, and benchmarking.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit describes a decision to adopt a specific evaluation methodology based on the reference paper to formally validate the project's contributions. This is a significant change to their evaluation approach.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-03",
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "The demonstration and evaluation strategy will involve contrasting a vanilla agent with the memory-enhanced agent by designing specific questions that elicit different answers, thereby making the added value of long-term memory visible.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "These units outline a concrete strategy for demonstrating the project's value by creating a clear, visible contrast between an agent with and without the new memory architecture. This is a key part of their presentation and evaluation approach.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The development plan is to first build the update methods for the three memory types and then address retrieval, which is considered the more challenging part requiring further thought on memory structure and architecture.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly states the team's agreed-upon development sequence, prioritizing the implementation of memory update methods before tackling the more complex retrieval aspect. This is a clear process decision.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-05"
+    ],
+    "content": "決定直接在開源專案「Membrane」的 GitHub 儲存庫上進行協作修改，而非繼續開發獨立的 Python 版本。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The unit clearly states an agreement between two students to change their development approach, moving from a separate version to direct modification of the original project.",
+    "related_topics": [
+      "Membrane_project",
+      "development_workflow"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "當前的計畫是先更徹底地審查相關研究論文，之後再考慮是否聯繫作者以獲取更完整的數據集。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit outlines a clear, two-step plan for addressing the dataset issue: first, review papers, then potentially contact authors. This is a decision on the research methodology.",
+    "related_topics": [
+      "dataset_acquisition",
+      "literature_review"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-004-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "教授將使用個人信用卡支付實驗室費用，這些費用可以報銷，因為實驗室資金充足。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states the professor's decision on how to handle lab expenses and the reason (reimbursement is possible due to sufficient funds).",
+    "related_topics": [
+      "lab_administration",
+      "expense_reimbursement"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-004-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "結論是，在運行帶有 `large-v3` 模型的 WhisperX 時，不設定批次大小（batch size）是可以接受的，因為這只影響速度而不影響結果。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit states a clear conclusion reached by the students about a technical parameter for their model execution, resolving a warning they were encountering.",
+    "related_topics": [
+      "WhisperX",
+      "model_configuration",
+      "batch_size"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-02"
+    ],
+    "content": "學生必須在3月15日之前提交中央研究院的實習申請。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states a hard deadline for an action: 'students must submit their applications by March 15th'.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-004",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-05"
+    ],
+    "content": "兩位學生將合作直接從GitHub儲存庫修改開源專案「Membrane」，而不是繼續開發獨立的Python版本。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit describes a specific, agreed-upon development task: 'Two students agreed to collaborate on modifying the open-source \"Membrane\" project directly from its GitHub repository'.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-005",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "學生將更仔細地審查相關研究論文，以調查其中使用的更完整的資料集。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states an immediate research task: 'The immediate plan is to review the papers more thoroughly'.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "實驗室需要申請一個API金鑰，可能會使用實驗室現有的Google帳號。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit identifies a necessary task for the lab: 'The lab needs to apply for an API key, possibly using an existing lab Google account.'",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-04"
+    ],
+    "content": "學生們需要同步他們的資料夾結構以避免重複。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit states that 'Students identified a need to synchronize their data folder structure to avoid duplication,' which constitutes a clear task to improve workflow.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-006",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "學生（Weixi）被指派整理一份實驗室需採購物品的清單。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly assigns a task to a specific student: 'A student (Weixi) is tasked with compiling a list of items to purchase.'",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-004",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "目前使用的資料集是否足夠，或者是否應該研究並尋求原始研究論文中使用的更完整的資料集，這是一個待解決的問題。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "A student explicitly questioned the adequacy of the current dataset and raised the issue of investigating and possibly acquiring the datasets from the original research papers. This remains an unresolved, high-impact research question.",
+    "related_topics": [
+      "dataset",
+      "research methodology"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-06"
+    ],
+    "content": "「Memory」系統的輸出被認為過於零碎和簡單，部分原因可能是系統在找不到關聯時未能記錄資訊。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The unit describes a key problem with the 'Memory' system's output quality, identifying it as too fragmented and simplistic. This is a core, unresolved technical issue requiring a solution.",
+    "related_topics": [
+      "Memory system",
+      "output quality"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-04"
+    ],
+    "content": "為了避免資料重複，學生們需要同步他們的資料夾結構。",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly identifies the need for students to synchronize their data folder structure to resolve duplication issues, which is an unresolved design issue for the team's workflow.",
+    "related_topics": [
+      "data management",
+      "folder structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-02"
+    ],
+    "content": "由於中研院一位教授不太可能接收全部三位學生，因此需要規劃如何安排學生申請實習。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states that it's unlikely one professor will accept all three students, creating an unresolved logistical issue for their internship applications.",
+    "related_topics": [
+      "Academia Sinica internship"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-004-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "建議研究原始研究論文中使用的更完整的數據集，而不是繼續使用當前的數據集。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "A student explicitly questioned the current dataset and suggested a new approach: investigating the datasets from the original research papers. This is a clear proposal for a change in research direction or methodology.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "建議使用實驗室現有的 Google 帳號來申請 API 金鑰。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit states a need to apply for an API key and suggests a possible method: using an existing lab Google account. This is a specific, suggested plan of action.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "有學生質疑當前使用的數據集，認為應該調查原始研究論文中可能更完整的數據集，這支持了先去審查論文的計畫。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit presents an argument against using the current dataset by contrasting it with potentially better alternatives from published research. It provides the reasoning for a proposed change in research direction (investigating other datasets).",
+    "related_topics": [
+      "Dataset selection",
+      "Research methodology"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-004-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-06"
+    ],
+    "content": "「Memory」系統的輸出被認為過於零碎和簡單，這歸因於輸入對話本身的零碎性，以及系統在找不到關聯時未能記錄資訊。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for the poor quality of the 'Memory' system's output, citing two specific reasons: the nature of the input and a system logging failure. This is a classic argument explaining an observed phenomenon.",
+    "related_topics": [
+      "Memory system performance",
+      "Data fragmentation"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-004-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "使用 `large-v3` 模型運行 WhisperX 時，不設置批次大小 (batch size) 是可接受的，因為這只會影響速度而非結果，且產生的警告並非嚴重錯誤。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for a technical decision (not setting batch size). It weighs the trade-off (speed) against the outcome (correct results) and concludes the current approach is valid.",
+    "related_topics": [
+      "WhisperX configuration",
+      "Model execution parameters"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-004-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-06"
+    ],
+    "content": "The \"Memory\" system's output is considered too fragmented and simplistic, which is attributed to both the fragmented nature of input conversations and the system's failure to log information when it cannot find relationships.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a direct observation and analysis of the system's current performance, identifying a key failure mode and its potential causes. This is a durable finding that will guide future improvements.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "The current dataset being used may be incomplete when compared to the more comprehensive datasets likely used in the original research papers the team is referencing.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a significant data-quality finding that questions the suitability of the current dataset and may influence the direction of data collection or sourcing.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "When running WhisperX with the `large-v3` model, it was concluded that not setting a batch size is acceptable. This configuration produces warnings and affects processing speed but does not alter the final output.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a specific experimental result that establishes a stable technical parameter for the team's workflow. It resolves an uncertainty about a warning message.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-006",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "The lab has sufficient funds, and lab-related expenses paid for with a personal credit card are reimbursable.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a stable finding about the lab's financial procedures, which is durable and important for team operations.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-09"
+    ],
+    "content": "The recording of this meeting is incomplete, as it began partway through the discussion about the Academia Sinica internship.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This is a data-quality finding that provides crucial context about the completeness of the source material for this specific meeting.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-005",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-01",
+      "U-S-0001-C04-SR-02"
+    ],
+    "content": "The Academia Sinica internship application requires a name, email, resume, transcript, and statement of purpose, with a submission deadline of March 15th. It is also noted that it is unlikely for one professor to accept all three applying students.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This summarizes key factual information and an observation about a specific, time-bound opportunity relevant to team members. It's a stable finding regarding the application process.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-05"
+    ],
+    "content": "團隊決定直接在 GitHub 上協作修改開源專案「Membrane」，而非繼續開發一個獨立的 Python 版本。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit clearly states a shift in development strategy, moving from a separate implementation to direct collaboration on an existing open-source project's repository.",
+    "related_topics": [
+      "Membrane project",
+      "development workflow"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "團隊將改變資料集策略，轉為先更深入地審查相關研究論文，以尋找更完整的資料集，並可能後續聯繫作者索取資料。",
+    "importance": 0.75,
+    "confidence": 0.9,
+    "rationale": "This unit outlines a change in the approach to data acquisition, shifting focus from using the current dataset to actively seeking better datasets from published research.",
+    "related_topics": [
+      "dataset acquisition",
+      "research methodology"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-04"
+    ],
+    "content": "學生們決定同步化他們的資料夾結構以避免重複，目前的結構是 `app/short_term/` 從 `meeting_recording/transcript` 讀取資料。",
+    "importance": 0.7,
+    "confidence": 0.9,
+    "rationale": "This unit documents a decision to change the data handling process by synchronizing folder structures to improve efficiency and avoid duplication.",
+    "related_topics": [
+      "data management",
+      "folder structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "實驗室將使用教授的個人信用卡支付可報銷的實驗室開銷，並可能使用現有的實驗室Google帳戶申請API金鑰。",
+    "importance": 0.6,
+    "confidence": 0.9,
+    "rationale": "This unit describes a newly established process for handling lab expenses and API key applications, which is a change in operational procedure.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-005",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "團隊確認在使用 WhisperX 的 `large-v3` 模型時，不設定批次大小（batch size）是可以接受的，因為這只會影響執行速度，不影響結果。",
+    "importance": 0.5,
+    "confidence": 1.0,
+    "rationale": "This unit documents a technical decision regarding the configuration for running a specific model (WhisperX), establishing an accepted practice for their workflow.",
+    "related_topics": [
+      "WhisperX",
+      "model configuration"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "legacy_type": "method_change"
+  }
+]

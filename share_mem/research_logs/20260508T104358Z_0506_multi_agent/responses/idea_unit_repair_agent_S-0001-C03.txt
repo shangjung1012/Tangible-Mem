@@ -1,0 +1,81 @@
+{
+  "idea_units": [
+    {
+      "line_start": 46,
+      "line_end": 46,
+      "text": "A question is raised about whether the memory system is divided into short-term and long-term components, establishing the focus is on the long-term memory architecture.",
+      "completeness": "partial",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 47,
+      "line_end": 47,
+      "text": "The system being designed is for long-term memory (LTM). It's proposed to have a three-tier structure: L1 nodes are fine-grained idea units from a single meeting, L2 nodes summarize a block of L1s (e.g., from four meetings), and L3 is the highest-level summary.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 48,
+      "line_end": 49,
+      "text": "A distinction is made between key node attributes: 'Importance' is a static score assigned by an LLM at creation; 'Relevance' is calculated during retrieval based on semantic similarity; and 'Recency' or 'Activation' is a dynamic score that decays over time.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 52,
+      "line_end": 52,
+      "text": "A key proposal is to create a human-in-the-loop system where users can inspect and manually adjust the 'importance' score of memory nodes. This user-tuned importance would then make the memory more durable by slowing its decay rate.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 52,
+      "line_end": 52,
+      "text": "To assist with human-in-the-loop tuning, when a user increases the importance of one idea unit, the system could use similarity search to find related units and prompt the user to increase their importance as well.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 53,
+      "line_end": 55,
+      "text": "To preserve the historical significance of an idea, decay is handled by a separate 'activation' parameter rather than altering the static 'importance' score. The 'activation' value decreases over time, but highly important items may have a 'floor' value to prevent them from decaying completely.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 56,
+      "line_end": 63,
+      "text": "A fundamental architectural debate arises between two models: a time-based structure where hierarchy is based on meeting chronology (e.g., L2 represents one meeting), versus a topic-based structure where hierarchy is based on semantic themes (e.g., \"scheduling,\" \"budget\").",
+      "completeness": "incomplete",
+      "uncertainty_note": "The team is debating two conflicting architectural models and has not reached a resolution."
+    },
+    {
+      "line_start": 63,
+      "line_end": 65,
+      "text": "A key difference between the two architectural models is how they handle revisited topics. The time-based model creates a new L1 node for each mention, while the topic-based model proposes updating the existing L1 node with new information and a timestamp, creating an evolutionary history within that single node.",
+      "completeness": "incomplete",
+      "uncertainty_note": "This is an unresolved design choice tied to the larger time-based vs. topic-based architectural debate."
+    },
+    {
+      "line_start": 66,
+      "line_end": 71,
+      "text": "In the time-based model, retrieval works by first finding matching low-level L1 units and then providing them, along with their L2/L3 parent nodes, to an LLM to give it temporal context.",
+      "completeness": "partial",
+      "uncertainty_note": "This describes the retrieval process for the time-based model, which is one of two competing architectures under discussion."
+    },
+    {
+      "line_start": 72,
+      "line_end": 72,
+      "text": "It is proposed to create a dynamic visualization to present the system's behavior, animating how the memory graph is constructed and updated over time to make the abstract concepts of node creation, updates, and decay tangible.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    }
+  ],
+  "non_memory_context_ranges": [
+    {
+      "line_start": 50,
+      "line_end": 51,
+      "reason": "Social chatter, logistics, and meta-commentary about the state of code/documentation that does not contribute to the design memory."
+    }
+  ]
+}

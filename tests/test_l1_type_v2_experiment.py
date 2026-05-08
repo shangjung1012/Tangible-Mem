@@ -8,8 +8,10 @@ from unittest.mock import patch
 
 from share_mem.build_tree import _run_bridge_for_transcript, parse_args
 from share_mem.compare_l1_runs import compare_l1_trees, iter_l1_objects, write_comparison_outputs
+from share_mem.l1.multi_agent_agents import l1_type_agent
 from share_mem.l1.multi_agent_logger import ResearchLogger
 from share_mem.l1.multi_agent_reducer import reduce_l1_patch
+from share_mem.l1.multi_agent_state import IdeaUnit
 from share_mem.l1.taxonomy import (
     LEGACY_L1_TYPES,
     V2_MEMORY_ROLE_TYPES,
@@ -49,6 +51,28 @@ def _candidate(
     }
 
 
+class _PromptCaptureRunner:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+
+    def call_json(self, stage: str, prompt: str, schema: dict) -> dict:
+        self.calls.append((stage, prompt))
+        return {
+            "candidates": [
+                {
+                    "type": "finding",
+                    "legacy_type": "result",
+                    "source_unit_ids": ["U-1"],
+                    "content": "The future demo does not need to operate in real time.",
+                    "importance": 0.72,
+                    "confidence": 0.86,
+                    "rationale": "The bounded unit resolves a demo requirement.",
+                    "related_topics": ["demo workflow"],
+                }
+            ]
+        }
+
+
 class L1TypeV2ExperimentTests(unittest.TestCase):
     def test_v1_candidate_schema_does_not_require_legacy_type_by_default(self) -> None:
         schema = candidate_schema_for_taxonomy("v1")
@@ -74,6 +98,39 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
             sorted(LEGACY_L1_TYPES),
         )
         self.assertIn("legacy_type", candidate_schema["required"])
+
+    def test_v2_type_agent_prompt_preserves_demo_scope_clarifications(self) -> None:
+        runner = _PromptCaptureRunner()
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=81,
+                line_end=82,
+                text=(
+                    "Future demo 是否需要 real time? "
+                    "Answer: 不一定要 real time; this is about memory update and later usage."
+                ),
+                completeness="complete",
+            )
+        ]
+
+        candidates = l1_type_agent(
+            runner,
+            obj_type="finding",
+            idea_units=units,
+            existing_topics=[],
+            extraction_scope="B-001",
+            segment_ids=["S-1"],
+            taxonomy="v2-memory-roles",
+            include_legacy_type=True,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("requirement/scope clarifications", prompt)
+        self.assertIn("real-time", prompt)
+        self.assertEqual(candidates[0].type, "finding")
+        self.assertEqual(candidates[0].legacy_type, "result")
 
     def test_reduce_v2_patch_preserves_type_and_legacy_type(self) -> None:
         _, memory_objects, quality_index = reduce_l1_patch(
@@ -653,6 +710,179 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
 
         self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
         self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-segmentation")
+
+    def test_compare_l1_runs_accepts_same_meeting_high_content_evidence_overlap(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0422",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-dynamic-eval",
+                            "type": "todo",
+                            "content": (
+                                "Dynamic chunking should be evaluated against fixed-size "
+                                "and sentence-by-sentence baselines, comparing accuracy, "
+                                "processing time, and function call count."
+                            ),
+                            "importance": 0.78,
+                            "evidence": (
+                                "Compare dynamic chunking with fixed-size and "
+                                "sentence-by-sentence chunking using accuracy, time, "
+                                "and function calls."
+                            ),
+                            "related_topics": ["chunking evaluation"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0422",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-dynamic-eval",
+                            "type": "action_item",
+                            "legacy_type": "todo",
+                            "content": (
+                                "Evaluate the dynamic chunking method with fixed-size "
+                                "and sentence-level baselines; report the trade-off "
+                                "between accuracy, runtime, and number of calls."
+                            ),
+                            "importance": 0.74,
+                            "evidence": (
+                                "The evaluation compares dynamic chunking to fixed-size "
+                                "and sentence-by-sentence baselines on accuracy, time, "
+                                "and function calls."
+                            ),
+                            "related_topics": ["model evaluation"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-dynamic-eval")
+
+    def test_compare_l1_runs_matches_candidate_object_merge_mechanism(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-candidate-object",
+                            "type": "decision",
+                            "content": (
+                                "The create_object function first generates a candidate "
+                                "object, then checks subsequent text and merges related "
+                                "content into that candidate."
+                            ),
+                            "importance": 0.78,
+                            "evidence": (
+                                "Create an object as a candidate; later content is checked "
+                                "for relation and merged when connected."
+                            ),
+                            "related_topics": ["candidate memory integration"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-candidate-object",
+                            "type": "decision",
+                            "legacy_type": "decision",
+                            "content": (
+                                "To handle topics spanning chunks, the system stores a "
+                                "potential topic as a candidate object and merges later "
+                                "relevant content, preventing information loss."
+                            ),
+                            "importance": 0.72,
+                            "evidence": (
+                                "It first stores a candidate, checks whether later content "
+                                "is related, and merges it for joint processing."
+                            ),
+                            "related_topics": ["long context processing", "candidate memory integration"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-candidate-object")
+
+    def test_compare_l1_runs_matches_idea_unit_type_taxonomy_consolidation(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0506",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-taxonomy-consolidation",
+                            "type": "method_change",
+                            "content": (
+                                "Idea units are classified into six types for memory "
+                                "updates, and multiple agent proposals are consolidated "
+                                "into one or two final labels."
+                            ),
+                            "importance": 0.76,
+                            "evidence": (
+                                "Idea units go through type agents; candidates are merged "
+                                "so the final object has one or at most two labels."
+                            ),
+                            "related_topics": ["idea unit", "taxonomy"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0506",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-taxonomy-consolidation",
+                            "type": "approach_change",
+                            "legacy_type": "method_change",
+                            "content": (
+                                "The L1 pipeline sends idea units to typed agents, merges "
+                                "duplicate candidates, and keeps the final memory object "
+                                "to one primary type, with a second label only when needed."
+                            ),
+                            "importance": 0.71,
+                            "evidence": (
+                                "Idea units are sent to multiple type agents; duplicate "
+                                "candidates are merged and final labels are constrained."
+                            ),
+                            "related_topics": ["L1 taxonomy", "memory update"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(
+            report["matches"][0]["candidate_obj_id"],
+            "new-taxonomy-consolidation",
+        )
 
     def test_semantic_anchors_do_not_treat_memory_as_memo(self) -> None:
         tree = {

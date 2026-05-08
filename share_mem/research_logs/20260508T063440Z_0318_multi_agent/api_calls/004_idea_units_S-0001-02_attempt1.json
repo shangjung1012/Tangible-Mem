@@ -1,0 +1,177 @@
+{
+  "sequence": 4,
+  "timestamp_utc": "2026-05-08T06:37:12Z",
+  "stage": "idea_units_S-0001-02",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "idea_units": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_start": {
+                "type": "integer"
+              },
+              "line_end": {
+                "type": "integer"
+              },
+              "text": {
+                "type": "string"
+              },
+              "completeness": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "partial",
+                  "incomplete",
+                  "uncertain"
+                ]
+              },
+              "uncertainty_note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line_start",
+              "line_end",
+              "text",
+              "completeness",
+              "uncertainty_note"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "idea_units"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "idea_units": {
+        "type": "array",
+        "maxItems": 12,
+        "items": {
+          "type": "object",
+          "properties": {
+            "line_start": {
+              "type": "integer"
+            },
+            "line_end": {
+              "type": "integer"
+            },
+            "text": {
+              "type": "string"
+            },
+            "completeness": {
+              "type": "string",
+              "enum": [
+                "complete",
+                "partial",
+                "incomplete",
+                "uncertain"
+              ]
+            },
+            "uncertainty_note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "line_start",
+            "line_end",
+            "text",
+            "completeness",
+            "uncertainty_note"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "idea_units"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are idea_unit_agent. Convert this segment into compact idea units.\nEach unit should express one checkable idea that downstream L1 agents can share.\nDo not classify memory types here. Return JSON only.\n\nNormally return 3-8 idea units. You may return up to 12\nonly when the segment contains many distinct durable claims.\nDo not split every sentence into a separate unit.\nPrefer durable, self-contained units that combine related details across several\nlines. Preserve questions, objections, counterexamples, method exploration,\nevaluation criteria, comparison rationale, and unresolved design discussions\nwhen they affect future project decisions or memory behavior.\nIgnore only true filler, acknowledgements, local wording clarifications, and\npurely social turns that do not affect the project state.\n\nUse completeness exactly as one of: complete, partial, incomplete, uncertain.\nCompleteness rubric:\n- complete: the unit is self-contained enough for downstream L1 extraction.\n- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.\n- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.\n- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.\nDo not use fallback or compacted; those are reserved for deterministic validators.\n\nSegment: S-0001-02\nTopic: In-depth analysis of the MEM 0 paper's evaluation methodology\n\nTranscript lines:\n14: [SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。\n15: [SPEAKER_01]: NAACL嗎\n16: [SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conversations，10 個對話，然後裡面大概有 600 個 dialogue turns，然後 total 是 26000 個 tokens，一個 session 這樣。然後 LOCOMO 它自己有產生大概 200 個問題。\n17: [SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。\n18: [SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？\n19: [SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。\n20: [SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。\n21: [SPEAKER_01]: 像是什麼，\n22: [SPEAKER_02]: 我想要問哪一部電影的導演的出生地，就是這個。他去找就要跳兩次，他不是一個很直接的問題。他要先找到這部電影的導演是誰，然後再去找這部導演的出生地是哪裡，類似這種概念。然後 one-hop 就是他可以直接馬上，就是不用跳一跳，就可以直接問這個問題、直接得到這個問題的解答。\n23: [SPEAKER_01]: OK。\n24: [SPEAKER_01]: 所以他是以 linguistic 上來說，他這個回答是需要跳幾個嗎？Linguistic 是指就譬如說是語言上面說，譬如說我媽媽的我媽媽的哥哥。\n25: [SPEAKER_02]: 應該不是，應該是子問題，就是它的答案需要跳過、需要幾個子問題的答案。\n26: [SPEAKER_01]: 那那個子問題指的是說，它的 conversation data 裡面它是有幾個連續問題這件事情嘛？譬如說譬如說我問\n27: [SPEAKER_02]: 也不會是連續問題，只要是斷，他只要是斷點。\n28: [SPEAKER_01]: 所以 conversation 指的是 chatbot 的 conversation，還是是什麼的 conversation？\n29: [SPEAKER_02]: Chatbot 他做了兩個 LLM，然後去對話，他的兩個 agent 對話。所以 single-hop 的意思應該就是說，我丟一個問題，然後我直接找一個答案。\n30: [SPEAKER_01]: 然後 multi-hop 是說，我丟了一個問題，然後我要中間經過幾次的對答，然後得到一個答案這樣。\n31: [SPEAKER_02]: 應該不是幾次對答，是你那個問題的問題本身。就比如說有個問題是，我們這邊會議的 mentor 是誰，就是你們；或者是他有個問題是，我們這個會議的 mentor 的的什麼兒子是誰這種。所以我們之前有討論到老師的兒子是誰，他會找 mentor 是你，然後他會說找到你之後，他再問你是那個兒子。\n32: [SPEAKER_01]: 那這個部分是他自己本身，他的 model 裡面的 reasoning 這件事情，他們要跳幾個 hop 這樣，對不對？你不是說他會問說你的 mentor 是誰，然後他回答說是 Grace，他說那 Grace 的小孩是誰。他這邊的 hop 只是說背後的 reasoning 裡面有。\n33: [SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？\n34: [SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。\n35: [SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？\n36: [SPEAKER_02]: 對\n37: [SPEAKER_01]: Temporal Reasoning。然後 open domain 是就開放性問題。所以它的 scale，它是，所以它的這個 dataset 基本上就是有這一些對話的內容，然後它的 question types 就是說，這些內容裡面包含這一種類型的 questions。所以他們在比什麼？\n38: [SPEAKER_02]: 然後就是它有從 full context，就是完全 raw 的逐字稿，餵進 LLM 回答；或是它有比有做 RAG 的，然後它還有比本來 LOCOMO 它自己就有去測市面上的 LLM 的 benchmark，就 LOCOMO 自己提供的測完的結果。\n39: [SPEAKER_01]: LOCOMO 是哪一年啊？\n40: [SPEAKER_02]: 2024\n41: [SPEAKER_01]: 所以那時候應該只有到 GPT-4 吧？\n42: [SPEAKER_02]: 它是用 3.0 Turbo，然後 open source 就是 GitHub 上面開源的。然後 memory provider 是平台提供的是有一個做圖像的 Zep 的，就是它們這些都有 GitHub 的版本，跟它有包好的套件的版本，所以它這個用的是套件的版本。然後 proprietary model 是 GPT 內建，GPT 有一個嵌入式的記憶可以用。對，GPT 自家記憶加 GPT 自家記憶。\n43: [SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 model 都跑了十次去得到平均的分數，就是可能二十個問題，那她答對了幾個，它跑了十次這樣。\n44: [SPEAKER_02]: 然後它後面還有比一些 latency 跟它花的 token 這樣。它跟其他花的 token，因為這一篇主要它要主打一個就是它 token 花比較少。對，就它的 highlight 比較是在它 token 比較少。因為它在 multi-hop 的問題上就沒有贏 RAG 跟其他的方式。OK，然後下一篇是 MIRIX，就是 MEM 0 之後的。",
+  "raw_response": "{\n  \"idea_units\": [\n    {\n      \"line_start\": 14,\n      \"line_end\": 15,\n      \"text\": \"The MIRIX paper was published after MEM 0 and includes MEM 0 in its evaluation. Both papers use the same dataset from the 2024 ACL conference for their evaluations.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 16,\n      \"line_end\": 17,\n      \"text\": \"MEM 0's evaluation used the text-only LOCOMO dataset, which contains 10 conversations (~600 turns, 26k tokens) and around 200 pre-generated questions for testing memory retrieval.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 17,\n      \"line_end\": 17,\n      \"text\": \"The LOCOMO dataset's questions are categorized into single-hop, multi-hop, Temporal Reasoning, and Open Domain. It also includes a category for unanswerable questions, which MEM 0 did not test.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 18,\n      \"line_end\": 32,\n      \"text\": \"A multi-hop question requires multiple reasoning steps or sub-problems to answer, not multiple conversational turns. An example is finding a director's birthplace from a movie title, which involves first finding the director, then their birthplace.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 33,\n      \"line_end\": 36,\n      \"text\": \"In the context of the LOCOMO dataset, \\\"Temporal Reasoning\\\" questions require the model to generate a summary of the conversation session.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 38,\n      \"line_end\": 38,\n      \"text\": \"MEM 0's evaluation compared its performance against several baselines: feeding the full raw context to an LLM, using a RAG approach, and the benchmark results from the original LOCOMO paper.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 39,\n      \"line_end\": 42,\n      \"text\": \"The LOCOMO benchmark used models like GPT-3.0 Turbo and other open-source models. The memory providers tested included Zep (an open-source tool) and GPT's proprietary built-in memory.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 43,\n      \"line_end\": 43,\n      \"text\": \"For performance evaluation, MEM 0 used an LLM-as-a-judge to provide a binary \\\"correct\\\" or \\\"incorrect\\\" assessment for each answer, avoiding issues with semantic similarity metrics that can rate factually wrong answers highly.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 43,\n      \"line_end\": 44,\n      \"text\": \"To ensure reliability, all models were run 10 times to get an average score. MEM 0's main advantage was lower token consumption, as it did not outperform RAG on multi-hop questions.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    }\n  ]\n}",
+  "parsed_json": {
+    "idea_units": [
+      {
+        "line_start": 14,
+        "line_end": 15,
+        "text": "The MIRIX paper was published after MEM 0 and includes MEM 0 in its evaluation. Both papers use the same dataset from the 2024 ACL conference for their evaluations.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 16,
+        "line_end": 17,
+        "text": "MEM 0's evaluation used the text-only LOCOMO dataset, which contains 10 conversations (~600 turns, 26k tokens) and around 200 pre-generated questions for testing memory retrieval.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 17,
+        "line_end": 17,
+        "text": "The LOCOMO dataset's questions are categorized into single-hop, multi-hop, Temporal Reasoning, and Open Domain. It also includes a category for unanswerable questions, which MEM 0 did not test.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 18,
+        "line_end": 32,
+        "text": "A multi-hop question requires multiple reasoning steps or sub-problems to answer, not multiple conversational turns. An example is finding a director's birthplace from a movie title, which involves first finding the director, then their birthplace.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 33,
+        "line_end": 36,
+        "text": "In the context of the LOCOMO dataset, \"Temporal Reasoning\" questions require the model to generate a summary of the conversation session.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 38,
+        "line_end": 38,
+        "text": "MEM 0's evaluation compared its performance against several baselines: feeding the full raw context to an LLM, using a RAG approach, and the benchmark results from the original LOCOMO paper.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 39,
+        "line_end": 42,
+        "text": "The LOCOMO benchmark used models like GPT-3.0 Turbo and other open-source models. The memory providers tested included Zep (an open-source tool) and GPT's proprietary built-in memory.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 43,
+        "line_end": 43,
+        "text": "For performance evaluation, MEM 0 used an LLM-as-a-judge to provide a binary \"correct\" or \"incorrect\" assessment for each answer, avoiding issues with semantic similarity metrics that can rate factually wrong answers highly.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 43,
+        "line_end": 44,
+        "text": "To ensure reliability, all models were run 10 times to get an average score. MEM 0's main advantage was lower token consumption, as it did not outperform RAG on multi-hop questions.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      }
+    ]
+  },
+  "latency_sec": 22.75,
+  "success": true,
+  "error": null
+}

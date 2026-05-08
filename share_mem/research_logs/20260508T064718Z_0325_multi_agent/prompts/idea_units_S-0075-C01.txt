@@ -1,0 +1,47 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0075-C01
+Topic: Defining and Implementing 'Personality' in the Agent / Evaluating Personality Drift and Prioritizing Memory Component
+
+Transcript lines:
+75: [SPEAKER_01]:	像我之前就是上次之前做過的short term我用現在這個dataset去跑過然後就是大概長得像這樣有點雜亂但是我剛剛的感覺我用它這個
+76: [SPEAKER_02]:	但是我剛剛看了一下你們的那個structure的東西因為我記得你們在那個計畫書裡面寫說還要有personality比較強調他不會drift那件事情對那這個地方你們要怎麼去抓到他的personality
+77: [SPEAKER_01]:	就是他可以分開去處理就是我們那時候一開始最初的計畫是他會先記憶先generate出來然後再丟進Persona的Memory然後再等於說那是兩個步驟修製成符合這個Persona的說話方式然後再調整
+78: [SPEAKER_02]:	那這個Persona它的Personality它可能某方面某個類型的Vector對嗎 那它的那個Vector我要怎麼Update它或是我要用什麼樣的Input去去建構它那個Persona的Personality
+79: [SPEAKER_04]:	也是老師錄音檔
+80: [SPEAKER_02]:	欸?所以是用聲音嗎?就譬如說我是upbeat的人
+81: [SPEAKER_01]:	沒有,我們是拿聲音沒有錯,但是我們那時候在想就是
+82: [SPEAKER_02]:	文字有辦法找到personality嗎?
+83: [SPEAKER_01]:	呃,所以我們那時候語氣讀了就是說話的方式不會是語氣,就目前啦我們是因為譬如說講話的方式是指講話的內容的方式
+84: [SPEAKER_03]: 陳	是你本來會有你的口頭禪或你習慣怎麼問問題
+85: [SPEAKER_02]:	那那個部分它是會drift的嗎?就因為我們剛剛講的是說我們在你們的proposal裡面寫說我們會有personality drift這件事情那在我們傾向如果只是口頭禪上的話它會有我們要怎麼去證明說新的方式它比較不會drift
+86: [SPEAKER_03]:	你說測試evaluate的方式嗎?
+87: [SPEAKER_02]:	對
+88: [SPEAKER_02]:	就譬如說如果我甚至不需要寄到過去的Personality啊我拿最近的一次去抓出我最常講的話我就放進去我不用記過去所有東西它是不是也是也是
+89: [SPEAKER_01]:	這就像是你拿整個的Data去train 跟你只拿一次去train的差別就是就是你我們要去設計怎麼去去評估說它到底效果嗎
+90: [SPEAKER_02]:	所以可能會是
+91: [SPEAKER_03]:	評估的方式我們有想我們應該想的是真人性嗯
+92: [SPEAKER_02]:	某方面說最終如果真的沒有辦法可能真的也是要用去gen出一個就是dataset譬如說我可以想可以怎麼去evaluate這件事情
+93: 因為當初是想說如果用我們的錄音檔的話那就是找老師的學生來看這個agent做出來的感覺像不像語氣像不像老師然後
+94: [SPEAKER_02]:	所以你們可能會比較說如果我只用上一次嗎然後跟長期的你們有做StabilizePersonality的Persona的Vector的空間現在的話還沒
+95: [SPEAKER_01]:	因為我們現在主要是在做記憶的因為我們發現記憶比我們長的人沒那麼好就是就要考量的東西也蠻多的

@@ -1,0 +1,237 @@
+{
+  "sequence": 17,
+  "timestamp_utc": "2026-05-08T06:27:12Z",
+  "stage": "l1_decision_agent_B-002",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "action_item",
+                  "approach_change",
+                  "argument",
+                  "decision",
+                  "finding",
+                  "open_issue",
+                  "proposal"
+                ]
+              },
+              "source_unit_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "content": {
+                "type": "string"
+              },
+              "importance": {
+                "type": "number"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "related_topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "legacy_type": {
+                "type": "string",
+                "enum": [
+                  "argument",
+                  "decision",
+                  "method_change",
+                  "open_question",
+                  "result",
+                  "todo"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source_unit_ids",
+              "content",
+              "importance",
+              "confidence",
+              "rationale",
+              "related_topics",
+              "legacy_type"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "candidates"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "candidates": {
+        "type": "array",
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "action_item",
+                "approach_change",
+                "argument",
+                "decision",
+                "finding",
+                "open_issue",
+                "proposal"
+              ]
+            },
+            "source_unit_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "content": {
+              "type": "string"
+            },
+            "importance": {
+              "type": "number"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "related_topics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "legacy_type": {
+              "type": "string",
+              "enum": [
+                "argument",
+                "decision",
+                "method_change",
+                "open_question",
+                "result",
+                "todo"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "source_unit_ids",
+            "content",
+            "importance",
+            "confidence",
+            "rationale",
+            "related_topics",
+            "legacy_type"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "candidates"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are l1_decision_agent in a multi-agent long-term memory pipeline.\nYour operational type definition: adopted, rejected, resolved, or materially revised conclusion that changes project state.\n\nRead only the bounded idea units below and propose only decision candidates.\nDo not infer from outside this extraction scope.\nPrior context may help disambiguate references, but it is never evidence.\nEvery candidate must be supported by the bounded idea units below.\nThe same idea unit may support other memory types; do not suppress valid decision objects for that reason.\nEvery candidate must set type exactly to decision.\nEvery candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.\nNormally return 0-4 candidates. You may return up to 6 only\nwhen there are clearly distinct durable decision memories. Return an empty list when\nthe batch has no durable decision. Do not pad the response to fill the limit.\n\nOnly output durable long-term memory:\n- keep project-level decisions, method changes, concrete follow-ups, stable findings,\n  unresolved research questions, or decision-supporting arguments\n- do not restate each idea unit as a candidate\n- do not output local clarifications, filler, examples, or one-line observations\n- for argument, preserve only reasoning that explains a meaningful tradeoff or choice\n- for open_question, preserve only questions that remain unresolved after the supplied scope\n- for proposal, preserve only suggested options or hypotheses that are not yet adopted\n- for action_item, preserve only executable follow-ups with a clear expectation of work\n- for open_issue, preserve only unresolved issues that matter after this scope\n- use importance >= 0.90 only for project-level or future-steering items\n- use 0.50-0.70 for useful but local meeting-level context\nReturn JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.\n\nExtraction scope: B-002\nSegment IDs: S-0001-02\nKnown related topics: (none)\n\nPrior cross-meeting context: (none)\nUse only the current transcript as evidence for new L1 objects.\n\n\n\n\n\nBounded idea units:\nU-S-0001-02-SR-01 (23-24): A question was raised about whether items 'deleted' from short-term memory (STM) are moved to long-term memory (LTM). It was clarified that the integration between STM and LTM is not yet designed, and the current STM is defined as remembering important information from the last three sessions.\nU-S-0001-02-SR-02 (25-28): The team critiques an external paper on 'long-term memory,' concluding its approach is different from their needs. They find the paper's model too granular and focused on handling long contexts within a single session, rather than tracking information across a long timeline.\nU-S-0001-02-SR-03 (29-29): The current STM architecture has a 3-session limit, after which items are considered unimportant and deleted. This raises an unresolved question about how to define 'distance' for recalling information mentioned more than three sessions ago.\nU-S-0001-02-SR-04 (30-30): The current STM, by spanning three meetings, is already considered a form of cross-session memory with a longer history than the system described in the critiqued paper.\nU-S-0001-02-SR-05 (31-33): The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year). It would capture the overall research narrative, including structural changes, goals, major themes, and milestones, but will eventually need to be integrated with STM.\nU-S-0001-02-SR-06 (34-34): The current memory system implementation focuses only on the 'update' phase (adding information to memory after a meeting). The 'retrieve' phase, which would use this memory to decide what to say in a future meeting, has not been designed yet.\nU-S-0001-02-SR-07 (35-35): Short-term memory is summarized as holding the most important and current information from the last three meetings, analogous to the information most actively used by the human brain during a conversation.\nU-S-0001-02-SR-08 (36-37): A future architecture is proposed where information from the rolling STM will be periodically processed and converted into the LTM structure. LTM should also be retrievable to influence real-time conversation content.\nU-S-0001-02-SR-09 (38-38): Working memory is defined as a distinct component for purely real-time use, simply recording what is currently being said in the conversation, while LTM currently just reads organized notes.",
+  "raw_response": "{\n  \"candidates\": [\n    {\n      \"type\": \"decision\",\n      \"source_unit_ids\": [\n        \"U-S-0001-02-SR-01\",\n        \"U-S-0001-02-SR-03\",\n        \"U-S-0001-02-SR-07\"\n      ],\n      \"content\": \"目前的短期記憶（STM）被定義為記住過去三次會議中的重要資訊，超過三次會議的項目將被視為不重要而被刪除。\",\n      \"importance\": 0.8,\n      \"confidence\": 1.0,\n      \"rationale\": \"The team established a clear, operational definition for the current STM, setting a 3-session rolling window to keep information current and relevant. This defines the current state of a key architectural component.\",\n      \"related_topics\": [\n        \"short-term memory\",\n        \"memory architecture\"\n      ],\n      \"legacy_type\": \"decision\"\n    },\n    {\n      \"type\": \"decision\",\n      \"source_unit_ids\": [\n        \"U-S-0001-02-SR-05\",\n        \"U-S-0001-02-SR-08\"\n      ],\n      \"content\": \"決定將長期記憶（LTM）設計為一個獨立的、更粗粒度的架構，旨在跨越長期的專案週期（例如一年），以捕捉研究的整體敘事、目標、主題和里程碑。\",\n      \"importance\": 0.9,\n      \"confidence\": 1.0,\n      \"rationale\": \"The team defined a high-level vision for LTM as a separate, coarser-grained system for tracking the project's long-term narrative. This is a future-steering architectural decision.\",\n      \"related_topics\": [\n        \"long-term memory\",\n        \"memory architecture\",\n        \"project narrative\"\n      ],\n      \"legacy_type\": \"decision\"\n    },\n    {\n      \"type\": \"decision\",\n      \"source_unit_ids\": [\n        \"U-S-0001-02-SR-02\"\n      ],\n      \"content\": \"團隊評估了一篇關於「長期記憶」的外部論文，並決定其方法不適用，因為它過於細粒度，且專注於單次會話內的長上下文處理，而非團隊所需的跨時間線資訊追蹤。\",\n      \"importance\": 0.6,\n      \"confidence\": 1.0,\n      \"rationale\": \"The team made a decision to reject an alternative approach presented in an external paper because its focus on single-session long context was misaligned with their need for cross-session memory.\",\n      \"related_topics\": [\n        \"long-term memory\",\n        \"alternative approaches\"\n      ],\n      \"legacy_type\": \"decision\"\n    },\n    {\n      \"type\": \"decision\",\n      \"source_unit_ids\": [\n        \"U-S-0001-02-SR-06\"\n      ],\n      \"content\": \"目前的記憶系統實作決定僅專注於「更新」階段（在會議後將資訊添加到記憶中），而「檢索」階段的設計則被推遲。\",\n      \"importance\": 0.75,\n      \"confidence\": 1.0,\n      \"rationale\": \"The team made a pragmatic decision to scope the current implementation to only the 'update' phase of the memory system, deferring the 'retrieve' phase. This defines the current project priorities and capabilities.\",\n      \"related_topics\": [\n        \"memory implementation\",\n        \"system architecture\",\n        \"project scope\"\n      ],\n      \"legacy_type\": \"decision\"\n    }\n  ]\n}",
+  "parsed_json": {
+    "candidates": [
+      {
+        "type": "decision",
+        "source_unit_ids": [
+          "U-S-0001-02-SR-01",
+          "U-S-0001-02-SR-03",
+          "U-S-0001-02-SR-07"
+        ],
+        "content": "目前的短期記憶（STM）被定義為記住過去三次會議中的重要資訊，超過三次會議的項目將被視為不重要而被刪除。",
+        "importance": 0.8,
+        "confidence": 1.0,
+        "rationale": "The team established a clear, operational definition for the current STM, setting a 3-session rolling window to keep information current and relevant. This defines the current state of a key architectural component.",
+        "related_topics": [
+          "short-term memory",
+          "memory architecture"
+        ],
+        "legacy_type": "decision"
+      },
+      {
+        "type": "decision",
+        "source_unit_ids": [
+          "U-S-0001-02-SR-05",
+          "U-S-0001-02-SR-08"
+        ],
+        "content": "決定將長期記憶（LTM）設計為一個獨立的、更粗粒度的架構，旨在跨越長期的專案週期（例如一年），以捕捉研究的整體敘事、目標、主題和里程碑。",
+        "importance": 0.9,
+        "confidence": 1.0,
+        "rationale": "The team defined a high-level vision for LTM as a separate, coarser-grained system for tracking the project's long-term narrative. This is a future-steering architectural decision.",
+        "related_topics": [
+          "long-term memory",
+          "memory architecture",
+          "project narrative"
+        ],
+        "legacy_type": "decision"
+      },
+      {
+        "type": "decision",
+        "source_unit_ids": [
+          "U-S-0001-02-SR-02"
+        ],
+        "content": "團隊評估了一篇關於「長期記憶」的外部論文，並決定其方法不適用，因為它過於細粒度，且專注於單次會話內的長上下文處理，而非團隊所需的跨時間線資訊追蹤。",
+        "importance": 0.6,
+        "confidence": 1.0,
+        "rationale": "The team made a decision to reject an alternative approach presented in an external paper because its focus on single-session long context was misaligned with their need for cross-session memory.",
+        "related_topics": [
+          "long-term memory",
+          "alternative approaches"
+        ],
+        "legacy_type": "decision"
+      },
+      {
+        "type": "decision",
+        "source_unit_ids": [
+          "U-S-0001-02-SR-06"
+        ],
+        "content": "目前的記憶系統實作決定僅專注於「更新」階段（在會議後將資訊添加到記憶中），而「檢索」階段的設計則被推遲。",
+        "importance": 0.75,
+        "confidence": 1.0,
+        "rationale": "The team made a pragmatic decision to scope the current implementation to only the 'update' phase of the memory system, deferring the 'retrieve' phase. This defines the current project priorities and capabilities.",
+        "related_topics": [
+          "memory implementation",
+          "system architecture",
+          "project scope"
+        ],
+        "legacy_type": "decision"
+      }
+    ]
+  },
+  "latency_sec": 26.203,
+  "success": true,
+  "error": null
+}

@@ -1,0 +1,60 @@
+You are l1_approach_change_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: adopted change in method, process, architecture, retrieval strategy, schema, data handling, or evaluation approach.
+
+Read only the bounded idea units below and propose only approach_change candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid approach_change objects for that reason.
+Every candidate must set type exactly to approach_change.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable approach_change memories. Return an empty list when
+the batch has no durable approach_change. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-002
+Segment IDs: S-0001-02
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset acquisition, Dataset selection, Experimental setup, Forgetting mechanism, Long-term memory, Membrane project, Membrane_project, Memory system, Memory system architecture, Memory system performance, Model execution parameters, RAG, Research methodology, STM-LTM integration, STM-LTM_integration, Short-term memory, WhisperX, WhisperX configuration, action_item, alternative approaches, alternative_approaches, batch_size, data handling, data management, data-quality finding, data_handling, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, forgetting_mechanism, implementation strategy, implementation_strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory implementation, long-term memory_architecture, long-term_memory, long-term_memory_architecture, long-term_memory_implementation, memory architecture, memory model, memory retrieval, memory system, memory system architecture, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system, memory_system_architecture, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, model_execution_parameters, output quality, output_quality, project goals, project narrative, project_goals, real-time, research methodology
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0429-051] type=action_item quality=strong activity=active activation=0.76 reason=open_thread content=An ablation study is planned to justify combining short-term and long-term memory, which will compare a baseline (RAG only), short-term only, long-term only, and the full system.
+  [L1-0429-036] type=action_item quality=strong activity=active activation=0.76 reason=open_thread content=An evaluation of the proposed "dynamic chunking" method should be conducted by comparing it against fixed-chunk and turn-by-turn baselines. The evaluation will analyze trade-offs using metrics such as the number of LLM requests (cost), output quality, and formal precision/recall against a human-annotated set of important idea units.
+  [L1-0429-087] type=action_item quality=normal activity=resolved activation=0.42 reason=open_thread content=The team agreed to conduct an experiment comparing a dynamic transcript chunking method against two baselines: a fixed-size chunking method (e.g., 3 or 5 turns) and an iterative, per-turn summary method.
+  [L1-0429-024] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=Experiments on transcript processing trade-offs (fixed-cut vs. iterative merge) will be postponed until after May 12th due to a report deadline. For now, the team will proceed by assuming the current implementation is effective without formal proof.
+  [L1-0422-049] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The memory system's forgetting mechanism is designed so that memory retrieval is based on current relevancy during an interaction, and importance is updated post-interaction. An old topic, if revisited, will have its importance boosted. Memories with a high enough importance score will never fade out.
+  [L1-0429-134] type=action_item quality=normal activity=active activation=0.76 reason=open_thread content=Implement a manager-agent architecture where a central manager delegates tasks to specialized, swappable agents. An initial agent to develop is one that determines if a text segment is a complete idea unit, needs splitting, or is incomplete.
+  [L1-0429-023] type=action_item quality=normal activity=active activation=0.76 reason=open_thread content=An ablation study is planned to validate the memory system's architecture. The study will compare four configurations: a RAG-only baseline, a short-term memory only system, a long-term memory only system, and the full system. In all test cases, the working memory component will remain active to simulate an ongoing conversation.
+  [L1-0429-020] type=approach_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system's data handling approach differs from a standard RAG baseline by first structuring the transcript into 'idea units'. On top of these units, the system generates higher-level conclusions for broader context and incorporates a detailed short-term memory component to track recent conversational activities.
+  [L1-0429-052] type=open_issue quality=normal activity=active activation=0.90 reason=open_thread content=The current dataset of 180 minutes from 5 meetings is considered potentially insufficient and of poor quality for LLM experiments, raising the need to define data sufficiency in standard terms (like tokens) and explore augmentation strategies.
+  [L1-0422-037] type=action_item quality=normal activity=fading activation=0.53 reason=open_thread content=To handle the evolution of information, the long-term memory system incorporates timelines. During retrieval, this allows an LLM to see when points were made, identify if they were later overturned, and determine which version is current.
+  [L1-0422-024] type=action_item quality=normal activity=fading activation=0.53 reason=open_thread content=To demonstrate the value of the structured memory approach, an evaluation should be conducted comparing the overall system's performance (using its structured STM/LTM) against a standard RAG system that ingests the entire raw transcript.
+  [L1-0429-181] type=open_issue quality=normal activity=active activation=0.96 reason=open_thread content=The memory update process is at risk of creating redundant information. When a single large text segment is used to update multiple memory nodes, the system might add the same core idea (e.g., "add Precision/Recall") to different nodes (e.g., 'poster' and 'forecasting'), resulting in duplicated, albeit paraphrased, content.
+
+
+
+
+
+Bounded idea units:
+U-S-0001-02-C01 (21-28): [SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓...
+U-S-0001-02-C02 (22-29): [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟decision他比較偏向哪一些或是他們兩個的資訊應該去做什麼樣的區隔這樣 [SPEAKER_02]: 我剛剛在說 我想剛...
+U-S-0001-02-C03 (23-30): [SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容 [SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea u...
+U-S-0001-02-C04 (29-36): [SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個 theme，好那現在意思是說在對話當中這兩個 theme 是在同一個 topic 底下 大 topic 底下所以我剛剛...
+U-S-0001-02-C05 (31-38): [SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸 [SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的label我覺得可能就是要兩個 label都在還是找一個 label [SPEAKER_02]: 然後剛剛講到剛剛講到labe...
+U-S-0001-02-C06 (37-44): [SPEAKER_01]: 然後我們現在讓他每一版的每一次打的prompt然後每次回來result我們都有流程OK OK然後有什麼流程就是我們會有所有的檔案紀錄他每一次的prompt他打了多少次這個agent然後每次prompt [SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的話譬如說這一個他本身他可能譬如說會是一個可能這一行他是個idea unit對然後這行可能是個idea unit嗯 或者是...
+U-S-0001-02-C07 (45-45): Memory node updates are merged within a single meeting (e.g., a later idea unit can be merged into a node created by an earlier, similar unit). However, merging does not occur across different meetings; each meeting is a distinct, self-contained processing unit.

@@ -1,0 +1,166 @@
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior. Do not dismiss these as
+filler.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted.
+
+For non_memory_context_ranges, include only lines that are purely filler,
+acknowledgements, local wording clarification, or social closing with no memory
+value.
+
+Segment: S-0123-03
+Topic: Planning an Experiment on Dynamic Transcript Chunking
+
+Transcript lines:
+153: [SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。
+154: [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。
+155: [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。
+156: [SPEAKER_02]: 對，然後我們就可以看出一些 trade-off。
+157: [SPEAKER_04]: 嗯，感覺也可以。其實蠻簡單的，我覺得實作上應該蠻簡單，然後又會是一個。
+158: [SPEAKER_02]: 對，然後就只要想一種方式去譬如說你去算那個 compute 的次數，還有你去分類的那個分類。就譬如說以 fixed 來說好了，它可能一定會有某些東西，它切 3 個 turn 或切 5 個 turn。
+159: [SPEAKER_02]: 就它的 compute 速度、數量，跟我們 dynamic 的方式。也就比如說我們用 dynamic 的方式，假設我們去算出可能會有幾個斷點，假設總共 100 個 turn，然後最終我們用 dynamic 的斷點的話，我們算出只有 20 個的話，那我們就說 OK，那我去算 100 除以 20。也就是 fixed 的話，我用 5 去切，看它 5 切出來，因為它現在是 5 個、5 個、5 個，是同樣的 turn 數量，看那個結果怎麼樣。
+160: [SPEAKER_02]: 然後我覺得我們的方式，我們切的那 20 個斷點，它其實每一個長短也是不同，但它的長短是根據它的主題是什麼東西有關。
+161: [SPEAKER_02]: 對，然後跟那個說你就是一個一個去找，那就是要 100 個 compute 嘛。然後你就要一直去 iterate，也就是你每一句都有一個 summary，然後你要再把一樣的去 merge 起來，那個算的次數一定會多非常多。那它當然會非常精準，然後但是我相信也會出現剛剛益心說的一些不是很重要的話，它會被變成是一個 item。對。
+162: [SPEAKER_02]: 因為我覺得這個差不多，我覺得實作上應該不是很難。對，然後應該沒有很難，而且東西應該也不太用調。它就只是讓它每一次 request 的長度，是根據它剛剛對話內容去猜下一次的。對，就是根據譬如它現在目前讀到的這一句，然後它去預測、去 forecast 說它接下來差不多會有幾個 turn 應該都是會講這個東西。對，所以我們是要看它 request 的次數的差別喔？
+163: [SPEAKER_02]: 應該說一個是可以看它 request 次數的差異，然後你可以看它結果怎麼樣啊。我們往回去說，如果我們用 fixed 的方式去切，它的結果會比較不可能會有不精細的感覺。
+164: [SPEAKER_04]: 我們可以試試看，應該蠻快就可以測出結果。
+165: [SPEAKER_02]: 然後只是這的話，感覺上也是去想一下說要怎麼去 evaluate、要怎麼去呈現。就是說我們在處理會議資訊的時候，我們去減少它的 compute，然後也增加它的精細程度。然後哪一些，也是精細程度有一點點微微地像 precision、recall。就假設我們有某一些 idea unit 是我們人類覺得重要的 idea unit。
+166: [SPEAKER_02]: 對，那我們之後產生出來的那些重要的 idea units 裡面，它的 recall 是多少，然後它 precision 是多少。那我可以想像說，你如果是每一個 turn 都去做 iterative summary 的話，你的 precision 可能會很差，但 recall 會很高。就你每一件事情你都會抓得到，可是你會多抓一堆其實不是那麼重要的事情。對，那以我們的情況下，可能 precision、recall 都會是高的。
+167: [SPEAKER_02]: 就我不會多抓一些不重要的事情，對，但是重要的 recall 我不會因為不小心被別的東西蓋掉而消失。對，
+168: [SPEAKER_04]: 嗯，我們去試試看。
+169: [SPEAKER_02]: 對，這個有的話就會直接是一個 result
+
+Current idea units:
+[
+  {
+    "unit_id": "U-S-0123-03-01",
+    "line_start": 154,
+    "line_end": 156,
+    "text": "An experiment is proposed to compare a dynamic transcript chunking method against a fixed-size chunking method (e.g., fixed number of turns like 3 or 5) to show the trade-offs.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-02",
+    "line_start": 158,
+    "line_end": 159,
+    "text": "A primary metric for comparison will be the number of computations (API requests). For example, if a dynamic method creates 20 chunks from 100 turns, it can be compared to a fixed method with a chunk size of 5.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-03",
+    "line_start": 160,
+    "line_end": 160,
+    "text": "A key difference between the methods is that dynamic chunking creates variable-length segments based on topic, whereas fixed chunking creates segments of uniform turn count.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-04",
+    "line_start": 161,
+    "line_end": 161,
+    "text": "An alternative, highly granular method to compare against is creating a summary for every single turn and then merging them. This is expected to be computationally expensive and capture many unimportant items.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-05",
+    "line_start": 162,
+    "line_end": 162,
+    "text": "The dynamic method's implementation involves having the model forecast, based on the current turn, how many subsequent turns will cover the same topic to determine the chunk boundary. This is perceived as simple to implement.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-06",
+    "line_start": 165,
+    "line_end": 166,
+    "text": "The quality of the output can be evaluated using precision and recall against a human-defined set of important idea units.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-07",
+    "line_start": 166,
+    "line_end": 167,
+    "text": "It is hypothesized that the iterative per-turn summary method would have high recall but low precision, while the proposed dynamic method could achieve both high precision and high recall.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  },
+  {
+    "unit_id": "U-S-0123-03-08",
+    "line_start": 165,
+    "line_end": 169,
+    "text": "The overall goal is to develop a method that reduces computation while increasing the fineness of information extraction from meetings, which could be a direct research result.",
+    "completeness": "complete",
+    "uncertainty_note": ""
+  }
+]
+
+Validator report:
+{
+  "segment_id": "S-0123-03",
+  "line_start": 153,
+  "line_end": 169,
+  "input_units": 8,
+  "output_units": 8,
+  "coverage_rate": 0.765,
+  "uncovered_ranges": [
+    {
+      "start_line": 153,
+      "end_line": 153
+    },
+    {
+      "start_line": 157,
+      "end_line": 157
+    },
+    {
+      "start_line": 163,
+      "end_line": 164
+    }
+  ],
+  "overlap_ranges": [
+    {
+      "start_line": 165,
+      "end_line": 167
+    }
+  ],
+  "non_memory_context_ranges": [],
+  "deterministic_fallback_enabled": false,
+  "issues": [
+    {
+      "issue": "uncovered_line_ranges",
+      "uncovered_ranges": [
+        {
+          "start_line": 153,
+          "end_line": 153
+        },
+        {
+          "start_line": 157,
+          "end_line": 157
+        },
+        {
+          "start_line": 163,
+          "end_line": 164
+        }
+      ]
+    }
+  ],
+  "repairs": []
+}

@@ -346,14 +346,19 @@ def _concept_keys_for_obj(obj: dict[str, Any]) -> set[str]:
         and _has_any(
             text,
             (
-                "rag",
                 "hierarchical",
                 "hierarchy",
                 "top-down",
                 "bottom-up",
                 "processing architecture",
-                "issues",
-                "objects",
+                "memory object",
+                "memory objects",
+                "objects and issues",
+                "issues and objects",
+                "issue node",
+                "issue nodes",
+                "issue represents",
+                "parent object",
             ),
         )
         or ("l1" in text and ("l2" in text or "l3" in text))
@@ -397,10 +402,10 @@ def _root_label_for_obj(obj: dict[str, Any]) -> str:
     topics = _topics(obj)
     text = _obj_text(obj).lower()
     concepts = _concept_keys_for_obj(obj)
+    if "data fragmentation" in concepts:
+        return "data fragmentation"
     if "memory processing architecture" in concepts:
         return "memory"
-    if "data fragmentation" in concepts and "memory" not in text:
-        return "data fragmentation"
     if (
         "memory" in text
         or "l1" in text
@@ -619,6 +624,26 @@ def _deterministic_assignment(
             "assignment_method": "deterministic",
             "linked_prior_obj_ids": sorted(set(related_obj_ids) & set(child.get("object_ids", []))),
         }
+    if normalize_topic_label(topic_label) in PROTECTED_TOPIC_LABELS:
+        if existing_root is not None:
+            return _new_topic_assignment(
+                action="new_l2",
+                root_topic_id=root_topic_id,
+                root_label=str(existing_root.get("label", root_label)),
+                topic_id=topic_id,
+                topic_label=topic_label,
+                topics=_topics(obj),
+                related_obj_ids=related_obj_ids,
+            )
+        return _new_topic_assignment(
+            action="new_l3",
+            root_topic_id=root_topic_id,
+            root_label=root_label,
+            topic_id=topic_id,
+            topic_label=topic_label,
+            topics=_topics(obj),
+            related_obj_ids=related_obj_ids,
+        )
     if existing_root is not None:
         return {
             "action": "new_l2",
@@ -676,6 +701,30 @@ def _should_keep_deterministic_assignment(
     if deterministic_topic in PROTECTED_TOPIC_LABELS:
         return proposed_topic != deterministic_topic or proposed_root != deterministic_root
     return False
+
+
+def _new_topic_assignment(
+    *,
+    action: str,
+    root_topic_id: str,
+    root_label: str,
+    topic_id: str,
+    topic_label: str,
+    topics: list[str],
+    related_obj_ids: list[str],
+    assignment_method: str = "deterministic",
+) -> dict[str, Any]:
+    return {
+        "action": action,
+        "root_topic_id": root_topic_id,
+        "root_label": root_label,
+        "topic_id": topic_id,
+        "topic_label": topic_label,
+        "previous_state": "",
+        "keywords": sorted(set([root_label, topic_label, *topics])),
+        "assignment_method": assignment_method,
+        "linked_prior_obj_ids": related_obj_ids,
+    }
 
 
 def _assignment_from_llm_decision(

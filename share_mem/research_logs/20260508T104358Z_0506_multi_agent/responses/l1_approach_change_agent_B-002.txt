@@ -1,0 +1,101 @@
+{
+  "candidates": [
+    {
+      "type": "approach_change",
+      "source_unit_ids": [
+        "U-S-0001-02-C01",
+        "U-S-0001-02-C02"
+      ],
+      "content": "系統流程定義為：將 idea units 平行送入多個（例如六個）agent 進行分類。由於是平行處理，不同 agent 可能會針對同一個 idea unit 產生重複的 candidate（例如同時被標記為 decision 和 to-do）。後續需要一個步驟來比對和區分這些重疊的 candidate，決定其最終歸屬。",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This describes a core component of the memory system's architecture: a parallel multi-agent system for candidate generation followed by a reconciliation step. This is a fundamental design choice for how raw information is processed into structured memory.",
+      "related_topics": [
+        "memory system architecture",
+        "long-term memory implementation",
+        "development workflow"
+      ],
+      "legacy_type": "method_change"
+    },
+    {
+      "type": "approach_change",
+      "source_unit_ids": [
+        "U-S-0001-02-C04"
+      ],
+      "content": "確立了資料的層級結構：最底層是「idea units」（如一句話），多個相關的 idea units 組成一個「segment」（具有一個 theme），而多個 segment 則可歸於一個更大的「topic」之下。",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This defines the fundamental data hierarchy for organizing conversational information, moving from granular utterances to thematic segments and broader topics. This structure is central to the entire memory system's design.",
+      "related_topics": [
+        "memory system architecture",
+        "data handling",
+        "long-term memory architecture"
+      ],
+      "legacy_type": "decision"
+    },
+    {
+      "type": "approach_change",
+      "source_unit_ids": [
+        "U-S-0001-02-C06"
+      ],
+      "content": "為確保系統各步驟的合理性，導入了一套驗證流程。該流程會記錄每個 agent 每次執行的完整 prompt 和返回的 result，以便能夠追蹤和檢查每一步的輸入與輸出是否符合預期。",
+      "importance": 0.8,
+      "confidence": 1,
+      "rationale": "This establishes a critical development and debugging methodology. By logging all agent interactions (prompts and results), the team can systematically verify and validate each stage of the processing pipeline, improving reliability and traceability.",
+      "related_topics": [
+        "development workflow",
+        "experimental setup",
+        "memory system implementation"
+      ],
+      "legacy_type": "method_change"
+    },
+    {
+      "type": "approach_change",
+      "source_unit_ids": [
+        "U-S-0001-02-C07"
+      ],
+      "content": "記憶節點的更新合併僅限於單次會議內部。系統不會跨會議進行記憶合併，每次會議都被視為一個獨立、自成一體的處理單元。",
+      "importance": 0.9,
+      "confidence": 1,
+      "rationale": "This defines a fundamental architectural boundary for the memory system. By treating each meeting as a self-contained unit for memory updates, it simplifies the update logic and prevents unintended cross-talk between different contexts, which is a key design decision.",
+      "related_topics": [
+        "memory system architecture",
+        "long-term memory implementation",
+        "data handling"
+      ],
+      "legacy_type": "decision"
+    },
+    {
+      "type": "approach_change",
+      "source_unit_ids": [
+        "U-S-0001-02-C03"
+      ],
+      "content": "在 idea unit 切割過程中，採用了修復機制（repair mechanism）來處理不完整的片段。此機制會將零碎的語句與其上下文中最相關的部分進行合併，以確保資訊的完整性，避免遺漏。",
+      "importance": 0.7,
+      "confidence": 1,
+      "rationale": "This describes a specific, adopted change to the data preprocessing stage. The 'repair mechanism' is a concrete method to improve the quality of the foundational 'idea units' by preventing data loss from segmentation errors.",
+      "related_topics": [
+        "data handling",
+        "implementation strategy",
+        "data management"
+      ],
+      "legacy_type": "method_change"
+    },
+    {
+      "type": "approach_change",
+      "source_unit_ids": [
+        "U-S-0001-02-C05"
+      ],
+      "content": "為了優化檢索，系統將採用雙標籤（dual-labeling）策略。每個記憶單元除了有功能性標籤（如 to-do），還會增加一個主題標籤（theme label），讓搜尋時可以同時根據主題和功能類型進行過濾。",
+      "importance": 0.8,
+      "confidence": 0.9,
+      "rationale": "This represents a change in the data schema and retrieval strategy. Adding a second label (theme) in addition to the functional type (e.g., to-do) directly impacts how information is organized and searched for, making it a key architectural adjustment.",
+      "related_topics": [
+        "memory retrieval",
+        "memory system architecture",
+        "data handling"
+      ],
+      "legacy_type": "method_change"
+    }
+  ]
+}

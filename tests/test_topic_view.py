@@ -12,6 +12,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from share_mem.topic_view import (  # noqa: E402
     TopicViewHashMismatchError,
+    _concept_keys_for_obj,
     build_topic_view_outputs,
     load_topic_index,
     load_topic_tree,
@@ -476,6 +477,109 @@ class TopicViewTests(unittest.TestCase):
                 topic_index["L1-0506-001"]["topic_path"],
                 ["memory", "memory processing architecture"],
             )
+
+    def test_protected_data_fragmentation_concept_opens_topic_before_lexical_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "share_mem"
+            tree = {
+                "tree_version": 1,
+                "last_updated_utc": "2026-05-08T00:00:00Z",
+                "project_profile": {},
+                "phases": [],
+                "meetings": [
+                    {
+                        "meeting_id": "0429",
+                        "timestamp": "2026-04-29T00:00:00Z",
+                        "meeting_date": "2026-04-29",
+                        "source_file": "meeting_recording/transcript/grace/0429.txt",
+                        "phase_id": "",
+                        "memory_objects": [
+                            _obj(
+                                "L1-0429-001",
+                                "open_issue",
+                                (
+                                    "Long context processing uses a candidate memory "
+                                    "integration mechanism for transcript chunks."
+                                ),
+                                topics=["long context processing", "candidate memory integration"],
+                            ),
+                            _obj(
+                                "L1-0429-002",
+                                "decision",
+                                (
+                                    "To handle topics that span across processing chunks, "
+                                    "the system stores a candidate object and merges "
+                                    "subsequent relevant content to prevent information "
+                                    "loss at chunk boundaries."
+                                ),
+                                topics=["long context processing", "text splitting"],
+                            ),
+                        ],
+                    }
+                ],
+            }
+
+            build_topic_view_outputs(root=root, tree=tree, mode="hybrid")
+
+            topic_index = load_topic_index(root)
+            self.assertEqual(
+                topic_index["L1-0429-002"]["topic_path"],
+                ["data fragmentation", "data fragmentation"],
+            )
+
+    def test_data_fragmentation_topic_keeps_dedicated_root_even_with_memory_terms(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "share_mem"
+            tree = {
+                "tree_version": 1,
+                "last_updated_utc": "2026-05-08T00:00:00Z",
+                "project_profile": {},
+                "phases": [],
+                "meetings": [
+                    {
+                        "meeting_id": "0506",
+                        "timestamp": "2026-05-06T00:00:00Z",
+                        "meeting_date": "2026-05-06",
+                        "source_file": "meeting_recording/transcript/grace/0506.txt",
+                        "phase_id": "",
+                        "memory_objects": [
+                            _obj(
+                                "L1-0506-001",
+                                "open_issue",
+                                (
+                                    "The memory system has data fragmentation when "
+                                    "idea unit extraction misses transcript lines."
+                                ),
+                                topics=["memory system implementation", "output quality"],
+                            )
+                        ],
+                    }
+                ],
+            }
+
+            build_topic_view_outputs(root=root, tree=tree, mode="hybrid")
+
+            topic_index = load_topic_index(root)
+            self.assertEqual(
+                topic_index["L1-0506-001"]["topic_path"],
+                ["data fragmentation", "data fragmentation"],
+            )
+
+    def test_memo_rag_evaluation_is_not_memory_processing_architecture(self) -> None:
+        obj = _obj(
+            "L1-0318-001",
+            "finding",
+            (
+                "The MEM 0 evaluation compared token consumption, latency, "
+                "RAG baseline behavior, and multi-hop correctness."
+            ),
+            topics=["memory system performance", "model configuration"],
+        )
+
+        concepts = _concept_keys_for_obj(obj)
+
+        self.assertIn("memory evaluation strategy", concepts)
+        self.assertNotIn("memory processing architecture", concepts)
 
     def test_related_obj_ids_assign_generic_update_to_prior_topic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

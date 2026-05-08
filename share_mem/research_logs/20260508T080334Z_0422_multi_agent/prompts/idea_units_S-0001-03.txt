@@ -1,0 +1,45 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0001-03
+Topic: Clarifying Memory Update Logic and Efficiency of Iterative Processing
+
+Transcript lines:
+38: [SPEAKER_00]: 我剛本來想的是我在猜因為我還是不太理解這個 tool calling的意思，那我剛想的是譬如說像剛剛我們一開始我們講說5月13號要那專題展，然後你們說5月5號對，好那這件事情它有沒有需要去update long term memory，對然後也許這這件事情它是比較短期是最近在講的東西，那可能就是說我在我在我會去我不會去動那個long term那個東西我來動短期的這個東西對那
+39: [SPEAKER_00]: 當你講到譬如說就是講到其他的某一些idea的時候它可能會變變成說我要去update long term
+40: [SPEAKER_01]: 你的意思是兩個應該要是transcript先進來他會去分這個idea是short term或是long term而不是都個別update
+41: [SPEAKER_02]: 因為我們現在是個別update就是他們不會通常跟 short term 在update的時候他們都會各自拿到完整的transcription在update的時候是不會有任何交互的
+42: [SPEAKER_00]: 我覺得這比較make sense就是我反正每個Idea units來的時候我都會短期記憶裡面update一些東西，長期記憶裡面會update一些東西
+43: [SPEAKER_00]: 所以你們這個 tool calling指的是剛剛講的那個樣子嘛就是說我要三行還是五行發現不夠的話就再把它 merge 起來
+44: [SPEAKER_01]: 基本上就是跟老師講的一樣它就是找看什麼樣是一個節點，然後把它包成一個 candidate 這樣
+45: [SPEAKER_00]: 然後你們是有點像 iteratively 去做這些事情，然後這樣子它的那個花費的時間會不會很長啊
+46: [SPEAKER_03]: 但這是 update 所以就是時間比較沒有關係
+47: [SPEAKER_00]: 我的意思是說它這樣消耗的，我在想的是說像比如以季敏來說它是一句一句看，然後就看說如果我是同一句我就把它合在同一個就是我是一個 pass 下去就結束了，那現在這個方式的話它有點像說我是三個然後 merge 完這樣嘛三個去 merge merge merge
+48: [SPEAKER_02]: 他就會一直來回調動一直來回調動調動到最後調到最後一行，然後就會結束
+49: [SPEAKER_00]: 來回調動是什麼意思也
+50: [SPEAKER_02]: 就是來回調動就是他會從上到下然後如果他要往回看他就可以往回看可是他的整體進度也是慢慢往下這樣然後直到看完最後
+51: [SPEAKER_00]: 所以有一些有一些譬如說某十分鐘他可能三句三句它就可以了，但是某個十分鐘可能要五句五句之類的，然後它是在每一個時刻它都動態的在一直在換說是三句還是五句還是七句
+52: [SPEAKER_02]: 那你的十分鐘的意思是什麼十分鐘是之類的
+53: [SPEAKER_00]: 我只是講說譬如說我們的Meeting過程當中它在分析這個Meeting Transcript的時候在可能在也許某一些主題像剛剛講五月十三號那個其實可能很短就是兩句它其實就是一個一個 unit 對
+54: [SPEAKER_02]: 那它就會繼續往下更新
+55: [SPEAKER_00]: 所以這個其實聽起來蠻像是前處理的部分對不對?對所以你這個 tool calling 指的是來講說前處理的部分，
+56: [SPEAKER_01]: 因為我們就因為像之前的paper還蠻多他們都是切一個trunk一個trunk一個trunk丟進去，那我們是讓他做可以iterate的他可以往上找他可以往下找

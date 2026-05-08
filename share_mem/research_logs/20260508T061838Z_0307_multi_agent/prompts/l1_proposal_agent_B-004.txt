@@ -1,0 +1,49 @@
+You are l1_proposal_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: suggested option, alternative, hypothesis, design, or plan that has not yet been adopted as a decision.
+
+Read only the bounded idea units below and propose only proposal candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid proposal objects for that reason.
+Every candidate must set type exactly to proposal.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable proposal memories. Return an empty list when
+the batch has no durable proposal. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-004
+Segment IDs: S-0001-C04
+Known related topics: (none)
+
+Prior cross-meeting context: (none)
+Use only the current transcript as evidence for new L1 objects.
+
+
+
+
+
+Bounded idea units:
+U-S-0001-C04-SR-01 (57-60): The Academia Sinica internship application requires name, email, resume, transcript, and a statement of purpose. Research achievements are an optional field, likely intended for graduate students or undergraduates with prior projects.
+U-S-0001-C04-SR-02 (61-67): For the Academia Sinica internship, students must submit their applications by March 15th, with reviews starting March 16th. The professor can contact faculty there after the students submit, but it's unlikely one professor will accept all three students.
+U-S-0001-C04-SR-03 (68-70): A student (Weixi) is tasked with compiling a list of items to purchase. The lab needs to apply for an API key, possibly using an existing lab Google account. The professor will use a personal credit card for lab expenses, which are reimbursable as the lab has sufficient funds.
+U-S-0001-C04-SR-04 (72-73): Students identified a need to synchronize their data folder structure to avoid duplication. One student's current structure is `app/short_term/` which consumes data from `meeting_recording/transcript`.
+U-S-0001-C04-SR-05 (74-74): Two students agreed to collaborate on modifying the open-source "Membrane" project directly from its GitHub repository, rather than continuing with a separate Python version.
+U-S-0001-C04-SR-06 (75-76): The output from the "Memory" system is considered too fragmented and simplistic, which is attributed to both the fragmented nature of the input conversations and the system's failure to log information when it cannot find relationships.
+U-S-0001-C04-SR-07 (76-77): A student questioned using their current dataset, suggesting they should investigate the more complete datasets likely used in the original research papers. The immediate plan is to review the papers more thoroughly, with the possibility of contacting authors for their data later.
+U-S-0001-C04-SR-08 (77-79): When running WhisperX with the `large-v3` model, students are getting warnings but not critical errors. They concluded that not setting a batch size is acceptable as it only affects speed, not the result.
+U-S-0001-C04-SR-09 (79-80): The recording of the meeting started partway through, beginning from the discussion about the Academia Sinica internship.

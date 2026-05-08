@@ -1,0 +1,48 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0057-C01
+Topic: Comparing iterative vs. sequential text chunking methods / Explaining the mechanism of dynamic chunking via LLM function calls
+
+Transcript lines:
+57: [SPEAKER_00]: 那這個的好處跟他我們剛剛講的一個parts下去可能會有什麼?
+58: [SPEAKER_01]: 我現在想的是就是節點跟節點之間它可能會overlap如果你直接這樣下去好從這裡切一個節點再往下套那它上面可能一樣它有提到的地方它上面的句子它就不一定會抓得到
+59: [SPEAKER_00]: 哦 所以妳也就是說像現在以現在這樣來看因為我們原本的方式的話會是它是一個sequential這樣子然後它只會去看說這一句要不要跟它合併這一句要不要跟它合併它可能只能這樣子它可以處理sequentially就是temporal它是同一個地方對，那但是它沒有辦法處理說譬如這一段然後譬如說我這邊講了一個東西跟這邊的東西有關係
+60: [SPEAKER_00]: 那你說那現在它你是會三句譬如說有的是三句包一個然後假設說你譬如說你本來這三句包一個呢
+61: [SPEAKER_00]: 三句包一個 然後你會發現這兩個其實可以合起來變一個它是其中一個idea unit對 那可能接下來比如說都是三句與三句自己是各自一個，然後比如說有一個大包的有一個小包的，然後到某一個時刻比如說到這個地方的時候它可以一直去check說，喔這個東西跟這個東西有關的這樣嗎
+62: [SPEAKER_00]: 對然後它會去變成一個就是比較higher level的一個說就這個meeting完之後它會有一包東西那它有的時候是在它有一開始講了一下然後後面也講了一下
+63: [SPEAKER_01]: 對 因為說我很long term希望可以做到稍微比較有時間跨度的東西
+64: [SPEAKER_00]: 我在想的是原本那個做法其實也是可以做得到啦，就是你譬如我包完這一包之後我還是有一個global的一個vector在check說現在目前我有我的每一個node的idea裡面它有哪一些key information。那我如果在後面找到的時候我還是可以說就是under這一個主題下面有兩個unit對，那我在想的是fixed number的話好所以我猜的就是因為你
+65: [SPEAKER_00]: 這地方的話感覺上你們是要去就是有點像是要去explore說我先看，我其實還是沒有很懂你說一句來啊你說我先三句三句，那我是要整個transcription都變三句三句嗎然後跑一遍然後去merge，還是說要怎麼做
+66: [SPEAKER_02]: 應該說是要怎麼做應該說讀幾句應該是給LLM去判斷就是不一定要三句三句他其實也可以讀五句八句
+67: [SPEAKER_01]: 他會自己看他後面要再往後讀幾句
+68: [SPEAKER_00]: 所以說如果我讀了五句然後呢，我再讀下面五句
+69: [SPEAKER_01]: 不一定他可能他可以讀五句，然後五句不夠可能再往後讀五句後面的三句
+70: [SPEAKER_00]: 那不夠的意思是什麼，怎麼判定他是不夠
+71: [SPEAKER_02]: 如果他這一句現在五句完假設你已經問了一個問題然後這個答案顯然還沒到一個就是完整回答的地方他就可以
+72: [SPEAKER_03]: 這會讓 Gemini 自己決定，就是 Gemini 可以自己決定說
+73: [SPEAKER_01]: 他現在五句他切在一個問題，就是可能像老師剛問我們說現在什麼意思是這個東西什麼意思然後他五句切在這裡，那 Gemini 就會知道後面會有人是跟上去回答這個問題的，所以他就會往後再繼續
+74: [SPEAKER_00]: Ok
+75: [SPEAKER_03]: 所以這就是Function Calling的目的，因為這個Function 它比如說它我們叫做Read然後它參數是第一行到第五行，它有兩個參數，然後因為是從頭到尾，Gemini 一開始可以先問這個那你之後然後你回傳嘛，那 Gemini 如果覺得一到五行不夠或是這個不夠
+76: [SPEAKER_00]: 是不是覺得有點像薇新我們那個我們這學期那個Machine Learning的作業，就是那個會說它是不是End
+77: [SPEAKER_00]: 一個人工智慧概論他們現在作業不是說我一個句子它是不是結束，就有點像那個概念對那所以就有點像說我現在這一包資訊過去我去判斷它結束了沒
+78: [SPEAKER_03]: 可以自己決定就是 LM 覺得這句話還沒結束的話，它可以繼續因為這兩個參數都是 LLM 可以自己決定的所以。它可以比如說它想要覺得這不夠它可以是 1 到 7 這種它可以再看一次 1 到 7 是怎樣第 1 行到第 7 行是怎樣然後這個參數是完全可以用 Gemini 去決定。所以 1 到 7 行如果它覺得它已經結束了那它可以繼續往下等嘛那就是

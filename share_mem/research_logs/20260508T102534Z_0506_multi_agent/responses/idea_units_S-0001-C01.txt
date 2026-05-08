@@ -1,0 +1,74 @@
+{
+  "idea_units": [
+    {
+      "line_start": 1,
+      "line_end": 1,
+      "text": "An initial experiment with an adaptive window for segmentation performed poorly, increasing rejected items and decreasing verified ones. The suspected cause was the model's inability to precisely predict cut-off lines, which created random boundary processing issues. The code for this experiment has been overwritten.",
+      "completeness": "complete",
+      "uncertainty_note": "Describes a past experiment and its negative result."
+    },
+    {
+      "line_start": 2,
+      "line_end": 2,
+      "text": "To properly evaluate segmentation strategies, it was proposed to first establish a \"ground truth\" by manually labeling correct cut-off points in a sample dataset. This would allow for calculating precision and recall for both fixed-window and adaptive methods.",
+      "completeness": "complete",
+      "uncertainty_note": "Describes a proposed, standard methodology for evaluation."
+    },
+    {
+      "line_start": 2,
+      "line_end": 4,
+      "text": "A hypothetical adaptive segmentation method was proposed where the model first predicts if a topic is \"short\" or \"long.\" For a \"long\" topic, it would jump a larger number of lines (e.g., 10), and if the topic changes, it could use a binary-search-like approach to find the precise boundary.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This is a hypothetical method being brainstormed during the conversation."
+    },
+    {
+      "line_start": 3,
+      "line_end": 5,
+      "text": "A counterargument was raised that even a perfectly precise adaptive segmentation might not be beneficial, as the LLM is capable of processing larger, less precise chunks of text. Any imprecision in an adaptive method would require adjustments, negating its advantage over a fixed window.",
+      "completeness": "complete",
+      "uncertainty_note": "Presents a clear objection to the value of pursuing a complex adaptive segmentation method."
+    },
+    {
+      "line_start": 7,
+      "line_end": 9,
+      "text": "The current data processing pipeline involves a `Context Planner` that feeds fixed-size chunks of the transcript (e.g., 80 lines) to a `Segment Agent`. The `Segment Agent` then identifies semantic segments (discussion topics) within that chunk, from which `Idea Units` are subsequently extracted.",
+      "completeness": "complete",
+      "uncertainty_note": "Describes the established multi-stage processing pipeline: Context Planner -> Segment Agent -> Idea Units."
+    },
+    {
+      "line_start": 10,
+      "line_end": 11,
+      "text": "To ensure 100% coverage of the transcript, a verification step identifies any lines missed during idea unit extraction. These missed lines are then automatically packaged as new, separate idea units using the raw text and are tagged as being of lower quality.",
+      "completeness": "complete",
+      "uncertainty_note": "Describes the fallback mechanism to ensure all transcript lines are covered by an idea unit."
+    },
+    {
+      "line_start": 15,
+      "line_end": 19,
+      "text": "There is unresolved confusion regarding the definitions and distinctions between `Segment`, `Idea Unit`, and `Batch`. The rationale for the top-down `Segment`-first approach was questioned in favor of a more standard bottom-up method of clustering `Idea Units` into themes.",
+      "completeness": "incomplete",
+      "uncertainty_note": "Captures an ongoing, unresolved debate about the core concepts and terminology of the segmentation pipeline."
+    },
+    {
+      "line_start": 22,
+      "line_end": 22,
+      "text": "After extraction, `Idea Units` are sent in parallel to multiple specialized agents (e.g., for decisions, to-dos). This can result in multiple agents flagging the same idea unit, creating duplicate `candidates` that must be reconciled in a later step.",
+      "completeness": "complete",
+      "uncertainty_note": "Describes the parallel processing step where idea units are classified by multiple agents, leading to candidate generation."
+    },
+    {
+      "line_start": 25,
+      "line_end": 28,
+      "text": "Segments cut off by the fixed-size window are marked as incomplete. The system then merges this partial segment with its corresponding part from the next window to create a complete, repaired segment. This repaired unit was being called a \"batch,\" but the new name was questioned.",
+      "completeness": "partial",
+      "uncertainty_note": "Describes the 'stitching' mechanism for handling segments that cross window boundaries, but also notes the confusion around the term 'batch'."
+    },
+    {
+      "line_start": 21,
+      "line_end": 29,
+      "text": "The ultimate goal of the pipeline is to update a memory store, where each idea unit should correspond to a memory node. It is still an open question what level of granularity (e.g., idea unit keywords, segment summary, batch summary) should be used to query the memory.",
+      "completeness": "incomplete",
+      "uncertainty_note": "States the final goal of the system but highlights that the specific method for querying the memory store is an open question."
+    }
+  ]
+}

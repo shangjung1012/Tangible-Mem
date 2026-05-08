@@ -1,0 +1,62 @@
+You are l1_finding_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: stable observation, experiment result, comparison, failure mode, literature finding, data-quality finding, or evidence report.
+
+Read only the bounded idea units below and propose only finding candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid finding objects for that reason.
+Every candidate must set type exactly to finding.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable finding memories. Return an empty list when
+the batch has no durable finding. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-002
+Segment IDs: S-0001-03
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset selection, Membrane project, Membrane_project, Memory system, Memory system performance, Model execution parameters, Research methodology, STM-LTM integration, WhisperX, WhisperX configuration, alternative approaches, alternative_approaches, batch_size, data management, data-quality finding, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, implementation strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory_architecture, long-term_memory, long-term_memory_architecture, memory architecture, memory model, memory retrieval, memory system, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, output quality, output_quality, project goals, project narrative, research methodology, research_methodology, retrieval phase, short-term memory, speaker diarization, system architecture, system_architecture, temporal references, time tracking, working memory
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-090] type=action_item quality=strong activity=active activation=0.86 reason=open_thread content=As a next step, the team should redefine their memory architecture and review the "Digital Me" paper to understand its methods for determining relevancy.
+  [L1-0325-018] type=action_item quality=strong activity=active activation=0.86 reason=open_thread content=To address the difficulty of verifying the AI's memory recall from the project's own real meeting data, the proposed method is to retrieve the original meeting segment and manually assess its relevance to the current discussion.
+  [L1-0318-017] type=action_item quality=strong activity=resolved activation=0.42 reason=open_thread content=For the MEM 0 evaluation, performance was measured using an LLM-as-a-judge to provide a binary 'correct' or 'incorrect' assessment, avoiding issues with semantic similarity metrics. To ensure reliability, models were run 10 times for an average score, and the evaluation also tracked latency and token cost.
+  [L1-0325-034] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system is divided into two main parts: a memory component to ensure correct recall of past meeting content, and a second component to adjust the output to sound like the professor's speaking style.
+  [L1-0318-018] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=A new research project on "Sustainable AI" will be initiated with Professor Wu Chun-Feng to measure GPT's energy consumption. The project will also explore a "human angle" for energy saving, such as developing a "power-saving mode" that allows users to select less powerful models for simpler tasks.
+  [L1-0325-036] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=Design a long-term memory structure capable of handling the non-linear evolution of research ideas, including branching concepts, dependencies, and temporal status, to overcome the limitations of simple RAG.
+  [L1-0307-009] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=The memory model operates sequentially: it processes a meeting transcript to generate summaries and action items, creating an initial memory. When a subsequent meeting discusses a topic from a previous one, the system updates the corresponding memory entry.
+  [L1-0307-021] type=action_item quality=normal activity=resolved activation=0.42 reason=open_thread content=The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year). It will capture the overall research narrative, including structural changes, goals, major themes, and milestones, and will eventually need to be integrated with STM.
+  [L1-0307-029] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key challenge for the project is to establish a method for evaluating the memory-enhanced agent's performance to prove its necessity and superiority over a standard LLM.
+  [L1-0325-046] type=open_issue quality=normal activity=active activation=0.86 reason=open_thread content=A key design challenge for long-term memory is how to implement a 'fading out' mechanism for older, less relevant information. Tree-based structures are considered unsuitable as they disrupt the temporal dimension required for time-based weight decay, which is crucial for achieving the desired trade-off between retaining important events and allowing other memories to fade.
+  [L1-0307-004] type=open_issue quality=normal activity=fading activation=0.42 reason=open_thread content=A suggestion for dynamic time tracking (e.g., updating "this meeting" to "one week ago") is infeasible with the current system design, which tracks items by `meeting ID` rather than relative time. This presents a design conflict, as updating an item changes its associated meeting ID (e.g., from 16 to 17), preventing stable relative time references.
+  [L1-0325-006] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=The team has selected the ICSI Meeting Corpus from around 2007 as the primary dataset. This decision was based on the dataset's completeness, its inclusion of continuous, single-topic research meetings, and the determination that its format of 3-4 person research meetings is acceptable for the project's objectives.
+
+
+
+
+
+Bounded idea units:
+U-S-0001-03-SR-01 (26-29): The top-level summary (L3) is described as the most concise skeleton of the project memory. It is updated iteratively and cumulatively, meaning a new version incorporates all previous content plus new content.
+U-S-0001-03-SR-02 (30-31): In response to a question clarifying the terms, the hierarchical memory structure is introduced: L1 nodes are created from each meeting, a set of four L1s are summarized into an L2, and all L2s are summarized into a higher-level L3.
+U-S-0001-03-SR-03 (33-33): The retrieval process is designed to start by matching a query against L1 data. When an L1 item is retrieved, its associated L2 and L3 summaries are also brought into context to provide both specific details and the broader project structure.
+U-S-0001-03-SR-04 (34-35): The L1, L2, and L3 tiers represent different levels of granularity within long-term memory. L3 is the highest-level summary. L2 is a summary of a set of meetings (e.g., four meetings, or monthly). L1 is the most granular and its objects can be traced back to the underlying source data segments.
+U-S-0001-03-SR-05 (36-36): L1 content is not raw text but is processed into structured objects. These objects are extracted from meeting content using prompts and are assigned specific types.
+U-S-0001-03-SR-06 (37-38): During L1 object generation, an 'importance' value is assigned, which is a key factor for the retrieval score. The hierarchical summarization process is compared to a method for summarizing Wikipedia, where summaries are created recursively from lower-level summaries.
+U-S-0001-03-SR-07 (39-40): A key problem the system aims to solve is handling topics that fade and later reappear. The system uses an 'open question' type to track unresolved issues. A hypothetical scenario is raised: what happens to an L1 node for a topic that is not mentioned for several subsequent meetings?
+U-S-0001-03-SR-08 (41-42): The retrieval score is based on recency and importance. A node's recency score decays over time, but a high initial importance score sets a 'floor' for the recency value, preventing it from decaying to zero. When the topic reappears, its high semantic similarity and non-zero recency score allow it to be retrieved.
+U-S-0001-03-SR-09 (43-43): The specific weights for the scoring formula (e.g., for recency, importance) are not yet finalized. The current formula is a placeholder that will require future evaluation and tuning.

@@ -1,0 +1,60 @@
+{
+  "idea_units": [
+    {
+      "line_start": 58,
+      "line_end": 59,
+      "text": "The previous sequential chunking method is limited because it only merges adjacent sentences and may fail to capture relationships between non-consecutive parts of the text.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 60,
+      "line_end": 61,
+      "text": "A hypothetical mechanism for the new method is that it could group sentences (e.g., in threes) and then merge these groups if they form a single idea unit, resulting in variable-sized chunks.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This is one speaker's attempt to understand the mechanism, not a confirmed description of how it works."
+    },
+    {
+      "line_start": 61,
+      "line_end": 63,
+      "text": "The primary goal of the new chunking approach is to create higher-level idea units by identifying and connecting related information mentioned at different, potentially distant, points in the transcript.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 64,
+      "line_end": 64,
+      "text": "A counter-argument was raised that the original sequential method could also handle long-range dependencies by using a global vector to check for key information across all generated nodes and group them thematically after the initial chunking.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 66,
+      "line_end": 69,
+      "text": "In the proposed method, the number of sentences to be processed in a single chunk is not fixed; instead, the LLM dynamically determines how many sentences to read at each step.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 70,
+      "line_end": 73,
+      "text": "The LLM determines a chunk is incomplete and needs to be extended if it ends on an unresolved thought, such as a question without its corresponding answer, and will then read subsequent sentences to find the complete idea.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 75,
+      "line_end": 78,
+      "text": "The technical implementation for dynamic chunking uses LLM Function Calling, where the LLM (Gemini) calls a function like `Read(start_line, end_line)` and can autonomously decide to re-call it with different line numbers if it deems the initial chunk incomplete.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 76,
+      "line_end": 77,
+      "text": "A conceptual analogy for the process is a machine learning task that determines if a sentence has ended; the LLM evaluates an \"information packet\" to decide if the idea within it is self-contained.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    }
+  ]
+}

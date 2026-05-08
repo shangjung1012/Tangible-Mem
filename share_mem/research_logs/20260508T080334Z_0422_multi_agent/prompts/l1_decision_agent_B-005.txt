@@ -1,0 +1,59 @@
+You are l1_decision_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: adopted, rejected, resolved, or materially revised conclusion that changes project state.
+
+Read only the bounded idea units below and propose only decision candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid decision objects for that reason.
+Every candidate must set type exactly to decision.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable decision memories. Return an empty list when
+the batch has no durable decision. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-005
+Segment IDs: S-0081-03
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset selection, Membrane project, Membrane_project, Memory system, Memory system performance, Model execution parameters, Research methodology, STM-LTM integration, WhisperX, WhisperX configuration, alternative approaches, alternative_approaches, batch_size, data handling, data management, data-quality finding, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, implementation strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory_architecture, long-term_memory, long-term_memory_architecture, memory architecture, memory model, memory retrieval, memory system, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, output quality, output_quality, project goals, project narrative, research methodology, research_methodology, retrieval phase, short-term memory, speaker diarization, system architecture, system_architecture, temporal references, time tracking, working memory
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-090] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=As a next step, the team should redefine their memory architecture and review the "Digital Me" paper to understand its methods for determining relevancy.
+  [L1-0325-018] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=To address the difficulty of verifying the AI's memory recall from the project's own real meeting data, the proposed method is to retrieve the original meeting segment and manually assess its relevance to the current discussion.
+  [L1-0318-017] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=For the MEM 0 evaluation, performance was measured using an LLM-as-a-judge to provide a binary 'correct' or 'incorrect' assessment, avoiding issues with semantic similarity metrics. To ensure reliability, models were run 10 times for an average score, and the evaluation also tracked latency and token cost.
+  [L1-0325-034] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system is divided into two main parts: a memory component to ensure correct recall of past meeting content, and a second component to adjust the output to sound like the professor's speaking style.
+  [L1-0318-018] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=A new research project on "Sustainable AI" will be initiated with Professor Wu Chun-Feng to measure GPT's energy consumption. The project will also explore a "human angle" for energy saving, such as developing a "power-saving mode" that allows users to select less powerful models for simpler tasks.
+  [L1-0408-019] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=The application scenario for the memory system was defined as a 'mentor agent.' This agent is constructed from the speakers' past dialogues and research discussions, and a user, envisioned as a student, will interact with this pre-built agent.
+  [L1-0325-036] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=Design a long-term memory structure capable of handling the non-linear evolution of research ideas, including branching concepts, dependencies, and temporal status, to overcome the limitations of simple RAG.
+  [L1-0408-052] type=open_issue quality=normal activity=active activation=0.86 reason=open_thread content=The relationship between Short-Term Memory (STM) and Long-Term Memory (LTM) is currently undefined. They are updated independently, which can cause content duplication, and the mechanism for transferring information from STM to LTM has not yet been implemented.
+  [L1-0408-012] type=approach_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=為了提高記憶提取的精確性，處理流程將從一次性分析整個轉錄稿，改為兩階段方法：首先，將文本分割成「想法單元」（idea units），然後再讓大型語言模型對每個單元進行單獨標記。
+  [L1-0325-046] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key design challenge for long-term memory is how to implement a 'fading out' mechanism for older, less relevant information. Tree-based structures are considered unsuitable as they disrupt the temporal dimension required for time-based weight decay, which is crucial for achieving the desired trade-off between retaining important events and allowing other memories to fade.
+  [L1-0325-006] type=action_item quality=normal activity=dormant activation=0.15 reason=open_thread content=The team has selected the ICSI Meeting Corpus from around 2007 as the primary dataset. This decision was based on the dataset's completeness, its inclusion of continuous, single-topic research meetings, and the determination that its format of 3-4 person research meetings is acceptable for the project's objectives.
+  [L1-0325-042] type=approach_change quality=strong activity=active activation=0.94 reason=recent_high_importance content=The definition of memory tiers was revised; short-term memory (STM) will now focus only on the immediately preceding meeting, with anything older being classified as long-term memory (LTM). This changes the previous approach where STM was designed to cover the last three meetings.
+
+
+
+
+
+Bounded idea units:
+U-S-0081-03-01 (103-107): A long-term memory object includes fields for Type, Content, Evidence, and Related Topics. The 'Evidence' is the original transcript, while the 'Content' is a concise summary derived from that evidence. 'Related Topics' are used for keyword retrieval.
+U-S-0081-03-02 (108-109): The use of mixed Chinese and English in the content does not currently appear to negatively affect the system's performance.
+U-S-0081-03-03 (110-111): Instead of using an object ID to link back to a recording, the long-term memory object appears to store the evidence (transcript segment) directly within it.
+U-S-0081-03-04 (112-114): A short-term memory object is structured with a 'meeting window' (a summary of recent meetings) and 'action item's, which are the specific items to be remembered.
+U-S-0081-03-05 (115-116): Short-term memory 'ActionItem's are discrete, individual items, contrasting with the tree-like structure of long-term memory. This raised the question of whether action items are exclusive to short-term memory.
+U-S-0081-03-06 (117-118): Long-term memory has a hierarchical summarization structure: L1 items are summarized into L2 (e.g., monthly) and L3 (overall context) summaries. When an L1 item is matched during retrieval, its associated L2 and L3 summaries are also brought up to provide context.

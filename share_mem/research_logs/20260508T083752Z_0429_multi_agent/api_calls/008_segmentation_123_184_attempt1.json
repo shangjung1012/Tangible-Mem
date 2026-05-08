@@ -1,0 +1,118 @@
+{
+  "sequence": 8,
+  "timestamp_utc": "2026-05-08T08:40:39Z",
+  "stage": "segmentation_123_184",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "segments": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_start": {
+                "type": "integer"
+              },
+              "line_end": {
+                "type": "integer"
+              },
+              "topic_label": {
+                "type": "string"
+              },
+              "needs_more_context": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "line_start",
+              "line_end",
+              "topic_label",
+              "needs_more_context"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "segments"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "segments": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "properties": {
+            "line_start": {
+              "type": "integer"
+            },
+            "line_end": {
+              "type": "integer"
+            },
+            "topic_label": {
+              "type": "string"
+            },
+            "needs_more_context": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "line_start",
+            "line_end",
+            "topic_label",
+            "needs_more_context"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "segments"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are segmentation_agent for a long-term memory extraction pipeline.\nReturn JSON only. Split the transcript window into topic-coherent segments.\nUse original line numbers.\n\nCreate durable discussion segments, not sentence-level or checklist-like slices.\nNormally return 3-6 segments for an 80-line primary window.\nYou may return up to 10 segments only when there are clear\nmajor topic shifts. Prefer 10-24 primary-window lines per segment.\nDo not split every small subpoint into a segment; downstream idea units will handle\nthe smaller claims inside each durable segment.\n\nMeeting: 0429\nPrimary window: 123-184\n\nTranscript lines:\n107: [SPEAKER_02]: OK，所以可以去跟學姊拿。對對對，可以跟她要。然後我在想的是，以這樣來說，其實應該是說，你可能下次就要先確定一下，最就是 long context 的那個中值是多少，然後用那個方式去比較。因為這 180 分鐘感覺不是 agent 他們在定義 long 的那個中值，就沒有分鐘的概念。對，用那個方式我們大概會知道說，所以我們的資料的大小大概是多大這樣。嗯。\n108: [SPEAKER_04]: 然後我們現在 evaluate 的 question 主要分三類，一個是 short-term，就是至少是要確定它短期的回答是正確的；然後 long-term 的 evolution，就是可能會問它說，我們這整個某一件事情的研究方法，從過去到現在完整的演進是什麼。\n109: [SPEAKER_04]: 然後還有一個是 decision reasoning，就是會問它說，我們為什麼現在是做這個決定，當初是什麼討論讓我們今天做這件事情的決定。這樣子嘛。所以這個 evaluation 的意思是說，第二個的話，它的重點是正確率嗎？對。\n110: [SPEAKER_04]: 就是它不能漏掉 context，它不能漏掉其中某個 meeting 講過的東西。就可能我們在三個 meeting 提過這件事情，然後三個 meeting 都有不同討論的點，但它只講到了其中兩場 meeting，或者是它自己胡亂地湊了一些我們 meeting 裡面並沒有講到的事情。嗯。\n111: [SPEAKER_04]: 所以在我們的 data 裡面，我們基本上就是要非常明確地知道說，我們裡面總共有哪一些 answer，而且哪些東西是不對的，就在 evaluate 的時候。所以那就是評分的方式，參考也是之前前面的 paper，就是我們會給它我們的答案，還有我們這個 agent 生出來的答案，然後請它去比對大概的正確率。\n112: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。\n113: [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但是你刻意地去挖它那個 lost 的裡面的話，它是存在的。\n114: [SPEAKER_02]: 對，然後它就是在等著某一期，就是它因為我們不是說它被有點像是 inactive 的某一些 idea 在那個地方，就是太久又太不重要的都會被丟到那個地方去。那所以說，我們要怎麼去處理，就是在一般對話的時候不應該觸發，然後在講某一句話的時候，它應該要去觸發、把這個記憶調起來。\n115: [SPEAKER_02]: 對，應該是說我們在一般對話的時候它不會出現，然後但是你用某一種 function call 去叫它列出你的 long-term memory 裡面現在有哪些是 inactive 的 idea，那它會列在那個地方，但是它會刻意地不出現在現在正在進行的對話裡。那它要在被 activate 的情況下，就是譬如說它必須要出現在 short-term meeting 裡面，出現到了幾次之後，它的那個會慢慢地從那個地方又再慢慢地浮掉。那應該就是我們之前有做。\n116: [SPEAKER_04]: 就是我們做，我們會去算它的 weight，會算它的 importance。我們應該會從這個地方去切一個，就是幾分以下它是在一般的對話中不會出現。然後我們在每一次，如果像老師說 short term 一直提到它的話，那它那個分數應該會往上，所以它就會再重新被 LLM 在對話中提到這樣。\n117: [SPEAKER_02]: 這個東西有 agent 的遺忘這件事情，現在有人在開始做，應該蠻多人做的。可是他們做的應該都是以人類的遺忘曲線，就是可能多久這樣子。但是如果是，他們有人在做嗎？因為 Large Language Model 已經自己很會遺忘啦。他們現在是怎麼樣的人類遺忘曲線？我感覺 Large Language Model 的遺忘，感覺是 sensitive 資料的去除嗎，那一種類型的遺忘。\n118: [SPEAKER_02]: 我有看過，我記得 Time Memory 還是哪一篇，它是有模仿，它是有做遺忘的機制喔。你可以把那一篇等一下貼到那個 chat，但我還要找我這個長相。好好好。就是，對，我覺得他們的遺忘都是直接全部忘掉，就是不可能再 retrieve 回來，就是它不會因為你一直提到再出現這樣。他們的遺忘是怎麼樣，他們是如何遺忘。\n119: [SPEAKER_02]: 是在某種方式把它 probability 上面直接 negate 這樣回去，讓它不記得這個連結嗎？還是他們那邊的遺忘是怎麼樣的遺忘？還是它用 prompt 的方式說你不記得這件事情？就是他們的遺忘方式是怎麼樣。遺忘應該就是直接在資料庫裡面把它踢掉，就像 RAG 它是會有那個向量建設，它直接把那個資料刪掉這樣。\n120: [SPEAKER_04]: 所以它就不會再找到。所以它比較像是在 RAG 上面的時候，就像因為我們也會拆很多的，我們會逐字稿送進來，我們會記 TODO 什麼什麼。如果這個 TODO 一直都沒有被提到，他們可能就是會把這一筆刪掉，這樣它下次在找的時候它不會找到這個。\n121: [SPEAKER_02]: 因為我在想的是，因為 language model 它在跟人的對話過程當中，它其實就算你慢慢把 external 那個拔掉之後，它已經慢慢地就被捲進它的 language model 裡面了，對不對？所以它如果真的要，我不知道它那邊所謂的去。所以我本來想像中的是，我要去除這個 language model 裡面的記憶的話，就是你就必須要想辦法把，比如說 A 跟 B 曾經有連接，我想你忘記 A 跟 B 的連接。\n122: [SPEAKER_02]: 我就是必須要用某種 negate 的方法，我要把 A 跟 B 直接的關聯直接去掉，讓你的 language model 裡面它就不存在它們的關聯性。我不知道過去的遺忘是這種 model 本身 fundamentally 去動它的 model，還是是 RAG 上面的說我在 external 裡面不存在這一個資料。聽起來是 external database。目前我們看到沒有人去處理說，就是 language model 整個 fundamentally 把這一個 knowledge 解掉、拆解掉這樣。OK。\n123: [SPEAKER_02]: 那個應該蠻數學的，應該蠻數學的。我覺得這可能就是，沒關係，我們就先不。那以 literature 的部分，就是也把最相關的這些 work 都把它列出來。然後再來是會做 ablation study，就是我們會有做 baseline，是只有 RAG，然後。\n124: [SPEAKER_02]: 只有 short-term 的機制跟只有 long-term 的機制，然後後面是整個 full system，就是要 prove 我們為什麼要 short term 加 long term 這樣。欸，那在 working memory 的話，應該也是要。working 的話是你們的 session 跟 testing 的狀態是嗎？就是應該是說你去比較不同的 memory 架構，去看它在 working memory，working memory 可能會是一樣的是嗎？\n125: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。\n126: [SPEAKER_02]: 拆成那個，轉換成像那樣的資料。我們是做，我們會先抓它裡面的 idea unit。對對，idea unit。嗯，OK，我現在，所以 RAG 跟 full system 的差別是在於，RAG 有什麼，呃，RAG、full system。\n127: [SPEAKER_01]: RAG 感覺就只是它是最簡單的處理方式啦，它就只是切塊，然後用語意去找相似度的那一塊是什麼。然後我們是除了有切 idea unit 之外，我們 idea unit 上面還會有更 high-level 的結論，它可以帶出那個上層的脈絡。然後我們還有 short-term 的部分，會比較仔細地告訴它我們最近在做什麼之類的。OK，好。\n128: [SPEAKER_01]: 好，我們先往後。後面是那個 long-term 的部分，就是這個 incremental，就是指我們用 tool calling 之後，它會一部分一部分地往下讀這樣。然後上次講了說，我們這邊有要去做實驗嗎？就是我們那時候說三種的 trade-off。\n129: [SPEAKER_02]: 一種是 fixed 切的話會有一定的 trade-off，然後如果是一句一句一句看，iterative 地去 merge，跟這個應該是我們之前講的那個嘛，然後再。\n130: [SPEAKER_02]: 但因為我們好像離那個報告只剩 13 天，所以感覺就是可能 5 月 12 日之後可以做的實驗。所以這段我就是假定我就是這麼做了，我去不去 prove，我們可能會有些 hypothesis，說這個會比別的東西好。對，那之後呢？\n131: [SPEAKER_01]: 其實如果稍微比一下，我覺得它會抓的東西會比較少那種很不必要的閒聊資訊。就像我們有時候講到什麼司機什麼，就是一些，或是什麼誰還沒來這種資訊。如果不是用這個的話，它會存那些蠻不必要的資訊。我覺得。你是說譬如說因為它 forward scan。我先聽一下這個流程是什麼好了，流程。那還是你的下一頁。\n132: [SPEAKER_01]: 就是它最主要的幾個 function，然後 read transcript 就是讀我們 transcript 的第幾行，然後 update issue。issue 跟我們的 object 是不一樣，issue 是這個 object 有提到的某一些 issue。issue 算是一個我們用來處理重複提到、會增加它 importance 的一個工具。\n133: [SPEAKER_01]: 算是比 object 再更細一點的東西，然後它會跟 object 連到。就可能一個 object 會連到兩個 issue 這樣。然後 issue 會去看它有沒有反覆出現，issue 如果反覆提高，它又連到這個 object，那這個 object 的 importance 就會提高。\n134: [SPEAKER_01]: 然後 create object 就是建立一個，它會先存成一個 candidate，然後在你後面再去讀到的時候，它會去看我現在這個 candidate 跟我後面的內容是不是相關。如果是相關的，它就合併在一起一起處理。它現在這邊的後面指的是多後面？就是後面一句話嗎？還是。\n135: [SPEAKER_02]: 後面要看它每一次 read transcript 的時候會。我看一下這個 read transcript 是只有讀，就是 assuming 它會是一個不斷一直讀的狀態。read transcript 的話它有一個 input，它的 input 就會是你現在要往前跳幾行的那個。我看我之前跑的紀錄，一次會先跑大概 20 幾行左右。那那個 20 幾行是怎麼決定的？\n136: [SPEAKER_01]: 20 幾行是算是怎麼講，算是我們初始隨便給它一個值吧。但是我們看它效果跑出來還 OK 就定，然後我們看它後面會讀幾行，後面會讀大概每次都是 20 行左右。所以這邊是沒有那個動態地去讀幾行這樣。\n137: [SPEAKER_02]: 動態去讀幾行。我們上次講過說，我現在讀進去這一句話，譬如說我們現在講現在有少一個人什麼之類的，我會預期這個對話大概就是兩句就結束了。然後跟如果說這一句話講的是說，喔，那接下來是 incremental bridge 這件事情，那它就判定說接下來可能五句或是十句應該都會是在講這個內容，我就會直接先跳到十句，把它變成一個 block 來分析。\n138: [SPEAKER_01]: 應該說這跟讀幾行應該沒關係，因為它會知道它的斷點在哪裡。就它會知道說你是第幾行跟第幾行是這個東西。就你一次讀 24 行，然後它 24 行可以分開處理，24 行可以前兩行是純純像你剛剛說的這是誰還沒到，這可能只有兩行，然後後面的 20 行可能其中 10 行是一個 object，後面 10 行是一個 object。就是你讀幾行都沒關係，它的 object，它的 structure 是長什麼樣子。\n139: [SPEAKER_02]: object 的 structure，我可以看 code 嗎？就是看它處理的。我分享一下畫面好了。\n140: [SPEAKER_00]: 因為我的短期也是差不多的方法。我想就是益心的意思大概是說，因為其實你不用太糾結 LLM 到底會讀幾行，因為 LLM 它自己可以。因為老師您剛剛說就是希望它讀幾行，那一行就是一個 object。但是其實 LLM 就算它真的讀太多行，它其實也知道這邊結束，就沒有什麼關係。\n141: [SPEAKER_00]: 所以它其實比如說讀了 0 到 40 行，假設裡面有兩個 object，不是只有一個 object，它其實也沒關係，它就會處理，就是把這兩個存進去。所以它下一次還是會讀什麼 41 到 80。所以就是對它來說，它只要能處理哪些 object，它就沒有什麼，它就不會有一次剛好就讀一個 object 會比較好，因為這些東西在存成這個形式之前，它都會是一個 candidate。\n142: [SPEAKER_00]: 所以你不用擔心說它因為被截斷而喪失它原本的意思，因為你在後面再讀到的時候它會回來。我本來在想的是，因為之前這有點像是說我們是仰賴 Large Language Model 的能力去決定，它現在的這一個 span 裡面有幾個 item，對嗎？\n143: [SPEAKER_02]: 就是我給它 40 句也可以，我給它 100 句也可以，我給它 30 句也可以。然後但是我完全是讓 Large Language Model 它自己去決定說，它現在看到這裡面有幾個 object，是嗎？這裡面有幾個 object，應該是感覺上模型自己判斷它整體能力有多少吧。因為對，那我在講的是，我們現在像那個什麼，上次應該是講到是那個誰，季敏她在處理那個。\n144: [SPEAKER_02]: 她之前在處理她的 transcription 的方式，她一開始也是讓 Large Language Model 自己去分。對，然後後來我們變的方式是，她後來是一句一句，就她不要一次先丟進去給 Large Language Model 一串，然後讓它自己去說裡面現在有幾個主題。對，那她後來變成是有點像比較 bottom-up 的方法。\n145: [SPEAKER_02]: 就是我就是切最小的可能單位，然後去丟上去給它，那它只是去做 label 的動作。它說現在你給我這個最小單位是這個，那我去幫它取一個 label，某一個名字 label A。對，那我下次我再給它一個 unit，那我可能去看說這個它是屬於 item B 還是什麼的。\n146: [SPEAKER_02]: 然後那當然就是會有 trade-off，因為 trade-off 應該就會是說，我當然丟 40 句可以，Large Language Model 我可以跟它說它可以分出五個主題，它也可以分出三個主題，它其實也可以分出十個主題，對吧？\n147: [SPEAKER_00]: 對，就有點像是我們讓 Large Language Model 來決定。\n148: [SPEAKER_02]: 那我本來想的是說，我們是可以比較像 top-down 這樣，我丟一串給它，可能有很多東西。\n149: [SPEAKER_02]: 那 Large Language Model top-down，讓它自己去看說我決定最後是幾個 group。對，然後上次我本來以為的是我們在講說我們要用 bottom-up 的方法。那所以我們在討論一些 trade-off，因為有人在切 transcription 的方式，他們是切譬如說每三個 turn，然後去產生一個小的 summary，再去 iteratively 把它產生一個比較 high-level 的 summary，這樣子轉出來的嘛。\n150: [SPEAKER_02]: 但那個方法我也會有問題，就是你那個 fixed number 的 turn 裡面，它有可能會有 multiple 的 idea units，在那個情況下它就是會被放成同一個 summary，它沒有辦法被拆開。所以那一個最極端的方式就是，我每一句話我都把它變成是一個小的東西，然後讓 language model 一直去產生。每一句話我先有幾個 keywords。\n151: [SPEAKER_02]: 然後我一直去 merge、merge、merge，但那個就是 compute 時間要非常地大。對，然後折衷的方式可能是說，也許我看到這一句話，我大概就知道說，就是我們把那個 fixed 拿掉，它是 dynamic，它不要都是三個 turn、三個 turn、三個 turn。但是我現在看到這一句話，我大概預估應該會是幾個 turn 都是在講這件事情，我就往前跳，然後把它變成一個 block。\n152: [SPEAKER_02]: 對，然後去把它弄起來。就是我本來想的是，我們是要用比較 bottom-up 的方法，那我們可能可以用那種動態去切，就是我要怎麼去丟那個最小的單位給 language model，去產生小 summary，然後去 iterate 產生一個比較 high-level 的 summary。\n153: [SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。\n154: [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。\n155: [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。\n156: [SPEAKER_02]: 對，然後我們就可以看出一些 trade-off。\n157: [SPEAKER_04]: 嗯，感覺也可以。其實蠻簡單的，我覺得實作上應該蠻簡單，然後又會是一個。\n158: [SPEAKER_02]: 對，然後就只要想一種方式去譬如說你去算那個 compute 的次數，還有你去分類的那個分類。就譬如說以 fixed 來說好了，它可能一定會有某些東西，它切 3 個 turn 或切 5 個 turn。\n159: [SPEAKER_02]: 就它的 compute 速度、數量，跟我們 dynamic 的方式。也就比如說我們用 dynamic 的方式，假設我們去算出可能會有幾個斷點，假設總共 100 個 turn，然後最終我們用 dynamic 的斷點的話，我們算出只有 20 個的話，那我們就說 OK，那我去算 100 除以 20。也就是 fixed 的話，我用 5 去切，看它 5 切出來，因為它現在是 5 個、5 個、5 個，是同樣的 turn 數量，看那個結果怎麼樣。\n160: [SPEAKER_02]: 然後我覺得我們的方式，我們切的那 20 個斷點，它其實每一個長短也是不同，但它的長短是根據它的主題是什麼東西有關。\n161: [SPEAKER_02]: 對，然後跟那個說你就是一個一個去找，那就是要 100 個 compute 嘛。然後你就要一直去 iterate，也就是你每一句都有一個 summary，然後你要再把一樣的去 merge 起來，那個算的次數一定會多非常多。那它當然會非常精準，然後但是我相信也會出現剛剛益心說的一些不是很重要的話，它會被變成是一個 item。對。\n162: [SPEAKER_02]: 因為我覺得這個差不多，我覺得實作上應該不是很難。對，然後應該沒有很難，而且東西應該也不太用調。它就只是讓它每一次 request 的長度，是根據它剛剛對話內容去猜下一次的。對，就是根據譬如它現在目前讀到的這一句，然後它去預測、去 forecast 說它接下來差不多會有幾個 turn 應該都是會講這個東西。對，所以我們是要看它 request 的次數的差別喔？\n163: [SPEAKER_02]: 應該說一個是可以看它 request 次數的差異，然後你可以看它結果怎麼樣啊。我們往回去說，如果我們用 fixed 的方式去切，它的結果會比較不可能會有不精細的感覺。\n164: [SPEAKER_04]: 我們可以試試看，應該蠻快就可以測出結果。\n165: [SPEAKER_02]: 然後只是這的話，感覺上也是去想一下說要怎麼去 evaluate、要怎麼去呈現。就是說我們在處理會議資訊的時候，我們去減少它的 compute，然後也增加它的精細程度。然後哪一些，也是精細程度有一點點微微地像 precision、recall。就假設我們有某一些 idea unit 是我們人類覺得重要的 idea unit。\n166: [SPEAKER_02]: 對，那我們之後產生出來的那些重要的 idea units 裡面，它的 recall 是多少，然後它 precision 是多少。那我可以想像說，你如果是每一個 turn 都去做 iterative summary 的話，你的 precision 可能會很差，但 recall 會很高。就你每一件事情你都會抓得到，可是你會多抓一堆其實不是那麼重要的事情。對，那以我們的情況下，可能 precision、recall 都會是高的。\n167: [SPEAKER_02]: 就我不會多抓一些不重要的事情，對，但是重要的 recall 我不會因為不小心被別的東西蓋掉而消失。對，\n168: [SPEAKER_04]: 嗯，我們去試試看。\n169: [SPEAKER_02]: 對，這個有的話就會直接是一個 result\n170: [SPEAKER_01]: 我先停一下，現在也感覺其實也是差不多的東西。然後我們要問 API key 的部分。\n171: [SPEAKER_00]: 就是趁你講。其實之前不是有說那個 9000 台幣的額度嗎？那個其實它有個問題，就是它沒有辦法用 Gemini 的 API。OK，好，所以我分享一下。\n172: [SPEAKER_02]: 沒關係，就你們需要什麼。你們現在需要可以 access 到 Gemini 的 API。\n173: [SPEAKER_00]: 我沒有改，是它改一個 Vertex AI 的東西。然後就是我們之前的時候沒有注意到，它其實是刷到卡的。我們之前用了之後是 715 塊。\n174: [SPEAKER_02]: 這個是刷到什麼卡？\n175: [SPEAKER_00]: 就是那時候綁的卡。\n176: [SPEAKER_01]: 那個卡是什麼卡？我的卡嗎？\n177: [SPEAKER_00]: 我的我的\n178: [SPEAKER_02]: 你的卡。\n179: [SPEAKER_00]: 就是它沒有辦法拿去扣那個 9000 塊，因為政策改變。就是你之後打的，好像從 4 月 1 號開始之後打的那個 API，你用 API key 直接打進來的話，它不會去扣那個 9000 塊，它會直接扣你的真錢。對，然後。\n180: [SPEAKER_00]: 就是它有一個東西是可以扣到額度的，是用一個 Vertex AI 的東西，它是可以用到這個額度。但是我不知道為什麼，它現在我還在跑，它一直會很容易卡住。我不知道是它的流量會比較限制還是怎樣，就是它會比較常卡住。\n181: [SPEAKER_01]: 因為他們官方給的那個層級好像有不一樣，就是你只是這個 9000 塊的層級，跟你真的有付錢去買它 API 的那個帳號，優先權會不一樣。\n182: [SPEAKER_00]: 我覺得一個比較簡單的方法，我就是直接撥兩萬塊的經費給你們其中某一個人。這樣好不好？這樣會比較方便。那如果就是不夠的話就再跟我說，因為如果還要再 receipt，我覺得有點麻煩。好，就是可以算一下。\n183: [SPEAKER_00]: 其實這個 717 塊是我今天打的。嗯嗯嗯。所以就是如果我今天一天是 717 塊，加上益心你一天打多少？\n184: [SPEAKER_04]: 其實我沒有到很多，我可能一兩百塊吧。因為我現在一直跑都是一次打全部。\n185: [SPEAKER_00]: 對，順便講一下我的 short term 那個好了。我 short term 現在會就是，它現在跟預計那個情況差不多。就是一開始它會基本上先去讀 overview，然後接下來它會讀 transcript，然後一樣你看它會先從第 1 行到 40 行讀，然後接下來之後它都好像就是一次讀 80 行。\n186: [SPEAKER_00]: 然後讀完之後，它就是一部分一部分讀，讀到一部分之後它就會開始。\n187: [SPEAKER_00]: 這個是 read，就是讀逐字稿；那這個 read 就是讀目前的 short-term memory。然後你看它讀完之後，馬上就直接 write 進去。所以它現在流程是會一開始的時候，可能會先讀這個 overview。是指就是目前的 short term 一些現在的東西長什麼樣，或者是一些 summary 之類的。然後接下來讀 transcript，然後它會一部分一部分讀，讀了之後它覺得差不多了，它就會開始去寫入的動作。\n188: [SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？\n189: [SPEAKER_00]: 呃，這是好問題，我看一下，看別的。呃。\n190: [SPEAKER_00]: 可能是看它，因為我的 prompt 看來只有剛剛那一次是這個部分。\n191: [SPEAKER_02]: 你說這個 function call，你是用 prompt 去產生的嗎？你不是自己用 code 去產生的嗎？就你要用哪一行。\n192: [SPEAKER_00]: 這個 function 是指定的，這個 function 是給好的，那裡面的這個參數是 Gemini 自己填進去的。\n193: [SPEAKER_02]: 我覺得參數部分還是要控制，我們自己控制會比較好一點。\n194: [SPEAKER_00]: 但是自己控制，不就沒有辦法讓 Gemini 它想要讀幾行就讀幾行嗎？\n195: [SPEAKER_02]: 你控制完之後，讓它去得到、去抓那個資訊來之後，Gemini 它不用就是你去讓它去判斷說大概是幾行，然後把那個搞掉。你們現在就是讓 Gemini 決定要從哪一行開始讀嗎？我現在其實有點混亂，我以為你們是寫 fixed 的。一次 80 行還是 40 行？\n196: [SPEAKER_00]: 我的 prompt 裡面是寫說建議，但是我是直接建議說你可以一次 40 到 80 行。所以它可能這一次第一次就是讀 40 行，然後它之後可能有 overlap 一些行數，然後再開始讀。\n197: [SPEAKER_02]: 對，因為我就是有種擔心，就是我覺得它好像有點，我會覺得我們可能要多一點控制。就譬如說以剛剛益心講，假設我們要去測這件事情的話，我們的 prompt 不會是一大串的 prompt 直接丟進去，我們可能拆解成幾個步驟，這樣你在 check 的時候比較好 check。就譬如說第一個部分是先問它說，好，根據我現在讀到這個句子。\n198: [SPEAKER_02]: 你先去判斷一下它是一個比較大的題目還是比較小的題目，然後去預估大概會有幾個句子會跟它相關。這件事情應該在一開始整個大的 prompt 裡面，你就可能要去寫說，就是當你得到一個句子的時候，它一開始還是要從 initial prompt 的方式去寫。我看一下你們原本的 prompt。\n199: [SPEAKER_00]: 呃，這個是短期的啦。我可能會跟羿昕，我看一下這短期的 prompt 任務流程。\n200: [SPEAKER_02]: 所以我會說，因為其實它之後，以現在這個方式，你中間非常難去 check 中間的東西，對不對？因為它就是一次把這個任務全部做完給你，對嗎？對，就是你中間其實沒有辦法控制一些什麼，你也沒有辦法調一些什麼東西。",
+  "raw_response": "{\n  \"segments\": [\n    {\n      \"line_start\": 123,\n      \"line_end\": 138,\n      \"topic_label\": \"Experimental Setup and Long-Term Memory Implementation Details\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 139,\n      \"line_end\": 152,\n      \"topic_label\": \"Debate on Transcript Processing Strategy: Top-Down vs. Bottom-Up\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 153,\n      \"line_end\": 169,\n      \"topic_label\": \"Planning an Experiment on Dynamic Transcript Chunking\",\n      \"needs_more_context\": false\n    },\n    {\n      \"line_start\": 170,\n      \"line_end\": 184,\n      \"topic_label\": \"Resolving Gemini API Billing and Budget Issues\",\n      \"needs_more_context\": false\n    }\n  ]\n}",
+  "parsed_json": {
+    "segments": [
+      {
+        "line_start": 123,
+        "line_end": 138,
+        "topic_label": "Experimental Setup and Long-Term Memory Implementation Details",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 139,
+        "line_end": 152,
+        "topic_label": "Debate on Transcript Processing Strategy: Top-Down vs. Bottom-Up",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 153,
+        "line_end": 169,
+        "topic_label": "Planning an Experiment on Dynamic Transcript Chunking",
+        "needs_more_context": false
+      },
+      {
+        "line_start": 170,
+        "line_end": 184,
+        "topic_label": "Resolving Gemini API Billing and Budget Issues",
+        "needs_more_context": false
+      }
+    ]
+  },
+  "latency_sec": 22.937,
+  "success": true,
+  "error": null
+}

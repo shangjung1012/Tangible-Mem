@@ -1,0 +1,81 @@
+{
+  "idea_units": [
+    {
+      "line_start": 22,
+      "line_end": 22,
+      "text": "The data processing pipeline is: idea units are sent to six parallel agents, which generate candidates, and these candidates are then used to find and update memory nodes.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 22,
+      "line_end": 22,
+      "text": "Since agents run in parallel, a single idea unit can be identified as a candidate by multiple agents (e.g., as both a 'decision' and a 'to-do'). A subsequent process is required to compare and differentiate these overlapping candidate types.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 31,
+      "line_end": 31,
+      "text": "An idea unit can be assigned multiple type labels initially, but the system tries to refine this to one, or at most two, precise types for the final candidate.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 41,
+      "line_end": 42,
+      "text": "The system uses six agent types to classify idea units, based on common meeting content: Decision, To-Do, Method Change, Result, Argument, and Open Question.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 24,
+      "line_end": 28,
+      "text": "A 'repair' mechanism handles cases where a transcript segment is cut off (e.g., at a fixed line limit). It marks the segment as incomplete and merges it with the following segment to form a complete block before further processing.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 27,
+      "line_end": 28,
+      "text": "A 'batch' is the unit of work sent to the L1 agents for typing. It is a coherent block of conversation, often created by the 'repair' mechanism, ensuring agents have sufficient context for accurate classification.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 29,
+      "line_end": 29,
+      "text": "An alternative, more hierarchical concept for a 'batch' was proposed: a thematic grouping that collects multiple segments from different speakers under a single topic, rather than just being a repaired segment.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This was a hypothetical model proposed during the discussion to contrast with the current implementation, and it's not clear if it was adopted or just a thought experiment."
+    },
+    {
+      "line_start": 45,
+      "line_end": 45,
+      "text": "Memory node updates are merged within a single meeting (e.g., a later idea unit can be merged into a node created by an earlier, similar unit). However, merging does not occur across different meetings; each meeting is a distinct, self-contained processing unit.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 38,
+      "line_end": 38,
+      "text": "Idea units are the base unit of meaning and have a flexible structure: one unit can span multiple transcript lines, or multiple units can exist on a single line. How to verify the quality of the idea unit splits is an open question.",
+      "completeness": "incomplete",
+      "uncertainty_note": "The discussion raises the question of how to verify the quality of idea unit segmentation but does not resolve it."
+    },
+    {
+      "line_start": 33,
+      "line_end": 37,
+      "text": "The system maintains a data structure where idea units belong to segments, and segments (which can cross speaker turns) are derived from the transcript. All prompts and results for each agent step are logged for verifiability.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 32,
+      "line_end": 32,
+      "text": "There is an unresolved design question about whether retrieval should be based on the content type (e.g., 'to-do') or a thematic label, suggesting a potential need for two types of labels on data.",
+      "completeness": "incomplete",
+      "uncertainty_note": "This was raised as a question about future retrieval strategy but not concluded."
+    }
+  ]
+}

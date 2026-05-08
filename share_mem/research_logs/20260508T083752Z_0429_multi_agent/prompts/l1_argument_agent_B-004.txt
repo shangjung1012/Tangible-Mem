@@ -1,0 +1,70 @@
+You are l1_argument_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: reasoning, tradeoff, constraint, evidence interpretation, or justification for or against a proposal or decision.
+
+Read only the bounded idea units below and propose only argument candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid argument objects for that reason.
+Every candidate must set type exactly to argument.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable argument memories. Return an empty list when
+the batch has no durable argument. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-004
+Segment IDs: S-0001-05, S-0070-C01
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset selection, Membrane project, Membrane_project, Memory system, Memory system performance, Model execution parameters, Research methodology, STM-LTM integration, WhisperX, WhisperX configuration, action_item, alternative approaches, alternative_approaches, batch_size, data handling, data management, data-quality finding, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, implementation strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory_architecture, long-term_memory, long-term_memory_architecture, memory architecture, memory model, memory retrieval, memory system, memory system architecture, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, output quality, output_quality, project goals, project narrative, real-time, research methodology, research_methodology, retrieval phase, short-term memory, speaker diarization, system architecture, system_architecture, temporal references, time tracking, working memory
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-090] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=As a next step, the team should redefine their memory architecture and review the "Digital Me" paper to understand its methods for determining relevancy.
+  [L1-0325-018] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=To address the difficulty of verifying the AI's memory recall from the project's own real meeting data, the proposed method is to retrieve the original meeting segment and manually assess its relevance to the current discussion.
+  [L1-0325-034] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system is divided into two main parts: a memory component to ensure correct recall of past meeting content, and a second component to adjust the output to sound like the professor's speaking style.
+  [L1-0422-049] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The memory system's forgetting mechanism is designed so that memory retrieval is based on current relevancy during an interaction, and importance is updated post-interaction. An old topic, if revisited, will have its importance boosted. Memories with a high enough importance score will never fade out.
+  [L1-0408-019] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=The application scenario for the memory system was defined as a 'mentor agent.' This agent is constructed from the speakers' past dialogues and research discussions, and a user, envisioned as a student, will interact with this pre-built agent.
+  [L1-0422-037] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=To handle the evolution of information, the long-term memory system incorporates timelines. During retrieval, this allows an LLM to see when points were made, identify if they were later overturned, and determine which version is current.
+  [L1-0422-024] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=To demonstrate the value of the structured memory approach, an evaluation should be conducted comparing the overall system's performance (using its structured STM/LTM) against a standard RAG system that ingests the entire raw transcript.
+  [L1-0325-036] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=Design a long-term memory structure capable of handling the non-linear evolution of research ideas, including branching concepts, dependencies, and temporal status, to overcome the limitations of simple RAG.
+  [L1-0408-052] type=open_issue quality=normal activity=active activation=0.73 reason=open_thread content=The relationship between Short-Term Memory (STM) and Long-Term Memory (LTM) is currently undefined. They are updated independently, which can cause content duplication, and the mechanism for transferring information from STM to LTM has not yet been implemented.
+  [L1-0408-012] type=approach_change quality=strong activity=reactivated activation=1.00 reason=recent_high_importance content=為了提高記憶提取的精確性，處理流程將從一次性分析整個轉錄稿，改為兩階段方法：首先，將文本分割成「想法單元」（idea units），然後再讓大型語言模型對每個單元進行單獨標記。
+  [L1-0422-022] type=approach_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=An evaluation strategy for the segmentation method was adopted. The dynamic, entropy-based approach will be compared against two baselines: fast but inaccurate fixed-size chunking, and accurate but slow sentence-by-sentence iteration. The evaluation will analyze trade-offs in performance, accuracy, and the number of function calls.
+  [L1-0325-046] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key design challenge for long-term memory is how to implement a 'fading out' mechanism for older, less relevant information. Tree-based structures are considered unsuitable as they disrupt the temporal dimension required for time-based weight decay, which is crucial for achieving the desired trade-off between retaining important events and allowing other memories to fade.
+
+
+
+Split-family scope metadata (not evidence):
+- parent_batch_id=PB-004; split_index=1/2
+- split_reason=idea_unit_count exceeded 14
+- If this batch is part of a split family, avoid creating a partial candidate solely because the chunk boundary cuts a larger idea.
+- Overlap idea units may be cited as normal bounded evidence when they appear below.
+- Do not cite sibling metadata or infer from unseen sibling batches.
+- overlap_unit_ids=U-S-0001-05-SR-09, U-S-0070-C01-01
+- semantic_parent_segment_ids=S-0001-05, S-0070-C01
+
+Bounded idea units:
+U-S-0001-05-SR-01 (50-50): Speaker 01 introduces the topic of long-term incremental transcript processing, which involves processing the transcript in sequential parts.
+U-S-0001-05-SR-02 (51-54): The team discussed whether to conduct experiments on different transcript processing trade-offs (fixed-cut vs. iterative merge), but decided to postpone them until after May 12th due to an impending report deadline. They will proceed by assuming the current implementation is effective without formal proof for now.
+U-S-0001-05-SR-03 (55-56): Speaker 01 posits that the current incremental method is advantageous because it filters out irrelevant chit-chat. Speaker 02 attempts to clarify, mentioning a 'forward scan', but then decides to wait for a full explanation of the process.
+U-S-0001-05-SR-04 (57-58): The system's core logic involves `retranscript` (reading transcript lines) and `update_issue`. It uses a two-tiered structure of 'Objects' and more granular 'Issues'. An Issue is a tool for tracking recurring topics; when an Issue is mentioned repeatedly, the importance of its associated Object increases. An Object can be linked to multiple Issues.
+U-S-0001-05-SR-05 (59-59): The `create_object` function operates by first creating a 'candidate' object. As it reads subsequent text, it merges related content into this candidate.
+U-S-0001-05-SR-06 (60-65): The system processes the transcript in fixed chunks of approximately 20 lines. This number was not systematically determined but was an arbitrary initial value that was kept because its performance was acceptable. The window size is not dynamic.
+U-S-0001-05-SR-07 (66-66): A previously discussed but unimplemented idea was to use a dynamic analysis window. The system would predict a topic's length (e.g., short for a quick comment, long for a major discussion point) and adjust the number of lines it processes as a single block accordingly.
+U-S-0001-05-SR-08 (67-67): A counter-argument was made that the fixed read-chunk size (e.g., 20 lines) is not a limitation, as the system is capable of identifying and separating multiple distinct objects of varying lengths within that single chunk. The object structuring logic is considered more important than the chunk size.
+U-S-0001-05-SR-09 (68-69): The verbal explanation of the object structure was insufficient, leading to a request to review the code directly to understand its processing logic, prompting a screen share.
+U-S-0070-C01-01 (70-72): An LLM can process a text chunk containing multiple objects/ideas simultaneously. It will identify and store all of them, so there is no need to worry about truncation causing data loss or to strictly feed it one object at a time.

@@ -1,0 +1,64 @@
+You are l1_decision_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: adopted, rejected, resolved, or materially revised conclusion that changes project state.
+
+Read only the bounded idea units below and propose only decision candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid decision objects for that reason.
+Every candidate must set type exactly to decision.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable decision memories. Return an empty list when
+the batch has no durable decision. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-010
+Segment IDs: S-0123-03
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset selection, Membrane project, Membrane_project, Memory system, Memory system performance, Model execution parameters, Research methodology, STM-LTM integration, WhisperX, WhisperX configuration, action_item, alternative approaches, alternative_approaches, batch_size, data handling, data management, data-quality finding, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, implementation strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory_architecture, long-term_memory, long-term_memory_architecture, memory architecture, memory model, memory retrieval, memory system, memory system architecture, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, output quality, output_quality, project goals, project narrative, real-time, research methodology, research_methodology, retrieval phase, short-term memory, speaker diarization, system architecture, system_architecture, temporal references, time tracking, working memory
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-090] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=As a next step, the team should redefine their memory architecture and review the "Digital Me" paper to understand its methods for determining relevancy.
+  [L1-0325-018] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=To address the difficulty of verifying the AI's memory recall from the project's own real meeting data, the proposed method is to retrieve the original meeting segment and manually assess its relevance to the current discussion.
+  [L1-0325-034] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system is divided into two main parts: a memory component to ensure correct recall of past meeting content, and a second component to adjust the output to sound like the professor's speaking style.
+  [L1-0422-049] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The memory system's forgetting mechanism is designed so that memory retrieval is based on current relevancy during an interaction, and importance is updated post-interaction. An old topic, if revisited, will have its importance boosted. Memories with a high enough importance score will never fade out.
+  [L1-0408-019] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=The application scenario for the memory system was defined as a 'mentor agent.' This agent is constructed from the speakers' past dialogues and research discussions, and a user, envisioned as a student, will interact with this pre-built agent.
+  [L1-0422-037] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=To handle the evolution of information, the long-term memory system incorporates timelines. During retrieval, this allows an LLM to see when points were made, identify if they were later overturned, and determine which version is current.
+  [L1-0422-024] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=To demonstrate the value of the structured memory approach, an evaluation should be conducted comparing the overall system's performance (using its structured STM/LTM) against a standard RAG system that ingests the entire raw transcript.
+  [L1-0325-036] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=Design a long-term memory structure capable of handling the non-linear evolution of research ideas, including branching concepts, dependencies, and temporal status, to overcome the limitations of simple RAG.
+  [L1-0408-052] type=open_issue quality=normal activity=active activation=0.73 reason=open_thread content=The relationship between Short-Term Memory (STM) and Long-Term Memory (LTM) is currently undefined. They are updated independently, which can cause content duplication, and the mechanism for transferring information from STM to LTM has not yet been implemented.
+  [L1-0408-012] type=approach_change quality=strong activity=reactivated activation=1.00 reason=recent_high_importance content=為了提高記憶提取的精確性，處理流程將從一次性分析整個轉錄稿，改為兩階段方法：首先，將文本分割成「想法單元」（idea units），然後再讓大型語言模型對每個單元進行單獨標記。
+  [L1-0422-022] type=approach_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=An evaluation strategy for the segmentation method was adopted. The dynamic, entropy-based approach will be compared against two baselines: fast but inaccurate fixed-size chunking, and accurate but slow sentence-by-sentence iteration. The evaluation will analyze trade-offs in performance, accuracy, and the number of function calls.
+  [L1-0325-046] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key design challenge for long-term memory is how to implement a 'fading out' mechanism for older, less relevant information. Tree-based structures are considered unsuitable as they disrupt the temporal dimension required for time-based weight decay, which is crucial for achieving the desired trade-off between retaining important events and allowing other memories to fade.
+
+
+
+
+
+Bounded idea units:
+U-S-0123-03-SR-01 (153-153): A suggested implementation for dynamic chunking is to add a parameter to the prompt specifying how many lines to read, based on the current context.
+U-S-0123-03-SR-02 (154-157): An experiment is proposed to compare a dynamic transcript chunking method against a fixed-size chunking method (e.g., fixed number of turns like 3 or 5) to analyze the trade-offs. This approach is considered simple to implement.
+U-S-0123-03-SR-03 (158-159): A primary metric for comparison will be the number of computations (API requests). For example, if a dynamic method creates 20 chunks from 100 turns, it can be compared to a fixed method with a chunk size of 5.
+U-S-0123-03-SR-04 (160-160): A key difference is that dynamic chunking creates variable-length segments based on topic, whereas fixed chunking creates segments of uniform turn count.
+U-S-0123-03-SR-05 (161-161): A third comparison point is an iterative method that creates a summary for every single turn, which is expected to be computationally expensive and capture many unimportant items.
+U-S-0123-03-SR-06 (162-162): The dynamic method's mechanism involves the model forecasting, based on the current turn, how many subsequent turns will cover the same topic, thus determining the request length.
+U-S-0123-03-SR-07 (163-163): The experiment will evaluate two aspects: the number of requests (computation cost) and the quality of the results, as fixed-size chunking may produce less fine-grained outputs.
+U-S-0123-03-SR-08 (164-164): The team agrees to try the experiment, expecting that it can be tested and produce results quickly.
+U-S-0123-03-SR-09 (165-165): To evaluate quality, the team will use precision and recall against a human-defined set of important idea units, with the goal of reducing computation while increasing fineness.
+U-S-0123-03-SR-10 (166-167): It is hypothesized that an iterative per-turn summary method would have high recall but low precision, while the proposed dynamic method could achieve both high precision and high recall.
+U-S-0123-03-SR-11 (169-169): If successful, this experiment is expected to produce a direct research result.

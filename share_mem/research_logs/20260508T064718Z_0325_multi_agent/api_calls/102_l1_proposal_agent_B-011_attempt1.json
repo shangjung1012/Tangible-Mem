@@ -1,0 +1,268 @@
+{
+  "sequence": 102,
+  "timestamp_utc": "2026-05-08T07:32:40Z",
+  "stage": "l1_proposal_agent_B-011",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "action_item",
+                  "approach_change",
+                  "argument",
+                  "decision",
+                  "finding",
+                  "open_issue",
+                  "proposal"
+                ]
+              },
+              "source_unit_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "content": {
+                "type": "string"
+              },
+              "importance": {
+                "type": "number"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "related_topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "legacy_type": {
+                "type": "string",
+                "enum": [
+                  "argument",
+                  "decision",
+                  "method_change",
+                  "open_question",
+                  "result",
+                  "todo"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source_unit_ids",
+              "content",
+              "importance",
+              "confidence",
+              "rationale",
+              "related_topics",
+              "legacy_type"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "candidates"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "candidates": {
+        "type": "array",
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "action_item",
+                "approach_change",
+                "argument",
+                "decision",
+                "finding",
+                "open_issue",
+                "proposal"
+              ]
+            },
+            "source_unit_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "content": {
+              "type": "string"
+            },
+            "importance": {
+              "type": "number"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "related_topics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "legacy_type": {
+              "type": "string",
+              "enum": [
+                "argument",
+                "decision",
+                "method_change",
+                "open_question",
+                "result",
+                "todo"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "source_unit_ids",
+            "content",
+            "importance",
+            "confidence",
+            "rationale",
+            "related_topics",
+            "legacy_type"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "candidates"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are l1_proposal_agent in a multi-agent long-term memory pipeline.\nYour operational type definition: suggested option, alternative, hypothesis, design, or plan that has not yet been adopted as a decision.\n\nRead only the bounded idea units below and propose only proposal candidates.\nDo not infer from outside this extraction scope.\nPrior context may help disambiguate references, but it is never evidence.\nEvery candidate must be supported by the bounded idea units below.\nThe same idea unit may support other memory types; do not suppress valid proposal objects for that reason.\nEvery candidate must set type exactly to proposal.\nEvery candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.\nNormally return 0-4 candidates. You may return up to 6 only\nwhen there are clearly distinct durable proposal memories. Return an empty list when\nthe batch has no durable proposal. Do not pad the response to fill the limit.\n\nOnly output durable long-term memory:\n- keep project-level decisions, method changes, concrete follow-ups, stable findings,\n  unresolved research questions, or decision-supporting arguments\n- do not restate each idea unit as a candidate\n- do not output local clarifications, filler, examples, or one-line observations\n- for argument, preserve only reasoning that explains a meaningful tradeoff or choice\n- for open_question, preserve only questions that remain unresolved after the supplied scope\n- for proposal, preserve only suggested options or hypotheses that are not yet adopted\n- for action_item, preserve only executable follow-ups with a clear expectation of work\n- for open_issue, preserve only unresolved issues that matter after this scope\n- use importance >= 0.90 only for project-level or future-steering items\n- use 0.50-0.70 for useful but local meeting-level context\nReturn JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.\n\nExtraction scope: B-011\nSegment IDs: S-0161-C04, S-0231-C01\nKnown related topics: Academia Sinica internship, Data fragmentation, Dataset selection, Membrane project, Membrane_project, Memory system, Memory system performance, Model execution parameters, Research methodology, STM-LTM integration, WhisperX, WhisperX configuration, alternative approaches, batch_size, data management, dataset, dataset acquisition, dataset selection, dataset_acquisition, development workflow, development_workflow, expense_reimbursement, experimental setup, folder structure, forgetting mechanism, implementation strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, memory architecture, memory model, memory retrieval, memory system implementation, memory system performance, model configuration, model_configuration, output quality, project goals, project narrative, research methodology, research_methodology, retrieval phase, short-term memory, speaker diarization, system architecture, temporal references, time tracking, working memory\n\nPrior cross-meeting context (for disambiguation only, never evidence):\n- Do not use these items as evidence for new L1 candidates.\n- Every new L1 candidate must cite only the current transcript / idea units.\n  [L1-0318-017] type=action_item quality=strong activity=active activation=0.86 reason=open_thread content=For the MEM 0 evaluation, performance was measured using an LLM-as-a-judge to provide a binary 'correct' or 'incorrect' assessment, avoiding issues with semantic similarity metrics. To ensure reliability, models were run 10 times for an average score, and the evaluation also tracked latency and token cost.\n  [L1-0318-018] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=A new research project on \"Sustainable AI\" will be initiated with Professor Wu Chun-Feng to measure GPT's energy consumption. The project will also explore a \"human angle\" for energy saving, such as developing a \"power-saving mode\" that allows users to select less powerful models for simpler tasks.\n  [L1-0307-009] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=The memory model operates sequentially: it processes a meeting transcript to generate summaries and action items, creating an initial memory. When a subsequent meeting discusses a topic from a previous one, the system updates the corresponding memory entry.\n  [L1-0307-021] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year). It will capture the overall research narrative, including structural changes, goals, major themes, and milestones, and will eventually need to be integrated with STM.\n  [L1-0307-029] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key challenge for the project is to establish a method for evaluating the memory-enhanced agent's performance to prove its necessity and superiority over a standard LLM.\n  [L1-0307-004] type=open_issue quality=normal activity=fading activation=0.42 reason=open_thread content=A suggestion for dynamic time tracking (e.g., updating \"this meeting\" to \"one week ago\") is infeasible with the current system design, which tracks items by `meeting ID` rather than relative time. This presents a design conflict, as updating an item changes its associated meeting ID (e.g., from 16 to 17), preventing stable relative time references.\n  [L1-0318-010] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=In the MEM 0 evaluation, the decision was made to compare performance against three baselines: feeding the full raw context to an LLM, using a RAG approach, and the benchmark results from the original LOCOMO paper.\n  [L1-0318-009] type=decision quality=strong activity=active activation=0.93 reason=recent_high_importance content=For performance evaluation in MEM 0, the project decided to use an LLM-as-a-judge to provide a binary 'correct' or 'incorrect' assessment, thereby avoiding issues with semantic similarity metrics that can rate factually wrong answers highly.\n  [L1-0307-014] type=open_issue quality=normal activity=fading activation=0.42 reason=open_thread content=The integration between the short-term memory (STM), which holds information from the last three sessions, and the long-term memory (LTM), designed for project-level history, has not yet been designed. A future architecture is envisioned where STM information is periodically processed and converted into the LTM structure.\n  [L1-0307-047] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=「Memory」系統的輸出被認為過於零碎和簡單，部分原因可能是系統在找不到關聯時未能記錄資訊。\n  [L1-0307-044] type=action_item quality=normal activity=dormant activation=0.15 reason=open_thread content=學生必須在3月15日之前提交中央研究院的實習申請。\n  [L1-0307-015] type=open_issue quality=normal activity=fading activation=0.42 reason=open_thread content=The 'retrieve' phase of the memory system has not been designed. While the system can currently update its memory after a meeting, the mechanism for using this stored information from both STM and LTM to decide what to say in a future meeting is an open design question.\n\n\n\n\n\nBounded idea units:\nU-S-0161-C04-SR-01 (212-214): An evaluation task could be to track \"dead topics\": identifying ideas that were explored in the project's history but were later abandoned. This is difficult because it requires finding the initial mention and then confirming its absence or an explicit decision to drop it in later meetings.\nU-S-0161-C04-SR-02 (215-216): A simple retrieval-augmented generation (RAG) approach is insufficient for tracking abandoned topics because it would find all related mentions across meetings, but it cannot understand the temporal sequence or identify a final decision to discontinue an idea.\nU-S-0161-C04-SR-03 (217-218): An alternative evaluation method, inspired by a Springer paper, is to verify if the system correctly identifies the final, jointly-agreed-upon decisions, distinguishing them from the scattered, preliminary discussions that led to them.\nU-S-0161-C04-SR-04 (220-223): Another evaluation approach for non-linear meetings involves checking if the system's summary covers all points from a predefined agenda. This method requires an expert-generated ground truth and is relevant for defining the structure of long-term summarization.\nU-S-0161-C04-SR-05 (224-225): As a next step, the team should redefine their memory architecture and review the \"Digital Me\" paper to understand its methods for determining relevancy.\nU-S-0161-C04-SR-06 (226-227): The \"Digital Me\" paper's evaluation method tests the factual correctness of the model's outputs regarding recent plans, self-introduction, and high-level opinions, likely using RAG over a person's entire history.\nU-S-0161-C04-SR-07 (228-230): A proposed method for evaluation is to use synthetic data. The team could create a fake history with a \"planted\" topic that is introduced and then abandoned, then test if the system correctly excludes this topic from a list of current to-dos, thereby reflecting the latest decision.\nU-S-0231-C01-SR-01 (231-234): An experiment involving approximately 40 API calls (described as running 'Ethereum' 13 times with ~3 runs each) cost about 75 units (rising from 14 to 91). This usage was identified as 37 API calls made the previous day.\nU-S-0231-C01-SR-02 (236-236): A potential issue was raised regarding Google Cloud account region restrictions, based on a past experience where a US-based account faced problems in Taiwan. A suggestion was made to test the lab's account to see if similar issues occur.\nU-S-0231-C01-SR-03 (237-238): The Google Cloud free trial provides $300 USD in credits after binding a credit card. It was noted that this could be misleading for Taiwanese users, as the UI is in Chinese but the amount is in USD, not TWD.\nU-S-0231-C01-SR-04 (239-240): There is a separate free credit of 9000 units (presumably TWD) that expires after a set period. There was uncertainty whether the period is 30 days or three months. This credit is used before the credit card is charged and resets to zero upon expiration.\nU-S-0231-C01-SR-05 (241-241): A question was raised whether the Google Cloud free credits apply to the Gemini API, or if Gemini API usage is billed separately from the general Google Cloud platform.\nU-S-0231-C01-SR-06 (242-247): It was clarified that AI Studio is not billed separately; its usage is integrated with and billed through a linked Google Cloud Project. The Google Cloud Project is the central entity for managing billing, and an API key from AI Studio is tied to a specific project's billing account.\nU-S-0231-C01-SR-07 (248-250): The team decided on a strategy to maximize free credits: they will first exhaust the current account's remaining 9000-unit free credit, which expires soon (around April 26th). Only after that will they activate a new free trial on another account to start a fresh 3-month credit period.",
+  "raw_response": "{\n  \"candidates\": [\n    {\n      \"type\": \"proposal\",\n      \"source_unit_ids\": [\n        \"U-S-0161-C04-SR-01\"\n      ],\n      \"content\": \"An evaluation task could be to track \\\"dead topics\\\" by identifying ideas that were explored in the project's history but were later abandoned. This would require the system to find the initial mention and then confirm its absence or an explicit decision to drop it.\",\n      \"importance\": 0.8,\n      \"confidence\": 1.0,\n      \"rationale\": \"This is a concrete proposal for a novel evaluation methodology for the memory system, addressing the challenge of tracking the evolution and abandonment of ideas over time.\",\n      \"related_topics\": [\n        \"research_methodology\",\n        \"memory_system_performance\",\n        \"long-term_memory\"\n      ],\n      \"legacy_type\": \"method_change\"\n    },\n    {\n      \"type\": \"proposal\",\n      \"source_unit_ids\": [\n        \"U-S-0161-C04-SR-03\"\n      ],\n      \"content\": \"An alternative evaluation method, inspired by a Springer paper, is to verify if the system correctly identifies the final, jointly-agreed-upon decisions, distinguishing them from the scattered, preliminary discussions that led to them.\",\n      \"importance\": 0.8,\n      \"confidence\": 1.0,\n      \"rationale\": \"This is a specific, proposed evaluation method focused on the system's ability to discern final decisions from the noise of discussion, which is a key capability for a long-term memory system.\",\n      \"related_topics\": [\n        \"research_methodology\",\n        \"memory_system_performance\",\n        \"decision\"\n      ],\n      \"legacy_type\": \"method_change\"\n    },\n    {\n      \"type\": \"proposal\",\n      \"source_unit_ids\": [\n        \"U-S-0161-C04-SR-04\"\n      ],\n      \"content\": \"For non-linear meetings, an evaluation approach could involve checking if the system's summary covers all points from a predefined agenda, a method that requires an expert-generated ground truth.\",\n      \"importance\": 0.75,\n      \"confidence\": 1.0,\n      \"rationale\": \"This proposes a structured evaluation method for summarization quality in the context of long-term memory, using an agenda as a ground-truth checklist.\",\n      \"related_topics\": [\n        \"research_methodology\",\n        \"memory_system_performance\",\n        \"long-term_memory\"\n      ],\n      \"legacy_type\": \"method_change\"\n    },\n    {\n      \"type\": \"proposal\",\n      \"source_unit_ids\": [\n        \"U-S-0161-C04-SR-05\"\n      ],\n      \"content\": \"As a next step, it is proposed that the team should redefine their memory architecture and review the \\\"Digital Me\\\" paper to understand its methods for determining relevancy.\",\n      \"importance\": 0.9,\n      \"confidence\": 1.0,\n      \"rationale\": \"This is a high-level strategic proposal outlining the immediate next steps for the project: a fundamental redesign of the memory architecture and a literature review of a key paper.\",\n      \"related_topics\": [\n        \"memory_architecture\",\n        \"system_architecture\",\n        \"research_methodology\",\n        \"literature_review\"\n      ],\n      \"legacy_type\": \"todo\"\n    },\n    {\n      \"type\": \"proposal\",\n      \"source_unit_ids\": [\n        \"U-S-0161-C04-SR-07\"\n      ],\n      \"content\": \"A proposed evaluation method is to use synthetic data by creating a fake history with a \\\"planted\\\" topic that is introduced and then abandoned, then testing if the system correctly excludes this topic from a list of current to-dos.\",\n      \"importance\": 0.8,\n      \"confidence\": 1.0,\n      \"rationale\": \"This proposes a specific and controllable evaluation methodology using synthetic data to test the system's ability to track the lifecycle of a topic, particularly its abandonment.\",\n      \"related_topics\": [\n        \"research_methodology\",\n        \"memory_system_performance\",\n        \"dataset\"\n      ],\n      \"legacy_type\": \"method_change\"\n    },\n    {\n      \"type\": \"proposal\",\n      \"source_unit_ids\": [\n        \"U-S-0231-C01-SR-02\"\n      ],\n      \"content\": \"It was suggested to test the lab's Google Cloud account to check for potential region-based restrictions, based on a past issue where a US-based account faced problems in Taiwan.\",\n      \"importance\": 0.5,\n      \"confidence\": 1.0,\n      \"rationale\": \"This is a concrete proposal for a test to mitigate a potential administrative or technical risk related to cloud service access.\",\n      \"related_topics\": [\n        \"lab_administration\",\n        \"model_configuration\"\n      ],\n      \"legacy_type\": \"todo\"\n    }\n  ]\n}",
+  "parsed_json": {
+    "candidates": [
+      {
+        "type": "proposal",
+        "source_unit_ids": [
+          "U-S-0161-C04-SR-01"
+        ],
+        "content": "An evaluation task could be to track \"dead topics\" by identifying ideas that were explored in the project's history but were later abandoned. This would require the system to find the initial mention and then confirm its absence or an explicit decision to drop it.",
+        "importance": 0.8,
+        "confidence": 1.0,
+        "rationale": "This is a concrete proposal for a novel evaluation methodology for the memory system, addressing the challenge of tracking the evolution and abandonment of ideas over time.",
+        "related_topics": [
+          "research_methodology",
+          "memory_system_performance",
+          "long-term_memory"
+        ],
+        "legacy_type": "method_change"
+      },
+      {
+        "type": "proposal",
+        "source_unit_ids": [
+          "U-S-0161-C04-SR-03"
+        ],
+        "content": "An alternative evaluation method, inspired by a Springer paper, is to verify if the system correctly identifies the final, jointly-agreed-upon decisions, distinguishing them from the scattered, preliminary discussions that led to them.",
+        "importance": 0.8,
+        "confidence": 1.0,
+        "rationale": "This is a specific, proposed evaluation method focused on the system's ability to discern final decisions from the noise of discussion, which is a key capability for a long-term memory system.",
+        "related_topics": [
+          "research_methodology",
+          "memory_system_performance",
+          "decision"
+        ],
+        "legacy_type": "method_change"
+      },
+      {
+        "type": "proposal",
+        "source_unit_ids": [
+          "U-S-0161-C04-SR-04"
+        ],
+        "content": "For non-linear meetings, an evaluation approach could involve checking if the system's summary covers all points from a predefined agenda, a method that requires an expert-generated ground truth.",
+        "importance": 0.75,
+        "confidence": 1.0,
+        "rationale": "This proposes a structured evaluation method for summarization quality in the context of long-term memory, using an agenda as a ground-truth checklist.",
+        "related_topics": [
+          "research_methodology",
+          "memory_system_performance",
+          "long-term_memory"
+        ],
+        "legacy_type": "method_change"
+      },
+      {
+        "type": "proposal",
+        "source_unit_ids": [
+          "U-S-0161-C04-SR-05"
+        ],
+        "content": "As a next step, it is proposed that the team should redefine their memory architecture and review the \"Digital Me\" paper to understand its methods for determining relevancy.",
+        "importance": 0.9,
+        "confidence": 1.0,
+        "rationale": "This is a high-level strategic proposal outlining the immediate next steps for the project: a fundamental redesign of the memory architecture and a literature review of a key paper.",
+        "related_topics": [
+          "memory_architecture",
+          "system_architecture",
+          "research_methodology",
+          "literature_review"
+        ],
+        "legacy_type": "todo"
+      },
+      {
+        "type": "proposal",
+        "source_unit_ids": [
+          "U-S-0161-C04-SR-07"
+        ],
+        "content": "A proposed evaluation method is to use synthetic data by creating a fake history with a \"planted\" topic that is introduced and then abandoned, then testing if the system correctly excludes this topic from a list of current to-dos.",
+        "importance": 0.8,
+        "confidence": 1.0,
+        "rationale": "This proposes a specific and controllable evaluation methodology using synthetic data to test the system's ability to track the lifecycle of a topic, particularly its abandonment.",
+        "related_topics": [
+          "research_methodology",
+          "memory_system_performance",
+          "dataset"
+        ],
+        "legacy_type": "method_change"
+      },
+      {
+        "type": "proposal",
+        "source_unit_ids": [
+          "U-S-0231-C01-SR-02"
+        ],
+        "content": "It was suggested to test the lab's Google Cloud account to check for potential region-based restrictions, based on a past issue where a US-based account faced problems in Taiwan.",
+        "importance": 0.5,
+        "confidence": 1.0,
+        "rationale": "This is a concrete proposal for a test to mitigate a potential administrative or technical risk related to cloud service access.",
+        "related_topics": [
+          "lab_administration",
+          "model_configuration"
+        ],
+        "legacy_type": "todo"
+      }
+    ]
+  },
+  "latency_sec": 30.093,
+  "success": true,
+  "error": null
+}

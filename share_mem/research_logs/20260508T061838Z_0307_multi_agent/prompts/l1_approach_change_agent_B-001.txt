@@ -1,0 +1,46 @@
+You are l1_approach_change_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: adopted change in method, process, architecture, retrieval strategy, schema, data handling, or evaluation approach.
+
+Read only the bounded idea units below and propose only approach_change candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid approach_change objects for that reason.
+Every candidate must set type exactly to approach_change.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable approach_change memories. Return an empty list when
+the batch has no durable approach_change. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-001
+Segment IDs: S-0001-01
+Known related topics: (none)
+
+Prior cross-meeting context: (none)
+Use only the current transcript as evidence for new L1 objects.
+
+
+
+
+
+Bounded idea units:
+U-S-0001-01-SR-01 (1-3): For experiments, the problem of speaker diarization in physical meetings can be simplified by assuming it's solved, similar to how online platforms (Zoom, Google Meet) automatically attach speech to the correct speaker, or by relying on a highly accurate model like WhisperX.
+U-S-0001-01-SR-02 (4-6): The memory model processes each meeting to generate a summary and a list of action items. When a topic from a previous meeting is discussed again, the system updates the corresponding memory entry.
+U-S-0001-01-SR-03 (7-11): The demonstration illustrates the memory update process: Meeting 16's transcript creates an initial memory from scratch. Meeting 17's transcript is then processed along with the existing memory from 16 to produce an updated version, adding new items and modifying existing ones.
+U-S-0001-01-SR-04 (12-18): When a topic is revisited in a subsequent meeting, its memory item is updated to reflect new developments. For example, an item that was a "TODO" in meeting 16 could be updated in meeting 17 with progress reports or new observations, and its associated meeting ID is also updated.
+U-S-0001-01-SR-05 (19-20): A suggestion was made to implement dynamic time tracking, where an item's temporal reference (e.g., "this meeting") would automatically update to "one week ago" in the following week's meeting. This would require updating all time-related references whenever a new meeting's memory is integrated.
+U-S-0001-01-SR-06 (21-22): The current system design has two key features: 1) It tracks items by `meeting ID` rather than relative time, making the suggested dynamic temporal updates infeasible. When an item is updated, its ID changes (e.g., from 16 to 17). 2) It includes a forgetting mechanism that deletes items not discussed within a predefined window (e.g., three meetings).

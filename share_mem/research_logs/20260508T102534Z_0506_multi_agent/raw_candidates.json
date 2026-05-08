@@ -1,0 +1,1375 @@
+[
+  {
+    "candidate_id": "C-B-001-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-06"
+    ],
+    "content": "A reconciliation step must be implemented to handle duplicate `Candidates` that are generated when a single `Idea Unit` is processed in parallel by multiple specialized agents.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The system design involves sending each Idea Unit to multiple specialized agents in parallel. This can result in multiple 'Candidates' (e.g., a decision and a to-do) being generated from the same source unit. The source text explicitly states that these duplicates \"must be reconciled in a later step\", indicating a required implementation task.",
+    "related_topics": [
+      "memory system architecture",
+      "development workflow",
+      "data handling",
+      "item tracking"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-001-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-05",
+      "U-S-0001-C01-SR-07"
+    ],
+    "content": "There is a major unresolved debate on the system's architecture, specifically whether to use a top-down approach (identifying Segments first, then Idea Units) or a more standard bottom-up approach (extracting Idea Units directly and then clustering them into themes).",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text explicitly states this is a 'major unresolved debate' (SR-05) regarding the core architecture. It contrasts the current top-down approach with a proposed bottom-up alternative (SR-07), indicating a fundamental, unresolved design choice.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory architecture",
+      "data handling",
+      "implementation strategy",
+      "research methodology"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-001-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-09"
+    ],
+    "content": "A key open question is what level of granularity—Idea Unit, Segment, or Batch—should be used for querying the memory store. This decision is fundamental to the memory retrieval process.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly identifies this as a 'key open question' that remains even after proposing a new data hierarchy. The choice of query granularity is a fundamental design decision for the memory retrieval system.",
+    "related_topics": [
+      "memory retrieval",
+      "memory system architecture",
+      "long-term memory architecture",
+      "long-term memory implementation"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-001-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-01"
+    ],
+    "content": "It is uncertain whether developing a complex, adaptive segmentation method is necessary, as a previous experiment failed and it's argued that LLMs can handle larger, less precise chunks, potentially making the added complexity unjustified.",
+    "importance": 0.75,
+    "confidence": 0.95,
+    "rationale": "The text describes a debate between pursuing a complex adaptive segmentation method versus relying on the LLM's ability to handle larger, simpler chunks. A past experiment failed, and the value of the complex approach is explicitly questioned, making this an unresolved design issue.",
+    "related_topics": [
+      "experimental setup",
+      "data handling",
+      "memory system architecture",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-001-open_issue-004",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-08",
+      "U-S-0001-C01-SR-09"
+    ],
+    "content": "There is significant confusion and debate over the definition of the term 'batch.' It has multiple conflicting definitions, including a repaired segment or a larger contextual unit, which hinders clear architectural understanding.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The text highlights that the term 'batch' is a 'source of confusion with multiple conflicting definitions being debated' (SR-08). Resolving this terminological ambiguity is crucial for coherent system design and team communication, as noted by the attempt to create a new hierarchy in SR-09.",
+    "related_topics": [
+      "memory system architecture",
+      "development workflow",
+      "data handling"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-05",
+      "U-S-0001-C01-SR-07"
+    ],
+    "content": "A bottom-up system architecture was proposed as an alternative to the current top-down (Segment-first) approach. This would involve first extracting all `Idea Units` directly from the transcript and then clustering them into themes or `Segments`.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This represents a fundamental alternative to the current system architecture (top-down vs. bottom-up), which is a major unresolved debate. It's a durable, high-level design proposal.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory architecture",
+      "implementation strategy",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-003",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-09"
+    ],
+    "content": "To resolve architectural confusion, a new data hierarchy was proposed: `Idea Unit` -> `Segment` -> `Batch`.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a concrete proposal to define the system's core data structure hierarchy, addressing a major point of confusion and debate. It's a key design suggestion.",
+    "related_topics": [
+      "memory system architecture",
+      "data handling",
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-01"
+    ],
+    "content": "A hypothetical adaptive segmentation method was proposed, which would use topic length prediction and a binary-search-like approach to define segment boundaries.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This is a specific, alternative technical approach for a core problem (segmentation) that was discussed. Even though it was countered, it represents a considered option.",
+    "related_topics": [
+      "memory system architecture",
+      "experimental setup",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-05",
+      "U-S-0001-C01-SR-07"
+    ],
+    "content": "系統架構應採用由下而上（bottom-up）的方法，即先直接抽取「Idea Units」，再將其聚類成「Segments」。這種方法被認為比當前由上而下（top-down）的方法更為標準，且能避免資訊遺漏，其代價是需要後續過濾掉無意義的單元。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This captures a core architectural debate, presenting a strong argument for an alternative system design (bottom-up vs. top-down). It's a high-level, future-steering point that explains the trade-offs of preventing information loss at the cost of needing a later filtering step.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory architecture",
+      "research methodology",
+      "alternative approaches",
+      "implementation strategy"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-01"
+    ],
+    "content": "複雜的自適應分段策略可能沒有必要，因為大型語言模型（LLM）能夠有效處理較大且邊界不那麼精確的文本塊，這使得為追求精確邊界預測而增加的複雜性變得不值得。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a durable argument justifying the choice of a simpler segmentation method (like a fixed window) over a more complex one by citing a key capability of LLMs. It represents a tradeoff between implementation complexity and model performance.",
+    "related_topics": [
+      "data handling",
+      "experimental setup",
+      "memory system architecture",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-05"
+    ],
+    "content": "使用固定的80行窗口大小進行文本分塊，其理由是為了減少大型語言模型在處理時產生「幻覺」（hallucinations）的風險。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This provides the specific justification for a key parameter (80-line window) in the current data processing pipeline, explaining the tradeoff between context size and model reliability.",
+    "related_topics": [
+      "data handling",
+      "experimental setup",
+      "model execution parameters",
+      "output quality"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-05",
+      "U-S-0001-C01-SR-07"
+    ],
+    "content": "系統架構存在一個根本性的爭論，即應採用「自頂向下」（先定義Segment，再提取Idea Unit）還是「自底向上」（先提取Idea Unit，再聚類成主題）的處理方法。後者被認為是更標準的做法，且能避免資訊遺漏。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "此發現捕捉了專案內部關於核心架構的衝突，這對於理解系統設計的演變至關重要，是一個穩定且高層次的觀察。",
+    "related_topics": [
+      "memory system architecture",
+      "research methodology",
+      "development workflow",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-03",
+      "U-S-0001-C01-SR-06",
+      "U-S-0001-C01-SR-08"
+    ],
+    "content": "當前的資料處理流程為：`Context Planner` 創建固定大小的文本塊，`Segment Agent` 從中識別主題（`Segments`），然後再提取觀點（`Idea Units`）。一個「拼接」機制負責處理跨塊分割的 segment。最後，提取出的 `Idea Units` 會被並行發送給多個專門的 agent 以生成記憶 `Candidates`。",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "這提供了對當前（儘管存在爭議）多階段數據處理架構的穩定、事實性的描述。這是關於系統現狀的一個發現。",
+    "related_topics": [
+      "memory system architecture",
+      "development workflow",
+      "data handling",
+      "implementation strategy"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-01"
+    ],
+    "content": "一項實驗結果顯示，由於邊界預測不精確，採用自適應窗口的文本切分策略，其表現劣於固定窗口策略。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "報告了一項比較兩種方法（自適應窗口與固定窗口）的具體實驗結果，這是一個持久的發現，可為未來的切分策略設計提供參考。",
+    "related_topics": [
+      "experimental setup",
+      "data handling",
+      "alternative approaches",
+      "memory system architecture"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-03",
+      "U-S-0001-C01-SR-04"
+    ],
+    "content": "資料處理流程中存在遺漏文本行的問題，這些被遺漏的行會透過後備機制（fallback mechanism）被標記為低品質單元。此問題被追溯為舊版系統中的提示詞（prompt）設計缺陷所致。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "識別了一個具體的數據品質問題（遺漏行）及其根本原因（過去版本的提示詞問題），這是關於系統過去性能的一個穩定發現。",
+    "related_topics": [
+      "data-quality finding",
+      "data handling",
+      "development workflow",
+      "output quality"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-03"
+    ],
+    "content": "The data processing pipeline employs a top-down approach. A `Context Planner` first creates fixed-size chunks (e.g., 80 lines). A `Segment Agent` then identifies topical `Segments` within these chunks, from which `Idea Units` (viewpoints) are finally extracted. This process includes a fallback mechanism that uses the raw text of any missed lines to ensure 100% transcript coverage, tagging these outputs as lower quality.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This describes the fundamental, multi-stage data handling architecture currently in use, moving from large fixed chunks down to semantic idea units. It's a core architectural decision.",
+    "related_topics": [
+      "data handling",
+      "memory system architecture",
+      "development workflow",
+      "dataset"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-06"
+    ],
+    "content": "The system architecture for memory extraction involves fanning out `Idea Units` in parallel to multiple specialized agents. Each agent is tasked with generating a specific type of memory `Candidate` (e.g., decisions, to-dos), with a reconciliation step planned for later to handle potential duplicates.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This describes the adopted 'fan-out' architectural pattern for generating memory candidates from idea units, a core part of the memory system's design.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory implementation",
+      "development workflow"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-08"
+    ],
+    "content": "A 'stitching' mechanism is used to reconstruct complete topical segments that are split by the boundaries of fixed-size processing windows. The system merges the incomplete parts from adjacent windows into a single, coherent unit before downstream processing.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This describes a specific, implemented solution to a problem inherent in using a fixed-windowing approach for data processing, ensuring topic continuity.",
+    "related_topics": [
+      "data handling",
+      "memory system architecture",
+      "data management"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C01-SR-04"
+    ],
+    "content": "A repair mechanism has been added to the data processing pipeline. It merges 'fallback' units, which are created from lines missed during initial processing, into adjacent, correctly identified idea units.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This describes a specific, implemented improvement to the data handling process, addressing a known issue with missed lines from a previous system version.",
+    "related_topics": [
+      "data handling",
+      "data management",
+      "development workflow"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-C01"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-03"
+    ],
+    "content": "The system's data is structured with `idea units` as the smallest component. These units are grouped into a `segment`, which corresponds to a portion of the transcript, and a `segment ID` maps to its associated set of `idea units`.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly defines the core data hierarchy (`segment` -> `idea unit`) that the entire system is built upon. This is a fundamental architectural decision.",
+    "related_topics": [
+      "memory system architecture",
+      "data handling",
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-07"
+    ],
+    "content": "An agent will classify `idea units` into one of six predefined types for memory updates: `Decision`, `To-Do`, `Method Change`, `Result`, `Argument`, and `Open Question`.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit establishes the fixed, six-category taxonomy used for classifying `idea units`, which is a core design decision for the memory system's structure and function.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory",
+      "implementation strategy"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-08",
+      "U-S-0001-03-09"
+    ],
+    "content": "The merging of `idea units` into L1 memory nodes is strictly confined to a single meeting. Within a meeting, subsequent similar units are merged into an existing node, but information is not merged across different meetings.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "These units define a critical rule for memory construction: aggregation of related ideas happens within a meeting's boundary but not between meetings. This is a key decision about the system's memory consolidation process.",
+    "related_topics": [
+      "memory system implementation",
+      "long-term memory architecture",
+      "data handling"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-03-01",
+      "U-S-0001-03-05"
+    ],
+    "content": "The development workflow includes a verification process where all prompts and results from each agent run are logged for provenance, and a UI is used to check the quality of `idea unit` segmentation.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "These units describe the decided-upon development and verification workflow, including logging and UI-based checks for ensuring data provenance and quality. This is a decision about the project's methodology and tooling.",
+    "related_topics": [
+      "development workflow",
+      "data handling",
+      "output quality"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-03-06"
+    ],
+    "content": "將逐字稿分割為`idea units`的品質是一個待解決的問題。這個過程的可靠性存疑，因為它可能受到agent提示詞的影響，且分割結果（例如，單行可能包含多個`idea units`，或一個`idea unit`橫跨多行）不穩定。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly raises the quality of `idea unit` segmentation as a \"concern,\" noting its dependency on the agent's prompt and the variability of its output. This is a foundational data quality issue.",
+    "related_topics": [
+      "data handling",
+      "data-quality finding",
+      "development workflow"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-03-07"
+    ],
+    "content": "目前用於分類`idea units`的六種記憶類型（`Decision`, `To-Do`, `Method Change`, `Result`, `Argument`, `Open Question`）被視為一個初步的起點，這意味著這套分類法是否足夠或最終定案仍在評估中。",
+    "importance": 0.75,
+    "confidence": 0.9,
+    "rationale": "The text describes the set of six predefined memory types as a \"starting point,\" which indicates that the taxonomy is not considered final and is open to future revision or expansion.",
+    "related_topics": [
+      "memory architecture",
+      "long-term memory architecture",
+      "research methodology"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-03-02"
+    ],
+    "content": "關於`idea unit`的標籤策略尚未確定，仍在討論是使用單一精確標籤，還是使用兩個獨立的標籤（一個用於`theme`，一個用於`to-do`等行動類型）以支援不同的搜索方法。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly states there is an \"unresolved discussion\" about whether to use a single label or two separate labels for `idea units`, which directly impacts how they can be searched and retrieved.",
+    "related_topics": [
+      "memory architecture",
+      "data handling",
+      "item tracking"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-03-07"
+    ],
+    "content": "It is proposed to use an initial set of six predefined types for classifying idea units: Decision, To-Do, Method Change, Result, Argument, and Open Question.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly defines a set of six classification types as a 'starting point' for memory updates, which constitutes a foundational proposal for the system's taxonomy.",
+    "related_topics": [
+      "memory_model",
+      "memory_system_architecture",
+      "implementation_strategy"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-03-02"
+    ],
+    "content": "To facilitate different search methods, it is proposed to use two separate labels for an idea unit: one for its 'theme' and another for its action type (e.g., 'to-do').",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly mentions an unresolved discussion about whether to use a single label or two separate labels for theme and action type to aid different search methods, presenting a clear, unadopted proposal.",
+    "related_topics": [
+      "memory_model",
+      "memory_retrieval",
+      "data_handling",
+      "item tracking"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-07"
+    ],
+    "content": "將「idea unit」分類為六種預定義類型（決策、待辦事項、方法變更、結果、論點、開放問題）的選擇，其理由是這是一個基於常見會議內容的起點。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The text justifies the selection of the six memory types by explaining they are a starting point derived from analyzing common meeting content.",
+    "related_topics": [
+      "memory model",
+      "memory system architecture",
+      "long-term memory"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-09",
+      "U-S-0001-03-08"
+    ],
+    "content": "為了維持會議之間的上下文隔離，將相似的「idea unit」合併到記憶節點的過程嚴格限制在單次會議內，不進行跨會議合併。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The text states a clear constraint on the memory creation process: information is not merged across meetings. This serves as a justification for how the system maintains contextual boundaries.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory implementation",
+      "data handling"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-03-02"
+    ],
+    "content": "為了方便不同的搜索方法，正在考慮為「idea unit」使用兩個獨立的標籤（例如「主題」和「行動類型」），而不是單一的精確標籤。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly discusses the tradeoff between using one or two labels for an idea unit, justifying the two-label approach by its benefit for different search methods.",
+    "related_topics": [
+      "memory model",
+      "data handling",
+      "memory retrieval"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-03-06"
+    ],
+    "content": "將文本分割為「idea unit」的品質是一個問題。一個「idea unit」可能跨越多個轉錄行，或者單一行可能包含多個「idea unit」。例如，一個17行的段落被分割成9個「idea unit」。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "該想法單元報告了核心數據處理步驟「idea unit」分割的品質問題，並用具體例子（17行分割成9個單元）說明了其可變性。",
+    "related_topics": [
+      "data-quality finding",
+      "data handling",
+      "development workflow"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-03-04"
+    ],
+    "content": "轉錄稿由Whisper生成，單一段落(segment)可包含多位發言者的文本。雖然目前數據僅顯示發言順序，但已知Whisper可提供時間戳。輸出中的換行通常表示語音中的停頓。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "該想法單元描述了輸入數據的特性，即Whisper生成的轉錄稿，包括發言者信息、時間戳的可能性以及換行的含義。",
+    "related_topics": [
+      "WhisperX",
+      "data handling",
+      "dataset"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-03-03"
+    ],
+    "content": "The data is structured with `idea units` as the smallest unit, which are grouped into `segments`. A `segment` corresponds to a portion of the transcript and is mapped via a `segment ID`.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit defines the core data schema for processing transcripts, establishing the relationship between transcripts, segments, and idea units. This is a foundational aspect of the data handling approach.",
+    "related_topics": [
+      "data handling",
+      "memory system architecture",
+      "data management"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-03-07"
+    ],
+    "content": "An agent classifies `idea units` into one of six predefined types for memory updates: `Decision`, `To-Do`, `Method Change`, `Result`, `Argument`, and `Open Question`. This set is the initial classification schema.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit specifies the exact, adopted classification schema used by agents to categorize idea units. This is a fundamental definition in the data handling and memory creation process.",
+    "related_topics": [
+      "memory system architecture",
+      "data handling",
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-03-08",
+      "U-S-0001-03-09"
+    ],
+    "content": "Within a single meeting, new `idea units` on the same topic are merged into an existing L1 memory node. This merging process is strictly confined to the scope of a single meeting and does not occur across different meetings.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "These units describe the adopted workflow for updating memory nodes, including the rule for merging similar idea units only within the scope of a single meeting. This is a key part of the memory system's implementation strategy.",
+    "related_topics": [
+      "long-term memory implementation",
+      "memory system implementation",
+      "data handling"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-03-05"
+    ],
+    "content": "A verification process is in place where all prompts and results from each agent run are logged for provenance, and a UI is used to check the quality of the `idea unit` segmentation.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit describes an adopted workflow for ensuring data provenance and quality control. It's a specific methodological choice for the development and evaluation process.",
+    "related_topics": [
+      "development workflow",
+      "data handling",
+      "output quality"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-03"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-01"
+    ],
+    "content": "The long-term memory system is architected with three hierarchical layers: L1 nodes representing individual idea units, L2 nodes summarizing contexts from a block of meetings, and L3 nodes providing a high-level summary of all contexts.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a foundational architectural decision defining the hierarchical structure of the long-term memory system.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "memory model"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-05",
+      "U-S-0001-04-SR-06"
+    ],
+    "content": "The system will incorporate a human-in-the-loop feature, enabling users to inspect the memory and manually adjust the 'importance' of idea units. The system will learn from these adjustments to personalize future importance predictions.",
+    "importance": 0.9,
+    "confidence": 0.9,
+    "rationale": "This decision establishes a key feature for user interaction and system personalization, allowing for manual overrides and adaptive learning of user preferences for information importance.",
+    "related_topics": [
+      "memory system",
+      "long-term memory",
+      "implementation strategy",
+      "forgetting mechanism"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-03"
+    ],
+    "content": "The 'importance' score for an idea unit is not a default value but is assigned by an LLM after the unit is selected as a memory node, based on criteria like its frequency of mention within a single meeting.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This defines the specific mechanism for how the 'importance' attribute of a memory node is calculated, which is a key part of the memory system's design.",
+    "related_topics": [
+      "long-term memory",
+      "memory system",
+      "memory model"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-02",
+      "U-S-0001-04-SR-12"
+    ],
+    "content": "The strategy for demonstrating the system is to use a dynamic visualization that shows the memory graph evolving as it processes meetings, which will also serve to showcase the human-in-the-loop inspection and tuning capabilities.",
+    "importance": 0.7,
+    "confidence": 0.8,
+    "rationale": "This defines the plan for demonstrating the system's capabilities, focusing on a dynamic visualization of the memory graph and human-in-the-loop features.",
+    "related_topics": [
+      "development workflow",
+      "project goals",
+      "memory system architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-05"
+    ],
+    "content": "Implement a human-in-the-loop mechanism that allows a user to inspect the memory and manually tune the 'importance' of idea units, overriding the initial LLM assessment.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-04-SR-05 explicitly proposes this as a feature to be built. It is a well-defined, executable task for adding user control and tuning to the memory system.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory implementation",
+      "forgetting mechanism"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-004",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-07"
+    ],
+    "content": "Implement the refined decay model where 'importance' is a static value representing significance at creation, while a separate 'activation' or 'recency' score handles the decay process.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-04-SR-07 explicitly proposes a refined model for memory decay. This represents a concrete action to implement a new core component of the memory system's architecture.",
+    "related_topics": [
+      "forgetting mechanism",
+      "long-term memory architecture",
+      "memory system architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-06"
+    ],
+    "content": "Implement a learning component for the system to personalize future importance predictions based on a user's manual adjustments to memory nodes.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-04-SR-06 describes a specific system capability to be developed as a direct extension of the human-in-the-loop feature. This is a clear, executable implementation task.",
+    "related_topics": [
+      "memory system architecture",
+      "long-term memory implementation",
+      "forgetting mechanism"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-02",
+      "U-S-0001-04-SR-12"
+    ],
+    "content": "Create a dynamic visualization to show how the memory graph (L1, L2, L3 nodes) is built and updated as new transcript data is processed, and to demonstrate the human-in-the-loop inspection capabilities.",
+    "importance": 0.8,
+    "confidence": 0.95,
+    "rationale": "U-S-0001-04-SR-02 states a key design goal is to create an inspectable system with dynamic visualization. U-S-0001-04-SR-12 reinforces this as a presentation strategy. This constitutes a concrete implementation task.",
+    "related_topics": [
+      "memory system architecture",
+      "development workflow",
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-08",
+      "U-S-0001-04-SR-09",
+      "U-S-0001-04-SR-10",
+      "U-S-0001-04-SR-11"
+    ],
+    "content": "A key architectural decision remains unresolved: whether to structure the long-term memory chronologically (where L2 nodes represent meetings) or thematically (where nodes for recurring topics are updated). The choice involves a trade-off between preserving a granular timeline versus creating a consolidated, evolving view of a topic, with the chronological approach noted as potentially inefficient for thematic queries.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "The idea units present two distinct architectural models (chronological vs. topic-based) and explicitly frame it as a 'key architectural trade-off', highlighting the pros and cons of each approach. This represents a major unresolved design choice.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "memory retrieval",
+      "memory_architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-07"
+    ],
+    "content": "The memory decay model is under discussion, with a proposal to separate a static 'importance' value (representing significance at creation) from a dynamic 'activation' or 'recency' score. This would allow user-boosted importance to slow decay and high initial importance to set a 'floor', preventing some memories from ever being forgotten, but this model has not been finalized.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The idea unit describes a 'refined decay model' that is 'proposed', indicating that the final mechanism for memory decay, forgetting, and the interplay between 'importance' and 'recency' is still an open design question.",
+    "related_topics": [
+      "forgetting mechanism",
+      "long-term memory",
+      "memory system",
+      "memory model"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-03",
+      "U-S-0001-04-SR-04"
+    ],
+    "content": "There is uncertainty regarding the implementation of the memory system, specifically how an LLM assigns an 'importance' score to an idea unit and how that score is used, including the function of a 'discard as L1' prompt.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea units explicitly state there is 'confusion and uncertainty' about the implementation details of the memory system, focusing on the assignment and use of the 'importance' score and a specific prompt instruction.",
+    "related_topics": [
+      "long-term memory implementation",
+      "memory system architecture",
+      "memory model"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-003",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-07"
+    ],
+    "content": "A refined decay model is proposed where 'importance' is a static value representing significance at creation, while a separate 'activation' or 'recency' score handles decay. A high initial importance could set a 'floor' to prevent the memory from ever decaying completely.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The source explicitly proposes a new model for memory decay, separating the concepts of static significance ('importance') from time-based relevance ('activation'/'recency').",
+    "related_topics": [
+      "forgetting mechanism",
+      "long-term memory architecture",
+      "memory system"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-004",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-08",
+      "U-S-0001-04-SR-10"
+    ],
+    "content": "One proposed memory architecture is chronological, where L2 nodes represent single meetings and L3 nodes summarize blocks of time. Node relationships are inferred during retrieval based on content and timestamps rather than being directly linked.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The source outlines a specific architectural proposal where memory is structured chronologically, preserving a granular timeline for an LLM to interpret during retrieval. This is presented as one of two main architectural options.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "memory retrieval"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-005",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-09",
+      "U-S-0001-04-SR-10"
+    ],
+    "content": "An alternative, topic-based architecture is proposed where memory is organized by semantic themes. Instead of creating new nodes for recurring topics, existing nodes are updated with new timestamps and details, creating a consolidated, evolving view of a topic.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The source presents a competing architectural proposal where memory is organized thematically, consolidating information about a topic into a single, evolving node rather than creating new nodes for each mention.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-06"
+    ],
+    "content": "The system can learn from a user's manual importance adjustments to personalize future importance predictions, recognizing the types of information that a specific user or agent deems important.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The source proposes that the system can learn from user adjustments to recognize what a specific user finds important, enabling personalization.",
+    "related_topics": [
+      "memory system",
+      "long-term memory",
+      "forgetting mechanism"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-05"
+    ],
+    "content": "A human-in-the-loop mechanism is proposed where a user can inspect the memory and manually tune the 'importance' of idea units, overriding the initial LLM assessment.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The source explicitly suggests a mechanism for user intervention to tune the importance of memories.",
+    "related_topics": [
+      "memory system",
+      "long-term memory",
+      "item tracking"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-006",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-02",
+      "U-S-0001-04-SR-12"
+    ],
+    "content": "It is proposed to create an inspectable system with a dynamic visualization to show the memory graph evolving over time and to demonstrate the human-in-the-loop tuning capabilities.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The source explicitly proposes creating a dynamic visualization to make the memory system inspectable and to demonstrate its features, such as the human-in-the-loop mechanism.",
+    "related_topics": [
+      "memory system",
+      "development workflow",
+      "project narrative"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-10",
+      "U-S-0001-04-SR-08",
+      "U-S-0001-04-SR-09"
+    ],
+    "content": "記憶體系結構存在一個關鍵權衡：時間序模型（為每次提及創建新節點）能保留供 LLM 解讀的精細時間線，而主題模型（更新現有節點）則能為單一主題創建一個整合、演進的視圖。",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "這些想法單元明確定義並對比了兩種基本的架構方法（基於時間與基於主題），呈現了在保留精細時間線和創建整合主題視圖之間的明確權衡。這是指導系統設計的核心論點。",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "alternative approaches",
+      "memory_architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-07"
+    ],
+    "content": "為了更精確地模擬記憶衰退，建議將「重要性」（importance）和「活躍度」（activation）分開。「重要性」應為一個靜態值，代表記憶創建時的內在意義，而「活躍度」或「新近度」（recency）則處理時間衰退。高重要性可以設定一個衰退下限，防止關鍵記憶完全消失。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "該想法單元提出了一個明確的論點，即通過分離靜態重要性和動態活躍度的概念來完善記憶衰退模型，並為這種設計選擇提供了理由，以更好地保存重要記憶。",
+    "related_topics": [
+      "forgetting mechanism",
+      "long-term memory",
+      "memory model",
+      "memory system architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-11"
+    ],
+    "content": "對於時間序模型的批評是，追蹤一個主題的歷史需要廣泛搜索所有底層單元及其父節點，這種方式效率低下，並非真正的主題式分層遍歷。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "這個想法單元針對基於時間的架構模型提出了一個具體而重要的論點，指出了其在主題查詢方面的低效率。這是考慮替代的基於主題模型的一個關鍵理由。",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "memory retrieval",
+      "memory_retrieval"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-10",
+      "U-S-0001-04-SR-08",
+      "U-S-0001-04-SR-09"
+    ],
+    "content": "記憶體架構存在一個關鍵權衡：時間序模型為每次提及創建新節點，保留了供LLM解讀的精細時間線；而主題模型則將新資訊更新到現有節點，形成對單一主題的整合、演進視圖。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This candidate captures a core architectural comparison between two competing memory organization models (time-based vs. topic-based). It's a durable finding because it defines a fundamental design choice and its implications, which will influence the system's implementation and retrieval capabilities.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-11"
+    ],
+    "content": "對時間序模型的一項關鍵批評是，追蹤一個主題的歷史需要對所有底層單元及其父節點進行廣泛搜索，這對於主題式查詢而言效率低下，並非真正的層級遍歷。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This candidate identifies a significant weakness or potential failure mode of the time-based memory architecture. It's a durable finding because it provides a concrete reason why this approach may be suboptimal for certain use cases (thematic queries), serving as critical evidence in the decision-making process.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system performance",
+      "memory retrieval"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-01"
+    ],
+    "content": "The long-term memory system is architected in three hierarchical layers: L1 nodes for individual idea units, L2 nodes summarizing contexts from a block of meetings, and L3 nodes providing a high-level summary of all contexts.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This describes the fundamental, three-tiered hierarchical structure of the long-term memory system, which is a core architectural decision.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "memory_architecture"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-07"
+    ],
+    "content": "The memory decay model is refined to separate a static 'importance' score (significance at creation) from a dynamic 'activation' or 'recency' score. A high initial importance can set a 'floor' to prevent a memory from decaying completely, and user-boosted importance can slow the decay rate.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This refines the memory decay model by decoupling static significance ('importance') from dynamic accessibility ('activation'), providing a more nuanced approach to forgetting.",
+    "related_topics": [
+      "forgetting mechanism",
+      "long-term memory",
+      "memory system"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-09",
+      "U-S-0001-04-SR-10"
+    ],
+    "content": "A topic-based memory architecture is proposed as an alternative to a purely chronological one. In this model, recurring topics update a single existing node with new timestamps and details, creating a consolidated, evolving view of that topic.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This describes a significant alternative architectural approach for organizing memory, shifting from a time-based structure to a semantic, topic-based one where nodes evolve over time.",
+    "related_topics": [
+      "long-term memory architecture",
+      "memory system architecture",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-04-SR-05",
+      "U-S-0001-04-SR-06"
+    ],
+    "content": "A human-in-the-loop mechanism will be implemented, allowing a user to inspect the memory and manually tune the 'importance' of idea units. The system will then learn from these adjustments to personalize future importance predictions.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "This introduces a significant change to the memory curation process by adding a manual override for importance scores and a learning component for personalization.",
+    "related_topics": [
+      "memory system",
+      "data handling",
+      "long-term memory"
+    ],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-04"
+    ],
+    "legacy_type": "method_change"
+  }
+]

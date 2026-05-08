@@ -1,0 +1,156 @@
+{
+  "sequence": 15,
+  "timestamp_utc": "2026-05-08T08:11:45Z",
+  "stage": "idea_units_S-0081-03",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "idea_units": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_start": {
+                "type": "integer"
+              },
+              "line_end": {
+                "type": "integer"
+              },
+              "text": {
+                "type": "string"
+              },
+              "completeness": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "partial",
+                  "incomplete",
+                  "uncertain"
+                ]
+              },
+              "uncertainty_note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line_start",
+              "line_end",
+              "text",
+              "completeness",
+              "uncertainty_note"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "idea_units"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "idea_units": {
+        "type": "array",
+        "maxItems": 12,
+        "items": {
+          "type": "object",
+          "properties": {
+            "line_start": {
+              "type": "integer"
+            },
+            "line_end": {
+              "type": "integer"
+            },
+            "text": {
+              "type": "string"
+            },
+            "completeness": {
+              "type": "string",
+              "enum": [
+                "complete",
+                "partial",
+                "incomplete",
+                "uncertain"
+              ]
+            },
+            "uncertainty_note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "line_start",
+            "line_end",
+            "text",
+            "completeness",
+            "uncertainty_note"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "idea_units"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are idea_unit_agent. Convert this segment into compact idea units.\nEach unit should express one checkable idea that downstream L1 agents can share.\nDo not classify memory types here. Return JSON only.\n\nNormally return 3-8 idea units. You may return up to 12\nonly when the segment contains many distinct durable claims.\nDo not split every sentence into a separate unit.\nPrefer durable, self-contained units that combine related details across several\nlines. Preserve questions, objections, counterexamples, method exploration,\nevaluation criteria, comparison rationale, and unresolved design discussions\nwhen they affect future project decisions or memory behavior.\nIgnore only true filler, acknowledgements, local wording clarifications, and\npurely social turns that do not affect the project state.\n\nUse completeness exactly as one of: complete, partial, incomplete, uncertain.\nCompleteness rubric:\n- complete: the unit is self-contained enough for downstream L1 extraction.\n- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.\n- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.\n- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.\nDo not use fallback or compacted; those are reserved for deterministic validators.\n\nSegment: S-0081-03\nTopic: Explanation of long-term and short-term memory object structures, including the L1-L3 hierarchy\n\nTranscript lines:\n103: [SPEAKER_02]: long term 的一個Outjet大概就是這樣像這樣，會有你的Type是什麼然後內容是什麼Evidence就是他從哪裡去找出這個然後還有一些Related Topics，就是讓他後面在Retrieve的時候關鍵字可能可以找到\n104: [SPEAKER_00]: 這些Evidence是他的內容嗎對\n105: [SPEAKER_02]: 就是原本逐字稿的內容\n106: [SPEAKER_00]: 然後 Content跟Evidence有差別嗎\n107: [SPEAKER_02]: Content 應該是已經總結過了，就是它已經它是根據那個 evidence 去總結出來比較精簡\n108: [SPEAKER_00]: 這個中英文都不會影響它的 performance 嗎?\n109: [SPEAKER_02]: 現在看起來是還好\n110: [SPEAKER_00]: 所以這個是 long term 的 memory，所以我可以透過 object id 去找到那個錄音檔里面那个段落是吗\n111: [SPEAKER_03]: 他会直接给吧看起来是他会直接直接放上去\n112: [SPEAKER_00]: 那 short term 的话呢\n113: [SPEAKER_03]: short term 是这样\n114: [SPEAKER_03]: 他現在長得就是其實是類似我用這個來看這是一樣的就是他只是把DB轉 json了而已，他現在長得就是這樣子他會有分meeting window就是他會就是有點類似總結最近的會議，然後action item才是就是那個item是什麼就是要記住的item是什麼\n115: [SPEAKER_03]: 這個ActionItem就是像這樣它就是一個一個Item一個一個Item它就沒有像 long term 一樣是樹狀的就是一個一個離散然後這個是這個是，我找一個例子\n116: [SPEAKER_00]: 你是說短期記憶裡面才會有action item 長期記憶不會有action item\n117: [SPEAKER_02]: 因為長期比較特別是它會往上總結成L2跟L3就是它會有月度總結跟整個大脈絡總結，然後你在找到L1 match的時候它會往上帶出L2跟L3\n118: [SPEAKER_02]: 理論上它就可以有脈絡的那個成分在這個裡面在這個過程中",
+  "raw_response": "{\n  \"idea_units\": [\n    {\n      \"line_start\": 103,\n      \"line_end\": 107,\n      \"text\": \"A long-term memory object includes fields for Type, Content, Evidence, and Related Topics. The 'Evidence' is the original transcript, while the 'Content' is a concise summary derived from that evidence. 'Related Topics' are used for keyword retrieval.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 108,\n      \"line_end\": 109,\n      \"text\": \"The use of mixed Chinese and English in the content does not currently appear to negatively affect the system's performance.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 110,\n      \"line_end\": 111,\n      \"text\": \"Instead of using an object ID to link back to a recording, the long-term memory object appears to store the evidence (transcript segment) directly within it.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 112,\n      \"line_end\": 114,\n      \"text\": \"A short-term memory object is structured with a 'meeting window' (a summary of recent meetings) and 'action item's, which are the specific items to be remembered.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 115,\n      \"line_end\": 116,\n      \"text\": \"Short-term memory 'ActionItem's are discrete, individual items, contrasting with the tree-like structure of long-term memory. This raised the question of whether action items are exclusive to short-term memory.\",\n      \"completeness\": \"partial\",\n      \"uncertainty_note\": \"This is a question that sets up the following explanation about the L1-L3 structure.\"\n    },\n    {\n      \"line_start\": 117,\n      \"line_end\": 118,\n      \"text\": \"Long-term memory has a hierarchical summarization structure: L1 items are summarized into L2 (e.g., monthly) and L3 (overall context) summaries. When an L1 item is matched during retrieval, its associated L2 and L3 summaries are also brought up to provide context.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    }\n  ]\n}",
+  "parsed_json": {
+    "idea_units": [
+      {
+        "line_start": 103,
+        "line_end": 107,
+        "text": "A long-term memory object includes fields for Type, Content, Evidence, and Related Topics. The 'Evidence' is the original transcript, while the 'Content' is a concise summary derived from that evidence. 'Related Topics' are used for keyword retrieval.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 108,
+        "line_end": 109,
+        "text": "The use of mixed Chinese and English in the content does not currently appear to negatively affect the system's performance.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 110,
+        "line_end": 111,
+        "text": "Instead of using an object ID to link back to a recording, the long-term memory object appears to store the evidence (transcript segment) directly within it.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 112,
+        "line_end": 114,
+        "text": "A short-term memory object is structured with a 'meeting window' (a summary of recent meetings) and 'action item's, which are the specific items to be remembered.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 115,
+        "line_end": 116,
+        "text": "Short-term memory 'ActionItem's are discrete, individual items, contrasting with the tree-like structure of long-term memory. This raised the question of whether action items are exclusive to short-term memory.",
+        "completeness": "partial",
+        "uncertainty_note": "This is a question that sets up the following explanation about the L1-L3 structure."
+      },
+      {
+        "line_start": 117,
+        "line_end": 118,
+        "text": "Long-term memory has a hierarchical summarization structure: L1 items are summarized into L2 (e.g., monthly) and L3 (overall context) summaries. When an L1 item is matched during retrieval, its associated L2 and L3 summaries are also brought up to provide context.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      }
+    ]
+  },
+  "latency_sec": 22.204,
+  "success": true,
+  "error": null
+}

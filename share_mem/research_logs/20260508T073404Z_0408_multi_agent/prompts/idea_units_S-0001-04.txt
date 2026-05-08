@@ -1,0 +1,49 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0001-04
+Topic: Debate on methods for processing transcripts into structured memory, including pre-processing and segmentation
+
+Transcript lines:
+44: [SPEAKER_00]: 這邊都是在講長期記憶。所以如果照剛剛講的，你們可以試著用圖畫給我看嗎？例如我們現在要建構它的長期記憶。假設現在有 week 1，最後透過某種處理出現五個題目、五個重點 idea。
+45: [SPEAKER_00]: 它最後 L1 的結構是什麼？L1 有一個錄音檔 transcription，對。那現在的處理是什麼？我們會先一樣讓 LLM 做這個地方。那我們怎麼 partition？這邊的 prompt 怎麼做？應該是下 prompt 叫它輸出 JSON。
+46: [SPEAKER_00]: 我真的在想，我們怎麼讓它找到 cluster、找到 idea unit？長期記憶彙整器。這邊我們是請它做嗎？好像不是，這是哪一支？
+47: [SPEAKER_02]: 這個應該是在前面那個，轉過一下吧。不對，這應該是轉成 UK 那個。我記得應該在 build tree。還是在別的地方？Skimmer。
+48: [SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。
+49: [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？
+50: [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。
+51: [SPEAKER_00]: 我們也不知道它是不是真的一句一句分析。因為我發現之前季敏在分析影片主持稿時，一開始直接丟進去，沒有任何 control。後來她改成自己先做 partition。
+52: [SPEAKER_00]: 也就是一個 sentence、一個 sentence 地切。因為那是教學影片，所以可能每一句話某方面都有重點。但我不知道 meeting 裡有沒有需要先做 pre-process，例如每一句話先做 label。
+53: [SPEAKER_00]: 我在想 meeting 這部分，是不是每一句都一定要找到一個 label？或者我剛剛問為什麼會有這些，是因為它概括了所有 meeting 會討論到的東西嗎？會不會有些東西不屬於決議、代辦、方法變更、實驗結果、發現、尚未解決的研究問題，或決策背後的論點推理？
+54: [SPEAKER_00]: 有可能，要看我們需要什麼。後面可以看什麼情況會漏掉，也就是哪些東西它沒有抓到。我問這個其實只是希望你們想好 argument 去說服別人。你可以說這個東西最後可能是一個 parameter，也許 user 可以自己加。因為我們的 context 是 research。
+55: [SPEAKER_00]: 我想要設定這個 agent 去 keep track of 這些重要的東西。那它可以變成一個 input，user 可以丟進去。也許某些時候可以加一個跟 career 有關的。佑貞之前看 MCA 時，除了研究方法之外，它也會講一些其他事情。你可以說我們現在先 assume。
+56: [SPEAKER_00]: 我 care 這幾類，想 track 這些東西。所以第一件事情是先從 meeting recording 裡只找這些東西。Outside of 這些 topic 的內容，目前沒有 track。這就是目前的 assumption 和限制。其實全部交給 LLM 也可能可以，但也可以分段，一段一段丟進去。Context 越少，產生的內容可能會越精準。
+57: [SPEAKER_00]: 因為季敏之前試過整個丟進去，後來發現標得非常不 OK。後來即使給它五類要標，它也標得非常不準，而且開始 hallucinate。
+58: [SPEAKER_00]: 它會說影片裡可能有某個東西，但那個東西其實根本不存在於 current description 裡。當然 model 越來越強後可能不會出現這些事，但仍可能有這樣的問題。假設每次 meeting 完後要處理 meeting record 來 update 記憶，我覺得可能需要一些前處理，不會是整個直接丟進去。季敏也試過類似方法。
+59: [SPEAKER_00]: 她會把一個很長的東西先請它切 idea unit，再請它下 label。Idea unit 的 segmentation，浩哲他們試過，現在有一個還不錯的 script。
+60: [SPEAKER_03]: 不好意思，我要去考試。
+61: [SPEAKER_00]: 你要去考試？好，趕快去。
+62: [SPEAKER_00]: 對，我們現在有一個滿好的 recipe，可以用那個 recipe 去切。不過它真的是切中文的，也是用 prompt 的設計去切。做法是先跟 language model 說什麼叫 idea units，後來再 tune 一些東西。那個 agent 是負責論壇上的 idea unit segmentation。
+63: [SPEAKER_00]: 他們那時候做得滿仔細。我覺得你們這邊現在可能還不用，但他們那邊有很仔細地比較用這個 prompt、這個 agent 跟那個 agent 去切割的差異。Segmentation 在 NLP 很早期時也會在意切得好不好這件事，也有一些標準化方法。
+64: [SPEAKER_00]: 可以去算切得好不好。但你們這邊我覺得可能只需要一個前處理，不用做到切得超準。你可以說，也許 instead of 整個丟進去，第一件事情是先切成比較小的單位。
+65: [SPEAKER_00]: 用句點切也可以，或者以每一個 turn 來切。這個人講的一段話算一個 turn，然後假設人在講話時，通常只會在講一件事，或最可能是在講某一件事。當然也可能一句話其實包含兩件事。
+66: [SPEAKER_00]: 但你可以先假設一個 idea unit 只有一個 type，或者一個 idea unit 可以有兩個 type。像我現在講的這些算哪一個？我們剛剛講的那些算哪一個？現在講的感覺像 open question，因為這是我們還沒有解決、研究上仍在討論的問題。它會算是代辦嗎？

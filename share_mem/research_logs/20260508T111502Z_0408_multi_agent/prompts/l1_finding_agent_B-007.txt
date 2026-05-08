@@ -1,0 +1,65 @@
+You are l1_finding_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: stable observation, experiment result, comparison, failure mode, literature finding, data-quality finding, or evidence report.
+
+Read only the bounded idea units below and propose only finding candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid finding objects for that reason.
+Every candidate must set type exactly to finding.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable finding memories. Return an empty list when
+the batch has no durable finding. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- preserve requirement/scope clarifications when they resolve or constrain system behavior
+  (for example whether a demo must be real-time); use finding/decision for resolved
+  clarifications and open_issue only when the requirement still remains unresolved
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-007
+Segment IDs: S-0081-C03
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset acquisition, Dataset selection, Experimental setup, Forgetting mechanism, Long-term memory, Membrane project, Membrane_project, Memory system, Memory system architecture, Memory system performance, Model execution parameters, RAG, Research methodology, STM-LTM integration, STM-LTM_integration, Short-term memory, WhisperX, WhisperX configuration, action_item, alternative approaches, alternative_approaches, batch_size, data handling, data management, data-quality finding, data_handling, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, forgetting_mechanism, implementation strategy, implementation_strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory implementation, long-term memory_architecture, long-term_memory, long-term_memory_architecture, long-term_memory_implementation, memory architecture, memory model, memory retrieval, memory system, memory system architecture, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system, memory_system_architecture, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, model_execution_parameters, output quality, output_quality, project goals, project narrative, project_goals, real-time, research methodology
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0429-051] type=action_item quality=strong activity=active activation=0.76 reason=open_thread content=An ablation study is planned to justify combining short-term and long-term memory, which will compare a baseline (RAG only), short-term only, long-term only, and the full system.
+  [L1-0429-036] type=action_item quality=strong activity=active activation=0.76 reason=open_thread content=An evaluation of the proposed "dynamic chunking" method should be conducted by comparing it against fixed-chunk and turn-by-turn baselines. The evaluation will analyze trade-offs using metrics such as the number of LLM requests (cost), output quality, and formal precision/recall against a human-annotated set of important idea units.
+  [L1-0429-087] type=action_item quality=normal activity=active activation=0.76 reason=open_thread content=The team agreed to conduct an experiment comparing a dynamic transcript chunking method against two baselines: a fixed-size chunking method (e.g., 3 or 5 turns) and an iterative, per-turn summary method.
+  [L1-0429-024] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=Experiments on transcript processing trade-offs (fixed-cut vs. iterative merge) will be postponed until after May 12th due to a report deadline. For now, the team will proceed by assuming the current implementation is effective without formal proof.
+  [L1-0422-049] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The memory system's forgetting mechanism is designed so that memory retrieval is based on current relevancy during an interaction, and importance is updated post-interaction. An old topic, if revisited, will have its importance boosted. Memories with a high enough importance score will never fade out.
+  [L1-0429-023] type=action_item quality=normal activity=active activation=0.76 reason=open_thread content=An ablation study is planned to validate the memory system's architecture. The study will compare four configurations: a RAG-only baseline, a short-term memory only system, a long-term memory only system, and the full system. In all test cases, the working memory component will remain active to simulate an ongoing conversation.
+  [L1-0429-134] type=action_item quality=normal activity=active activation=0.76 reason=open_thread content=Implement a manager-agent architecture where a central manager delegates tasks to specialized, swappable agents. An initial agent to develop is one that determines if a text segment is a complete idea unit, needs splitting, or is incomplete.
+  [L1-0429-020] type=approach_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system's data handling approach differs from a standard RAG baseline by first structuring the transcript into 'idea units'. On top of these units, the system generates higher-level conclusions for broader context and incorporates a detailed short-term memory component to track recent conversational activities.
+  [L1-0429-052] type=open_issue quality=normal activity=active activation=0.90 reason=open_thread content=The current dataset of 180 minutes from 5 meetings is considered potentially insufficient and of poor quality for LLM experiments, raising the need to define data sufficiency in standard terms (like tokens) and explore augmentation strategies.
+  [L1-0422-037] type=action_item quality=normal activity=fading activation=0.53 reason=open_thread content=To handle the evolution of information, the long-term memory system incorporates timelines. During retrieval, this allows an LLM to see when points were made, identify if they were later overturned, and determine which version is current.
+  [L1-0422-024] type=action_item quality=normal activity=fading activation=0.53 reason=open_thread content=To demonstrate the value of the structured memory approach, an evaluation should be conducted comparing the overall system's performance (using its structured STM/LTM) against a standard RAG system that ingests the entire raw transcript.
+  [L1-0429-021] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=In the planned ablation study, the working memory component will be a constant, always active across all tested configurations to simulate an ongoing conversation.
+
+
+
+
+
+Bounded idea units:
+U-S-0081-C03-01 (116-119): A simple model for memory consolidation is proposed using a frequency threshold: a topic moves from short-term to long-term memory after being mentioned a certain number of times (e.g., 3 times). A potential issue is that this could cause too many items to enter long-term memory.
+U-S-0081-C03-02 (119-120): To manage memory clutter, a "forgot" or "trash can" area was proposed. This area would hold items that are not actively used but can be consciously retrieved if needed, preventing them from cluttering the main memory.
+U-S-0081-C03-03 (121-124): There is an unresolved design question about whether short-term memory (STM) should handle recent queries (e.g., "what was discussed last time?") or if it should accumulate information until it's strong enough (high discussion density) to become long-term memory (LTM), even if not discussed for a while.
+U-S-0081-C03-04 (125-128): The current system's short-term and long-term memories update themselves independently, and the mechanism for information to transition from short-term to long-term is not yet defined. This can result in content being duplicated across both memory stores.
+U-S-0081-C03-05 (129-129): A theoretical principle for the memory system is that items in long-term memory should also be present in short-term memory, but not all short-term items will exist in long-term memory.
+U-S-0081-C03-06 (129-129): A key future task is to prove the value of the long-term memory architecture by comparing system performance with and without it. This first requires formally defining the architecture, including the update rules and relationships between memory stores.
+U-S-0081-C03-08 (130-132): A proposed method is to use a model (like Gemini) with function calling to decide how to update memory. The function's parameters could include a time range, allowing the model to "re-read" specific parts of a transcript before acting.
+U-S-0081-C03-07 (130-134): For future implementation, meeting transcriptions should be pre-processed into fine-grained units like sentences or ideas, rather than being ingested whole, to enable more precise memory updates.
+U-S-0081-C03-09 (133-134): With sentence-level processing, the system could detect when a topic is being revisited. By checking long-term memory for an item with high importance but low recency, it could pull the relevant historical context into short-term memory.

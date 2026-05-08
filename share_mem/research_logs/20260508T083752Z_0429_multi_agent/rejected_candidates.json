@@ -1,0 +1,164 @@
+[
+  {
+    "candidate_id": "C-B-012-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0161-03-SR-02",
+      "U-S-0161-03-SR-03",
+      "U-S-0161-03-SR-04",
+      "U-S-0161-03-SR-05"
+    ],
+    "content": "關於短期記憶體讀取文本的方式存在一個設計權衡。讓大型語言模型（LLM）自行決定讀取範圍（起始行和結束行）可以賦予其根據上下文需求調整讀取量的靈活性，但這也可能導致如讀取區塊重疊等不可預測的行為。另一種方法是由系統代碼控制讀取參數，以確保過程的可預測性。",
+    "importance": 0.6,
+    "confidence": 0.9,
+    "rationale": "The idea units explicitly describe a design discussion (SR-04) about a tradeoff. The argument for LLM control is flexibility in deciding context size (SR-04, SR-05), while the argument against it is the resulting unpredictable behavior, such as overlapping reads (SR-02). The alternative, system-controlled reads, offers predictability.",
+    "related_topics": [
+      "short-term memory",
+      "memory system implementation",
+      "model execution parameters",
+      "system architecture"
+    ],
+    "extraction_scope": "B-012",
+    "segment_ids": [
+      "S-0161-03"
+    ],
+    "evidence_lines": [
+      188,
+      189,
+      190,
+      191,
+      192,
+      193,
+      194,
+      195,
+      196
+    ],
+    "evidence_quote": "[SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_00]: 呃，這是好問題，我看一下，看別的。呃。 [SPEAKER_00]: 可能是看它，因為我的 prompt 看來只有剛剛那一次是這個部分。 [SPEAKER_02]: 你說這個 function call，你是用 prompt 去產生的嗎？你不是自己用 code 去產生的嗎？就你...",
+    "support_score": 0.165,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.073, 'content_token_coverage': 0.194, 'evidence_token_coverage': 0.104, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The investigation is just beginning and the initial hypothesis is not the final conclusion.",
+      "The discussion was unresolved, with one side advocating for programmatic control and the other for letting the LLM decide."
+    ],
+    "legacy_type": "argument",
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-012-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0161-03-SR-02",
+      "U-S-0161-03-SR-03",
+      "U-S-0161-03-SR-05"
+    ],
+    "content": "在短期記憶處理流程中，發現讀取文本區塊時會發生重疊（例如，先讀取1-40行，再讀取31-80行）。其根本原因已查明：系統讓大型語言模型（Gemini）自行決定讀取的起訖行數，而非由程式碼寫死。目前的提示詞允許模型每次讀取40至80行，這種靈活性導致了不可預測的重疊行為。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a durable finding identifying a specific failure mode (overlapping reads) and its root cause (LLM-controlled read parameters). This information is crucial for debugging and future design decisions regarding the memory system's data ingestion process.",
+    "related_topics": [
+      "short-term memory",
+      "memory system implementation",
+      "data handling",
+      "model execution parameters",
+      "data-quality finding"
+    ],
+    "extraction_scope": "B-012",
+    "segment_ids": [
+      "S-0161-03"
+    ],
+    "evidence_lines": [
+      188,
+      189,
+      190,
+      191,
+      192,
+      196
+    ],
+    "evidence_quote": "[SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_00]: 呃，這是好問題，我看一下，看別的。呃。 [SPEAKER_00]: 可能是看它，因為我的 prompt 看來只有剛剛那一次是這個部分。 [SPEAKER_02]: 你說這個 function call，你是用 prompt 去產生的嗎？你不是自己用 code 去產生的嗎？就你...",
+    "support_score": 0.177,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.083, 'content_token_coverage': 0.208, 'evidence_token_coverage': 0.122, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The investigation is just beginning and the initial hypothesis is not the final conclusion."
+    ],
+    "legacy_type": "result",
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  },
+  {
+    "candidate_id": "C-B-023-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0401-02-SR-07",
+      "U-S-0401-02-SR-08",
+      "U-S-0401-02-SR-09",
+      "U-S-0401-02-SR-11"
+    ],
+    "content": "關於記憶更新的機制存在一個懸而未決的爭論和不明確之處。目前尚不清楚`writeMemory`函數如何處理一個文本塊，以智能地選擇僅相關的資訊來更新特定的記憶節點，從而防止同一文本塊中不相關的想法造成「交叉污染」。這個過濾和更新過程的具體實現細節需要被定義並達成共識。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "提供的文本明確指出，對於`writeMemory`函數如何從文本塊中智能選擇相關資訊以更新記憶節點而不造成污染，存在「懸而未決的爭論」(SR-08) 和「不清晰」(SR-11)。為了解決這個問題，還提出了一個行動項目，要求提供一個有說服力的解釋 (SR-09)，這證實了該問題是開放的且需要解決。",
+    "related_topics": [
+      "memory system implementation",
+      "long-term memory architecture",
+      "data handling",
+      "development workflow"
+    ],
+    "extraction_scope": "B-023",
+    "segment_ids": [
+      "S-0401-02"
+    ],
+    "evidence_lines": [
+      445,
+      446,
+      447,
+      448,
+      449,
+      450,
+      451,
+      452,
+      453,
+      454,
+      455,
+      456,
+      457,
+      459
+    ],
+    "evidence_quote": "[SPEAKER_02]: 它其實C其實它跟M1其實是沒有關係的可是因為它現在在同樣的Window裡面它沒有被切開它A加C一起去updateM1A加C一起去updateM1是指就我們來覺得A加C要一起去updateM1嗎它沒有覺得啊你不是就是給它這個這個A加C這個段落嗎你沒有叫它切啊就是A加C我去updateM1啊 [SPEAKER_00]: 但是Gemini今天在write的時候他就會去write出A的部分要寫到M1去啊你說他自己會切出C不對不是要update嗎 [SPEAKER_00]: 因為他呃就是他write Memory的參數不是那不是ABC一起丟進去的 [SPEAKER_02]: 所以他的參數是怎麼產生的是由Gemini產生的他Gemini你給他什麼prompt讓他產生的就是他呃 [SPEAKER...",
+    "support_score": 0.149,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.056, 'content_token_coverage': 0.176, 'evidence_token_coverage': 0.077, 'span_inclusion': 0.0}; source_unit_completeness=['complete', 'incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "complete",
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The discussion highlights a disagreement on the internal logic of the `write` function, which remains unresolved in this segment."
+    ],
+    "legacy_type": "open_question",
+    "unit_quality_warnings": [
+      "uncertain_source_unit",
+      "source_unit_uncertainty_note"
+    ],
+    "verification_reasons": [
+      "weak_grounding"
+    ]
+  }
+]

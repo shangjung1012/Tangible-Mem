@@ -1,0 +1,36 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0321-02
+Topic: Advantages of Agent-based Architecture for Testing and Debugging
+
+Transcript lines:
+338: [SPEAKER_00]: 其實現在的流程他可以改成就是一樣是一個 manager但其實每次tool calling的時候其實除了tool之外他可以附帶 prompt
+339: [SPEAKER_00]: 就是它除了tool calling 的output之外它可以附帶Prompt所以其實我知道分層的agent可能有一定的好處但是我的意思是說現在這個東西它其實有點像是Manager那你回來之後我可以把我目前的output配上Prompt再一起發回給這個Manager這個Manager其實也可以像是你剛剛說的那個agent嗯
+340: [SPEAKER_02]: 就是比如說他最後也會是一個自動化的流程就是就算你區分很多個agent的話最後他還會是一個還是會是一個只是說你每個agent都可以去各自的去tune各自也去測試但各自測試的好處只在於消耗的token會比較少也不是啊就是說我可以比較去知道說每一個agent如果我改了一下之後他的output會長什麼樣子
+341: [SPEAKER_02]: 然後還有另外一個事情是因為以現在的話我們每一次做完的時候它都是1要跑到10嘛所以中間它每一個factor它中間的各種的effect它都是疊加在一起的譬如說我第一次的line切在哪裡它會影響到我後面去怎麼切idea unit會影響到我怎麼決定我要怎麼樣要不要update我的memory等等你一次跑完下去之後它是所有步驟都做完了
+342: [SPEAKER_02]: 對 那今天如果說其實問題是idea units切的不好或是idea units判斷completed這件事情有問題的話那它一次都是每一個它都是接著去把它做完所以你其實你也不太知道說到底問題在哪個地方
+343: [SPEAKER_00]: 但如果有辦法輸出他完整的call哪一個流程是不是就可以就是他為什麼會call這個然後他call了什麼然後結果出來給他是什麼理論上是不是也可以知道他在做的東西是什麼
+344: [SPEAKER_02]: 嗯?什麼意思?你說有agent的話嗎?
+345: [SPEAKER_00]: 是tool calling的部分就是如果我們tool calling能把它每一次呼叫的tool然後跟為什麼呼叫這個tool的原因都列出來的話理論上也可以知道它會怎麼處理因為我覺得tool calling其實也算是因為它可以一次call很多個function所以它變成說它是
+346: [SPEAKER_00]: 把很多的很多的需求然後一次送給Gemini可是那個Gemini也是會分別把這個需求的結果回傳給你所以他也算是很多個agent只是他是每一次一次來回的形式這樣剛剛說的那個問題現在是步驟嘛其實你每個步驟的pront也可以去改啊就是他今天不是不能改他今天改的方式只是有點像是你每次的結果出來之後你可以根據他的就是像剛剛的嘛你可以根據那個log因為log你一定可以看出他讀了幾行
+347: [SPEAKER_00]: 跟他讀了幾行回去的時候他卻返回說他今天想要再讀那一行所以他每個步驟的prompt是分開的他今天的prompt不是合在一起就他雖然是合在一起但是他每個步驟的單獨的該做的事情他都是分開說的嗯總之我的意見就是把重要的東西把它分成agent去處理

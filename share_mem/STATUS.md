@@ -9,6 +9,8 @@ new `long_term` L2/L3 retrieval and `short_term` context loading.
 
 - `share_mem/` is the canonical raw L1 evidence store for Grace work.
 - `share_mem/tree.json` is the canonical aggregate L1 store.
+- The current canonical Grace run uses v2 memory roles in `type` and keeps the
+  old taxonomy in `legacy_type` for compatibility, diffing, and rollback checks.
 - `share_mem/meetings/<meeting_id>.json` stores one immutable L1 meeting payload
   per meeting.
 - `share_mem/l1_index.json` maps `obj_id` to meeting, type, content, evidence,
@@ -28,7 +30,7 @@ These interfaces are intended to stay structurally stable:
   - `meeting_id`, `meeting_date`, `source_file`
   - `memory_objects[]`
   - `obj_id`, `type`, `content`, `evidence`, `importance`, `related_topics`
-  - v2 experiment outputs may also include `legacy_type`.
+  - `legacy_type` is present in the current Grace v2 canonical output.
 - `meetings/<meeting_id>.json`
   - Same meeting payload shape as an item in `tree.json`.
 - `l1_index.json`
@@ -67,6 +69,14 @@ force a core JSON format break:
 - `current_state` and `timeline_digest` wording in topic-tree nodes.
 - Validator thresholds for large topics and expected concept links.
 
+Current generated state:
+
+- Grace meetings: 7 (`0307`, `0318`, `0325`, `0408`, `0422`, `0429`, `0506`).
+- L1 objects: 545.
+- Topic-tree sidecar: exists, with 54 topics and 545 topic events.
+- Topic validation: 0 severe issues; current warnings are large-topic review
+  diagnostics, not schema blockers.
+
 These files should be treated as generated outputs:
 
 - `share_mem/tree.json`
@@ -95,11 +105,9 @@ These files should be treated as generated outputs:
 
 Current known quality work:
 
-- Prevent type-like labels such as `design decision` from becoming topics.
-- Normalize aliases such as `data_fragmentation` and `data fragmentation`.
-- Keep memory processing architecture discussions under
-  `memory / memory processing architecture`.
-- Review large topics for accidental over-merging.
+- Continue reviewing large topics for accidental over-merging.
+- Continue checking prompt/content quality when new transcripts are added.
+- Do not treat topic labels or topic paths as final ontology names yet.
 
 ## Useful Commands
 

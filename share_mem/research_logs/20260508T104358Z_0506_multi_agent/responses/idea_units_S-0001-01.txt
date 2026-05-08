@@ -1,0 +1,81 @@
+{
+  "idea_units": [
+    {
+      "line_start": 1,
+      "line_end": 1,
+      "text": "An initial experiment using an \"adaptive window\" for segmentation performed poorly, resulting in more rejected and fewer verified outputs, indicating lower confidence. The failure was attributed to the difficulty of precisely predicting the exact boundary line, which led to more random boundary handling issues. The code for this experiment has been overwritten.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 2,
+      "line_end": 2,
+      "text": "To properly evaluate segmentation performance, one should use a ground truth dataset with pre-labeled breakpoints. This allows for the calculation of precision/recall for different methods, such as fixed-size windows (e.g., every 3 sentences) or adaptive approaches.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 2,
+      "line_end": 2,
+      "text": "A hypothetical adaptive method was proposed where the model predicts if a topic will be a \"short\" or \"extensive\" discussion, rather than predicting an exact line count. This binary classification might be more robust.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This is a proposed idea for an adaptive method, but it's not clear if it was adopted or explored further."
+    },
+    {
+      "line_start": 3,
+      "line_end": 3,
+      "text": "A counterargument was made against adaptive segmentation: if it's not perfectly precise, it's ineffective because boundary adjustments are still required, nullifying the benefit over a simpler fixed-window approach.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 4,
+      "line_end": 4,
+      "text": "A dynamic segmentation method using a binary search-like adjustment was proposed. It would make a large jump for a \"long\" topic, and if it overshoots, it would bisect the interval to efficiently find the correct boundary.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This is a detailed hypothetical method being explored during the conversation."
+    },
+    {
+      "line_start": 7,
+      "line_end": 10,
+      "text": "The current system architecture involves a `context planner` that reads a fixed-size window (e.g., 80 lines) of the transcript. This chunk is passed to a `segment agent` that identifies semantic `segments` (topics), from which `idea units` (specific points) are then extracted.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 7,
+      "line_end": 11,
+      "text": "The system handles boundary conditions by marking segments that cross the 80-line window as incomplete for later merging. Additionally, any transcript lines missed during idea unit extraction are automatically added back as raw-text idea units with a lower quality tag to ensure full coverage.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 15,
+      "line_end": 18,
+      "text": "There is active confusion and debate about the conceptual and practical distinction between a `segment` and an `idea unit`. A key question is why pre-slicing into segments is necessary before extracting idea units, and how an LLM would differentiate the two tasks.",
+      "completeness": "incomplete",
+      "uncertainty_note": "The team is actively debating the definition and necessity of the 'segment' vs. 'idea unit' distinction, and no firm conclusion is reached in this segment."
+    },
+    {
+      "line_start": 19,
+      "line_end": 19,
+      "text": "An alternative, bottom-up approach to segmentation was suggested, aligning with qualitative coding methods. This would involve extracting `idea units` first, and then grouping adjacent units that share a common `theme` to form segments.",
+      "completeness": "uncertain",
+      "uncertainty_note": "This is a proposal for an alternative, bottom-up architecture, contrasting with the current top-down implementation."
+    },
+    {
+      "line_start": 15,
+      "line_end": 19,
+      "text": "The rationale for using a fixed 80-line window is primarily for easier verification and debugging, as it allows the team to know precisely which part of the transcript is being processed.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    },
+    {
+      "line_start": 15,
+      "line_end": 15,
+      "text": "A suggestion was made to prepare a slide deck with all the important prompts used in the project. This would serve as a reference, especially for explaining the methodology (e.g., how idea units are defined and segmented) to others.",
+      "completeness": "complete",
+      "uncertainty_note": ""
+    }
+  ]
+}

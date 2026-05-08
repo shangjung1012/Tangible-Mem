@@ -1,0 +1,163 @@
+{
+  "sequence": 20,
+  "timestamp_utc": "2026-05-08T08:47:03Z",
+  "stage": "idea_units_S-0070-C02",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "idea_units": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_start": {
+                "type": "integer"
+              },
+              "line_end": {
+                "type": "integer"
+              },
+              "text": {
+                "type": "string"
+              },
+              "completeness": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "partial",
+                  "incomplete",
+                  "uncertain"
+                ]
+              },
+              "uncertainty_note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line_start",
+              "line_end",
+              "text",
+              "completeness",
+              "uncertainty_note"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "idea_units"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "idea_units": {
+        "type": "array",
+        "maxItems": 12,
+        "items": {
+          "type": "object",
+          "properties": {
+            "line_start": {
+              "type": "integer"
+            },
+            "line_end": {
+              "type": "integer"
+            },
+            "text": {
+              "type": "string"
+            },
+            "completeness": {
+              "type": "string",
+              "enum": [
+                "complete",
+                "partial",
+                "incomplete",
+                "uncertain"
+              ]
+            },
+            "uncertainty_note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "line_start",
+            "line_end",
+            "text",
+            "completeness",
+            "uncertainty_note"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "idea_units"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are idea_unit_agent. Convert this segment into compact idea units.\nEach unit should express one checkable idea that downstream L1 agents can share.\nDo not classify memory types here. Return JSON only.\n\nNormally return 3-8 idea units. You may return up to 12\nonly when the segment contains many distinct durable claims.\nDo not split every sentence into a separate unit.\nPrefer durable, self-contained units that combine related details across several\nlines. Preserve questions, objections, counterexamples, method exploration,\nevaluation criteria, comparison rationale, and unresolved design discussions\nwhen they affect future project decisions or memory behavior.\nIgnore only true filler, acknowledgements, local wording clarifications, and\npurely social turns that do not affect the project state.\n\nUse completeness exactly as one of: complete, partial, incomplete, uncertain.\nCompleteness rubric:\n- complete: the unit is self-contained enough for downstream L1 extraction.\n- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.\n- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.\n- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.\nDo not use fallback or compacted; those are reserved for deterministic validators.\n\nSegment: S-0070-C02\nTopic: Off-topic discussion about a colleague's sleep schedule and TA workload / Logistics: Power outage warning and starting the presentation\n\nTranscript lines:\n93: [SPEAKER_01]: 超好笑，我看到小孩在旁邊，問今天他 11 點感覺還沒吧，不知道。我以為他都很早睡，他感覺都蠻早起的，每次 3 點、5 點都回訊息啊。真的喔，嗯。\n94: [SPEAKER_03]: 蛤，他不是早上七、八點感覺就要起來？對啊，3 點、5 點回訊息，他是要幾點睡覺？他那個每次回訊息或回一些人的信，他都 3 點、5 點，然後每次收到那種課程的信都 3 點、5 點。喔，想說他看起來很有精神，而且沒有那種很累的感覺。有啦，他有一次開會的時候他都沒睡覺，然後他說我們可以改天再開嗎，開助教會的時候他跟我一起。\n95: [SPEAKER_01]: 喔，你說 AI 概的那個。嗯，所以你們都是 AI 概的助教這樣？對啊。全部人都有打喔？感覺累。AI 概感覺很燙，而且我記得他的 AI 概作業不是不少。對啊，我們這次還好，這次四次作業，他改其中一個，但是他。\n96: [SPEAKER_03]: 我去年修的時候我覺得蠻高的，但是去年我是修陳怡婷的，兩班一樣啦。他們做的這些，有啊，有人寫信說作業太多了，可以不要這麼多作業嗎？是有一點。我覺得以那個，他上課裡面都沒在教什麼是真的，他自己考完作業他就說，欸，我們有教到那嗎？沒有，我們沒有要教的那。\n97: [SPEAKER_01]: 你們就不要等他進來，然後直接那個。有啦，聽得到聲音了，我聽到噔噔一聲。真的喔？我那個聲音聽那個我也知道。Sorry，我的孩子還沒睡著呢。\n98: [SPEAKER_02]: 對，好，來吧。然後我們家這邊等一下會停電，所以他說預計是 12 點，但是不知道會怎麼樣。好，來吧，那我開簡報。",
+  "raw_response": "{\n  \"idea_units\": [\n    {\n      \"line_start\": 93,\n      \"line_end\": 94,\n      \"text\": \"Speakers discuss a colleague's sleep schedule, noting he replies to messages at 3 or 5 AM despite seeming to wake up early, and wonder how he manages.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 94,\n      \"line_end\": 95,\n      \"text\": \"Despite his odd hours, the colleague usually appears energetic, though he once had to reschedule a TA meeting due to lack of sleep.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 95,\n      \"line_end\": 96,\n      \"text\": \"The speakers, who are TAs for an 'Intro to AI' course, discuss its heavy workload, noting that students have complained about the large number of assignments.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 96,\n      \"line_end\": 96,\n      \"text\": \"A critique of the 'Intro to AI' course is that the professor doesn't teach much of the material required for the assignments.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 97,\n      \"line_end\": 97,\n      \"text\": \"The speakers hear a sound indicating someone has joined the call, signaling a transition to start the meeting.\",\n      \"completeness\": \"partial\",\n      \"uncertainty_note\": \"This marks the end of an off-topic conversation and the beginning of the meeting.\"\n    },\n    {\n      \"line_start\": 98,\n      \"line_end\": 98,\n      \"text\": \"Speaker 02 warns of a scheduled power outage at their location expected around 12:00, but the exact timing is uncertain.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    },\n    {\n      \"line_start\": 98,\n      \"line_end\": 98,\n      \"text\": \"Speaker 02 decides to begin the meeting and starts to open the presentation.\",\n      \"completeness\": \"complete\",\n      \"uncertainty_note\": \"\"\n    }\n  ]\n}",
+  "parsed_json": {
+    "idea_units": [
+      {
+        "line_start": 93,
+        "line_end": 94,
+        "text": "Speakers discuss a colleague's sleep schedule, noting he replies to messages at 3 or 5 AM despite seeming to wake up early, and wonder how he manages.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 94,
+        "line_end": 95,
+        "text": "Despite his odd hours, the colleague usually appears energetic, though he once had to reschedule a TA meeting due to lack of sleep.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 95,
+        "line_end": 96,
+        "text": "The speakers, who are TAs for an 'Intro to AI' course, discuss its heavy workload, noting that students have complained about the large number of assignments.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 96,
+        "line_end": 96,
+        "text": "A critique of the 'Intro to AI' course is that the professor doesn't teach much of the material required for the assignments.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 97,
+        "line_end": 97,
+        "text": "The speakers hear a sound indicating someone has joined the call, signaling a transition to start the meeting.",
+        "completeness": "partial",
+        "uncertainty_note": "This marks the end of an off-topic conversation and the beginning of the meeting."
+      },
+      {
+        "line_start": 98,
+        "line_end": 98,
+        "text": "Speaker 02 warns of a scheduled power outage at their location expected around 12:00, but the exact timing is uncertain.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      },
+      {
+        "line_start": 98,
+        "line_end": 98,
+        "text": "Speaker 02 decides to begin the meeting and starts to open the presentation.",
+        "completeness": "complete",
+        "uncertainty_note": ""
+      }
+    ]
+  },
+  "latency_sec": 19.782,
+  "success": true,
+  "error": null
+}

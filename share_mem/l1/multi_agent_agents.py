@@ -784,6 +784,9 @@ Only output durable long-term memory:
   unresolved research questions, or decision-supporting arguments
 - do not restate each idea unit as a candidate
 - do not output local clarifications, filler, examples, or one-line observations
+- preserve requirement/scope clarifications when they resolve or constrain system behavior
+  (for example whether a demo must be real-time); use finding/decision for resolved
+  clarifications and open_issue only when the requirement still remains unresolved
 - for argument, preserve only reasoning that explains a meaningful tradeoff or choice
 - for open_question, preserve only questions that remain unresolved after the supplied scope
 - for proposal, preserve only suggested options or hypotheses that are not yet adopted

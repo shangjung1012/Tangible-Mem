@@ -1,0 +1,231 @@
+{
+  "sequence": 33,
+  "timestamp_utc": "2026-05-08T06:33:10Z",
+  "stage": "l1_open_issue_agent_B-004",
+  "attempt": 1,
+  "model": "gemini-2.5-pro",
+  "config": {
+    "temperature": 0.1,
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+      "type": "object",
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "action_item",
+                  "approach_change",
+                  "argument",
+                  "decision",
+                  "finding",
+                  "open_issue",
+                  "proposal"
+                ]
+              },
+              "source_unit_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "content": {
+                "type": "string"
+              },
+              "importance": {
+                "type": "number"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "related_topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "legacy_type": {
+                "type": "string",
+                "enum": [
+                  "argument",
+                  "decision",
+                  "method_change",
+                  "open_question",
+                  "result",
+                  "todo"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source_unit_ids",
+              "content",
+              "importance",
+              "confidence",
+              "rationale",
+              "related_topics",
+              "legacy_type"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "candidates"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "candidates": {
+        "type": "array",
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "action_item",
+                "approach_change",
+                "argument",
+                "decision",
+                "finding",
+                "open_issue",
+                "proposal"
+              ]
+            },
+            "source_unit_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "content": {
+              "type": "string"
+            },
+            "importance": {
+              "type": "number"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "related_topics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "legacy_type": {
+              "type": "string",
+              "enum": [
+                "argument",
+                "decision",
+                "method_change",
+                "open_question",
+                "result",
+                "todo"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "source_unit_ids",
+            "content",
+            "importance",
+            "confidence",
+            "rationale",
+            "related_topics",
+            "legacy_type"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "candidates"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are l1_open_issue_agent in a multi-agent long-term memory pipeline.\nYour operational type definition: unresolved blocker, design issue, uncertainty, research question, or decision point that still needs clarification.\n\nRead only the bounded idea units below and propose only open_issue candidates.\nDo not infer from outside this extraction scope.\nPrior context may help disambiguate references, but it is never evidence.\nEvery candidate must be supported by the bounded idea units below.\nThe same idea unit may support other memory types; do not suppress valid open_issue objects for that reason.\nEvery candidate must set type exactly to open_issue.\nEvery candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.\nNormally return 0-4 candidates. You may return up to 6 only\nwhen there are clearly distinct durable open_issue memories. Return an empty list when\nthe batch has no durable open_issue. Do not pad the response to fill the limit.\n\nOnly output durable long-term memory:\n- keep project-level decisions, method changes, concrete follow-ups, stable findings,\n  unresolved research questions, or decision-supporting arguments\n- do not restate each idea unit as a candidate\n- do not output local clarifications, filler, examples, or one-line observations\n- for argument, preserve only reasoning that explains a meaningful tradeoff or choice\n- for open_question, preserve only questions that remain unresolved after the supplied scope\n- for proposal, preserve only suggested options or hypotheses that are not yet adopted\n- for action_item, preserve only executable follow-ups with a clear expectation of work\n- for open_issue, preserve only unresolved issues that matter after this scope\n- use importance >= 0.90 only for project-level or future-steering items\n- use 0.50-0.70 for useful but local meeting-level context\nReturn JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.\n\nExtraction scope: B-004\nSegment IDs: S-0001-C04\nKnown related topics: (none)\n\nPrior cross-meeting context: (none)\nUse only the current transcript as evidence for new L1 objects.\n\n\n\n\n\nBounded idea units:\nU-S-0001-C04-SR-01 (57-60): The Academia Sinica internship application requires name, email, resume, transcript, and a statement of purpose. Research achievements are an optional field, likely intended for graduate students or undergraduates with prior projects.\nU-S-0001-C04-SR-02 (61-67): For the Academia Sinica internship, students must submit their applications by March 15th, with reviews starting March 16th. The professor can contact faculty there after the students submit, but it's unlikely one professor will accept all three students.\nU-S-0001-C04-SR-03 (68-70): A student (Weixi) is tasked with compiling a list of items to purchase. The lab needs to apply for an API key, possibly using an existing lab Google account. The professor will use a personal credit card for lab expenses, which are reimbursable as the lab has sufficient funds.\nU-S-0001-C04-SR-04 (72-73): Students identified a need to synchronize their data folder structure to avoid duplication. One student's current structure is `app/short_term/` which consumes data from `meeting_recording/transcript`.\nU-S-0001-C04-SR-05 (74-74): Two students agreed to collaborate on modifying the open-source \"Membrane\" project directly from its GitHub repository, rather than continuing with a separate Python version.\nU-S-0001-C04-SR-06 (75-76): The output from the \"Memory\" system is considered too fragmented and simplistic, which is attributed to both the fragmented nature of the input conversations and the system's failure to log information when it cannot find relationships.\nU-S-0001-C04-SR-07 (76-77): A student questioned using their current dataset, suggesting they should investigate the more complete datasets likely used in the original research papers. The immediate plan is to review the papers more thoroughly, with the possibility of contacting authors for their data later.\nU-S-0001-C04-SR-08 (77-79): When running WhisperX with the `large-v3` model, students are getting warnings but not critical errors. They concluded that not setting a batch size is acceptable as it only affects speed, not the result.\nU-S-0001-C04-SR-09 (79-80): The recording of the meeting started partway through, beginning from the discussion about the Academia Sinica internship.",
+  "raw_response": "{\n  \"candidates\": [\n    {\n      \"type\": \"open_issue\",\n      \"source_unit_ids\": [\n        \"U-S-0001-C04-SR-02\"\n      ],\n      \"content\": \"由於中研院一位教授不太可能接收全部三位學生，因此需要規劃如何安排學生申請實習。\",\n      \"importance\": 0.7,\n      \"confidence\": 1.0,\n      \"rationale\": \"The unit explicitly states that it's unlikely one professor will accept all three students, creating an unresolved logistical issue for their internship applications.\",\n      \"related_topics\": [\n        \"Academia Sinica internship\"\n      ],\n      \"legacy_type\": \"open_question\"\n    },\n    {\n      \"type\": \"open_issue\",\n      \"source_unit_ids\": [\n        \"U-S-0001-C04-SR-04\"\n      ],\n      \"content\": \"為了避免資料重複，學生們需要同步他們的資料夾結構。\",\n      \"importance\": 0.75,\n      \"confidence\": 1.0,\n      \"rationale\": \"The unit explicitly identifies the need for students to synchronize their data folder structure to resolve duplication issues, which is an unresolved design issue for the team's workflow.\",\n      \"related_topics\": [\n        \"data management\",\n        \"folder structure\"\n      ],\n      \"legacy_type\": \"method_change\"\n    },\n    {\n      \"type\": \"open_issue\",\n      \"source_unit_ids\": [\n        \"U-S-0001-C04-SR-06\"\n      ],\n      \"content\": \"「Memory」系統的輸出被認為過於零碎和簡單，部分原因可能是系統在找不到關聯時未能記錄資訊。\",\n      \"importance\": 0.85,\n      \"confidence\": 1.0,\n      \"rationale\": \"The unit describes a key problem with the 'Memory' system's output quality, identifying it as too fragmented and simplistic. This is a core, unresolved technical issue requiring a solution.\",\n      \"related_topics\": [\n        \"Memory system\",\n        \"output quality\"\n      ],\n      \"legacy_type\": \"open_question\"\n    },\n    {\n      \"type\": \"open_issue\",\n      \"source_unit_ids\": [\n        \"U-S-0001-C04-SR-07\"\n      ],\n      \"content\": \"目前使用的資料集是否足夠，或者是否應該研究並尋求原始研究論文中使用的更完整的資料集，這是一個待解決的問題。\",\n      \"importance\": 0.9,\n      \"confidence\": 1.0,\n      \"rationale\": \"A student explicitly questioned the adequacy of the current dataset and raised the issue of investigating and possibly acquiring the datasets from the original research papers. This remains an unresolved, high-impact research question.\",\n      \"related_topics\": [\n        \"dataset\",\n        \"research methodology\"\n      ],\n      \"legacy_type\": \"open_question\"\n    }\n  ]\n}",
+  "parsed_json": {
+    "candidates": [
+      {
+        "type": "open_issue",
+        "source_unit_ids": [
+          "U-S-0001-C04-SR-02"
+        ],
+        "content": "由於中研院一位教授不太可能接收全部三位學生，因此需要規劃如何安排學生申請實習。",
+        "importance": 0.7,
+        "confidence": 1.0,
+        "rationale": "The unit explicitly states that it's unlikely one professor will accept all three students, creating an unresolved logistical issue for their internship applications.",
+        "related_topics": [
+          "Academia Sinica internship"
+        ],
+        "legacy_type": "open_question"
+      },
+      {
+        "type": "open_issue",
+        "source_unit_ids": [
+          "U-S-0001-C04-SR-04"
+        ],
+        "content": "為了避免資料重複，學生們需要同步他們的資料夾結構。",
+        "importance": 0.75,
+        "confidence": 1.0,
+        "rationale": "The unit explicitly identifies the need for students to synchronize their data folder structure to resolve duplication issues, which is an unresolved design issue for the team's workflow.",
+        "related_topics": [
+          "data management",
+          "folder structure"
+        ],
+        "legacy_type": "method_change"
+      },
+      {
+        "type": "open_issue",
+        "source_unit_ids": [
+          "U-S-0001-C04-SR-06"
+        ],
+        "content": "「Memory」系統的輸出被認為過於零碎和簡單，部分原因可能是系統在找不到關聯時未能記錄資訊。",
+        "importance": 0.85,
+        "confidence": 1.0,
+        "rationale": "The unit describes a key problem with the 'Memory' system's output quality, identifying it as too fragmented and simplistic. This is a core, unresolved technical issue requiring a solution.",
+        "related_topics": [
+          "Memory system",
+          "output quality"
+        ],
+        "legacy_type": "open_question"
+      },
+      {
+        "type": "open_issue",
+        "source_unit_ids": [
+          "U-S-0001-C04-SR-07"
+        ],
+        "content": "目前使用的資料集是否足夠，或者是否應該研究並尋求原始研究論文中使用的更完整的資料集，這是一個待解決的問題。",
+        "importance": 0.9,
+        "confidence": 1.0,
+        "rationale": "A student explicitly questioned the adequacy of the current dataset and raised the issue of investigating and possibly acquiring the datasets from the original research papers. This remains an unresolved, high-impact research question.",
+        "related_topics": [
+          "dataset",
+          "research methodology"
+        ],
+        "legacy_type": "open_question"
+      }
+    ]
+  },
+  "latency_sec": 25.313,
+  "success": true,
+  "error": null
+}

@@ -31,6 +31,12 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "tagged",
             "predefined label",
             "predefined labels",
+            "type label",
+            "type labels",
+            "final label",
+            "final labels",
+            "labeling process",
+            "labeling",
             "predefined tag",
             "predefined tags",
             "taxonomy",
@@ -159,6 +165,20 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "dynamic_chunking_evaluation",
+        (
+            "dynamic chunking",
+            "fixed-size",
+            "fixed size",
+            "sentence-by-sentence",
+            "sentence level",
+            "function call",
+            "function calls",
+            "processing time",
+            "runtime",
+        ),
+    ),
+    (
         "memory_processing_architecture",
         (
             "top-down",
@@ -170,6 +190,43 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "memory hierarchy",
             "由上而下",
             "由下而上",
+        ),
+    ),
+    (
+        "memory_architecture_rules",
+        (
+            "memory architecture",
+            "update rules",
+            "short-term",
+            "long-term",
+            "relationship",
+            "relationship between",
+        ),
+    ),
+    (
+        "single_pass_global_vector",
+        (
+            "single-pass",
+            "single pass",
+            "global vector",
+            "post-hoc",
+            "post hoc",
+            "initial nodes",
+        ),
+    ),
+    (
+        "candidate_object_merge",
+        (
+            "create_object",
+            "candidate object",
+            "candidate objects",
+            "candidate",
+            "candidate memory integration",
+            "subsequent text",
+            "later content",
+            "merged when connected",
+            "merges related",
+            "merges later relevant",
         ),
     ),
     (
@@ -194,6 +251,16 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "real_time_demo",
+        (
+            "real-time",
+            "real time",
+            "demo",
+            "demonstration",
+            "demo flow",
+        ),
+    ),
+    (
         "agent_modularity",
         (
             "modularity",
@@ -202,8 +269,42 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "fixed and dynamic",
             "line-jumping agent",
             "manager/agent",
+            "manager agent",
+            "manager lean",
+            "specialized agents",
             "different implementations",
             "模組",
+        ),
+    ),
+    (
+        "separation_of_concerns",
+        (
+            "separation of concerns",
+            "not pure delegator",
+            "pure delegator",
+            "how many lines",
+            "manager decides",
+        ),
+    ),
+    (
+        "multi_agent_debugging",
+        (
+            "multi-agent",
+            "multi agent",
+            "debugging",
+            "unit testing",
+            "monolithic",
+        ),
+    ),
+    (
+        "data_fragmentation_prevention",
+        (
+            "data fragmentation",
+            "prevent data fragmentation",
+            "irrelevant co-located",
+            "co-located",
+            "not bundled",
+            "idea units",
         ),
     ),
     (
@@ -265,14 +366,34 @@ SPECIFIC_SEMANTIC_ANCHORS = {
     "memo_rag_evaluation",
     "forgetting_mechanism",
     "adaptive_segmentation_tradeoff",
+    "dynamic_chunking_evaluation",
     "memory_processing_architecture",
+    "memory_architecture_rules",
+    "single_pass_global_vector",
+    "candidate_object_merge",
     "agent_orchestration_state",
+    "real_time_demo",
     "agent_modularity",
+    "separation_of_concerns",
+    "multi_agent_debugging",
+    "data_fragmentation_prevention",
     "memory_node_convergence",
     "l123_hierarchy",
     "meeting_scoped_merge",
     "topic_tree",
     "retrieval",
+}
+
+EVIDENCE_DOMINANT_SEMANTIC_ANCHORS = {
+    "memory_retention_decay",
+    "memo_rag_evaluation",
+    "forgetting_mechanism",
+}
+
+TRANSLATION_EVIDENCE_SEMANTIC_ANCHORS = {
+    "agent_modularity",
+    "taxonomy_labeling",
+    "six_role_set",
 }
 
 WATCHLIST_MARKERS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -413,6 +534,12 @@ def _match_score(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
         candidate_anchors,
     )
     specific_anchor_overlap = 1.0 if baseline_anchors & candidate_anchors & SPECIFIC_SEMANTIC_ANCHORS else 0.0
+    evidence_dominant_anchor_overlap = (
+        1.0 if baseline_anchors & candidate_anchors & EVIDENCE_DOMINANT_SEMANTIC_ANCHORS else 0.0
+    )
+    translation_evidence_anchor_overlap = (
+        1.0 if baseline_anchors & candidate_anchors & TRANSLATION_EVIDENCE_SEMANTIC_ANCHORS else 0.0
+    )
     same_meeting_bonus = 1.0 if baseline.get("meeting_id") == candidate.get("meeting_id") else 0.0
     score = (
         0.45 * evidence_similarity
@@ -429,6 +556,8 @@ def _match_score(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
         "topic_similarity": round(topic_similarity, 4),
         "semantic_anchor_similarity": round(semantic_anchor_similarity, 4),
         "specific_anchor_overlap": specific_anchor_overlap,
+        "evidence_dominant_anchor_overlap": evidence_dominant_anchor_overlap,
+        "translation_evidence_anchor_overlap": translation_evidence_anchor_overlap,
         "same_meeting_bonus": same_meeting_bonus,
     }
 
@@ -501,6 +630,7 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                             )
                             or (
                                 score.get("specific_anchor_overlap", 0.0) >= 1.0
+                                and score.get("evidence_dominant_anchor_overlap", 0.0) >= 1.0
                                 and score.get("evidence_similarity", 0.0) >= 0.55
                                 and score.get("semantic_score", 0.0) >= 0.45
                             )
@@ -512,8 +642,14 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                         and score.get("semantic_score", 0.0) >= 0.40
                         and (
                             score.get("topic_similarity", 0.0) >= 0.10
-                            or score.get("content_similarity", 0.0) >= 0.08
-                            or score.get("evidence_similarity", 0.0) >= 0.20
+                            or score.get("content_similarity", 0.0) >= 0.10
+                            or (
+                                score.get("evidence_similarity", 0.0) >= 0.20
+                                and (
+                                    score.get("content_similarity", 0.0) >= 0.10
+                                    or score.get("topic_similarity", 0.0) >= 0.05
+                                )
+                            )
                         )
                     )
                     or (
@@ -523,8 +659,14 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                         and score.get("semantic_score", 0.0) >= 0.35
                         and (
                             score.get("topic_similarity", 0.0) >= 0.05
-                            or score.get("content_similarity", 0.0) >= 0.08
-                            or score.get("evidence_similarity", 0.0) >= 0.38
+                            or score.get("content_similarity", 0.0) >= 0.10
+                            or (
+                                score.get("evidence_similarity", 0.0) >= 0.38
+                                and (
+                                    score.get("content_similarity", 0.0) >= 0.10
+                                    or score.get("topic_similarity", 0.0) >= 0.05
+                                )
+                            )
                         )
                     )
                 )
@@ -535,9 +677,28 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                 and score.get("evidence_similarity", 0.0) >= 0.28
                 and score.get("semantic_score", 0.0) >= 0.45
                 and (
-                    score.get("content_similarity", 0.0) >= 0.08
-                    or score.get("evidence_similarity", 0.0) >= 0.38
+                    score.get("content_similarity", 0.0) >= 0.10
+                    or (
+                        score.get("evidence_similarity", 0.0) >= 0.38
+                        and (
+                            score.get("content_similarity", 0.0) >= 0.10
+                            or score.get("topic_similarity", 0.0) >= 0.05
+                        )
+                    )
                 )
+            )
+            or (
+                score.get("specific_anchor_overlap", 0.0) >= 1.0
+                and score.get("semantic_anchor_similarity", 0.0) >= 0.30
+                and score.get("evidence_similarity", 0.0) >= 0.25
+                and score.get("content_similarity", 0.0) >= 0.18
+                and score.get("semantic_score", 0.0) >= 0.45
+            )
+            or (
+                score.get("translation_evidence_anchor_overlap", 0.0) >= 1.0
+                and score.get("semantic_anchor_similarity", 0.0) >= 0.30
+                and score.get("evidence_similarity", 0.0) >= 0.28
+                and score.get("semantic_score", 0.0) >= 0.45
             )
         )
     )

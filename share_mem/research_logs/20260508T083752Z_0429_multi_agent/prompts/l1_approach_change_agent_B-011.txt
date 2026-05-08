@@ -1,0 +1,61 @@
+You are l1_approach_change_agent in a multi-agent long-term memory pipeline.
+Your operational type definition: adopted change in method, process, architecture, retrieval strategy, schema, data handling, or evaluation approach.
+
+Read only the bounded idea units below and propose only approach_change candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+The same idea unit may support other memory types; do not suppress valid approach_change objects for that reason.
+Every candidate must set type exactly to approach_change.
+Every candidate must include legacy_type using one of: argument, decision, method_change, open_question, result, todo. Use the closest old taxonomy role for comparison only.
+Normally return 0-4 candidates. You may return up to 6 only
+when there are clearly distinct durable approach_change memories. Return an empty list when
+the batch has no durable approach_change. Do not pad the response to fill the limit.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable findings,
+  unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- for argument, preserve only reasoning that explains a meaningful tradeoff or choice
+- for open_question, preserve only questions that remain unresolved after the supplied scope
+- for proposal, preserve only suggested options or hypotheses that are not yet adopted
+- for action_item, preserve only executable follow-ups with a clear expectation of work
+- for open_issue, preserve only unresolved issues that matter after this scope
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+
+Extraction scope: B-011
+Segment IDs: S-0123-04
+Known related topics: Academia Sinica internship, Data fragmentation, Dataset selection, Membrane project, Membrane_project, Memory system, Memory system performance, Model execution parameters, Research methodology, STM-LTM integration, WhisperX, WhisperX configuration, action_item, alternative approaches, alternative_approaches, batch_size, data handling, data management, data-quality finding, data_management, dataset, dataset acquisition, dataset selection, dataset_acquisition, dataset_selection, decision, development workflow, development_workflow, expense_reimbursement, experimental setup, experimental_setup, folder structure, forgetting mechanism, implementation strategy, item tracking, lab_administration, literature_review, long-term memory, long-term memory architecture, long-term memory_architecture, long-term_memory, long-term_memory_architecture, memory architecture, memory model, memory retrieval, memory system, memory system architecture, memory system implementation, memory system performance, memory_architecture, memory_model, memory_retrieval, memory_system, memory_system_implementation, memory_system_performance, model configuration, model execution parameters, model_configuration, output quality, output_quality, project goals, project narrative, real-time, research methodology, research_methodology, retrieval phase, short-term memory, speaker diarization, system architecture, system_architecture, temporal references, time tracking, working memory
+
+Prior cross-meeting context (for disambiguation only, never evidence):
+- Do not use these items as evidence for new L1 candidates.
+- Every new L1 candidate must cite only the current transcript / idea units.
+  [L1-0325-090] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=As a next step, the team should redefine their memory architecture and review the "Digital Me" paper to understand its methods for determining relevancy.
+  [L1-0325-018] type=action_item quality=strong activity=fading activation=0.46 reason=open_thread content=To address the difficulty of verifying the AI's memory recall from the project's own real meeting data, the proposed method is to retrieve the original meeting segment and manually assess its relevance to the current discussion.
+  [L1-0325-034] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The system is divided into two main parts: a memory component to ensure correct recall of past meeting content, and a second component to adjust the output to sound like the professor's speaking style.
+  [L1-0422-049] type=decision quality=strong activity=active activation=1.00 reason=recent_high_importance content=The memory system's forgetting mechanism is designed so that memory retrieval is based on current relevancy during an interaction, and importance is updated post-interaction. An old topic, if revisited, will have its importance boosted. Memories with a high enough importance score will never fade out.
+  [L1-0408-019] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=The application scenario for the memory system was defined as a 'mentor agent.' This agent is constructed from the speakers' past dialogues and research discussions, and a user, envisioned as a student, will interact with this pre-built agent.
+  [L1-0422-037] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=To handle the evolution of information, the long-term memory system incorporates timelines. During retrieval, this allows an LLM to see when points were made, identify if they were later overturned, and determine which version is current.
+  [L1-0422-024] type=action_item quality=normal activity=active activation=0.86 reason=open_thread content=To demonstrate the value of the structured memory approach, an evaluation should be conducted comparing the overall system's performance (using its structured STM/LTM) against a standard RAG system that ingests the entire raw transcript.
+  [L1-0325-036] type=action_item quality=normal activity=fading activation=0.46 reason=open_thread content=Design a long-term memory structure capable of handling the non-linear evolution of research ideas, including branching concepts, dependencies, and temporal status, to overcome the limitations of simple RAG.
+  [L1-0408-052] type=open_issue quality=normal activity=active activation=0.73 reason=open_thread content=The relationship between Short-Term Memory (STM) and Long-Term Memory (LTM) is currently undefined. They are updated independently, which can cause content duplication, and the mechanism for transferring information from STM to LTM has not yet been implemented.
+  [L1-0408-012] type=approach_change quality=strong activity=reactivated activation=1.00 reason=recent_high_importance content=為了提高記憶提取的精確性，處理流程將從一次性分析整個轉錄稿，改為兩階段方法：首先，將文本分割成「想法單元」（idea units），然後再讓大型語言模型對每個單元進行單獨標記。
+  [L1-0422-022] type=approach_change quality=strong activity=active activation=1.00 reason=recent_high_importance content=An evaluation strategy for the segmentation method was adopted. The dynamic, entropy-based approach will be compared against two baselines: fast but inaccurate fixed-size chunking, and accurate but slow sentence-by-sentence iteration. The evaluation will analyze trade-offs in performance, accuracy, and the number of function calls.
+  [L1-0325-046] type=open_issue quality=normal activity=reactivated activation=0.82 reason=open_thread content=A key design challenge for long-term memory is how to implement a 'fading out' mechanism for older, less relevant information. Tree-based structures are considered unsuitable as they disrupt the temporal dimension required for time-based weight decay, which is crucial for achieving the desired trade-off between retaining important events and allowing other memories to fade.
+
+
+
+
+
+Bounded idea units:
+U-S-0123-04-SR-01 (171-171): It was discovered that the provided NT$9000 credit cannot be used for the Gemini API.
+U-S-0123-04-SR-02 (172-172): The team's primary need is confirmed to be functional access to the Gemini API.
+U-S-0123-04-SR-03 (173-178): An unexpected charge of NT$715 was billed to a team member's personal credit card for API usage.
+U-S-0123-04-SR-04 (179-179): The cause of the billing issue is a policy change since April 1st; API key calls are now billed directly to the credit card instead of being deducted from the NT$9000 credit.
+U-S-0123-04-SR-05 (180-180): A workaround exists by routing calls through Vertex AI to use the credit, but this method is unreliable and frequently gets stuck, possibly due to traffic limitations.
+U-S-0123-04-SR-06 (181-181): It was hypothesized that the unreliability of the Vertex AI workaround is because the free credit tier has a lower priority than paid API accounts.
+U-S-0123-04-SR-07 (182-182): A new solution was proposed: allocate a NT$20,000 budget directly to a team member to pay for API usage, simplifying the payment process.
+U-S-0123-04-SR-08 (183-184): To evaluate the budget proposal, a preliminary daily cost estimation was started, with one user's usage at NT$717/day and another's at an estimated NT$100-200/day.

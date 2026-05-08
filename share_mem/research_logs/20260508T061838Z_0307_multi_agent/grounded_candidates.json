@@ -1,0 +1,3036 @@
+[
+  {
+    "candidate_id": "C-B-001-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "The memory system is designed to track items by `meeting ID` rather than using relative time. This makes dynamic temporal updates (e.g., changing \"this meeting\" to \"last week's meeting\") infeasible.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text explicitly identifies this as a key feature of the current system design, contrasting it with a rejected alternative proposal.",
+    "related_topics": [
+      "memory model",
+      "item tracking"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。 [SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。",
+    "support_score": 0.546,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.122, 'content_token_coverage': 0.643, 'evidence_token_coverage': 0.131, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "The system includes a forgetting mechanism that deletes memory items that have not been discussed within a predefined window, such as three meetings.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is described as the second key feature of the current system design, representing a core decision about how memory is managed over time.",
+    "related_topics": [
+      "memory model",
+      "forgetting mechanism"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。 [SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。",
+    "support_score": 0.648,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.113, 'content_token_coverage': 0.762, 'evidence_token_coverage': 0.117, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "For the purpose of experiments, the problem of speaker diarization will be treated as solved, either by using platforms that automatically handle speaker attribution (like Zoom or Google Meet) or by relying on a high-accuracy model like WhisperX.",
+    "importance": 0.8,
+    "confidence": 0.9,
+    "rationale": "The text states that for experiments, the problem can be simplified by assuming it's solved, which is a clear methodological decision to unblock other work.",
+    "related_topics": [
+      "speaker diarization",
+      "experimental setup"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1,
+      2,
+      3
+    ],
+    "evidence_quote": "[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。 [SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。 [SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是...",
+    "support_score": 0.567,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.114, 'content_token_coverage': 0.667, 'evidence_token_coverage': 0.121, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05"
+    ],
+    "content": "Implement dynamic time tracking, where an item's temporal reference (e.g., \"this meeting\") would automatically update to \"one week ago\" in the following week's meeting.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "A specific feature implementation was suggested, which represents a potential future task. The text states 'A suggestion was made to implement dynamic time tracking'.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      19,
+      20
+    ],
+    "evidence_quote": "[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。 [SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。",
+    "support_score": 1.0,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.164, 'content_token_coverage': 1.0, 'evidence_token_coverage': 0.164, 'span_inclusion': 1.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-001-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05",
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "A suggestion for dynamic time tracking (e.g., updating \"this meeting\" to \"one week ago\") is infeasible with the current system design, which tracks items by `meeting ID` rather than relative time. This presents a design conflict, as updating an item changes its associated meeting ID (e.g., from 16 to 17), preventing stable relative time references.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The text explicitly contrasts a proposed feature for dynamic temporal references with the current system's limitation of tracking items by meeting ID, highlighting an unresolved design challenge.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      19,
+      20,
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。 [SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。 [SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以...",
+    "support_score": 0.676,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.164, 'content_token_coverage': 0.795, 'evidence_token_coverage': 0.171, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05"
+    ],
+    "content": "建議實現動態時間追蹤，讓項目的時間參考（例如「本次會議」）在下週會議中自動更新為「一週前」。這需要在整合新會議記憶時更新所有與時間相關的參考。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states a suggestion to implement dynamic time tracking for memory items, which would require updating all time-related references when a new meeting's memory is integrated.",
+    "related_topics": [
+      "memory model",
+      "temporal references"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      19,
+      20
+    ],
+    "evidence_quote": "[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。 [SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。",
+    "support_score": 0.408,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.14, 'content_token_coverage': 0.48, 'evidence_token_coverage': 0.164, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "為了實驗目的，可以簡化實體會議中的說話者日誌（speaker diarization）問題，假設該問題已解決，或依賴像WhisperX這樣的高精度模型。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit proposes a specific simplification for handling speaker diarization in experiments, either by assuming it's a solved problem or using a high-accuracy model.",
+    "related_topics": [
+      "speaker diarization",
+      "experimental setup"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1,
+      2,
+      3
+    ],
+    "evidence_quote": "[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。 [SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。 [SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是...",
+    "support_score": 0.398,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.106, 'content_token_coverage': 0.468, 'evidence_token_coverage': 0.121, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-05",
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "動態時間追蹤（例如將「本次會議」自動更新為「一週前」）的建議是不可行的，因為目前的系統設計是透過`會議ID`而非相對時間來追蹤項目，當項目更新時，其ID會從舊會議更新為新會議，此機制與相對時間更新不相容。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "該單元明確指出，由於系統以會議ID而非相對時間來追蹤項目，因此動態時間更新的提議在當前架構下是不可行的，這是一個關於系統設計限制的關鍵論點。",
+    "related_topics": [
+      "memory model",
+      "system architecture",
+      "time tracking"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      19,
+      20,
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。 [SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。 [SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以...",
+    "support_score": 0.315,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.094, 'content_token_coverage': 0.371, 'evidence_token_coverage': 0.112, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "為了實驗目的，可以簡化實體會議中的說話者分段問題，理由是線上會議平台已能自動對應發言者，或可依賴如WhisperX等高準確度模型來處理。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "該單元為簡化說話者分段問題提供了明確的理由，指出可以參照現有技術（線上會議平台）或使用高準確度模型（WhisperX）作為權宜之計，這是一個方法論上的論證。",
+    "related_topics": [
+      "speaker diarization",
+      "experimental setup"
+    ],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1,
+      2,
+      3
+    ],
+    "evidence_quote": "[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。 [SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。 [SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是...",
+    "support_score": 0.448,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.139, 'content_token_coverage': 0.527, 'evidence_token_coverage': 0.159, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-001-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "當前系統設計有兩個關鍵特點：1) 項目通過`meeting ID`而非相對時間進行追踪，因此當項目更新時，其ID會從上一個會議（如16）變更為當前會議（如17）。2) 系統包含一個遺忘機制，會刪除在預設時間窗口（如三次會議）內未被再次討論的項目。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit clearly outlines two fundamental design characteristics of the current system: tracking items by meeting ID and implementing a forgetting mechanism for items not discussed within a specific window.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。 [SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。",
+    "support_score": 0.375,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.189, 'content_token_coverage': 0.442, 'evidence_token_coverage': 0.248, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "為了簡化實驗，實體會議中的說話者日誌（speaker diarization）問題被視為已解決，其假設是依賴如Zoom或Google Meet等線上平台自動附加的說話者資訊，或使用如WhisperX等高準確度模型。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states a simplifying assumption made for experiments, treating speaker diarization as a solved problem by relying on platform data or high-accuracy models.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1,
+      2,
+      3
+    ],
+    "evidence_quote": "[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。 [SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。 [SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是...",
+    "support_score": 0.378,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.129, 'content_token_coverage': 0.444, 'evidence_token_coverage': 0.154, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-02",
+      "U-S-0001-01-SR-04"
+    ],
+    "content": "記憶模型的工作流程是處理單次會議以生成摘要和行動項目。當先前會議的某個主題在後續會議中被再次討論時，系統會更新相應的記憶條目以反映新的進展，並將其關聯的會議ID更新為當前會議的ID。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "These idea units describe the core workflow of the memory model, where it processes meetings sequentially and updates existing memory items when a topic is revisited, also updating the associated meeting ID.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      4,
+      5,
+      6,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "evidence_quote": "[SPEAKER_01]: 跑了一次之後，它會產生一個 Memory。這個 Memory 的樣子我還沒有仔細設計過。大概來說，首先它會為每一次 meeting 建一個 summary。 [SPEAKER_01]: 像我剛剛跑了 16 跟 17 這兩次。原本是 16，現在是 17，它會更新這一邊，把它變成 2。meeting window 就是這一次的 summary。你會發現它會直接加一個 17 出來，接下來還有幾個 action items。 [SPEAKER_01]: 這個 action items 主要是它會自己判斷哪一個事件需要記起來。比如說我們之前有一些持續性的內容，像是要調查 GPU 的東西。它還有一個特點，就是如果今天又講到上次提到的東西，它會把相關記憶更新。 [SPEAKER_01]: 對。現...",
+    "support_score": 0.288,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.1, 'content_token_coverage': 0.338, 'evidence_token_coverage': 0.124, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-04",
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "Memory items are tracked using the `meeting ID` as a reference, not relative time (e.g., 'last week'). When an item is updated, its associated meeting ID is changed to that of the current meeting.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The units explicitly describe this as a key design feature of the current system, which makes dynamic temporal updates infeasible.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對。現在這個 demo 是：如果 16 已經討論過某個東西，17 又再提到，它就會更新。其實如果 16 講過，17 又提到，它會把這個 item 的 meeting ID 加一，並補上一些內容。 [SPEAKER_00]: 這邊要怎麼看出它是又被講過一次？那邊看起來好像是一樣的對話。 [SPEAKER_01]: 以這個點來說，代表我們在下一次 meeting 的時候沒有解決它，也可能根本沒有提到它。 [SPEAKER_00]: 那有沒有例子是某一件事情在兩次 meeting 都被提到？ [SPEAKER_01]: 像這個 item 可能是標註的部分。原本 16 可能有提到你們先去標註什麼；在 17 裡，SPEAKER_02 會說它已經經過標註，並且觀察到一些問題之類的。 [SPEA...",
+    "support_score": 0.595,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.1, 'content_token_coverage': 0.7, 'evidence_token_coverage': 0.105, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-06"
+    ],
+    "content": "The system incorporates a forgetting mechanism that automatically deletes memory items that have not been discussed within a specified window, such as three meetings.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly identifies this as one of the two key features of the current system design for managing memory items.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      21,
+      22
+    ],
+    "evidence_quote": "[SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。 [SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。",
+    "support_score": 0.541,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.097, 'content_token_coverage': 0.636, 'evidence_token_coverage': 0.102, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-02",
+      "U-S-0001-01-SR-03",
+      "U-S-0001-01-SR-04"
+    ],
+    "content": "The memory model operates sequentially: it processes a meeting transcript to generate summaries and action items, creating an initial memory. When a subsequent meeting discusses a topic from a previous one, the system updates the corresponding memory entry.",
+    "importance": 0.9,
+    "confidence": 0.95,
+    "rationale": "These units collectively describe the fundamental, adopted workflow for how the memory model processes meeting data and updates its state over time.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "evidence_quote": "[SPEAKER_01]: 跑了一次之後，它會產生一個 Memory。這個 Memory 的樣子我還沒有仔細設計過。大概來說，首先它會為每一次 meeting 建一個 summary。 [SPEAKER_01]: 像我剛剛跑了 16 跟 17 這兩次。原本是 16，現在是 17，它會更新這一邊，把它變成 2。meeting window 就是這一次的 summary。你會發現它會直接加一個 17 出來，接下來還有幾個 action items。 [SPEAKER_01]: 這個 action items 主要是它會自己判斷哪一個事件需要記起來。比如說我們之前有一些持續性的內容，像是要調查 GPU 的東西。它還有一個特點，就是如果今天又講到上次提到的東西，它會把相關記憶更新。 [SPEAKER_00]: 左邊是...",
+    "support_score": 0.652,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.112, 'content_token_coverage': 0.767, 'evidence_token_coverage': 0.116, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-001-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-01-SR-01"
+    ],
+    "content": "For experiments, the speaker diarization problem is simplified by assuming it is already solved, either by using data from platforms like Zoom/Google Meet or by employing a high-accuracy model like WhisperX.",
+    "importance": 0.8,
+    "confidence": 0.9,
+    "rationale": "The unit explicitly states a methodological simplification adopted for experiments to handle speaker diarization.",
+    "related_topics": [],
+    "extraction_scope": "B-001",
+    "segment_ids": [
+      "S-0001-01"
+    ],
+    "evidence_lines": [
+      1,
+      2,
+      3
+    ],
+    "evidence_quote": "[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。 [SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。 [SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是...",
+    "support_score": 0.616,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.111, 'content_token_coverage': 0.724, 'evidence_token_coverage': 0.115, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "決定將長期記憶（LTM）設計為一個獨立的、更粗粒度的架構，旨在跨越長期的專案週期（例如一年），以捕捉研究的整體敘事、目標、主題和里程碑。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The team defined a high-level vision for LTM as a separate, coarser-grained system for tracking the project's long-term narrative. This is a future-steering architectural decision.",
+    "related_topics": [
+      "long-term memory",
+      "memory architecture",
+      "project narrative"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      31,
+      32,
+      33,
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。 [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所...",
+    "support_score": 0.313,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.094, 'content_token_coverage': 0.368, 'evidence_token_coverage': 0.112, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration.",
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-03",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "目前的短期記憶（STM）被定義為記住過去三次會議中的重要資訊，超過三次會議的項目將被視為不重要而被刪除。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The team established a clear, operational definition for the current STM, setting a 3-session rolling window to keep information current and relevant. This defines the current state of a key architectural component.",
+    "related_topics": [
+      "short-term memory",
+      "memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23,
+      24,
+      29,
+      35
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？ [SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。 [SPEAKER_01]: 因為我自己覺得那篇的問題是，如果上下文太長，model 會忘記前面的內容。但我們目前的架構在 short term 的部分只會記得三次；如果超過三次，它會覺得不重要就刪掉。可是如果今天我們曾經提過某些東西，我現在有點不知道距離怎麼定義。 [SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用...",
+    "support_score": 0.51,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.092, 'content_token_coverage': 0.6, 'evidence_token_coverage': 0.098, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The mechanism for how or if STM items transition to LTM is an open question.",
+      "The method for defining 'distance' and recalling older information is an open design problem."
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "目前的記憶系統實作決定僅專注於「更新」階段（在會議後將資訊添加到記憶中），而「檢索」階段的設計則被推遲。",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The team made a pragmatic decision to scope the current implementation to only the 'update' phase of the memory system, deferring the 'retrieve' phase. This defines the current project priorities and capabilities.",
+    "related_topics": [
+      "memory implementation",
+      "system architecture",
+      "project scope"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      34
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。",
+    "support_score": 0.17,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.064, 'content_token_coverage': 0.2, 'evidence_token_coverage': 0.086, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The retrieval mechanism is a planned but unimplemented part of the memory architecture."
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "團隊評估了一篇關於「長期記憶」的外部論文，並決定其方法不適用，因為它過於細粒度，且專注於單次會話內的長上下文處理，而非團隊所需的跨時間線資訊追蹤。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The team made a decision to reject an alternative approach presented in an external paper because its focus on single-session long context was misaligned with their need for cross-session memory.",
+    "related_topics": [
+      "long-term memory",
+      "alternative approaches"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      25,
+      26,
+      27,
+      28
+    ],
+    "evidence_quote": "[SPEAKER_00]: 三次內的重要事情，這是 short term。Long term 是陳佑貞那邊主要負責。我覺得如果是這樣，佑貞剛剛看的那篇所謂 long term，應該不是我們一般想像中大腦裡的 long term，對不對？ [SPEAKER_02]: 對，所以我們才想說要挑戰它。我們現在會覺得它抓得很瑣碎、很知識點，是因為它本身的設定比較沒有 focus 在跨時間軸要抓什麼。 [SPEAKER_00]: 它抓的是時間問題嗎？它比較像是抓今天這個資訊本身，或是資訊有沒有被推翻。我們在看那一篇時，我猜它比較是從 large language model 相關 work 延伸出來的。所以他們講 long term 的時候，跟我們講的 long term 應該會滿不一樣。 [SPEAKER_00]: 我...",
+    "support_score": 0.235,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.084, 'content_token_coverage': 0.277, 'evidence_token_coverage': 0.108, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-002-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "Design the integration between the short-term memory (STM) and long-term memory (LTM) systems, as this is not yet defined. The STM is a rolling 3-session window, while the LTM is envisioned as a separate, coarser-grained architecture for long-term project history.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript explicitly states that the integration between STM and LTM has not yet been designed. It also describes the distinct characteristics of each system, highlighting the need for a dedicated design to make them work together.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23,
+      24,
+      31,
+      32,
+      33
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？ [SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。 [SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？...",
+    "support_score": 0.584,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.108, 'content_token_coverage': 0.688, 'evidence_token_coverage': 0.114, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The mechanism for how or if STM items transition to LTM is an open question.",
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration."
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-002-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "Design and implement the 'retrieve' phase for the memory system. This mechanism, which is currently not designed, should use stored memory from both STM and LTM to decide what to say in future meetings and influence real-time conversation.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript clearly identifies that the retrieval mechanism, which is essential for the memory system to be functional, is a missing component that needs to be designed and built. It is specified that this should apply to both STM and LTM.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      34,
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。 [SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。 [SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一...",
+    "support_score": 0.65,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.141, 'content_token_coverage': 0.765, 'evidence_token_coverage': 0.147, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The retrieval mechanism is a planned but unimplemented part of the memory architecture.",
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-002-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "Design the future architectural process for periodically processing information from the rolling short-term memory (STM) and converting it into the long-term memory (LTM) structure.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The transcript proposes a specific future architectural task: creating a process to migrate important information from the temporary, rolling STM into the permanent LTM to ensure long-term retention.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。 [SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。在做 update 時，我們現在的 Short Term Memory 會做快速 update；但是 Long Term Memory 在適時的時候，應該要可以調一些東西出來，然後改變我們 real time 要講的內容。像我們現在的 Long Term 應該是從 script 調出來。",
+    "support_score": 0.58,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.107, 'content_token_coverage': 0.682, 'evidence_token_coverage': 0.113, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-05",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "The integration between the short-term memory (STM), which holds information from the last three sessions, and the long-term memory (LTM), designed for project-level history, has not yet been designed. A future architecture is envisioned where STM information is periodically processed and converted into the LTM structure.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript explicitly states that the integration between STM and LTM is not yet designed (SR-01) and describes a future vision for how they might connect (SR-05, SR-08), making this a clear, high-importance open architectural issue.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23,
+      24,
+      31,
+      32,
+      33,
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？ [SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。 [SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？...",
+    "support_score": 0.689,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.138, 'content_token_coverage': 0.811, 'evidence_token_coverage': 0.143, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=3",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The mechanism for how or if STM items transition to LTM is an open question.",
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration.",
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06",
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "The 'retrieve' phase of the memory system has not been designed. While the system can currently update its memory after a meeting, the mechanism for using this stored information from both STM and LTM to decide what to say in a future meeting is an open design question.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript clearly states that the 'retrieve' phase of the memory system has not been designed (SR-06), which is a fundamental gap in the system's functionality. SR-08 reinforces that LTM retrieval to influence conversation is a future goal.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      34,
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。 [SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。 [SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一...",
+    "support_score": 0.552,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.136, 'content_token_coverage': 0.65, 'evidence_token_coverage': 0.147, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'uncertain']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The retrieval mechanism is a planned but unimplemented part of the memory architecture.",
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-03"
+    ],
+    "content": "An unresolved question exists regarding how to define 'distance' for recalling information that was mentioned more than three sessions ago and has thus been deleted from the current short-term memory (STM) architecture.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The source unit explicitly identifies this as an 'unresolved question' related to the 3-session limit of the current STM, making it a clear open issue for the design of the memory recall system.",
+    "related_topics": [],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      29
+    ],
+    "evidence_quote": "[SPEAKER_01]: 因為我自己覺得那篇的問題是，如果上下文太長，model 會忘記前面的內容。但我們目前的架構在 short term 的部分只會記得三次；如果超過三次，它會覺得不重要就刪掉。可是如果今天我們曾經提過某些東西，我現在有點不知道距離怎麼定義。",
+    "support_score": 0.644,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.2, 'content_token_coverage': 0.758, 'evidence_token_coverage': 0.214, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The method for defining 'distance' and recalling older information is an open design problem."
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-002-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year), capturing the overall research narrative, including structural changes, goals, major themes, and milestones.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text explicitly states a vision for a long-term memory system that is architecturally distinct and serves a different purpose than short-term memory, focusing on high-level project narrative over a long timeline.",
+    "related_topics": [
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      31,
+      32,
+      33
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。 [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所...",
+    "support_score": 0.824,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.189, 'content_token_coverage': 0.97, 'evidence_token_coverage': 0.19, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "A future architecture is proposed where information from the rolling short-term memory (STM) will be periodically processed and converted into the long-term memory (LTM) structure, and LTM will be retrievable to influence real-time conversation.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The text proposes a specific architectural plan for how short-term memory will feed into long-term memory over time and how LTM will be used, which is a concrete design suggestion for the system's future.",
+    "related_topics": [
+      "long-term memory architecture",
+      "STM-LTM integration"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。 [SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。在做 update 時，我們現在的 Short Term Memory 會做快速 update；但是 Long Term Memory 在適時的時候，應該要可以調一些東西出來，然後改變我們 real time 要講的內容。像我們現在的 Long Term 應該是從 script 調出來。",
+    "support_score": 0.85,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.226, 'content_token_coverage': 1.0, 'evidence_token_coverage': 0.226, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The long-term memory (LTM) must be a separate, coarser-grained architecture to effectively capture the overall research narrative, including goals, major themes, and milestones, over a long project duration like a year.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The idea unit presents a core design principle for the LTM, justifying the need for a coarse-grained architecture by defining its specific long-term purpose, which is distinct from other memory components.",
+    "related_topics": [
+      "long-term memory",
+      "system architecture",
+      "project goals"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      31,
+      32,
+      33
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。 [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所...",
+    "support_score": 0.733,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.145, 'content_token_coverage': 0.862, 'evidence_token_coverage': 0.149, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration."
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "An external paper's approach to 'long-term memory' was deemed unsuitable because its model is too granular and focuses on handling long contexts within a single session, whereas the project requires tracking information across a long timeline of multiple sessions.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly critiques an external paper, providing clear reasoning for why its approach does not align with the project's needs for cross-session memory.",
+    "related_topics": [
+      "long-term memory",
+      "system architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      25,
+      26,
+      27,
+      28
+    ],
+    "evidence_quote": "[SPEAKER_00]: 三次內的重要事情，這是 short term。Long term 是陳佑貞那邊主要負責。我覺得如果是這樣，佑貞剛剛看的那篇所謂 long term，應該不是我們一般想像中大腦裡的 long term，對不對？ [SPEAKER_02]: 對，所以我們才想說要挑戰它。我們現在會覺得它抓得很瑣碎、很知識點，是因為它本身的設定比較沒有 focus 在跨時間軸要抓什麼。 [SPEAKER_00]: 它抓的是時間問題嗎？它比較像是抓今天這個資訊本身，或是資訊有沒有被推翻。我們在看那一篇時，我猜它比較是從 large language model 相關 work 延伸出來的。所以他們講 long term 的時候，跟我們講的 long term 應該會滿不一樣。 [SPEAKER_00]: 我...",
+    "support_score": 0.582,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.145, 'content_token_coverage': 0.684, 'evidence_token_coverage': 0.156, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-04"
+    ],
+    "content": "The current short-term memory (STM) is considered a valid form of cross-session memory because its three-meeting span provides a longer history than the system described in a critiqued external paper.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit makes a direct comparison to an external system to justify the value and classification of the current STM implementation as a form of cross-session memory.",
+    "related_topics": [
+      "short-term memory",
+      "system architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      30
+    ],
+    "evidence_quote": "[SPEAKER_00]: 因為你現在做的東西，某方面對我來說就像 long term memory 了，已經超過這一次 session 的記憶。你說 session 是什麼意思？16 是上週五的 meeting，17 是現在的 meeting。你可以想像我們今天講三次 meeting，就是 17、16、15。這個機制其實某方面已經比剛才佑貞那篇還要長，因為你的歷史更長。",
+    "support_score": 0.645,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.195, 'content_token_coverage': 0.759, 'evidence_token_coverage': 0.208, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "The design of short-term memory (STM) holding key information from the last three meetings is justified by its analogy to how the human brain keeps the most current and important information active during a conversation.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit provides a conceptual justification for the STM's design by drawing an analogy to human cognitive processes, explaining the reasoning behind its limited but focused scope.",
+    "related_topics": [
+      "short-term memory",
+      "system architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      35
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用到最多的資訊。",
+    "support_score": 0.584,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.259, 'content_token_coverage': 0.688, 'evidence_token_coverage': 0.293, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The established vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to capture the overall research narrative over a long project duration (e.g., a year), including goals, major themes, and milestones.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This is a high-level, future-steering finding that defines the core design philosophy for the long-term memory system.",
+    "related_topics": [
+      "long-term memory architecture",
+      "project goals"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      31,
+      32,
+      33
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。 [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所...",
+    "support_score": 0.797,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.176, 'content_token_coverage': 0.938, 'evidence_token_coverage': 0.179, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration."
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-002-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "The current memory system implementation is incomplete; it only includes the 'update' phase for adding information to memory after a meeting. The 'retrieve' phase, which would use this memory to influence real-time conversation, has not been designed.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a key finding about the current state and limitations of the system's implementation.",
+    "related_topics": [
+      "memory system implementation",
+      "retrieval phase"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      34
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。",
+    "support_score": 0.611,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.202, 'content_token_coverage': 0.719, 'evidence_token_coverage': 0.219, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The retrieval mechanism is a planned but unimplemented part of the memory architecture."
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-03",
+      "U-S-0001-02-SR-07"
+    ],
+    "content": "Short-term memory (STM) is currently defined as storing important information from the last three sessions, after which items are deleted. The integration between this rolling STM and a future long-term memory (LTM) has not yet been designed.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This defines the current architecture and limitations of the short-term memory component, which is a foundational aspect of the system.",
+    "related_topics": [
+      "short-term memory",
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23,
+      24,
+      29,
+      35
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？ [SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。 [SPEAKER_01]: 因為我自己覺得那篇的問題是，如果上下文太長，model 會忘記前面的內容。但我們目前的架構在 short term 的部分只會記得三次；如果超過三次，它會覺得不重要就刪掉。可是如果今天我們曾經提過某些東西，我現在有點不知道距離怎麼定義。 [SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用...",
+    "support_score": 0.729,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.136, 'content_token_coverage': 0.857, 'evidence_token_coverage': 0.14, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=2",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The mechanism for how or if STM items transition to LTM is an open question.",
+      "The method for defining 'distance' and recalling older information is an open design problem."
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-02"
+    ],
+    "content": "An external paper on 'long-term memory' was evaluated and found to be unsuitable for the project's needs. The paper's model was too granular, focusing on handling long contexts within a single session rather than tracking information across a long timeline.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a literature finding that informs the project's direction and distinguishes its approach from others.",
+    "related_topics": [
+      "long-term memory architecture"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      25,
+      26,
+      27,
+      28
+    ],
+    "evidence_quote": "[SPEAKER_00]: 三次內的重要事情，這是 short term。Long term 是陳佑貞那邊主要負責。我覺得如果是這樣，佑貞剛剛看的那篇所謂 long term，應該不是我們一般想像中大腦裡的 long term，對不對？ [SPEAKER_02]: 對，所以我們才想說要挑戰它。我們現在會覺得它抓得很瑣碎、很知識點，是因為它本身的設定比較沒有 focus 在跨時間軸要抓什麼。 [SPEAKER_00]: 它抓的是時間問題嗎？它比較像是抓今天這個資訊本身，或是資訊有沒有被推翻。我們在看那一篇時，我猜它比較是從 large language model 相關 work 延伸出來的。所以他們講 long term 的時候，跟我們講的 long term 應該會滿不一樣。 [SPEAKER_00]: 我...",
+    "support_score": 0.631,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.148, 'content_token_coverage': 0.743, 'evidence_token_coverage': 0.156, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-05"
+    ],
+    "content": "The vision for long-term memory (LTM) is a separate, coarser-grained architecture designed to span a long project duration (e.g., a year). It will capture the overall research narrative, including structural changes, goals, major themes, and milestones, and will eventually need to be integrated with STM.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly defines the high-level architectural approach for LTM, distinguishing it from STM and setting the long-term direction for memory development.",
+    "related_topics": [
+      "long-term memory architecture",
+      "short-term memory"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      31,
+      32,
+      33
+    ],
+    "evidence_quote": "[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。 [SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。 [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所...",
+    "support_score": 0.85,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.244, 'content_token_coverage': 1.0, 'evidence_token_coverage': 0.244, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is a high-level vision for LTM; the specific architecture and what it will record are still under consideration."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-08"
+    ],
+    "content": "The planned architecture for memory integration involves periodically processing information from the rolling Short-Term Memory (STM) and converting it into the Long-Term Memory (LTM) structure. LTM will also be designed to be retrievable to influence real-time conversation content.",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "This unit describes the adopted future process for how STM and LTM will interact, defining the data flow between memory components and the retrieval requirement for LTM.",
+    "related_topics": [
+      "long-term memory architecture",
+      "short-term memory",
+      "memory retrieval"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      36,
+      37
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。 [SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。在做 update 時，我們現在的 Short Term Memory 會做快速 update；但是 Long Term Memory 在適時的時候，應該要可以調一些東西出來，然後改變我們 real time 要講的內容。像我們現在的 Long Term 應該是從 script 調出來。",
+    "support_score": 0.644,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.177, 'content_token_coverage': 0.758, 'evidence_token_coverage': 0.188, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This describes a future plan for how STM and LTM will interact, but the design is not finalized."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-01",
+      "U-S-0001-02-SR-07",
+      "U-S-0001-02-SR-09"
+    ],
+    "content": "The memory system's architecture is defined with three distinct components: 1) Working Memory for real-time conversation tracking, 2) Short-Term Memory (STM) for holding important information from the last three sessions, and 3) Long-Term Memory (LTM) for the project's historical narrative.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "These units collectively establish a clear, adopted definition and separation of the different memory components (Working, STM, LTM), which is a fundamental architectural schema for the project.",
+    "related_topics": [
+      "long-term memory architecture",
+      "short-term memory",
+      "working memory"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      23,
+      24,
+      35,
+      38
+    ],
+    "evidence_quote": "[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？ [SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。 [SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用到最多的資訊。 [SPEAKER_01]: Short term 的 memory 說不定也可以，但現在 long term 是直接讀每一次的組織稿。那 working 呢？Working 真的只有 real time，對不對？對，因為是 real time，所以我...",
+    "support_score": 0.559,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.116, 'content_token_coverage': 0.657, 'evidence_token_coverage': 0.124, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete', 'complete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete",
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The mechanism for how or if STM items transition to LTM is an open question."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-002-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-02-SR-06"
+    ],
+    "content": "The current implementation of the memory system is focused solely on the 'update' phase (adding information post-meeting), with the 'retrieve' phase (using memory in a future meeting) not yet designed.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit defines the current, adopted implementation strategy, which is to build the memory system in phases, starting with 'update' and deferring 'retrieve'.",
+    "related_topics": [
+      "memory retrieval",
+      "implementation strategy"
+    ],
+    "extraction_scope": "B-002",
+    "segment_ids": [
+      "S-0001-02"
+    ],
+    "evidence_lines": [
+      34
+    ],
+    "evidence_quote": "[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。",
+    "support_score": 0.612,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.161, 'content_token_coverage': 0.72, 'evidence_token_coverage': 0.171, 'span_inclusion': 0.0}; source_unit_completeness=['incomplete']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "incomplete"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The retrieval mechanism is a planned but unimplemented part of the memory architecture."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "The project's primary goal is defined as understanding the impact of a memory-enhanced agent on human interaction, rather than a full replication of the reference paper. The minimum viable product (MVP) is to implement the basic architecture and demonstrate a noticeable behavioral difference.",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-05 explicitly redefines the project's main goal and sets the criteria for the minimum viable step, which is a major strategic decision.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+    "support_score": 0.597,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.19, 'content_token_coverage': 0.703, 'evidence_token_coverage': 0.206, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-005",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02",
+      "U-S-0001-C03-SR-04"
+    ],
+    "content": "The team will investigate and adopt the evaluation methods from the reference paper to benchmark the memory architecture's performance against a standard LLM.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-02 advises the team to investigate the reference paper's evaluation methods, and U-S-0001-C03-SR-04 confirms this has been taken on as an action item, indicating a decision to proceed with this approach.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44,
+      47
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.567,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.077, 'content_token_coverage': 0.667, 'evidence_token_coverage': 0.08, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "Modifying open-source code is permitted on the condition that the team can clearly demonstrate the added value of their changes, such as making the effects of long-term memory visible.",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-07 establishes a clear rule and requirement for the project's development process when using open-source code.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      54,
+      55,
+      56
+    ],
+    "evidence_quote": "[SPEAKER_01]: 如果我們是建立在拿別人的 open source 來改，這件事情是可以的嗎？ [SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，例如剛剛那個 memory topology。我還有點難以看出它的 long term 強在哪裡、哪裡不一樣。 [SPEAKER_00]: 如果有某種方式可以 highlight，證明它 exhibit 出 long term memory 這件事，例如一個事件的發展不一樣。原本的 agent 不會有那樣的記憶；如果用這個架構，它會有那樣的記憶。如果能在 talk 裡看得出來會比較好。",
+    "support_score": 0.504,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.113, 'content_token_coverage': 0.593, 'evidence_token_coverage': 0.123, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The development plan will prioritize building the update methods for the three memory types first, before addressing the more challenging retrieval component.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-01 explicitly states the team's plan to first build update methods and then address retrieval, establishing a clear development sequence.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      39,
+      40,
+      41
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？ [SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。 [SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。",
+    "support_score": 0.582,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.076, 'content_token_coverage': 0.684, 'evidence_token_coverage': 0.079, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-06"
+    ],
+    "content": "A shared lab account and API key will be established for project use, and associated API costs will be reimbursable to prevent personal expenses.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-06 details a concrete logistical decision regarding shared resources and expense reimbursement for the project.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      50,
+      51,
+      52
+    ],
+    "evidence_quote": "[SPEAKER_01]: 我們想問一下 API key 的使用，因為我們跑 Memory 之類的會需要用到 API key。這個部分有辦法報帳，還是要怎麼處理？ [SPEAKER_00]: 像我們以前打的是 Gemini 的 API。你們那個一年額度應該不夠用。一年？一年不會有 token，它只有信用卡進去後給的 300 美金，但我們好像都用完了。那個都是可以報帳的。 [SPEAKER_00]: 我們可能用一個實驗室帳號，然後用那個 API key。那個東西可以先建立起來。其他人如果要用，也會知道要用那個 API key。用我們實驗室的帳號，然後那些費用都可以報帳。就不用用自己的。",
+    "support_score": 0.765,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.126, 'content_token_coverage': 0.9, 'evidence_token_coverage': 0.128, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The team will first build the update methods for the three memory types and then address retrieval, which requires further thought on the memory structure and architecture.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly outlines the immediate technical implementation plan for the project, breaking it down into two main phases: building update methods and then tackling retrieval.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      39,
+      40,
+      41
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？ [SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。 [SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。",
+    "support_score": 0.773,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.12, 'content_token_coverage': 0.909, 'evidence_token_coverage': 0.121, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02",
+      "U-S-0001-C03-SR-04"
+    ],
+    "content": "For the next meeting, the team is to present how the reference papers prove their models' performance, in order to establish how to demonstrate the memory architecture is necessary and superior.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "U-S-0001-C03-SR-04 explicitly states this as an action item for the next meeting. U-S-0001-C03-SR-02 provides the context and reason for this task, which is to understand how to prove the value of the memory architecture.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44,
+      47
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.708,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.111, 'content_token_coverage': 0.833, 'evidence_token_coverage': 0.114, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-06"
+    ],
+    "content": "A shared lab account and API key will be established for project use to manage and reimburse API key costs.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This unit describes a concrete logistical action to be taken to facilitate the project's technical work by setting up shared resources and handling expenses.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      50,
+      51,
+      52
+    ],
+    "evidence_quote": "[SPEAKER_01]: 我們想問一下 API key 的使用，因為我們跑 Memory 之類的會需要用到 API key。這個部分有辦法報帳，還是要怎麼處理？ [SPEAKER_00]: 像我們以前打的是 Gemini 的 API。你們那個一年額度應該不夠用。一年？一年不會有 token，它只有信用卡進去後給的 300 美金，但我們好像都用完了。那個都是可以報帳的。 [SPEAKER_00]: 我們可能用一個實驗室帳號，然後用那個 API key。那個東西可以先建立起來。其他人如果要用，也會知道要用那個 API key。用我們實驗室的帳號，然後那些費用都可以報帳。就不用用自己的。",
+    "support_score": 0.75,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.105, 'content_token_coverage': 0.882, 'evidence_token_coverage': 0.106, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02",
+      "U-S-0001-C03-SR-05",
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "A key challenge for the project is to establish a method for evaluating the memory-enhanced agent's performance to prove its necessity and superiority over a standard LLM.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "The transcript highlights the need to investigate how to prove the model's performance (SR-02) to demonstrate a noticeable difference (SR-05) and show added value (SR-07). This represents a critical, unresolved methodological issue for the project.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44,
+      48,
+      49,
+      54,
+      55,
+      56
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.567,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.072, 'content_token_coverage': 0.667, 'evidence_token_coverage': 0.075, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The design of the retrieval mechanism for the memory architecture is a significant challenge that requires further consideration, as it is considered the more difficult part of the implementation.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly identifies retrieval as the \"more challenging part\" of the project that requires \"further thought on the memory structure and architecture,\" making it a clear, unresolved technical issue.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      39,
+      40,
+      41
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？ [SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。 [SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。",
+    "support_score": 0.407,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.062, 'content_token_coverage': 0.478, 'evidence_token_coverage': 0.067, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-003",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "專案的最小可行步驟是實現基本的記憶體架構並展示代理行為的顯著差異，而非完全複製參考論文。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This statement defines the minimum viable scope of the project, proposing a focus on demonstrating a noticeable difference in agent behavior rather than a full replication. This is a high-level proposal that steers the project's core objective.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+    "support_score": 0.187,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.057, 'content_token_coverage': 0.22, 'evidence_token_coverage': 0.071, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-03",
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "建議的演示策略是通過設計特定問題來對比普通代理和記憶增強代理，以突顯短期和長期記憶的存在與效果，從而清晰地展示新架構的附加價值。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The user suggests a specific strategy for demonstrating the project's value by contrasting a memory-enhanced agent with a vanilla one to make the impact of the new architecture visible. This is a durable proposal for how to prove the project's success.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      45,
+      46,
+      54,
+      55,
+      56
+    ],
+    "evidence_quote": "[SPEAKER_00]: 可以去看一下。然後再看能不能用同樣方式，搭配我們自己的 dataset 做那種類型的測試。我覺得最後的 demo 可以是：原本 vanilla agent 對話會是這樣；用了這個架構之後會變成那樣。你可以設計幾個問題直接問下去，看到它的答案不同。 [SPEAKER_00]: 某些東西是 signal，表示它有 short term memory；某些問題則用來展現它有 long term memory。也就是要怎麼證明這件事情的存在。他們的 paper 裡應該會有吧？我記得他們可能就是拿過去的問題來測。 [SPEAKER_01]: 如果我們是建立在拿別人的 open source 來改，這件事情是可以的嗎？ [SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，例...",
+    "support_score": 0.299,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.084, 'content_token_coverage': 0.352, 'evidence_token_coverage': 0.099, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-004",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "建議研究並可能採用參考論文中的模型性能評估方法，以證明記憶體架構的必要性和優越性。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The user is advised to investigate how the reference paper proves its model's performance. This is a proposal to adopt a specific methodology (benchmarking, standardized tests) for evaluating the project's outcome.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.276,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.063, 'content_token_coverage': 0.324, 'evidence_token_coverage': 0.073, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "開發計畫將首先建立三種記憶體類型的更新方法，然後再處理更具挑戰性的檢索部分。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The user states a clear, sequential plan for development, proposing to tackle the update methods before the more complex retrieval architecture. This is a durable proposal for the project's implementation strategy.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      39,
+      40,
+      41
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？ [SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。 [SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。",
+    "support_score": 0.378,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.086, 'content_token_coverage': 0.444, 'evidence_token_coverage': 0.097, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "專案的主要目標不是完全複製論文，而是理解記憶增強型代理如何影響人類互動與感知。因此，最小可行步驟是實現基本架構並展示代理行為的顯著差異。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit provides a fundamental argument that defines the project's scope and success criteria, justifying the decision to focus on a minimum viable implementation rather than a full replication.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+    "support_score": 0.237,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.1, 'content_token_coverage': 0.279, 'evidence_token_coverage': 0.135, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "為了證明記憶架構的必要性和優越性，團隊應研究參考論文如何評估其模型性能，可能涉及標準化測試、特定數據集和基準測試。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for a specific course of action (investigating the paper's evaluation methods) by linking it to a core project goal (proving the architecture's value).",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.238,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.07, 'content_token_coverage': 0.28, 'evidence_token_coverage': 0.085, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-004",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "如果修改開源代碼，就必須清楚地展示其附加價值，例如，通過突顯新架構如何展現原代理所不具備的長期記憶能力，讓差異在演示中清晰可見。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit presents a key argument for how to approach development when using open-source code, establishing a requirement to demonstrate clear, added value.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      54,
+      55,
+      56
+    ],
+    "evidence_quote": "[SPEAKER_01]: 如果我們是建立在拿別人的 open source 來改，這件事情是可以的嗎？ [SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，例如剛剛那個 memory topology。我還有點難以看出它的 long term 強在哪裡、哪裡不一樣。 [SPEAKER_00]: 如果有某種方式可以 highlight，證明它 exhibit 出 long term memory 這件事，例如一個事件的發展不一樣。原本的 agent 不會有那樣的記憶；如果用這個架構，它會有那樣的記憶。如果能在 talk 裡看得出來會比較好。",
+    "support_score": 0.249,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.099, 'content_token_coverage': 0.293, 'evidence_token_coverage': 0.131, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-03"
+    ],
+    "content": "一個有效的演示策略是，通過設計能引出不同答案的特定問題，來對比無記憶的普通代理和有記憶的增強代理，從而展示短期和長期記憶的存在與效果。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit presents a reasoned approach for demonstrating the project's core feature (memory), justifying a specific demo strategy.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      45,
+      46
+    ],
+    "evidence_quote": "[SPEAKER_00]: 可以去看一下。然後再看能不能用同樣方式，搭配我們自己的 dataset 做那種類型的測試。我覺得最後的 demo 可以是：原本 vanilla agent 對話會是這樣；用了這個架構之後會變成那樣。你可以設計幾個問題直接問下去，看到它的答案不同。 [SPEAKER_00]: 某些東西是 signal，表示它有 short term memory；某些問題則用來展現它有 long term memory。也就是要怎麼證明這件事情的存在。他們的 paper 裡應該會有吧？我記得他們可能就是拿過去的問題來測。",
+    "support_score": 0.367,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.129, 'content_token_coverage': 0.431, 'evidence_token_coverage': 0.155, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "專案的主要目標非完全複製論文，而是理解記憶體增強型代理如何影響人類互動與感知。最小可行步驟是實作基本架構並展示代理行為的顯著差異。",
+    "importance": 0.95,
+    "confidence": 1.0,
+    "rationale": "This is a project-level finding that clarifies the core objective and scope. It steers the project's direction towards understanding human-agent interaction rather than pure technical replication, defining the MVP's success criteria.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+    "support_score": 0.216,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.088, 'content_token_coverage': 0.254, 'evidence_token_coverage': 0.119, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "為了證明記憶體架構的必要性和優越性，應參考論文中的模型評估方法，可能包括標準化測試、特定數據集和基準測試。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a finding about the project's evaluation methodology, establishing that the reference paper's performance tests are the standard for proving the value of the new architecture.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.235,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.066, 'content_token_coverage': 0.277, 'evidence_token_coverage': 0.079, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-003-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "修改開源代碼時，關鍵要求是清楚地展示附加價值，例如，透過突顯新架構如何展現原代理所沒有的長期記憶能力。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a stable finding that sets a key success criterion for the development work: any modifications to existing code must result in a clearly demonstrable value-add, specifically in showing enhanced memory capabilities.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      54,
+      55,
+      56
+    ],
+    "evidence_quote": "[SPEAKER_01]: 如果我們是建立在拿別人的 open source 來改，這件事情是可以的嗎？ [SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，例如剛剛那個 memory topology。我還有點難以看出它的 long term 強在哪裡、哪裡不一樣。 [SPEAKER_00]: 如果有某種方式可以 highlight，證明它 exhibit 出 long term memory 這件事，例如一個事件的發展不一樣。原本的 agent 不會有那樣的記憶；如果用這個架構，它會有那樣的記憶。如果能在 talk 裡看得出來會比較好。",
+    "support_score": 0.23,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.079, 'content_token_coverage': 0.271, 'evidence_token_coverage': 0.1, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-003-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "在記憶體架構的實作中，檢索（retrieval）被認為是比更新方法更具挑戰性的部分，需要對記憶體結構和架構進行更深入的思考。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a stable observation about a key technical challenge within the project, identifying retrieval as the more difficult component compared to memory updates.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      39,
+      40,
+      41
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？ [SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。 [SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。",
+    "support_score": 0.336,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.089, 'content_token_coverage': 0.395, 'evidence_token_coverage': 0.103, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-05"
+    ],
+    "content": "The project's primary goal is not a full replication of the reference paper, but to implement a minimum viable architecture sufficient to demonstrate a noticeable difference in agent behavior for studying human interaction and perception.",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "This unit clarifies the project's core objective, shifting focus from a complete technical replication to achieving a minimum viable product that demonstrates a behavioral difference. This is a fundamental strategic decision steering the project's direction.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      48,
+      49
+    ],
+    "evidence_quote": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+    "support_score": 0.744,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.215, 'content_token_coverage': 0.875, 'evidence_token_coverage': 0.222, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-02"
+    ],
+    "content": "To prove the memory architecture is necessary and superior, the team will investigate and likely adopt the evaluation methods from the reference paper, which may include standardized tests, specific datasets, and benchmarking.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit describes a decision to adopt a specific evaluation methodology based on the reference paper to formally validate the project's contributions. This is a significant change to their evaluation approach.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      41,
+      42,
+      43,
+      44
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。 [SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。 [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起...",
+    "support_score": 0.598,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.11, 'content_token_coverage': 0.704, 'evidence_token_coverage': 0.116, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-03",
+      "U-S-0001-C03-SR-07"
+    ],
+    "content": "The demonstration and evaluation strategy will involve contrasting a vanilla agent with the memory-enhanced agent by designing specific questions that elicit different answers, thereby making the added value of long-term memory visible.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "These units outline a concrete strategy for demonstrating the project's value by creating a clear, visible contrast between an agent with and without the new memory architecture. This is a key part of their presentation and evaluation approach.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      45,
+      46,
+      54,
+      55,
+      56
+    ],
+    "evidence_quote": "[SPEAKER_00]: 可以去看一下。然後再看能不能用同樣方式，搭配我們自己的 dataset 做那種類型的測試。我覺得最後的 demo 可以是：原本 vanilla agent 對話會是這樣；用了這個架構之後會變成那樣。你可以設計幾個問題直接問下去，看到它的答案不同。 [SPEAKER_00]: 某些東西是 signal，表示它有 short term memory；某些問題則用來展現它有 long term memory。也就是要怎麼證明這件事情的存在。他們的 paper 裡應該會有吧？我記得他們可能就是拿過去的問題來測。 [SPEAKER_01]: 如果我們是建立在拿別人的 open source 來改，這件事情是可以的嗎？ [SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，例...",
+    "support_score": 0.708,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.127, 'content_token_coverage': 0.833, 'evidence_token_coverage': 0.13, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-003-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C03-SR-01"
+    ],
+    "content": "The development plan is to first build the update methods for the three memory types and then address retrieval, which is considered the more challenging part requiring further thought on memory structure and architecture.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit explicitly states the team's agreed-upon development sequence, prioritizing the implementation of memory update methods before tackling the more complex retrieval aspect. This is a clear process decision.",
+    "related_topics": [],
+    "extraction_scope": "B-003",
+    "segment_ids": [
+      "S-0001-C03"
+    ],
+    "evidence_lines": [
+      39,
+      40,
+      41
+    ],
+    "evidence_quote": "[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？ [SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。 [SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。",
+    "support_score": 0.759,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.149, 'content_token_coverage': 0.893, 'evidence_token_coverage': 0.152, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-decision-002",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-05"
+    ],
+    "content": "決定直接在開源專案「Membrane」的 GitHub 儲存庫上進行協作修改，而非繼續開發獨立的 Python 版本。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The unit clearly states an agreement between two students to change their development approach, moving from a separate version to direct modification of the original project.",
+    "related_topics": [
+      "Membrane_project",
+      "development_workflow"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      74
+    ],
+    "evidence_quote": "[SPEAKER_02]: 那我只要把我的 Python 檔改成讀你的那個就沒事？對，它就是一個 Python 檔，你應該可以直接 pull 下來。好，我跟你講，我現在原本用的是 Python 版的 Membrane，現在應該會直接從 open source 開始改。我把那個 GitHub pull 下來，看你要不要一起做。可以啊，我覺得我們可以一起做。",
+    "support_score": 0.26,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.096, 'content_token_coverage': 0.306, 'evidence_token_coverage': 0.124, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-decision-003",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "當前的計畫是先更徹底地審查相關研究論文，之後再考慮是否聯繫作者以獲取更完整的數據集。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit outlines a clear, two-step plan for addressing the dataset issue: first, review papers, then potentially contact authors. This is a decision on the research methodology.",
+    "related_topics": [
+      "dataset_acquisition",
+      "literature_review"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.24,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.057, 'content_token_coverage': 0.282, 'evidence_token_coverage': 0.067, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-004-decision-001",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "教授將使用個人信用卡支付實驗室費用，這些費用可以報銷，因為實驗室資金充足。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states the professor's decision on how to handle lab expenses and the reason (reimbursement is possible due to sufficient funds).",
+    "related_topics": [
+      "lab_administration",
+      "expense_reimbursement"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      68,
+      69,
+      70
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？ [SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。 [SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。",
+    "support_score": 0.453,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.087, 'content_token_coverage': 0.533, 'evidence_token_coverage': 0.095, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-004-decision-004",
+    "type": "decision",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "結論是，在運行帶有 `large-v3` 模型的 WhisperX 時，不設定批次大小（batch size）是可以接受的，因為這只影響速度而不影響結果。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit states a clear conclusion reached by the students about a technical parameter for their model execution, resolving a warning they were encountering.",
+    "related_topics": [
+      "WhisperX",
+      "model_configuration",
+      "batch_size"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      77,
+      78,
+      79
+    ],
+    "evidence_quote": "[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。 [SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。 [SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還...",
+    "support_score": 0.502,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.135, 'content_token_coverage': 0.591, 'evidence_token_coverage': 0.149, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "decision"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-001",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-02"
+    ],
+    "content": "學生必須在3月15日之前提交中央研究院的實習申請。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states a hard deadline for an action: 'students must submit their applications by March 15th'.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67
+    ],
+    "evidence_quote": "[SPEAKER_00]: 這些都是你要寫的檔案，對不對？那就好好寫。 [SPEAKER_00]: 如果你們確定的話，我也許可以問問一些老師，就是中研院那邊的人。不過你們三個人最終應該不會都在同一個人那邊。 [SPEAKER_00]: 他們應該不太可能一次收三位。我猜他們通常會說可以收幾個大學部、幾個研究生之類的。所以你們先把這些東西都寫好，盡量展現誠意。因為如果我聯絡他們，他們就會打開你們的東西來看。 [SPEAKER_00]: OK，那就這樣。你研究一下我的 deadline 是什麼時候。是 3 月 7 號嗎？我覺得是你們丟出去之後，我才會收到信，對不對？ [SPEAKER_01]: 我看起來它沒有說，只說資料繳交時間。我看一下，它有一個 FAQ。 [SPEAKER_01]: 他沒有說，只說申請時間是這樣...",
+    "support_score": 0.476,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.074, 'content_token_coverage': 0.56, 'evidence_token_coverage': 0.079, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-004",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-05"
+    ],
+    "content": "兩位學生將合作直接從GitHub儲存庫修改開源專案「Membrane」，而不是繼續開發獨立的Python版本。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit describes a specific, agreed-upon development task: 'Two students agreed to collaborate on modifying the open-source \"Membrane\" project directly from its GitHub repository'.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      74
+    ],
+    "evidence_quote": "[SPEAKER_02]: 那我只要把我的 Python 檔改成讀你的那個就沒事？對，它就是一個 Python 檔，你應該可以直接 pull 下來。好，我跟你講，我現在原本用的是 Python 版的 Membrane，現在應該會直接從 open source 開始改。我把那個 GitHub pull 下來，看你要不要一起做。可以啊，我覺得我們可以一起做。",
+    "support_score": 0.299,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.115, 'content_token_coverage': 0.351, 'evidence_token_coverage': 0.146, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-005",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "學生將更仔細地審查相關研究論文，以調查其中使用的更完整的資料集。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly states an immediate research task: 'The immediate plan is to review the papers more thoroughly'.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.293,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.055, 'content_token_coverage': 0.345, 'evidence_token_coverage': 0.061, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-002",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "實驗室需要申請一個API金鑰，可能會使用實驗室現有的Google帳號。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit identifies a necessary task for the lab: 'The lab needs to apply for an API key, possibly using an existing lab Google account.'",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      68,
+      69,
+      70
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？ [SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。 [SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。",
+    "support_score": 0.598,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.107, 'content_token_coverage': 0.704, 'evidence_token_coverage': 0.112, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-003",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-04"
+    ],
+    "content": "學生們需要同步他們的資料夾結構以避免重複。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The idea unit states that 'Students identified a need to synchronize their data folder structure to avoid duplication,' which constitutes a clear task to improve workflow.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      72,
+      73
+    ],
+    "evidence_quote": "[SPEAKER_01]: 欸，那個誰，陳佑貞在幹嘛？你的格式要不要來跟我對一下？什麼格式？你說。 [SPEAKER_01]: 我現在在 app 同層建 short term，short term 裡面吃的是 meeting_recording 裡 transcript 的東西。我的也是吃這個啊，我的也是吃 transcript。我的意思是整個資料夾的格式，如果你知道要怎麼推，我們才不會有兩份 meeting transcript 之類的。我看一下，我現在只有一個檔案，就是一個 Python 檔而已。",
+    "support_score": 0.297,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.056, 'content_token_coverage': 0.35, 'evidence_token_coverage': 0.062, 'span_inclusion': 0.0}; source_unit_completeness=['partial']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The final agreed-upon structure is not stated, only the need for coordination and one student's current setup."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-action_item-006",
+    "type": "action_item",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "學生（Weixi）被指派整理一份實驗室需採購物品的清單。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The idea unit explicitly assigns a task to a specific student: 'A student (Weixi) is tasked with compiling a list of items to purchase.'",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      68,
+      69,
+      70
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？ [SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。 [SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。",
+    "support_score": 0.296,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.043, 'content_token_coverage': 0.348, 'evidence_token_coverage': 0.047, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "todo"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-004",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "目前使用的資料集是否足夠，或者是否應該研究並尋求原始研究論文中使用的更完整的資料集，這是一個待解決的問題。",
+    "importance": 0.9,
+    "confidence": 1.0,
+    "rationale": "A student explicitly questioned the adequacy of the current dataset and raised the issue of investigating and possibly acquiring the datasets from the original research papers. This remains an unresolved, high-impact research question.",
+    "related_topics": [
+      "dataset",
+      "research methodology"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.383,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.097, 'content_token_coverage': 0.45, 'evidence_token_coverage': 0.11, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-003",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-06"
+    ],
+    "content": "「Memory」系統的輸出被認為過於零碎和簡單，部分原因可能是系統在找不到關聯時未能記錄資訊。",
+    "importance": 0.85,
+    "confidence": 1.0,
+    "rationale": "The unit describes a key problem with the 'Memory' system's output quality, identifying it as too fragmented and simplistic. This is a core, unresolved technical issue requiring a solution.",
+    "related_topics": [
+      "Memory system",
+      "output quality"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      75,
+      76
+    ],
+    "evidence_quote": "[SPEAKER_04]: 雖然我單純就只是一來一回而已，但我覺得 long term 要改得比較多。感覺可以。若文的內容好像還有滿多在講類似的東西。我覺得 Memory 產出的資料好簡陋。你說它抓出來的那些東西嗎？對，就是它抓出來之後很瑣碎。不過我覺得有一部分也是因為我們的對話紀錄頗瑣碎。 [SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。",
+    "support_score": 0.505,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.127, 'content_token_coverage': 0.595, 'evidence_token_coverage': 0.139, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-002",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-04"
+    ],
+    "content": "為了避免資料重複，學生們需要同步他們的資料夾結構。",
+    "importance": 0.75,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly identifies the need for students to synchronize their data folder structure to resolve duplication issues, which is an unresolved design issue for the team's workflow.",
+    "related_topics": [
+      "data management",
+      "folder structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      72,
+      73
+    ],
+    "evidence_quote": "[SPEAKER_01]: 欸，那個誰，陳佑貞在幹嘛？你的格式要不要來跟我對一下？什麼格式？你說。 [SPEAKER_01]: 我現在在 app 同層建 short term，short term 裡面吃的是 meeting_recording 裡 transcript 的東西。我的也是吃這個啊，我的也是吃 transcript。我的意思是整個資料夾的格式，如果你知道要怎麼推，我們才不會有兩份 meeting transcript 之類的。我看一下，我現在只有一個檔案，就是一個 Python 檔而已。",
+    "support_score": 0.27,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.055, 'content_token_coverage': 0.318, 'evidence_token_coverage': 0.062, 'span_inclusion': 0.0}; source_unit_completeness=['partial']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The final agreed-upon structure is not stated, only the need for coordination and one student's current setup."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-open_issue-001",
+    "type": "open_issue",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-02"
+    ],
+    "content": "由於中研院一位教授不太可能接收全部三位學生，因此需要規劃如何安排學生申請實習。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "The unit explicitly states that it's unlikely one professor will accept all three students, creating an unresolved logistical issue for their internship applications.",
+    "related_topics": [
+      "Academia Sinica internship"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67
+    ],
+    "evidence_quote": "[SPEAKER_00]: 這些都是你要寫的檔案，對不對？那就好好寫。 [SPEAKER_00]: 如果你們確定的話，我也許可以問問一些老師，就是中研院那邊的人。不過你們三個人最終應該不會都在同一個人那邊。 [SPEAKER_00]: 他們應該不太可能一次收三位。我猜他們通常會說可以收幾個大學部、幾個研究生之類的。所以你們先把這些東西都寫好，盡量展現誠意。因為如果我聯絡他們，他們就會打開你們的東西來看。 [SPEAKER_00]: OK，那就這樣。你研究一下我的 deadline 是什麼時候。是 3 月 7 號嗎？我覺得是你們丟出去之後，我才會收到信，對不對？ [SPEAKER_01]: 我看起來它沒有說，只說資料繳交時間。我看一下，它有一個 FAQ。 [SPEAKER_01]: 他沒有說，只說申請時間是這樣...",
+    "support_score": 0.449,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.098, 'content_token_coverage': 0.528, 'evidence_token_coverage': 0.107, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "open_question"
+  },
+  {
+    "candidate_id": "C-B-004-proposal-002",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "建議研究原始研究論文中使用的更完整的數據集，而不是繼續使用當前的數據集。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "A student explicitly questioned the current dataset and suggested a new approach: investigating the datasets from the original research papers. This is a clear proposal for a change in research direction or methodology.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.283,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.049, 'content_token_coverage': 0.333, 'evidence_token_coverage': 0.055, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-proposal-001",
+    "type": "proposal",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "建議使用實驗室現有的 Google 帳號來申請 API 金鑰。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "The unit states a need to apply for an API key and suggests a possible method: using an existing lab Google account. This is a specific, suggested plan of action.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      68,
+      69,
+      70
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？ [SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。 [SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。",
+    "support_score": 0.502,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.073, 'content_token_coverage': 0.591, 'evidence_token_coverage': 0.077, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-argument-002",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "有學生質疑當前使用的數據集，認為應該調查原始研究論文中可能更完整的數據集，這支持了先去審查論文的計畫。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit presents an argument against using the current dataset by contrasting it with potentially better alternatives from published research. It provides the reasoning for a proposed change in research direction (investigating other datasets).",
+    "related_topics": [
+      "Dataset selection",
+      "Research methodology"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.277,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.073, 'content_token_coverage': 0.326, 'evidence_token_coverage': 0.085, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-004-argument-001",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-06"
+    ],
+    "content": "「Memory」系統的輸出被認為過於零碎和簡單，這歸因於輸入對話本身的零碎性，以及系統在找不到關聯時未能記錄資訊。",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for the poor quality of the 'Memory' system's output, citing two specific reasons: the nature of the input and a system logging failure. This is a classic argument explaining an observed phenomenon.",
+    "related_topics": [
+      "Memory system performance",
+      "Data fragmentation"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      75,
+      76
+    ],
+    "evidence_quote": "[SPEAKER_04]: 雖然我單純就只是一來一回而已，但我覺得 long term 要改得比較多。感覺可以。若文的內容好像還有滿多在講類似的東西。我覺得 Memory 產出的資料好簡陋。你說它抓出來的那些東西嗎？對，就是它抓出來之後很瑣碎。不過我覺得有一部分也是因為我們的對話紀錄頗瑣碎。 [SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。",
+    "support_score": 0.435,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.123, 'content_token_coverage': 0.512, 'evidence_token_coverage': 0.139, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-004-argument-003",
+    "type": "argument",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "使用 `large-v3` 模型運行 WhisperX 時，不設置批次大小 (batch size) 是可接受的，因為這只會影響速度而非結果，且產生的警告並非嚴重錯誤。",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This unit provides a clear justification for a technical decision (not setting batch size). It weighs the trade-off (speed) against the outcome (correct results) and concludes the current approach is valid.",
+    "related_topics": [
+      "WhisperX configuration",
+      "Model execution parameters"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      77,
+      78,
+      79
+    ],
+    "evidence_quote": "[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。 [SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。 [SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還...",
+    "support_score": 0.385,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.118, 'content_token_coverage': 0.453, 'evidence_token_coverage': 0.137, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "argument"
+  },
+  {
+    "candidate_id": "C-B-004-finding-001",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-06"
+    ],
+    "content": "The \"Memory\" system's output is considered too fragmented and simplistic, which is attributed to both the fragmented nature of input conversations and the system's failure to log information when it cannot find relationships.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a direct observation and analysis of the system's current performance, identifying a key failure mode and its potential causes. This is a durable finding that will guide future improvements.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      75,
+      76
+    ],
+    "evidence_quote": "[SPEAKER_04]: 雖然我單純就只是一來一回而已，但我覺得 long term 要改得比較多。感覺可以。若文的內容好像還有滿多在講類似的東西。我覺得 Memory 產出的資料好簡陋。你說它抓出來的那些東西嗎？對，就是它抓出來之後很瑣碎。不過我覺得有一部分也是因為我們的對話紀錄頗瑣碎。 [SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。",
+    "support_score": 0.85,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.171, 'content_token_coverage': 1.0, 'evidence_token_coverage': 0.171, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-003",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "The current dataset being used may be incomplete when compared to the more comprehensive datasets likely used in the original research papers the team is referencing.",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This is a significant data-quality finding that questions the suitability of the current dataset and may influence the direction of data collection or sourcing.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.502,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.075, 'content_token_coverage': 0.591, 'evidence_token_coverage': 0.079, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-002",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "When running WhisperX with the `large-v3` model, it was concluded that not setting a batch size is acceptable. This configuration produces warnings and affects processing speed but does not alter the final output.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a specific experimental result that establishes a stable technical parameter for the team's workflow. It resolves an uncertainty about a warning message.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      77,
+      78,
+      79
+    ],
+    "evidence_quote": "[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。 [SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。 [SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還...",
+    "support_score": 0.584,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.119, 'content_token_coverage': 0.688, 'evidence_token_coverage': 0.126, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-006",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "The lab has sufficient funds, and lab-related expenses paid for with a personal credit card are reimbursable.",
+    "importance": 0.7,
+    "confidence": 1.0,
+    "rationale": "This is a stable finding about the lab's financial procedures, which is durable and important for team operations.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      68,
+      69,
+      70
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？ [SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。 [SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。",
+    "support_score": 0.7,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.081, 'content_token_coverage': 0.824, 'evidence_token_coverage': 0.083, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-004",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-09"
+    ],
+    "content": "The recording of this meeting is incomplete, as it began partway through the discussion about the Academia Sinica internship.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This is a data-quality finding that provides crucial context about the completeness of the source material for this specific meeting.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      79,
+      80
+    ],
+    "evidence_quote": "[SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還好，所以我一開始也是報一堆錯。那我們前面有錄音嗎？我從中間開始錄，這樣有點尷尬。 [SPEAKER_01]: 太好了，中間有滿多東西。我是從開始講那個的時候錄。你剛剛今天會議有錄嗎？對，我剛剛有一部錄影。那可以，謝謝。不過是從你們講中研院之後開始。OK，時間不太久。",
+    "support_score": 0.55,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.089, 'content_token_coverage': 0.647, 'evidence_token_coverage': 0.093, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-finding-005",
+    "type": "finding",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-01",
+      "U-S-0001-C04-SR-02"
+    ],
+    "content": "The Academia Sinica internship application requires a name, email, resume, transcript, and statement of purpose, with a submission deadline of March 15th. It is also noted that it is unlikely for one professor to accept all three applying students.",
+    "importance": 0.6,
+    "confidence": 1.0,
+    "rationale": "This summarizes key factual information and an observation about a specific, time-bound opportunity relevant to team members. It's a stable finding regarding the application process.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，所以接下來應該是你們中研院的申請要先處理。你們需要寫什麼計畫嗎？還是直接申請就好？ [SPEAKER_01]: 他昨天辦的說明會要填的欄位，我看一下。我再分享好了。要填名字、郵件、履歷、成績單、研究成果、實習動機。 [SPEAKER_00]: 研究成果是什麼意思？他們是要你提交研究成果嗎？ [SPEAKER_01]: 研究成果應該是可放可不放。它要填的是這些，研究成果不是必須，因為它也有開放研究生，所以可能有人大學有做過專題就可以放。 [SPEAKER_00]: 這些都是你要寫的檔案，對不對？那就好好寫。 [SPEAKER_00]: 如果你們確定的話，我也許可以問問一些老師，就是中研院那邊的人。不過你們三個人最終應該不會都在同一個人那邊。 [SPEAKER_00]: 他們應該不...",
+    "support_score": 0.656,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.134, 'content_token_coverage': 0.771, 'evidence_token_coverage': 0.139, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "result"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-003",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-05"
+    ],
+    "content": "團隊決定直接在 GitHub 上協作修改開源專案「Membrane」，而非繼續開發一個獨立的 Python 版本。",
+    "importance": 0.8,
+    "confidence": 1.0,
+    "rationale": "This unit clearly states a shift in development strategy, moving from a separate implementation to direct collaboration on an existing open-source project's repository.",
+    "related_topics": [
+      "Membrane project",
+      "development workflow"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      74
+    ],
+    "evidence_quote": "[SPEAKER_02]: 那我只要把我的 Python 檔改成讀你的那個就沒事？對，它就是一個 Python 檔，你應該可以直接 pull 下來。好，我跟你講，我現在原本用的是 Python 版的 Membrane，現在應該會直接從 open source 開始改。我把那個 GitHub pull 下來，看你要不要一起做。可以啊，我覺得我們可以一起做。",
+    "support_score": 0.316,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.117, 'content_token_coverage': 0.371, 'evidence_token_coverage': 0.146, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-004",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-07"
+    ],
+    "content": "團隊將改變資料集策略，轉為先更深入地審查相關研究論文，以尋找更完整的資料集，並可能後續聯繫作者索取資料。",
+    "importance": 0.75,
+    "confidence": 0.9,
+    "rationale": "This unit outlines a change in the approach to data acquisition, shifting focus from using the current dataset to actively seeking better datasets from published research.",
+    "related_topics": [
+      "dataset acquisition",
+      "research methodology"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      76,
+      77
+    ],
+    "evidence_quote": "[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。 [SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。",
+    "support_score": 0.296,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.082, 'content_token_coverage': 0.348, 'evidence_token_coverage': 0.098, 'span_inclusion': 0.0}; source_unit_completeness=['uncertain']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "uncertain"
+    ],
+    "source_unit_uncertainty_notes": [
+      "This is an exploratory discussion about future strategy; the only decided action is to review the papers."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-002",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-04"
+    ],
+    "content": "學生們決定同步化他們的資料夾結構以避免重複，目前的結構是 `app/short_term/` 從 `meeting_recording/transcript` 讀取資料。",
+    "importance": 0.7,
+    "confidence": 0.9,
+    "rationale": "This unit documents a decision to change the data handling process by synchronizing folder structures to improve efficiency and avoid duplication.",
+    "related_topics": [
+      "data management",
+      "folder structure"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      72,
+      73
+    ],
+    "evidence_quote": "[SPEAKER_01]: 欸，那個誰，陳佑貞在幹嘛？你的格式要不要來跟我對一下？什麼格式？你說。 [SPEAKER_01]: 我現在在 app 同層建 short term，short term 裡面吃的是 meeting_recording 裡 transcript 的東西。我的也是吃這個啊，我的也是吃 transcript。我的意思是整個資料夾的格式，如果你知道要怎麼推，我們才不會有兩份 meeting transcript 之類的。我看一下，我現在只有一個檔案，就是一個 Python 檔而已。",
+    "support_score": 0.283,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.081, 'content_token_coverage': 0.333, 'evidence_token_coverage': 0.097, 'span_inclusion': 0.0}; source_unit_completeness=['partial']; source_unit_uncertainty_notes=1",
+    "source_unit_completeness": [
+      "partial"
+    ],
+    "source_unit_uncertainty_notes": [
+      "The final agreed-upon structure is not stated, only the need for coordination and one student's current setup."
+    ],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-001",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-03"
+    ],
+    "content": "實驗室將使用教授的個人信用卡支付可報銷的實驗室開銷，並可能使用現有的實驗室Google帳戶申請API金鑰。",
+    "importance": 0.6,
+    "confidence": 0.9,
+    "rationale": "This unit describes a newly established process for handling lab expenses and API key applications, which is a change in operational procedure.",
+    "related_topics": [],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      68,
+      69,
+      70
+    ],
+    "evidence_quote": "[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？ [SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。 [SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。",
+    "support_score": 0.437,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.097, 'content_token_coverage': 0.514, 'evidence_token_coverage': 0.107, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  },
+  {
+    "candidate_id": "C-B-004-approach_change-005",
+    "type": "approach_change",
+    "source_unit_ids": [
+      "U-S-0001-C04-SR-08"
+    ],
+    "content": "團隊確認在使用 WhisperX 的 `large-v3` 模型時，不設定批次大小（batch size）是可以接受的，因為這只會影響執行速度，不影響結果。",
+    "importance": 0.5,
+    "confidence": 1.0,
+    "rationale": "This unit documents a technical decision regarding the configuration for running a specific model (WhisperX), establishing an accepted practice for their workflow.",
+    "related_topics": [
+      "WhisperX",
+      "model configuration"
+    ],
+    "extraction_scope": "B-004",
+    "segment_ids": [
+      "S-0001-C04"
+    ],
+    "evidence_lines": [
+      77,
+      78,
+      79
+    ],
+    "evidence_quote": "[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。 [SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。 [SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還...",
+    "support_score": 0.452,
+    "grounding_note": "local evidence-content alignment from source idea unit spans; signals={'lexical_jaccard': 0.127, 'content_token_coverage': 0.532, 'evidence_token_coverage': 0.143, 'span_inclusion': 0.0}; source_unit_completeness=['complete']; source_unit_uncertainty_notes=0",
+    "source_unit_completeness": [
+      "complete"
+    ],
+    "source_unit_uncertainty_notes": [],
+    "legacy_type": "method_change"
+  }
+]

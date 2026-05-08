@@ -1,0 +1,50 @@
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12
+only when the segment contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Prefer durable, self-contained units that combine related details across several
+lines. Preserve questions, objections, counterexamples, method exploration,
+evaluation criteria, comparison rationale, and unresolved design discussions
+when they affect future project decisions or memory behavior.
+Ignore only true filler, acknowledgements, local wording clarifications, and
+purely social turns that do not affect the project state.
+
+Use completeness exactly as one of: complete, partial, incomplete, uncertain.
+Completeness rubric:
+- complete: the unit is self-contained enough for downstream L1 extraction.
+- partial: the unit is useful, but nearby context is needed for pronouns, target, or rationale.
+- incomplete: the discussion is cut off, still unfolding, or missing a conclusion.
+- uncertain: the text is ambiguous, exploratory, hypothetical, or unclear whether it was adopted.
+Do not use fallback or compacted; those are reserved for deterministic validators.
+
+Segment: S-0081-C02
+Topic: Presentation on the current dataset size, data quality issues, and the need to define and handle 'long context' for LLMs. / Detailing the evaluation plan, including question types (short-term, long-term, decision reasoning) and testing the model's ability to 'forget' irrelevant information. / Technical discussion on different AI 'forgetting' mechanisms, contrasting RAG-based data deletion with fundamental model adjustments.
+
+Transcript lines:
+99: [SPEAKER_04]: 我們這週主要是我們規劃了一些 evaluation 的方法，然後就是有參考之前看的幾篇 paper。然後我們現在累積的 data，應該是前面有從這個學期開始，比較就是有一直 focus 在研究上的，總共有五場。然後現在總計的時間大概是 180 分鐘。
+100: [SPEAKER_04]: 是已經 5 場，總共加起來 180 分鐘。對，然後每一場的長短不一樣，有半個小時，有到快一個小時這樣。對，然後我們有把這 5 場都去轉成逐字稿，但是因為那個錄音檔會有一些可能大家講話交雜的聲音，所以它轉出來的品質有一些部分是需要修改的。然後因為我們有在想說。
+101: [SPEAKER_04]: 五場的量，以現在 LLM 來說其實他們能力都蠻強，那這樣下去做實驗，不太確定這五場的內容夠不夠，所以我們在想是用 LLM 去做，先請 LLM 去修正。
+102: [SPEAKER_02]: 對話裡面有 context 在這個地方的話，你們說這個長度對於 LLM 來說不是一個問題，它是有什麼樣的根據嗎？因為這個地方如果你們在講這個專題的時候，你就要蠻明確地講說，以 Large Language Model 來說，在處理這種會議資料的時候最長。
+103: [SPEAKER_02]: 就是在多長。對，我們有要去嘗試大概多長，大概幾個 turn 是它的極限，那我們就是要做，還是幾個 term、是幾個字，它通常算的應該是，我覺得應該是看 token。對，應該是看 token。所以你可能要去查一下確切地說，以現在目前為止，就是在 agent 上面再定義成是 long context，大家講的是多 long，就是 largest 的現在是最長。
+104: [SPEAKER_04]: 對，然後用那個方式，我們才剛好可以回來看說，所以以我們的 transcription 裡面，先不管 180 分鐘，以那一個標準來看它是幾倍的長度這樣。嗯，然後我們有在想，就是如果今天這個不夠的話，那像有一些 paper 它是用給背景資料，然後請 AI 去對話，那我們現在想的做法是我們把我們的逐字稿送進去，請 AI 去幫忙增長這個對話。
+105: [SPEAKER_02]: 就是讓它的對話可以變得更長，就是 data 更大。或者是有另外一種方式是你可以把我們其他同學的會議錄音也放進去，你就把它變成說是以我作為一個 leader。
+106: [SPEAKER_02]: 然後你們想要來跟我去討論一些事情，那這樣就會存在說，譬如說我跟碩二的同學，我們大概有兩年的 meeting，對，然後就會有很長，就是我對於每個人，我們都有一些脈絡，然後一定有些東西曾經討論過，然後被丟棄。這些錄音都在嗎？應該是都在。對，我知道真盈，因為真盈她也是在弄會議分析，所以她的檔案一定是都在。
+107: [SPEAKER_02]: OK，所以可以去跟學姊拿。對對對，可以跟她要。然後我在想的是，以這樣來說，其實應該是說，你可能下次就要先確定一下，最就是 long context 的那個中值是多少，然後用那個方式去比較。因為這 180 分鐘感覺不是 agent 他們在定義 long 的那個中值，就沒有分鐘的概念。對，用那個方式我們大概會知道說，所以我們的資料的大小大概是多大這樣。嗯。
+108: [SPEAKER_04]: 然後我們現在 evaluate 的 question 主要分三類，一個是 short-term，就是至少是要確定它短期的回答是正確的；然後 long-term 的 evolution，就是可能會問它說，我們這整個某一件事情的研究方法，從過去到現在完整的演進是什麼。
+109: [SPEAKER_04]: 然後還有一個是 decision reasoning，就是會問它說，我們為什麼現在是做這個決定，當初是什麼討論讓我們今天做這件事情的決定。這樣子嘛。所以這個 evaluation 的意思是說，第二個的話，它的重點是正確率嗎？對。
+110: [SPEAKER_04]: 就是它不能漏掉 context，它不能漏掉其中某個 meeting 講過的東西。就可能我們在三個 meeting 提過這件事情，然後三個 meeting 都有不同討論的點，但它只講到了其中兩場 meeting，或者是它自己胡亂地湊了一些我們 meeting 裡面並沒有講到的事情。嗯。
+111: [SPEAKER_04]: 所以在我們的 data 裡面，我們基本上就是要非常明確地知道說，我們裡面總共有哪一些 answer，而且哪些東西是不對的，就在 evaluate 的時候。所以那就是評分的方式，參考也是之前前面的 paper，就是我們會給它我們的答案，還有我們這個 agent 生出來的答案，然後請它去比對大概的正確率。
+112: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。
+113: [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但是你刻意地去挖它那個 lost 的裡面的話，它是存在的。
+114: [SPEAKER_02]: 對，然後它就是在等著某一期，就是它因為我們不是說它被有點像是 inactive 的某一些 idea 在那個地方，就是太久又太不重要的都會被丟到那個地方去。那所以說，我們要怎麼去處理，就是在一般對話的時候不應該觸發，然後在講某一句話的時候，它應該要去觸發、把這個記憶調起來。
+115: [SPEAKER_02]: 對，應該是說我們在一般對話的時候它不會出現，然後但是你用某一種 function call 去叫它列出你的 long-term memory 裡面現在有哪些是 inactive 的 idea，那它會列在那個地方，但是它會刻意地不出現在現在正在進行的對話裡。那它要在被 activate 的情況下，就是譬如說它必須要出現在 short-term meeting 裡面，出現到了幾次之後，它的那個會慢慢地從那個地方又再慢慢地浮掉。那應該就是我們之前有做。
+116: [SPEAKER_04]: 就是我們做，我們會去算它的 weight，會算它的 importance。我們應該會從這個地方去切一個，就是幾分以下它是在一般的對話中不會出現。然後我們在每一次，如果像老師說 short term 一直提到它的話，那它那個分數應該會往上，所以它就會再重新被 LLM 在對話中提到這樣。
+117: [SPEAKER_02]: 這個東西有 agent 的遺忘這件事情，現在有人在開始做，應該蠻多人做的。可是他們做的應該都是以人類的遺忘曲線，就是可能多久這樣子。但是如果是，他們有人在做嗎？因為 Large Language Model 已經自己很會遺忘啦。他們現在是怎麼樣的人類遺忘曲線？我感覺 Large Language Model 的遺忘，感覺是 sensitive 資料的去除嗎，那一種類型的遺忘。
+118: [SPEAKER_02]: 我有看過，我記得 Time Memory 還是哪一篇，它是有模仿，它是有做遺忘的機制喔。你可以把那一篇等一下貼到那個 chat，但我還要找我這個長相。好好好。就是，對，我覺得他們的遺忘都是直接全部忘掉，就是不可能再 retrieve 回來，就是它不會因為你一直提到再出現這樣。他們的遺忘是怎麼樣，他們是如何遺忘。
+119: [SPEAKER_02]: 是在某種方式把它 probability 上面直接 negate 這樣回去，讓它不記得這個連結嗎？還是他們那邊的遺忘是怎麼樣的遺忘？還是它用 prompt 的方式說你不記得這件事情？就是他們的遺忘方式是怎麼樣。遺忘應該就是直接在資料庫裡面把它踢掉，就像 RAG 它是會有那個向量建設，它直接把那個資料刪掉這樣。
+120: [SPEAKER_04]: 所以它就不會再找到。所以它比較像是在 RAG 上面的時候，就像因為我們也會拆很多的，我們會逐字稿送進來，我們會記 TODO 什麼什麼。如果這個 TODO 一直都沒有被提到，他們可能就是會把這一筆刪掉，這樣它下次在找的時候它不會找到這個。
+121: [SPEAKER_02]: 因為我在想的是，因為 language model 它在跟人的對話過程當中，它其實就算你慢慢把 external 那個拔掉之後，它已經慢慢地就被捲進它的 language model 裡面了，對不對？所以它如果真的要，我不知道它那邊所謂的去。所以我本來想像中的是，我要去除這個 language model 裡面的記憶的話，就是你就必須要想辦法把，比如說 A 跟 B 曾經有連接，我想你忘記 A 跟 B 的連接。
+122: [SPEAKER_02]: 我就是必須要用某種 negate 的方法，我要把 A 跟 B 直接的關聯直接去掉，讓你的 language model 裡面它就不存在它們的關聯性。我不知道過去的遺忘是這種 model 本身 fundamentally 去動它的 model，還是是 RAG 上面的說我在 external 裡面不存在這一個資料。聽起來是 external database。目前我們看到沒有人去處理說，就是 language model 整個 fundamentally 把這一個 knowledge 解掉、拆解掉這樣。OK。
