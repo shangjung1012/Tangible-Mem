@@ -1,0 +1,41 @@
+=== Embedding RAG Transcript Baseline ===
+
+[0325#chunk-5] cosine=0.6430
+KER_01]:	然後就是我們一開始他可能有分三個是就是working short term跟long term然後之後講出的話就是我們第一個部分memory出來的話是正確之後然後待會第二個部分是會把它調整成像是老師會說的話
+[SPEAKER_01]:	那那個Memory的話假設就是有三個一個是Working一個是Short-term一個是Long-term那Working它就有點像是我們當下的就比如說現在我們在講話的內容那就是一定要記得說可能上前10秒我剛說了什麼
+[SPEAKER_01]:	再來是long term,long term主要的意思是就是對,
+[SPEAKER_02]:	short term要不要先
+[SPEAKER_01]:	short term主要的意思是就是要記得近三次的會議就比如說你agent要記得說你上次的to do是什麼那你到今天的時候有沒有做了什麼更新之類的那我們的做法就是我們目前的做法是他會用LLM我們是打一個LLM去判斷然後他會回傳
+[SPEAKER_01]:	然後比如說它會是有點類似列點的方式那列點的方式如果今天我們就之前會有個目前的Memory嘛那我們會拿這次Meeting完之後的逐字稿去把它餵進去那餵進去之後它
+[SPEAKER_01]:	就是如果是相同的比如說上次的會議他會有個類似description那如果是description類似的話然後他會去比較然後比較完之後他會直接更新上去那我今天講過的事情是之前沒有講過的他就會類似append上去這是目前的short term
+[SPEAKER_01]:	會是這樣的方式去做然後因為每一個items他會記得就是他會去記錄說他上次用到上次更新是什麼時候就比如說就12345然後這一次是我們的第六次會議那第六次會議完之後會拿第六次的會議去把它update進去那如果今天有一個會議的item他上次記錄的最後一次更新是可能第一次或是第二次那代表
+[SPEAKER_01]:	近期都沒有提到過他那他會把他就踢掉這樣子
+[SPEAKER_02]:	我覺得你總地來講說應該是剛剛講的working memory就是現在正在進行然後short term我記得我們上次是說就是上一次就好那short term的話就是說他比較重視在直接會impact這個禮拜要找的事情因為他會直接是變to do那beyond上一次的話我們就當成是一個比較long term的一個東西
+[SPEAKER_02]:	那我覺得我們的Memory有個比較重要的點是因為我們討論的是在研究的情境底下然後所以有很多東西它其實會一直開枝然後在某些時刻它可能它不是線性的對 然後所以有些東西它其實在某個時刻它存在但是其實在某個時刻我們已經否決掉不要做這件事情了
+[SPEAKER_02]:	那如果是我們想像說一般的像比方說rag或什麼東西我知道說這個事情比如說本來覺得要做這個東西對他是在記憶裡的但是在某個時刻他其實已經變成是不要再做它了那所以那也許然後不同的事情比如說像我們一開始有一些不一樣的goal那現在說好我們聚焦到說memory這件事情那也不代表說personality或什麼東西不管對那當然那個東西會現在目前會丟在就是比較longterm的那個記憶裡面去
+[SPEAKER_02]:	對,然後,所以就有點像是這種,譬如說我要怎麼去在Long Term上的話,我要怎麼去Structure這種可能開枝散葉或是Iterative然後中間可能有些Dependency,那某些東西其實它雖然曾經被講過但是它是不應該再被執行等等的,這些Temporal的一些Formation對,就比較,然後這部分就是Long Term的地方嗯,
+[SPEAKER_04]:	Long Term這現在應該不是Dependency,現在比較像是靠retrieval去那個
+[SPEAKER_02]:	不知道顏老師對於我們現在這樣子的架構有沒有什麼想法 然後最近同學們就一直在看一些處理memory架構的paper
+[SPEAKER_01]:	我們最近主要是在看就很多Memory主要是解決的問題是在 context太大的時候然後很多人我們會把它去處理成一些樹狀的結構我們昨天有自己討論就是我們到底要怎麼去區分我們的short term 我們現在在想short
+
+[0429#chunk-19] cosine=0.6416
+要提供給它，然後這個函數其實是我們自己先已經寫好函數的行為是什麼。函數給它之後，它會回傳說希望我去調這個函數，那我會把這個函數的結果印出來之後，再返回給 Gemini。所以等於說流程是我們再到第二步，第二步就是。
+[SPEAKER_02]: Gemini 就會回傳說它希望我們去，就是它就是要叫這個函數。那這個函數不是就，雖然是 Gemini 要我們叫。所以這邊的逐字稿的函數跟頭尾這個地方，你就是。
+[SPEAKER_02]: 應該說這個部分，逐字稿的函數跟頭尾這件事情，我們直接讀，我們有一個 transcription file 過來了，這件事情是不是直接就有那個數、有那個 variable 了？
+[SPEAKER_00]: 對，所以這個東西是我們的，就是我們函數。就是它要這個的時候，我們就直接返回給它函數。那我們函數的實際上實作，也是去看那個逐字稿的函數，然後主要是讓 Gemini 知道而已。
+[SPEAKER_02]: 嗯嗯嗯，我應該說我看到這個，所以我現在有點試圖在想是說，有一些好像就是我們程式裡面，譬如說你 call read short-term memory 這件事情，你裡面就可以直接 call read transcript overview。然後裡面因為你有 input 一個 file，那它的逐字稿行數那個，就直接 function 裡面其實你去 call、你去跑了 read short-term memory 這件事情，它裡面在執行的過程當中，它就會再去呼叫 read transcript overview。
+[SPEAKER_00]: 可是這樣子的話，那個函數就不應該叫 Read Short-term Memory，因為如果 Read Short-term Memory 一定會去讀 Read Transcript Overview 的話，那這個 Read Short-term Memory 應該改名叫做 Read Short-term Memory and Transcript Overview。所以你的第一個步驟應該是 Read Transcript Overview，然後進來之後你要開始說我要 Read Short-term Memory。
+[SPEAKER_02]: 然後可能你也會最後如果要 long term 的話，有時候 read long-term memory 這件事情。就是應該是說，我現在會覺得，這部分我會覺得好像一切都 rely on。就當然說，這個我們以前都是寫在程式碼裡面的嘛，對不對？我 load 一個 transcription 之後，我第一個程式碼要做的事情是我要去 read short-term memory，然後我要開始去做一些 update。
+[SPEAKER_02]: 然後我去 read short-term memory 之後，我裡面會去 call read transcript lines 這個東西。那我想像是說，那在這個地方的時候，我可能會 call 一個 Gemini，做一個 API call。我會說現在 given 這個 text，我想要你 AI 做的事情是幫我去判斷，這個句子大概接下來你覺得會是幾個句子，你 output 出來給我。
+[SPEAKER_00]: 對啊，這個是在後面的部分吧。就是當然你一定可以把 code 全部都寫死說，你 read short-term memory 完之後。
+[SPEAKER_02]: 應該說不是寫死，這就是你的任務流程啊。這個流程，它本來你在這個 function calling，
+[SPEAKER_00]: 因為這個東西本來就是 function calling 的目的，就是讓一下 prompt，然後讓 Gemini 去執行這個函數。然後剛剛說的那個部分，是在接下來它第三個就會應該去叫 read transcript，然後就是每個 line 要怎麼讀，所以它要讀幾行。
+[SPEAKER_02]: 嗯
+[SPEAKER_00]: 所以就是 function calling，你知道嗎，用 prompt 來去限制它。
+[SPEAKER_02]: 嗯，有什麼樣的原因是不想要直接用我們的 function code？因為這就是一個我們的架構、
+
+[0422#chunk-7] cosine=0.6398
+是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個
+[SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般的普通的那個RAG相比如果把所有的Transcription就是用某種方式變成就是記憶起來，然後等你們有去分Long-term Short-term的話，它不然它比我跑的方式會有什麼樣不一樣然後有什麼樣的有什麼樣的好處對
+[SPEAKER_02]: long term 的一個Outjet大概就是這樣像這樣，會有你的Type是什麼然後內容是什麼Evidence就是他從哪裡去找出
+...(truncated)

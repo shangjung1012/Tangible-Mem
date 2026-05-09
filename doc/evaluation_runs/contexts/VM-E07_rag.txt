@@ -1,0 +1,44 @@
+=== Embedding RAG Transcript Baseline ===
+
+[0429#chunk-3] cosine=0.6523
+它是有模仿它是有做遺忘的機制喔 
+[SPEAKER_02]: 你可以把那一篇 等一下貼到那個chat
+[SPEAKER_04]: 但我還要找一下 
+[SPEAKER_02]: 好好就是 對我覺得他們的遺忘都是直接全部忘掉就是不可能再retrieve回來就是它不會因為你一直提到再出現這樣他們的遺忘是怎麼樣他們是他們的遺忘是如何遺忘
+[SPEAKER_02]: 是在某種方式把他probability上面直接把它就是negate這樣回去讓他不記得這個連結嗎還是他們那邊的遺忘是怎麼樣的遺忘還是他用prompt的方式說你不記得這件事情就是他們的話遺忘的方式是怎麼樣的遺忘
+[SPEAKER_04]: 應該就是直接在就是我們都會後面都是有資料庫還在資料庫裡面直接把它踢掉就像RAG它是會有那個向量建設它直接把那個資料就是刪掉這樣
+[SPEAKER_04]: 所以他就不会再找到所以他比较像是在RAG上面的时候就像因为就像我们也会拆很多的我们会逐字稿送进来我们会记to do什么什么啊如果这个to do一直都没有被提到他们可能就是会把这一笔就是删掉这样那他下次在找的时候他不会找到这个
+[SPEAKER_02]: 因為我在想的是因為language model它在跟人的對話過程當中它其實就算你慢慢把external那個拔掉之後它已經慢慢的就被捲進它的language model裡面了對不對所以它如果真的要我不知道它那邊所謂的去所以我本來想像中的時候我要去除這個language model裡面的記憶的話就是你就必須要想辦法把比如說A跟B曾經有連接我想你忘記A跟B的連接
+[SPEAKER_02]: 我就是必須要用反正某種Nigate的方法我要把A跟B直接的關聯直接去掉讓你的Language Model裡面它就不存在他們的觀聯性我不知道過去的遺忘是這種Model本身Fundamentally的去動它的Model還是是RAG上面的說我在External裡面不存在這一個資料聽起來是External的Database目前我們看到沒有人去處理說就是Language Model整個Fundamentally把這一個Knowledge就是解掉拆解掉這樣OK
+[SPEAKER_04]: 那個應該蠻數學的應該蠻數學的
+[SPEAKER_02]: 我覺得這可能就是沒關係我們就先不我們就先以一個那以 literature 的部分就是也把最相關的這些 work就都把它列出來
+[SPEAKER_04]: 然後再來是會做 ablation study就是我們會有做就是 baseline 是只有 RAG然後只有short term的機制跟只有long term的機制然後後面是整個full system就是要prove就是我們為什麼要short term加long term這樣
+[SPEAKER_02]: 誒那在working memory的話應該是也是要working的話是你們的session跟testing的狀態是嗎就是應該是說你去比較不同的memory的架構去看它在working memory使用working memory可能會是一樣的是嗎
+[SPEAKER_04]: 對 因為Working Memory是不管是怎麼樣就是你在對話的時候一直我們會模仿他一直進來進來進來這樣
+[SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼
+[SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它分就是我們逐字搞進來我們不是一句一句一句然後就讓它拆成那個轉換成像那樣的資料我們是做我們會先抓它裡面的idea unit對對idea unit
+[SPEAKER_02]: 嗯ok然後現在所以RAG跟Full System的差別是在於RAG有什麼
+[SPEAKER_01]: 呃RAG Full System Track 感覺就只是它是最簡單的處理方式啦它就只是切塊然後用語意去找相似度的那一塊是什麼然後我們是除了有切 idea unit 之外我們 idea unit 上面還會有更高 level 的結論就它可以帶出那個上層的脈絡然後我們還有 short term 的部分會比較仔細的告訴它我們最近在做什麼之類的
+[SPEAKER_02]: 嗯好
+[SPEA
+
+[0429#chunk-11] cosine=0.6136
+就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。
+[SPEAKER_02]: 拆成那個，轉換成像那樣的資料。我們是做，我們會先抓它裡面的 idea unit。對對，idea unit。嗯，OK，我現在，所以 RAG 跟 full system 的差別是在於，RAG 有什麼，呃，RAG、full system。
+[SPEAKER_01]: RAG 感覺就只是它是最簡單的處理方式啦，它就只是切塊，然後用語意去找相似度的那一塊是什麼。然後我們是除了有切 idea unit 之外，我們 idea unit 上面還會有更 high-level 的結論，它可以帶出那個上層的脈絡。然後我們還有 short-term 的部分，會比較仔細地告訴它我們最近在做什麼之類的。OK，好。
+[SPEAKER_01]: 好，我們先往後。後面是那個 long-term 的部分，就是這個 incremental，就是指我們用 tool calling 之後，它會一部分一部分地往下讀這樣。然後上次講了說，我們這邊有要去做實驗嗎？就是我們那時候說三種的 trade-off。
+[SPEAKER_02]: 一種是 fixed 切的話會有一定的 trade-off，然後如果是一句一句一句看，iterative 地去 merge，跟這個應該是我們之前講的那個嘛，然後再。
+[SPEAKER_02]: 但因為我們好像離那個報告只剩 13 天，所以感覺就是可能 5 月 12 日之後可以做的實驗。所以這段我就是假定我就是這麼做了，我去不去 prove，我們可能會有些 hypothesis，說這個會比別的東西好。對，那之後呢？
+[SPEAKER_01]: 其實如果稍微比一下，我覺得它會抓的東西會比較少那種很不必要的閒聊資訊。就像我們有時候講到什麼司機什麼，就是一些，或是什麼誰還沒來這種資訊。如果不是用這個的話，它會存那些蠻不必要的資訊。我覺得。你是說譬如說因為它 forward scan。我先聽一下這個流程是什麼好了，流程。那還是你的下一頁。
+[SPEAKER_01]: 就是它最主要的幾個 function，然後 read transcript 就是讀我們 transcript 的第幾行，然後 update issue。issue 跟我們的 object 是不一樣，issue 是這個 object 有提到的某一些 issue。issue 算是一個我們用來處理重複提到、會增加它 importance 的一個工具。
+[SPEAKER_01]: 算是比 object 再更細一點的東西，然後它會跟 object 連到。就可能一個 object 會連到兩個 issue 這樣。然後 issue 會去看它有沒有反覆出現，issue 如果反覆提高，它又連到這個 object，那這個 object 的 importance 就會提高。
+[SPEAKER_01]: 然後 create object 就是建立一個，它會先存成一個 candidate，然後在你後面再去讀到的時候，它會去看我現在這個 candidate 跟我後面的內容是不是相關。如果是相關的，它就合併在一起一起處理。它現在這邊的後面指的是多後面？就是後面一句話嗎？還是。
+[SPEAKER_02]: 後面要看它每一次 read transcript 的時候會。我看一下這個 read transcript 是只有讀，就是 assuming 它會是一個不斷一直讀的狀態。read transcript 的話它有一個 input，它的 input 就會是你現在要往前跳幾行的那個。我看我之前跑的紀錄，一次會先跑大概 20 幾行左右。那那個 20 幾行是怎麼決定的？
+[SPEAKER_01]: 20 幾行是算是怎麼講，算是我們初始隨便給它一個值吧。但是我們看它效果跑出來還 OK 就定，然後我們看它後面會讀幾行，後面會讀大概每次都是 20 行左右。所以這邊是沒有那個動態地去讀幾行這樣。
+[SPEAKER_02]: 動態去讀幾行。我們上次講過說，我現在讀進去這一句話，譬如說我們現在講現在有少一個人什麼之類的，我會預期這個對話大概就是兩句就結束了。然後跟如果說這一句話講的是說，喔，那接下來是 incremental bridge 這件事情，那它就判定說接下來可能
+
+[0429#chunk-10] cosine=0.6074
+？我感覺 Large Language Model 的遺忘，感覺是 sensitive 資料的去除嗎，那一種類型的遺忘。
+[SPEAKER_02]: 我有看過，我記得 Time Memory 還是哪一篇，它是有模仿，它是有做遺忘的機制喔。你可以把那一篇等一下貼到那個 chat，但我還要找我這個長相。好好好。就是，對，我覺得他們的遺忘都是直接全部忘掉，就是不可能再 retrieve 回來，就是它不會因為你一直提到再出現這樣。他們的遺忘是怎麼樣，他們是如何遺忘。
+[SPEAKER_02]: 是在某種方式把它 probabilit
+...(truncated)

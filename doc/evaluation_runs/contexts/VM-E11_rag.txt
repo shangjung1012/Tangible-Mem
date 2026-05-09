@@ -1,0 +1,56 @@
+=== Embedding RAG Transcript Baseline ===
+
+[0325#chunk-5] cosine=0.6631
+KER_01]:	然後就是我們一開始他可能有分三個是就是working short term跟long term然後之後講出的話就是我們第一個部分memory出來的話是正確之後然後待會第二個部分是會把它調整成像是老師會說的話
+[SPEAKER_01]:	那那個Memory的話假設就是有三個一個是Working一個是Short-term一個是Long-term那Working它就有點像是我們當下的就比如說現在我們在講話的內容那就是一定要記得說可能上前10秒我剛說了什麼
+[SPEAKER_01]:	再來是long term,long term主要的意思是就是對,
+[SPEAKER_02]:	short term要不要先
+[SPEAKER_01]:	short term主要的意思是就是要記得近三次的會議就比如說你agent要記得說你上次的to do是什麼那你到今天的時候有沒有做了什麼更新之類的那我們的做法就是我們目前的做法是他會用LLM我們是打一個LLM去判斷然後他會回傳
+[SPEAKER_01]:	然後比如說它會是有點類似列點的方式那列點的方式如果今天我們就之前會有個目前的Memory嘛那我們會拿這次Meeting完之後的逐字稿去把它餵進去那餵進去之後它
+[SPEAKER_01]:	就是如果是相同的比如說上次的會議他會有個類似description那如果是description類似的話然後他會去比較然後比較完之後他會直接更新上去那我今天講過的事情是之前沒有講過的他就會類似append上去這是目前的short term
+[SPEAKER_01]:	會是這樣的方式去做然後因為每一個items他會記得就是他會去記錄說他上次用到上次更新是什麼時候就比如說就12345然後這一次是我們的第六次會議那第六次會議完之後會拿第六次的會議去把它update進去那如果今天有一個會議的item他上次記錄的最後一次更新是可能第一次或是第二次那代表
+[SPEAKER_01]:	近期都沒有提到過他那他會把他就踢掉這樣子
+[SPEAKER_02]:	我覺得你總地來講說應該是剛剛講的working memory就是現在正在進行然後short term我記得我們上次是說就是上一次就好那short term的話就是說他比較重視在直接會impact這個禮拜要找的事情因為他會直接是變to do那beyond上一次的話我們就當成是一個比較long term的一個東西
+[SPEAKER_02]:	那我覺得我們的Memory有個比較重要的點是因為我們討論的是在研究的情境底下然後所以有很多東西它其實會一直開枝然後在某些時刻它可能它不是線性的對 然後所以有些東西它其實在某個時刻它存在但是其實在某個時刻我們已經否決掉不要做這件事情了
+[SPEAKER_02]:	那如果是我們想像說一般的像比方說rag或什麼東西我知道說這個事情比如說本來覺得要做這個東西對他是在記憶裡的但是在某個時刻他其實已經變成是不要再做它了那所以那也許然後不同的事情比如說像我們一開始有一些不一樣的goal那現在說好我們聚焦到說memory這件事情那也不代表說personality或什麼東西不管對那當然那個東西會現在目前會丟在就是比較longterm的那個記憶裡面去
+[SPEAKER_02]:	對,然後,所以就有點像是這種,譬如說我要怎麼去在Long Term上的話,我要怎麼去Structure這種可能開枝散葉或是Iterative然後中間可能有些Dependency,那某些東西其實它雖然曾經被講過但是它是不應該再被執行等等的,這些Temporal的一些Formation對,就比較,然後這部分就是Long Term的地方嗯,
+[SPEAKER_04]:	Long Term這現在應該不是Dependency,現在比較像是靠retrieval去那個
+[SPEAKER_02]:	不知道顏老師對於我們現在這樣子的架構有沒有什麼想法 然後最近同學們就一直在看一些處理memory架構的paper
+[SPEAKER_01]:	我們最近主要是在看就很多Memory主要是解決的問題是在 context太大的時候然後很多人我們會把它去處理成一些樹狀的結構我們昨天有自己討論就是我們到底要怎麼去區分我們的short term 我們現在在想short
+
+[0422#chunk-7] cosine=0.6552
+是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個
+[SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般的普通的那個RAG相比如果把所有的Transcription就是用某種方式變成就是記憶起來，然後等你們有去分Long-term Short-term的話，它不然它比我跑的方式會有什麼樣不一樣然後有什麼樣的有什麼樣的好處對
+[SPEAKER_02]: long term 的一個Outjet大概就是這樣像這樣，會有你的Type是什麼然後內容是什麼Evidence就是他從哪裡去找出這個然後還有一些Related Topics，就是讓他後面在Retrieve的時候關鍵字可能可以找到
+[SPEAKER_00]: 這些Evidence是他的內容嗎對
+[SPEAKER_02]: 就是原本逐字稿的內容
+[SPEAKER_00]: 然後 Content跟Evidence有差別嗎
+[SPEAKER_02]: Content 應該是已經總結過了，就是它已經它是根據那個 evidence 去總結出來比較精簡
+[SPEAKER_00]: 這個中英文都不會影響它的 performance 嗎?
+[SPEAKER_02]: 現在看起來是還好
+[SPEAKER_00]: 所以這個是 long term 的 memory，所以我可以透過 object id 去找到那個錄音檔里面那个段落是吗
+[SPEAKER_03]: 他会直接给吧看起来是他会直接直接放上去
+[SPEAKER_00]: 那 short term 的话呢
+[SPEAKER_03]: short term 是这样
+[SPEAKER_03]: 他現在長得就是其實是類似我用這個來看這是一樣的就是他只是把DB轉 json了而已，他現在長得就是這樣子他會有分meeting window就是他會就是有點類似總結最近的會議，然後action item才是就是那個item是什麼就是要記住的item是什麼
+[SPEAKER_03]: 這個ActionItem就是像這樣它就是一個一個Item一個一個Item它就沒有像 long term 一樣是樹狀的就是一個一個離散然後這個是這個是，我找一個例子
+[SPEAKER_00]: 你是說短期記憶裡面才會有action item 長期記憶不會有action item
+[SPEAKER_02]: 因為長期比較特別是它會往上總結成L2跟L3就是它會有月度總結跟整個大脈絡總結，然後你在找到L1 match的時候它會往上帶出L2跟L3
+[SPEAKER_02]: 理論上它就可以有脈絡的那個成分在這個裡面在這個過程中
+[SPEAKER_00]: L1,2,3是什麼?
+[SPEAKER_02]: L1就是我們剛剛看到那個Memory Adjunct都在Long Term的Memory Adjunct
+[SPEAKER_00]: 所以L1的話是最High Level的還是最Low Level的?
+[SPEAKER_02]: 最 low level 的
+[SPEAKER_00]: 然後但是他接下來會有L2,L3，所以如果我想要看這個Agent他的 Long term 的一些大結構我會上 L3 去看，然後在 L3 它會去連到 L2 的節點然後再去連到 L1 的節點
+[SPEAKER_00]: 然後短期記憶的話看起來這邊就會有action item嗎?還是
+[SPEAKER_03]: 是action item，然後比如說就是它會有這個比如說這個它就是會有history然後history就是可能最近講過的東西就是它同樣的一件事情然後最近會講過的講到過的事情
+[SPEAKER_00]: 那Long Term 沒有 History 嗎?
+[SPEAKER_00]: Long Term 的話譬如說 L3 有一個大的節點然後他有好幾次不同的 Meeting他時間軸上不一樣都被提到那在 Long Term 裡面他是看得出來的嗎?
+[SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM的時候他看到同樣的時間點然後有類似的論點然後可能這裡被推翻，他應該就
+
+[0307#chunk-2] cosine=0.6232
+題之類的。
+[SPEAKER_00]: 所以同一件事情在 16 的時候有點像是 TODO，但 17 的時候有一些進展狀態。
+[SPEAKER_01]: 對。現在是這樣：它會有一個 item，這個 item 之後可以再設計，但目前會記錄這是什麼東西，有 title 跟一些記錄。16 這邊可能只是簡單說某件事要去做，17 就會更新相關進度。
+[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個
+...(truncated)

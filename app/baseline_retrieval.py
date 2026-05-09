@@ -215,10 +215,21 @@ def retrieve_full_transcript_context(
     *,
     transcript_dir: Path | str = DEFAULT_TRANSCRIPT_DIR,
     max_context_chars: int = 0,
+    scope: str = "gold",
 ) -> str:
-    """Oracle full-transcript baseline using the row's gold meeting ids."""
-    ids = parse_meeting_ids(meeting_ids)
+    """Full-transcript baseline.
+
+    scope="gold" uses the row's oracle meeting ids.
+    scope="all" uses every transcript in the configured transcript directory.
+    """
     transcripts = load_transcripts(transcript_dir)
+    if scope == "all":
+        ids = sorted(transcripts)
+    elif scope == "gold":
+        ids = parse_meeting_ids(meeting_ids)
+    else:
+        raise ValueError(f"Unsupported full transcript scope: {scope}")
+
     parts = ["=== Full Transcript Baseline ==="]
     for meeting_id in ids:
         transcript = transcripts.get(meeting_id, "")

@@ -56,6 +56,15 @@ def build_parser() -> argparse.ArgumentParser:
             "Use 0 to avoid local truncation and let the model context window be the limit."
         ),
     )
+    parser.add_argument(
+        "--transcript-scope",
+        choices=("gold", "all"),
+        default="gold",
+        help=(
+            "Full-transcript baseline scope. "
+            "gold uses each row's gold_meeting_ids; all uses every available transcript."
+        ),
+    )
     parser.add_argument("--limit", type=int, default=0, help="Run only the first N rows.")
     parser.add_argument(
         "--ids",
@@ -121,6 +130,16 @@ def parse_methods(value: str) -> set[str]:
     return methods or set(allowed)
 
 
+def format_error(method: str, exc: BaseException) -> str:
+    message = str(exc).strip() or exc.__class__.__name__
+    return f"{method}: {exc.__class__.__name__}: {message}"
+
+
+def has_successful_answer(value: str) -> bool:
+    text = str(value or "").strip()
+    return bool(text) and not text.startswith("ERROR:")
+
+
 def run_batch(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     input_path = Path(args.input)
@@ -137,6 +156,7 @@ def run_batch(argv: Sequence[str] | None = None) -> int:
         "baseline_transcript_answer",
         "baseline_transcript_context_path",
         "hallucination_flag",
+        "error_notes",
     ):
         if field not in fieldnames:
             fieldnames.append(field)
@@ -156,63 +176,96 @@ def run_batch(argv: Sequence[str] | None = None) -> int:
         question = row.get("question", "").strip()
         if not question:
             continue
-        if "structured" in methods:
-            memory_context = retrieve_memory_context(
-                query=question,
-                api_key=retrieval_api_key,
-                model_name=args.model,
-                max_context_chars=max(500, int(args.max_context_chars)),
-            )
-            context_path = context_dir / f"{qid}_structured.txt"
-            context_path.write_text(memory_context, encoding="utf-8")
-            row["actual_route"] = extract_actual_route(memory_context)
-            row["retrieved_l1_obj_ids"] = extract_l1_ids(memory_context)
-            row["memory_context_path"] = str(context_path)
-            if has_sufficient_memory_context(memory_context):
-                row["agent_answer"] = generate_answer(
+        if "structured" in methods and not has_successful_answer(row.get("agent_answer", "")):
+            try:
+                memory_context = retrieve_memory_context(
                     query=question,
-                    memory_context=memory_context,
+                    api_key=retrieval_api_key,
+                    model_name=args.model,
+                    max_context_chars=max(500, int(args.max_context_chars)),
+                )
+                context_path = context_dir / f"{qid}_structured.txt"
+                context_path.write_text(memory_context, encoding="utf-8")
+                row["actual_route"] = extract_actual_route(memory_context)
+                row["retrieved_l1_obj_ids"] = extract_l1_ids(memory_context)
+                row["memory_context_path"] = str(context_path)
+                if has_sufficient_memory_context(memory_context):
+                    row["agent_answer"] = generate_answer(
+                        query=question,
+                        memory_context=memory_context,
+                        api_key=retrieval_api_key,
+                        model_name=args.model,
+                    )
+                    row["hallucination_flag"] = ""
+                else:
+                    row["agent_answer"] = INSUFFICIENT_MEMORY_ANSWER
+                    row["hallucination_flag"] = "insufficient_memory_gate"
+            except Exception as exc:
+                error = format_error("structured", exc)
+                row["agent_answer"] = f"ERROR: {error}"
+                row["hallucination_flag"] = "error"
+                row["error_notes"] = "; ".join(
+                    part for part in (row.get("error_notes", ""), error) if part
+                )
+            write_rows(output_path, rows, fieldnames)
+
+        if "rag" in methods and not has_successful_answer(row.get("baseline_rag_answer", "")):
+            try:
+                rag_context = retrieve_plain_rag_context(
+                    query=question,
+                    api_key=retrieval_api_key,
+                    max_context_chars=max(500, int(args.max_context_chars)),
+                    mode=args.rag_mode,
+                )
+                rag_context_path = context_dir / f"{qid}_rag.txt"
+                rag_context_path.write_text(rag_context, encoding="utf-8")
+                row["baseline_rag_context_path"] = str(rag_context_path)
+                row["baseline_rag_answer"] = generate_baseline_answer(
+                    query=question,
+                    context=rag_context,
+                    baseline_name=f"{args.rag_mode} raw transcript RAG",
                     api_key=retrieval_api_key,
                     model_name=args.model,
                 )
-                row["hallucination_flag"] = ""
-            else:
-                row["agent_answer"] = INSUFFICIENT_MEMORY_ANSWER
-                row["hallucination_flag"] = "insufficient_memory_gate"
+            except Exception as exc:
+                error = format_error("rag", exc)
+                row["baseline_rag_answer"] = f"ERROR: {error}"
+                row["error_notes"] = "; ".join(
+                    part for part in (row.get("error_notes", ""), error) if part
+                )
+            write_rows(output_path, rows, fieldnames)
 
-        if "rag" in methods:
-            rag_context = retrieve_plain_rag_context(
-                query=question,
-                api_key=retrieval_api_key,
-                max_context_chars=max(500, int(args.max_context_chars)),
-                mode=args.rag_mode,
-            )
-            rag_context_path = context_dir / f"{qid}_rag.txt"
-            rag_context_path.write_text(rag_context, encoding="utf-8")
-            row["baseline_rag_context_path"] = str(rag_context_path)
-            row["baseline_rag_answer"] = generate_baseline_answer(
-                query=question,
-                context=rag_context,
-                baseline_name=f"{args.rag_mode} raw transcript RAG",
-                api_key=retrieval_api_key,
-                model_name=args.model,
-            )
-
-        if "transcript" in methods:
-            transcript_context = retrieve_full_transcript_context(
-                row.get("gold_meeting_ids", ""),
-                max_context_chars=max(0, int(args.transcript_context_chars)),
-            )
-            transcript_context_path = context_dir / f"{qid}_full_transcript.txt"
-            transcript_context_path.write_text(transcript_context, encoding="utf-8")
-            row["baseline_transcript_context_path"] = str(transcript_context_path)
-            row["baseline_transcript_answer"] = generate_baseline_answer(
-                query=question,
-                context=transcript_context,
-                baseline_name="oracle gold-meeting full transcript",
-                api_key=retrieval_api_key,
-                model_name=args.model,
-            )
+        if "transcript" in methods and not has_successful_answer(
+            row.get("baseline_transcript_answer", "")
+        ):
+            try:
+                transcript_context = retrieve_full_transcript_context(
+                    row.get("gold_meeting_ids", ""),
+                    max_context_chars=max(0, int(args.transcript_context_chars)),
+                    scope=args.transcript_scope,
+                )
+                transcript_context_path = context_dir / f"{qid}_full_transcript.txt"
+                transcript_context_path.write_text(transcript_context, encoding="utf-8")
+                row["baseline_transcript_context_path"] = str(transcript_context_path)
+                transcript_baseline_name = (
+                    "all-meeting full transcript"
+                    if args.transcript_scope == "all"
+                    else "oracle gold-meeting full transcript"
+                )
+                row["baseline_transcript_answer"] = generate_baseline_answer(
+                    query=question,
+                    context=transcript_context,
+                    baseline_name=transcript_baseline_name,
+                    api_key=retrieval_api_key,
+                    model_name=args.model,
+                )
+            except Exception as exc:
+                error = format_error("transcript", exc)
+                row["baseline_transcript_answer"] = f"ERROR: {error}"
+                row["error_notes"] = "; ".join(
+                    part for part in (row.get("error_notes", ""), error) if part
+                )
+            write_rows(output_path, rows, fieldnames)
 
         print(
             f"{qid}: route={row.get('actual_route', '')} "
@@ -220,6 +273,7 @@ def run_batch(argv: Sequence[str] | None = None) -> int:
             f"rag={row.get('baseline_rag_answer', '')[:40]} "
             f"transcript={row.get('baseline_transcript_answer', '')[:40]}"
         )
+        write_rows(output_path, rows, fieldnames)
 
     write_rows(output_path, rows, fieldnames)
     print(f"wrote {output_path}")

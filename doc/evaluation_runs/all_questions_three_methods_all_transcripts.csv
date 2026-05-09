@@ -1,0 +1,679 @@
+question_id,set,demo_priority,category,expected_route,expected_winner,question,gold_meeting_ids,gold_l1_obj_ids,expected_answer,why_it_is_useful,demo_note,actual_route,retrieved_l1_obj_ids,agent_answer,baseline_rag_answer,baseline_transcript_answer,correctness_score,evidence_hit_score,hallucination_flag,memory_context_path,judge_notes,baseline_rag_context_path,baseline_transcript_context_path,error_notes
+VM-E01,core,medium,recent_context,short_term,Short-Term only or Hybrid,目前 transcript segmentation pipeline 是怎麼跑的？從 Context Planner 到最後 candidate / L1 的主要步驟是什麼？,0506,"L1-0506-001, L1-0506-002, L1-0506-003, L1-0506-006",目前流程是固定 80 行 window 的 Context Planner，先切 segment，再從 segment 抽 idea unit；跨 window 的尾段會標 incomplete，後續合併；抽完後會 verify coverage，補 gap，並逐步修成可更新 memory 的 candidate。,這題應該偏向 recent implementation state，不需要大量歷史，適合檢查 short-term 是否真的保留最新工程狀態。,適合快速 sanity check 或 router/recent-state 測試。,both,"L1-0307-001, L1-0307-016, L1-0325-037, L1-0325-041, L1-0325-042, L1-0325-044, L1-0325-050, L1-0325-051, L1-0408-011, L1-0422-016, L1-0429-024, L1-0429-026, L1-0429-057, L1-0429-066, L1-0429-068, L1-0429-069, L1-0429-075, L1-0429-126, L1-0429-137, L1-0429-158, L1-0506-001, L1-0506-002, L1-0506-003, L1-0506-005, L1-0506-006, L1-0506-007, L1-0506-008, L1-0506-012, L1-0506-015, L1-0506-017","根據提供的 context，目前的 transcript segmentation pipeline 相關步驟如下，但 context 中並未提及「Context Planner」，因此無法提供從該步驟開始的完整流程。
+
+*   **L2 Topic: [L2-transcript-segmentation-and-idea-unit-coverage]**
+    *   **Child L2 Topic: [L2-transcript-segmentation] transcript segmentation**
+        *   目前的作法是將 transcript 以固定大小的區塊（fixed-size chunks）進行處理（`L1-0429-057`）。
+        *   這個固定區塊的大小約為 20 行（`L1-0429-024`）。
+        *   團隊曾考慮但最終決定不採用動態分塊（dynamic chunking）的方法（`L1-0429-057`）。此決策也取代了更早期的作法，例如一次性將完整 transcript 輸入給 LLM（`L1-0408-011`）。
+
+    *   **Child L2 Topic: [L2-idea-unit-extraction-and-coverage-repair] idea-unit extraction and coverage repair**
+        *   在分塊後，會進行「idea unit segmentation」。此過程包含一個修復機制（repair mechanism），用來將破碎不完整的句子與其最相關的上下文合併，以確保資訊的完整性（`S001`）。
+
+總結來說，目前的流程是先將 transcript 切分為約 20 行的固定大小區塊，然後再進行 idea unit 的切分與修復。然而，**目前 context 不足以回答此問題**的完整流程，特別是關於「Context Planner」的角色以及如何生成最終 L1 candidate 的詳細步驟。","根據提供的 context，目前 transcript segmentation pipeline 從 Context Planner 到產生 candidate 的主要步驟如下：
+
+1.  **輸入 Transcript**: 整個 transcript 會先進入 pipeline 的起點，一個名為「Context Planner」的程式碼模組 ([0506#chunk-2])。
+2.  **分塊處理**: Context Planner 會一次讀取固定行數的 transcript，例如 80 行 ([0506#chunk-2])。
+3.  **交付 Segment Agent**: Context Planner 會將這 80 行的內容丟給後續的「segment agent」([0506#chunk-2])。
+4.  **切分語意段落**: Segment agent 的任務是在這 80 行的範圍內，找出有幾個「語意的段落」(segments) ([0506#chunk-2])。
+5.  **標記未完結的段落**: 如果一個 segment 跨越了 80 行的邊界（也就是在第 80 行還沒講完），這個 segment 會被標記為「沒有結束」([0506#chunk-2], [0506#chunk-3])。
+6.  **銜接處理**: 在後續抽取「idea unit」時，這個被標記為未完結的 segment 會跟下一個區塊的內容合併在一起看，以確保語意的完整性 ([0506#chunk-2], [0506#chunk-3])。
+7.  **產生 Candidate**: 這個流程會產生出「candidate」。如果過程中出現重複的 candidate，會在後續步驟中進行合併或比對，以決定資訊的最終歸屬 ([0506#chunk-2], [0506#chunk-3])。
+
+關於 L1 的生成，context [0408#chunk-3] 提到某個方法在會議中被提出時，透過某個流程會變成一個 L1 節點，但沒有詳細說明這個流程與上述 segmentation pipeline 的具體關聯。","根據提供的 context，目前的 transcript segmentation pipeline 主要步驟如下：
+
+1.  **Context Planner 讀取固定行數的 transcript**：
+    整個流程由 `Context Planner` 開始，這是一個程式碼模組，它會以一個固定大小的視窗（例如 80 行）來讀取會議的逐字稿（transcript）。
+    *   **證據**：在 meeting 0506 中，SPEAKER_01 說明：「我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣」。
+
+2.  **Segment Agent 切分語意段落 (Segment)**：
+    `Context Planner` 讀取到的固定行數內容會被傳遞給 `Segment Agent`。這個 agent 的任務是將這段文字切分成數個有意義的語意段落（`segment`）。
+    *   **證據**：在 meeting 0506 中，SPEAKER_01 接著解釋：「那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣」。
+
+3.  **從 Segment 中抽取 Idea Unit**：
+    在每個 `segment` 內部，系統會進一步抽取更細緻的 `idea unit`（觀點單元）。
+    *   **證據**：在 meeting 0506 中，SPEAKER_01 提到：「在1到17行裡面它會去抽它的idea units」。
+
+4.  **驗證 (Verify) 與修復 (Repair)**：
+    系統會進行驗證，確保所有的逐字稿句子都被 `idea unit` 覆蓋。如果發現有遺漏的句子，會將其作為一個品質較低的 `idea unit` 補回，這個機制稱為 `fallback` 或 `repair`。
+    *   **證據**：在 meeting 0506 中，SPEAKER_01 描述：「我們會先去做verify就是看它有沒有漏掉的句子...它下面就有寫它是idea unit covered the gap就是它原本在抽idea units的時候它沒有抽到這一行」。
+
+5.  **組織成 Batch**：
+    為了確保送入下一階段的內容具有完整的上下文連貫性，特別是處理被視窗邊界切斷的 `segment`，系統會將相關的 `segment` 和 `idea unit` 組合成一個 `batch`。
+    *   **證據**：在 meeting 0506 中，SPEAKER_04 解釋：「batch比較像是再多一層保障就是確保說你這次給他的內容是一段連貫的對話然後他的內容是完全相關的」。SPEAKER_01 也提到，如果一個 `segment` 在視窗邊界被切斷，它會和下一個視窗的相關部分合併成一個 `batch` 再送去處理。
+
+6.  **平行 Agent 生成 Candidate**：
+    `batch` 會被平行地送往六個不同的 agent，每個 agent 負責一種特定的資訊類型（`Decision`, `TODO`, `Method Change`, `Result`, `Argument`, `Open Question`），並從中生成 `candidate`。同一個 `idea unit` 可能會被多個 agent 抓取，從而產生重複的 `candidate`。
+    *   **證據**：在 meeting 0506 中，SPEAKER_01 說明：「idea units 會先去送六個 agent然後去分辨說他們各自是什麼...但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的」。
+
+7.  **更新或建立 L1 Node**：
+    最後，系統會處理這些 `candidate`，進行衝突解決與比對，最終將這些資訊更新到記憶結構中，成為 `L1` 層級的 node。
+    *   **證據**：在 meeting 0506 中，SPEAKER_01 提到：「candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟decision他比較偏向哪一些...」。SPEAKER_01 在 meeting 0429 也提到，這個過程的最終產出是 `final更新出來的node`。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E01_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E01_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E01_full_transcript.txt,
+VM-E02,core,medium,recent_context,short_term,Short-Term only or Hybrid,現在 transcript segmentation 還有哪些未解問題或待驗證點？,0506,"L1-0506-005, L1-0506-007, L1-0506-008, L1-0506-009, L1-0506-010",未解點包括 segment 與 idea unit 的區分是否必要、adaptive segmentation 是否真的值得保留、gap 的 prompt failure 根因、以及要不要改成直接從 window 抽 idea unit。正式評估方式則是用人工 ground truth 比 precision/recall。,這題應該不能只回答目前做法，還要指出目前 pipeline 尚未收斂的 open issues。,適合快速 sanity check 或 router/recent-state 測試。,short_term_only,"L1-0307-001, L1-0307-016, L1-0307-024, L1-0307-028, L1-0307-029, L1-0307-032, L1-0307-033, L1-0307-037, L1-0307-039, L1-0307-041, L1-0325-037, L1-0325-041, L1-0325-042, L1-0325-044, L1-0325-050, L1-0325-051","根據提供的 context，目前 transcript segmentation 的待驗證點如下：
+
+根據 `[S006]` (Agent Evaluation Framework, Step Verification, and Benchmarking)，Text segmentation 的效能尚待透過基準真實答案資料集（benchmark ground truth dataset）進行正式評估。與此評估相關的待辦事項包含：
+*   資料充足性（Data sufficiency）與擴增策略（augmentation strategies）仍在處理中。
+*   用於基準測試的「長文本（long context）」將由 token 數量來定義。
+*   一個明確的評估計畫尚待確定。
+
+此外，`[S001]` 提到在 idea unit segmentation 流程中已採用修復機制來處理不完整的片段，但並未提及其他未解問題。
+
+(Source L1 IDs: L1-0307-024, L1-0307-028, L1-0307-029, L1-0307-032, L1-0307-033, L1-0307-037, L1-0307-039, L1-0307-041)","根據提供的 context，目前 transcript segmentation 有以下未解問題或待驗證點：
+
+1.  **處理跨區塊 (chunk) 的 segment**：
+    *   目前的做法是 `context planner` 會先將 transcript 切成固定大小的區塊（例如 80 行），再交給 `segment agent` 進行語意分段。
+    *   問題在於，一個完整的語意段落 (segment) 可能會跨越這個 80 行的邊界。
+    *   目前的解法是，在區塊結尾的 segment 會被標記為「未結束」，以便在後續抽取 `idea unit` 時，能與下一個區塊的內容合併處理。這顯示了如何完美銜接跨區塊的 segment 仍是一個需要處理的問題 ([0506#chunk-2])。
+
+2.  **`idea unit` 抽取不完整**：
+    *   在 segment 切分完成後，從中抽取 `idea unit` 的過程有時會漏掉某些句子。
+    *   這個問題被認為是「prompt 判定的問題」。
+    *   目前的解法是透過一個驗證步驟 (verify)，將被遺漏的逐字稿句子直接當成一個新的 `idea unit` 補回，但這種 `idea unit` 會被標記為品質較低。雖然 context 提到後續版本會修復這個問題，但在當前討論的版本中這仍是一個待處理的狀況 ([0506#chunk-3])。
+
+3.  **固定窗口 vs. 動態窗口的效益**：
+    *   會議中曾討論是否要採用動態 (dynamic) 的方式來決定切分點，例如預測一個主題的長度，並使用類似二元搜尋 (binary search) 的方法來找到精確的邊界。
+    *   然而，這個想法也存在待驗證點：
+        *   **預測的精準度**：如果對主題長度的預測不準，動態調整可能白費工夫，效果不如固定的窗口 ([0506#chunk-2])。
+        *   **實際效益**：有觀點認為，即使能精準找到切分點，其優點也可能不明顯，因為 LLM 本身就能處理較大的 context 範圍 ([0506#chunk-2])。","根據提供的 context，目前 transcript segmentation 還有以下未解問題或待驗證點：
+
+1.  **固定切塊（Fixed-size Chunking）的限制**：
+    *   直接按固定長度（如句數）切分，被認為是「很 random」的方法，可能導致一句話被從中間切斷，讓模型無法理解語意 (meeting 0318, [SPEAKER_01])。
+    *   即使將整個逐字稿直接丟給 LLM 處理，也可能因上下文過長而導致標記不準確和內容幻覺（hallucination）(meeting 0408, [SPEAKER_00])。
+
+2.  **動態切塊（Dynamic/Adaptive Segmentation）的挑戰**：
+    *   **如何判斷切點**：團隊曾討論過用「Tool Calling」讓模型自行判斷是否讀取了足夠的行數來形成一個完整的 idea unit。但如何準確判斷「夠不夠」是一個核心問題 (meeting 0422, [SPEAKER_00], [SPEAKER_01])。
+    *   **預測窗口長度的效益**：曾有提議讓模型根據當前主題去預測後續相關句子的長度（例如，一個簡單主題可能預測2句，複雜主題預測10句），以動態調整讀取窗口。這被視為一個待探索的新方法，但其效益和運算成本的權衡（trade-off）尚未驗證 (meeting 0422, [SPEAKER_00])。
+    *   **Adaptive Window 的初步失敗**：根據會議 0506 的討論，初步測試「adaptive window」預測切點的方法後，發現結果反而變差，因為模型難以精準預測到 idea unit 的邊界，導致邊界處理問題變得更隨機 (meeting 0506, [SPEAKER_04])。
+
+3.  **現行架構的疑問**：
+    *   **多層次切分的必要性**：目前的做法是先將逐字稿切成較大的 `segment`（約80行），再從 `segment` 中抽取出 `idea unit`。但 SPEAKER_02 提問為何需要先切 `segment`，而不是直接從80行中抽取 `idea unit`，這顯示 `segment` 和 `idea unit` 兩層切分的必要性和區別仍是個待釐清的討論點 (meeting 0506, [SPEAKER_02])。
+    *   **處理遺漏的句子（Fallback）**：目前的流程會檢查並補回被遺漏的句子，但這些被補回的句子會被標記為品質較低。為什麼這些句子會被遺漏，以及如何優化 prompt 來減少這種情況，是待解決的問題 (meeting 0506, [SPEAKER_04], [SPEAKER_02])。
+
+4.  **評估（Evaluation）方法的缺乏**：
+    *   要驗證哪種切分方法更好，需要有 `ground truth` 資料集，也就是由人工預先標記好正確切點的逐字稿。目前 context 中顯示團隊尚未建立這樣的資料集來進行量化比較 (meeting 0506, [SPEAKER_02])。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E02_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E02_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E02_full_transcript.txt,
+VM-E03,core,high,topic_synthesis,long_term,Long-Term L1 + L2 or Hybrid,我們對 transcript segmentation / idea unit 切分策略的設計方向是怎麼演進的？從 0408 到 0506 的主要轉折是什麼？,"0408, 0422, 0506","L1-0408-013, L1-0422-002, L1-0422-014, L1-0506-001, L1-0506-004, L1-0506-005, L1-0506-008",0408 還在討論要不要先把 transcript 切成比較小單位；0422 轉向 tool calling / iterative reading，強調讓模型自己決定 read 多大範圍；0506 則落到固定 80 行 window、segment plus idea unit、verify plus repair，並把 adaptive segmentation 暫時視為效果不佳的方向。,這是典型的跨會議 topic evolution 題，能測 L2 topic synthesis，而不是只測最近一場。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,long_term_only,"L1-0318-003, L1-0408-017, L1-0422-005, L1-0429-057, L1-0429-159, L1-0506-001, L1-0506-002, L1-0506-003, L1-0506-007, L1-0506-008","根據提供的 context，我們對 transcript segmentation / idea unit 切分策略的設計方向演進如下：
+
+此議題主要涵蓋在 L2 主題 `L2-transcript-segmentation-and-idea-unit-coverage` 之下，其演進脈絡可從其子主題 `L2-idea-unit-extraction-and-coverage-repair` 和 `L2-transcript-segmentation` 的時間軸中看出。
+
+**設計方向的演進：**
+
+1.  **初期方向 (04/08)：先切分 Idea Units (Bottom-up)**
+    *   **L1-0408-017 -> L2-idea-unit-extraction-and-coverage-repair**: 最早的設計是將記憶體提取過程從一次性分析整個 transcript，改為兩階段方法：首先將文本切分為較小的「idea units」，然後再進行處理。
+    *   **L1-0422-005 -> L2-idea-unit-extraction-and-coverage-repair**: 該方向在 4/22 有一個替代提案，建議在 Gemini 處理前，先將相同主題的連續發言組合成一個「idea node」。
+
+2.  **策略轉折 (04/29)：改為固定窗口處理 (Top-down)**
+    *   **L1-0429-057 -> L2-transcript-segmentation**: 團隊決定**放棄**動態切分（dynamic chunking），改為採用固定大小（約 20 行）的區塊來處理 transcript。
+    *   **L1-0429-159 -> L2-idea-unit-extraction-and-coverage-repair**: 此證據明確指出，當時的流程**不再**將文本預先切分為 idea units。取而代之的是，在一個較大的文本區塊（例如 80 行）內，由模型（Gemini）來識別多個主題。
+
+3.  **現行策略與優化 (05/06)：固定窗口下的多階段流程**
+    *   **L1-0506-001 -> L2-transcript-segmentation**: 目前的資料處理架構是一個由上而下 (top-down) 的三階段流程：
+        1.  `Context Planner` 讀取一個固定的 80 行窗口。
+        2.  `Segment Agent` 在此窗口內識別廣泛的主題。
+        3.  後續步驟（內文未完整提供）。
+    *   **L1-0506-002 -> L2-transcript-segmentation**: 為了處理跨越 80 行窗口邊界的主題，`Segment Agent` 會將窗口內的最後一個 segment 標記為不完整，以便與下一個窗口的內容連接。
+    *   **L1-0506-003 -> L2-idea-unit-extraction-and-coverage-repair**: 系統透過驗證和填補缺口的流程，來確保 100% 的 transcript覆蓋率。
+
+**從 0408 到 0506 的主要轉折：**
+
+主要轉折發生在 **04/29**。策略從 **「先將 transcript 預先切分成有意義的 idea units」** 的 bottom-up 思維，轉變為 **「在固定的、較大的文本窗口內，再由模型去識別主題」** 的 top-down 思維 (L1-0429-057, L1-0429-159)。
+
+到了 05/06，這個 top-down 的固定窗口策略已成為當前的實作架構 (L1-0506-001)，但 context 也顯示，這是否為最佳策略仍是個開放問題 (L1-0506-008)，且團隊內部對於 `Segment` 和 `Idea Unit` 兩個步驟的必要性仍有討論 (L1-0506-007)。","根據提供的 context，目前不足以回答從 0408 到 0506 的完整演進過程，因為所有 context 皆來自 0506 的會議。不過，我們可以根據 0506 的討論來理解當時的設計方向以及正在考慮的轉變。
+
+在 0506 的會議中，當前的 transcript 切分策略如下：
+1.  **固定窗口 (Fixed Window)**：由一個寫好程式碼的 `context planner` 負責，它會先讀取一個固定大小的 transcript 區塊，例如 80 行 ([0506#chunk-2], [0506#chunk-3])。
+2.  **分段 (Segmentation)**：`context planner` 將這 80 行的內容交給 `segment agent`。`segment agent` 的任務是在這個區塊內，根據語意切分出數個 `segment`（語意段落）([0506#chunk-2], [0506#chunk-3])。
+3.  **提取 Idea Units**：在每個 `segment` 內部，再進一步提取出更細粒度的 `idea units`（觀點）([0506#chunk-3])。
+4.  **驗證與補漏 (Verify)**：系統會檢查是否有遺漏的句子。如果發現有句子在提取 `idea units` 時被遺漏，會將該句直接當成一個品質較低的 `idea unit` 補回，以確保所有 transcript 都被覆蓋 ([0506#chunk-3])。
+5.  **邊界銜接處理**：如果一個 `segment` 跨越了 80 行的邊界，系統會對其進行標記，以便在提取 `idea unit` 時，能與下一個區塊的內容合併處理 ([0506#chunk-2], [0506#chunk-3])。
+
+0506 會議中討論到的主要轉折或未來設計方向，是關於是否要從「固定窗口」轉向「動態窗口」(dynamic/adaptive)：
+*   **動態窗口的設想**：有成員提出，可以讓模型先判斷一個主題是簡短的（short）還是需要深入討論的（extensive discussion），然後動態調整一次要處理的範圍。例如，如果預測是長主題，就一次跳 10 句，再根據內容相關性，用類似二元搜尋（binary search）的方式逐步縮小或擴大範圍，來找到主題的精確邊界 ([0506#chunk-2])。
+*   **對動態窗口的疑慮**：也有成員提出反對意見，認為模型很難精準預測主題的長度。一旦預測錯誤，動態調整的好處就消失了。此外，目前的 LLM 已經有能力處理較大的 context，即使給定一個較大的範圍，它也能夠準確地在內部進行切分，因此花費力氣做動態窗口的效益可能不大 ([0506#chunk-2])。
+
+總結來說，雖然無法得知從 0408 以來的完整演進，但在 0506 的時間點，團隊正在使用的策略是基於固定窗口的多層次切分（`context planner` -> `segment agent` -> `idea units`），而主要的討論轉折點在於是否要引入更複雜的「動態窗口」機制，以及這樣做的實際效益為何 ([0506#chunk-2])。","根據提供的 context，我們對 transcript segmentation / idea unit 切分策略的設計方向演進以及從 0408 到 0506 的主要轉折如下：
+
+### 設計方向的演進
+
+1.  **0408：從「整體處理」轉向「前處理切分」**
+    *   最初的設想是將整份 transcript 直接交給 LLM 進行黑箱運算，由模型自行抓取重點 (meeting 0408)。
+    *   在 0408 的會議中，團隊意識到直接處理長篇 transcript 可能會導致精準度下降或產生幻覺。因此，提出了新的方向：在分析前，應先進行前處理，將 transcript 切分成較小的單位，例如以句子、說話輪次 (turn) 或 idea unit 為單位 (meeting 0408)。
+
+2.  **0422：探索「動態預測窗口」**
+    *   團隊討論了如何更智慧地切分。相較於固定的切塊大小（如每三行一切），或逐句分析（計算成本高），會議中提出了一種「動態預測窗口」的想法：讓 LLM 根據當前句子的主題，去預測這個主題可能會持續多少句，並動態調整抓取的窗口大小 (meeting 0422)。
+    *   這個方法的目標是在固定切塊的低成本和逐句分析的高精準度之間找到平衡 (meeting 0422)。
+
+3.  **0429：實作「固定窗口」並討論不同切分方法的權衡**
+    *   在 0429 的討論中，團隊透露當時的作法是採用一個固定的窗口大小（例如 20 行或 80 行）來讀取 transcript，並讓 LLM 在這個固定窗口內自行判斷和處理 idea units (meeting 0429)。
+    *   同時，團隊也深入討論了三種切分策略的優劣：
+        *   **固定大小切塊 (Fixed-size chunks)**：速度快，但可能切斷語意完整的 idea unit。
+        *   **逐句迭代合併 (Iterative merging)**：精準度高，但 API 呼叫次數多，計算成本極高。
+        *   **動態預測窗口 (Dynamic predictive window)**：作為前兩者的折衷方案，計劃進行實驗來驗證其效果 (meeting 0429)。
+
+### 0408 到 0506 的主要轉折
+
+**主要轉折點發生在 0506 的會議，團隊放棄了「動態預測窗口」的策略，轉而採用一個更結構化、多層次的切分流程。**
+
+*   **轉折原因**：實驗證明，「動態預測窗口」(adaptive window) 的效果不佳。由於 LLM 難以精準預測 idea unit 的結束行，導致邊界處理問題變得更隨機，最終拉低了產出內容的可信度（`rejected` 數量變高，`verify` 變少）(meeting 0506)。
+
+*   **0506 時的最新策略**：團隊設計了一個新的、更穩健的多層次切分流程：
+    1.  **Context Planner**: 首先，由一個程式化的 `Context Planner` 讀取固定大小的窗口（例如 80 行）(meeting 0506)。
+    2.  **Segment Agent**: 接著，`Segment Agent` 會在這 80 行內，將其切分成數個語意相關的 `Segment`（話題段落）(meeting 0506)。
+    3.  **Idea Unit 提取**: 在每個 `Segment` 內部，再進一步抽取出更細緻的 `Idea Unit`（觀點）(meeting 0506)。
+    4.  **驗證與修復 (Verify & Repair)**: 系統會檢查是否有遺漏的句子。若有，會將被遺漏的句子作為一個低品質的 `Idea Unit` 補回，確保所有內容都被覆蓋 (meeting 0506)。
+    5.  **批次處理 (Batching)**: 為了處理在窗口邊界被切斷的 `Segment`，系統會將其與下一個窗口的內容合併，形成一個完整的 `Batch`，以確保送交後續分析的內容是連貫的 (meeting 0506)。
+
+總結來說，從 0408 到 0506，切分策略從簡單的「前處理切分」想法，演進到嘗試「動態預測窗口」，最終因實驗效果不佳而放棄，確立了目前這種更為嚴謹、多層次（`Window -> Segment -> Idea Unit`）並帶有修復機制的處理流程。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E03_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E03_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E03_full_transcript.txt,transcript: ReadTimeout: The read operation timed out
+VM-E04,core,high,decision_reasoning,long_term,Long-Term L1 + L2,為什麼最後沒有採用 adaptive segmentation，而是改成 fixed 80-line + verify/repair？,0506,"L1-0506-001, L1-0506-003, L1-0506-004, L1-0506-005, L1-0506-008, L1-0506-012, L1-0506-013",adaptive 方案在既有實驗裡讓 rejected 增加、verify 降低，邊界預測不準時仍要補邊界處理，優勢被抵銷；相較之下 fixed window 雖粗，但配合 verify、gap filling、repair，比較穩定、可檢查，也較符合 LLM 可以消化較大 chunk 的實際能力。,這題不是問 pipeline 是什麼，而是問目前決策背後的理由，能測 citation faithfulness 與 rationale retrieval。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,long_term_only,"L1-0408-017, L1-0422-005, L1-0422-009, L1-0506-001, L1-0506-002, L1-0506-003, L1-0506-004, L1-0506-006, L1-0506-012, L1-0506-013","根據提供的 context，之所以沒有採用 adaptive segmentation，是因為過去的實驗證明其效果不佳，且被認為是不切實際且不必要的。目前的作法是採用固定的 80 行窗口處理，並透過後續的驗證與修補機制來確保內容的完整覆蓋。
+
+詳細的脈絡與決策原因如下：
+
+**L2 主題：[L2-transcript-segmentation-and-idea-unit-coverage] transcript segmentation and idea-unit coverage**
+
+*   **子主題：[L2-transcript-segmentation] transcript segmentation**
+    *   **放棄 Adaptive Segmentation 的原因**：
+        *   **效能不佳**：先前使用 adaptive window segmentation 的實驗已被拒絕並放棄，因為該方法表現不佳，導致了更多的拒絕 (rejections) 和更少的驗證 (verifications)，其複雜性並不合理 (L1-0506-004)。
+        *   **不切實際且隨機**：Adaptive segmentation 被認為是不切實際的。過去的實驗顯示其表現不佳，並且由於難以預測精確的邊界，使得整個過程變得隨機 (L1-0506-013)。
+        *   **並非必要**：複雜的自適應搜尋方法可能是不必要的，因為 LLM 能夠處理更大、不那麼精確的文本塊，並從中篩選出相關資訊 (L1-0506-012)。
+
+*   **子主題：[L2-transcript-segmentation] transcript segmentation**
+    *   **採用 Fixed 80-line 的現況**：
+        *   目前的資料處理架構是一個由上到下的三階段流程，其中第一階段的 `Context Planner` 會讀取一個固定的 80 行窗口 (fixed 80-line window) (L1-0506-001)。
+        *   為了處理跨越 80 行窗口的主題，`Segment Agent` 會將窗口內的最後一個片段標記為不完整，以便系統接續處理 (L1-0506-002)。
+
+*   **子主題：[L2-idea-unit-extraction-and-coverage-repair] idea-unit extraction and coverage repair**
+    *   **Verify/Repair 機制**：
+        *   系統透過一個驗證和填補缺口的流程 (verification and gap-filling process) 來確保 100% 的逐字稿覆蓋率。在初步提取後，會進行檢查以找出任何被遺漏的行 (L1-0506-003)。
+        *   針對逐字稿覆蓋的缺口，實作了一個「修復」(repair) 機制，將遺漏的行合併到相鄰的 idea units 中，而不是創建新的、低品質的 units (L1-0506-006)。","根據提供的 context，之所以沒有採用 adaptive segmentation，而改成 fixed 80-line + verify/repair，主要有以下幾個原因：
+
+1.  **Adaptive Segmentation 預測不準確，反而效果更差**：
+    *   測試結果顯示，只用預測的 adaptive 方法，結果反而會變差。具體表現為 `rejected` 的數量變高，`verify` 的數量變少，這代表產出內容的可信度降低了 [0506#chunk-1]。
+    *   團隊推測，這是因為 adaptive window 很難完全準確地預測到主題結束的那一行。只要預測不夠精準，基本上就沒有效果，而且還需要回頭做邊界處理，這讓前面的預測工夫都白費了 [0506#chunk-1], [0506#chunk-2]。
+    *   這種不準確性甚至會讓邊界處理的問題變得比 fixed window 更隨機 [0506#chunk-1]。
+
+2.  **Adaptive Segmentation 的優點不明顯**：
+    *   即使 adaptive 方法能夠精準地切分，相較於直接給 LLM 一個較大的範圍，其優點也並不突出。因為 LLM 的能力足以處理一個較大的範圍（如 80 行），並在其中找出正確的切分點 [0506#chunk-2]。
+
+3.  **Fixed 80-line + Verify/Repair 機制已能解決問題**：
+    *   目前的做法是採用一個 `context planner`，一次讀取固定的 80 行 transcript，再交給 `segment agent` 在這 80 行內部分割出語意段落 (segment) [0506#chunk-2]。
+    *   為了處理跨越 80 行邊界的段落，系統會標記最後一個 segment 尚未結束，以便在處理下一個 chunk 時，將其與前面的內容合併在一起看，確保資訊不會遺漏 [0506#chunk-2]。這個機制也包含了 repair 的概念，會判斷邊界點應該屬於上一個段落還是下一個段落 [0506#chunk-6]。","根據提供的 context，團隊最初曾考慮或嘗試過 adaptive segmentation（動態窗口切分）的方法，但在 `meeting 0506` 的討論中揭示，這個方法的效果不佳，因此最終沒有被採用。
+
+主要原因如下：
+
+1.  **預測不準確，導致效果變差**：在 `meeting 0506` 中，SPEAKER_04 提到，僅使用 adaptive window 預測切點的方法，實驗結果反而變差了。具體表現為 `rejected` 的數量變高，而 `verify` 的數量變少，這代表模型產出的內容可信度降低了。
+
+2.  **邊界處理問題更隨機**：團隊推測，adaptive window 很難精準預測到 `idea unit` 的確切邊界。這導致即使在預測後，仍然需要進行邊界處理，但這個問題反而變得「更隨機」（`meeting 0506`, SPEAKER_04）。SPEAKER_03 也補充，只要預測沒有完全精準，就沒有效果，因為模型還是需要往前或往後調整，這使得最初的預測被白費了。
+
+基於上述原因，團隊轉而採用 `fixed 80-line + verify/repair` 的流程：
+
+*   **Fixed 80-line**：由一個 `context planner` 固定讀取 80 行的逐字稿 (`meeting 0506`, SPEAKER_01)。
+*   **Segment Agent**：`context planner` 將這 80 行交給 `segment agent`，由它在內部切分出數個語意段落 (`segment`) (`meeting 0506`, SPEAKER_01)。
+*   **Verify/Repair**：在從 `segment` 中抽取 `idea units` 後，系統會進行 `verify`，檢查是否有遺漏的句子。如果發現有遺漏的句子，會將其直接作為一個獨立的 `idea unit` 補回，以確保所有逐字稿內容都被覆蓋 (`meeting 0506`, SPEAKER_01, SPEAKER_04)。
+
+總結來說，團隊放棄 adaptive segmentation 是因為實驗發現其預測不準確，反而使邊界處理問題惡化，降低了內容的可信度。因此，他們選擇了更穩定、可控的 `fixed 80-line` 搭配後續的 `verify/repair` 機制來確保處理的完整性與品質 (`meeting 0506`)。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E04_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E04_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E04_full_transcript.txt,
+VM-E05,core,medium,recent_context,short_term,Short-Term only or Hybrid,目前的 memory node 分數設計是什麼？importance、activation 或 recency、relevance 各自負責什麼？,0506,"L1-0506-033, L1-0506-036, L1-0506-041",importance 是建立 node 當下的相對重要性，不應被後續 decay 直接改寫； activation 或 recency 是動態活躍度，會隨時間下降； relevance 是 retrieve 時的 semantic similarity。三者分開是為了保留「當時重要」和「現在活躍」這兩種不同訊號。,這題能直接檢查目前系統是否正確表達 static vs dynamic memory scores，而不是把 importance 和 recency 混成同一件事。,適合快速 sanity check 或 router/recent-state 測試。,both,"L1-0408-008, L1-0408-056, L1-0422-033, L1-0422-039, L1-0422-041, L1-0429-017, L1-0429-018, L1-0429-048, L1-0506-022, L1-0506-033, L1-0506-035, L1-0506-036, L1-0506-037, L1-0506-038, L1-0506-039, L1-0506-040, L1-0506-041","根據提供的 context，目前的 memory node 分數設計如下：
+
+根據最新的會議記憶摘要 `[S021]`，memory node 的分數設計主要包含三個屬性，其各自負責的功能如下：
+
+*   **Importance (重要性)**:
+    *   **功能**: 這是一個在節點創建時賦予的**靜態**分數，用以保存想法的歷史意義，確保重要但較舊的想法不會因為時間而完全消失。它為高重要性的項目維持一個「基準值」(baseline)。
+    *   **目前設計**: `[S021]` 指出，此分數現在也設計成可由使用者調整（human-in-the-loop），系統會根據相似性搜尋提供調整建議。然而，關於使用者如何檢視/調整分數，以及系統如何主動建議相關單元進行調整的具體設計，仍是一個待解決的問題。
+    *   **脈絡**:
+        *   `[L2-memory-lifecycle]` -> `[L1-0422-041]` 提到，具有足夠高 `importance` 分數的項目將永遠不會淡出，使其成為永久記憶。
+        *   `[L2-memory-lifecycle]` -> `[L1-0429-017]`, `[L1-0429-018]` 指出，低 `importance` 的資訊會從一般對話中隱藏（fade out）以避免混亂，但仍可透過特定方式檢索。
+
+*   **Relevance (相關性)**:
+    *   **功能**: 這是一個**動態**分數，其值基於語意相似度（semantic similarity）。
+    *   **脈絡**:
+        *   `[S021]` 直接定義了其功能。
+        *   `[L2-memory-lifecycle]` -> `[L1-0422-033]` 提到，如果一個主題沒有被討論，其 `relevancy` 分數會隨時間衰減。
+
+*   **Recency (新近度) / Activation (活躍度)**:
+    *   **功能**: 這是一個**動態**分數，會隨時間衰減。它主要用於反映資訊的新舊程度。
+    *   **脈絡**:
+        *   `[S021]` 指出，為了保存歷史意義，靜態的 `importance` 分數應與處理衰減的動態 `activation` 參數明確分開。
+        *   `[L2-memory-retrieval]` -> `[L1-0408-008]` 說明，為了處理隨時間反覆出現的主題，檢索分數（retrieval score）會結合語意相似度與一個隨時間衰減的 `recency` 分數。
+        *   `[L2-memory-retrieval]` -> `[L1-0408-056]` 補充，為了平衡新近度和長期重要性，記憶項目的分數應在被頻繁檢索時增加。","根據提供的 context，目前的 memory node 分數設計如下：
+
+每個記憶節點（memory node）會有多個分數，包含 importance、activation、recency 和 relevance，各自有不同的功能。
+
+1.  **Importance (重要性)**：
+    *   **功能**：衡量一個記憶節點在「最初被建立時」的重要性。它被設計為一個相對「靜態」的指標，以保留其作為歷史參考的價值 (`[0506#chunk-12]`)。
+    *   **使用者調整**：使用者可以手動調高或調低節點的 importance。當使用者將某個節點標示為重要時，系統會減緩該節點的遺忘（decay）速度 (`[0506#chunk-12]`)。
+    *   **影響**：高 importance 的節點在長期記憶中會有一個衰減的「下限（floor）」，確保重要的內容不會隨著時間完全消失 (`[0506#chunk-12]`)。
+
+2.  **Activation (活躍度)**：
+    *   **功能**：這是一個獨立於 importance 的參數，用來判斷「記憶現在有多活躍」。它主要用來處理記憶的衰減（decay），從而避免去改動原始的 importance 分數 (`[0506#chunk-12]`)。
+
+3.  **Recency (時近性)**：
+    *   **功能**：這是一個與時間相關的分數，會隨著每一次會議的召開而衰減。一場會議中產生的所有節點，其初始 recency 分數理論上會差不多 (`[0506#chunk-12]`, `[0506#chunk-13]`)。
+    *   **釐清**：在討論中，發言者曾將隨時間衰減的特性一度口誤為 ""relevancy""，但隨後更正為 ""recency""，確認了 recency 是負責時間維度的衰減 (`[0506#chunk-12]`)。
+
+4.  **Relevance / Relevancy (相關性)**：
+    *   **功能**：此分數是基於「語意相似度」和「關鍵字」來計算的，用來找出與當前討論內容有相關性的記憶節點 (`[0422#chunk-9]`, `[0506#chunk-12]`)。
+    *   **應用**：在即時互動中，系統會結合 relevance 和 importance 來抓取重要的相關記憶，以提升效率。例如，可以設定一個閾值，只關注 relevance 和 importance 都很高的節點 (`[0422#chunk-9]`)。","根據提供的 context，目前的 memory node 分數設計及其各個組成部分的職責如下：
+
+目前的記憶節點分數設計包含 importance、activation、recency 和 relevance 等幾個部分，它們在檢索（retrieval）時共同作用。
+
+*   **Importance (重要性)**：
+    *   **職責**：這是一個在記憶節點（node）最初建立時，由 LLM 判斷並賦予的分數，用來衡量該資訊在當下的重要程度 (meeting 0506)。它被設計為一個**靜態指標**，代表該觀點最初的價值，不會隨時間衰退 (meeting 0506)。
+    *   **作用**：一個重要性高的節點，其 recency 分數會有一個下限（floor），確保即使時間久遠，這個重要的記憶也不會完全因為時間因素而被忽略 (meeting 0408, meeting 0325)。
+
+*   **Activation (活躍度)**：
+    *   **職責**：這是一個後來加入的參數，專門負責處理記憶隨時間的衰退（decay）。會引入這個參數是為了讓 `importance` 保持為一個固定的初始重要性指標，而由 `activation` 來反映記憶當前的活躍程度 (meeting 0506)。
+
+*   **Recency (近期性)**：
+    *   **職責**：這個分數反映了記憶的時間遠近。它會隨著時間（例如每經過一次會議）而衰退、降低數值 (meeting 0506)。在 meeting 0325 的討論中，這個概念也被稱為 ""Residency""。
+    *   **作用**：如上所述，如果某個節點的 `importance` 很高，其 `recency` 分數在衰退時會有一個下限（floor），不會降至零 (meeting 0506, meeting 0408)。
+
+*   **Relevance (相關性)**：
+    *   **職責**：這是在檢索（retrieve）記憶時計算的分數，代表當前問題或對話與記憶節點內容之間的**語意相似度** (meeting 0506)。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E05_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E05_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E05_full_transcript.txt,
+VM-E06,core,high,topic_synthesis,long_term,Long-Term L1 + L2,我們的 forgetting / fade-out 設計是怎麼演進的？從 0307 的三次會議刪除、0325/0408 的 floor 機制，到 0429/0506 的 fade-out 與 activation 各自代表什麼？,"0307, 0325, 0408, 0429, 0506","L1-0307-002, L1-0325-054, L1-0325-055, L1-0408-008, L1-0429-017, L1-0429-018, L1-0429-047, L1-0506-033, L1-0506-041",0307 的 forgetting 比較像 STM rolling window，三次沒提就刪；0325 和 0408 開始把 long-term retrieval 想成 time decay plus floor，保留高重要性舊事件；0429 進一步把 fade-out 定義成「平常對話不主動吐出，但仍可 explicit retrieve」；0506 再把 importance、activation 或 recency、relevance 分離，讓 decay 不會破壞原始 importance 訊號。,這題很適合驗證 memory architecture 是否真的有學到「記憶消退不是單純刪除」這件事。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,long_term_only,"L1-0307-002, L1-0307-012, L1-0307-013, L1-0307-014, L1-0307-016, L1-0307-017, L1-0325-010, L1-0325-054, L1-0408-008, L1-0408-023, L1-0422-041, L1-0429-012, L1-0429-018, L1-0506-033","根據提供的 context，forgetting / fade-out 設計的演進如下：
+
+*   **0307 的三次會議刪除機制**：
+    *   在 `L2-memory-lifecycle` 主題脈絡中，最初的設計是，如果一個記憶項目在一定次數的會議（例如三次）中沒有被討論，它將被自動刪除 (L1-0307-002)。
+
+*   **0325/0408 的 floor 機制**：
+    *   目前 context 不足以回答此問題。Context 中沒有提到「floor 機制」。
+    *   在相關日期，Context 提到：
+        *   03/25：長期記憶模型被重新設計，從樹狀結構改為時間排序序列 (L1-0325-054)。
+        *   04/08：記憶更新架構不再是資訊從短期記憶 (STM) 淡出至長期記憶 (LTM)，而是將 STM 和 LTM 視為獨立的資料庫同時更新 (L1-0408-023)。
+
+*   **0429/0506 的 fade-out 與 activation**：
+    *   **Fade-out**：
+        *   在 `L2-memory-lifecycle` 主題脈絡中，`fade-out` 機制被提出。對於重要性分數較低的資訊，它將在正常對話中被隱藏，但仍然可以透過特定方式（例如 RAG）被檢索到 (L1-0429-018)。
+        *   這個設計也決定了，重要性分數足夠高的項目將永遠不會 fade-out，使其成為永久記憶 (L1-0422-041)。
+        *   團隊決定專注於基於 RAG 的遺忘機制，這涉及從外部資料庫刪除數據 (L1-0429-012)。
+    *   **Activation**：
+        *   目前 context 不足以回答此問題。Context 中並未出現或定義「activation」一詞。","根據提供的 context，關於 forgetting / fade-out 設計的演進如下：
+
+*   **關於 0307 的「三次會議刪除」設計**：
+    目前 context 不足以回答此問題。Context 中並未提及 0307 會議的內容，也沒有「三次會議刪除」的具體設計。
+    在 `[0408#chunk-8]` 的討論中，有提到一個假設情境，當一個主題被提到第三次時，可能達到一個閾值（threshold）並進入長期記憶，但這是在討論記憶的形成，而非刪除機制。
+
+*   **關於 0325/0408 的「floor 機制」**：
+    目前 context 中沒有 0325 的資訊。而在 `[0408#chunk-8]` 的內容中也未提及「floor 機制」。
+    不過，在 `[0506#chunk-12]` 的討論中提到了 **floor 機制**：如果一個記憶節點的 `importance` 很高，它會有一個「floor」，確保其值不會因為時間 decay 而降得太低，這樣重要的東西就不會隨時間完全消失。
+
+*   **關於 0429/0506 的「fade-out」與「activation」**：
+    目前 context 中沒有 0429 的資訊。`[0506#chunk-12]` 的內容對此有詳細說明：
+    *   **Fade-out**：指的是長期記憶會隨著時間推移而衰減（decay）的過程。如果使用者曾經手動調高某個記憶的 `importance`，那麼它在 `fade-out` 過程中的衰減速度會比其他記憶來得慢。
+    *   **Activation**：這是一個在 `importance` 之外新增的參數，用來判斷「這個記憶現在有多活躍」。設計上將 `activation` 與 `importance` 分開，是為了保留 `importance` 作為一個靜態指標，用以參考該記憶在「最初建立時」的重要性。而 `activation` 則是一個動態值，用來處理後續的 decay，如此一來，記憶的活躍度會隨時間變化，但其最初的重要性評級不會因此被抹去。","根據提供的 context，我們的 forgetting / fade-out 設計演進如下：
+
+1.  **0307 的三次會議刪除機制**：
+    在 `meeting 0307` 中，團隊討論了初步的短期記憶（short term memory）遺忘機制。該設計為：如果一個記憶項目在連續三次會議內沒有被再次討論，模型會認為它不重要並將其刪除。當時此機制主要針對短期記憶，與長期記憶的結合方式尚未確定。
+
+2.  **0325/0408 的 floor 機制**：
+    在 `meeting 0325` 和 `meeting 0408` 的討論中，團隊為長期記憶的檢索（retrieval）引入了「floor」（下限）機制。這個設計是為了解決重要資訊可能因時間久遠而被遺忘的問題。記憶項目的分數會受到「recency」（新近度）影響，而 recency 會隨時間衰退。然而，對於「importance」（重要性）很高的資訊，其 recency 分數會有一個 floor，確保它不會因為時間流逝而完全衰退至零，從而依然有機會被檢索到。
+
+3.  **0429/0506 的 fade-out 與 activation**：
+    *   **Fade-out**：在 `meeting 0429` 中被提出，這個概念指的是長期記憶中那些長時間未被提及且重要性不高的記憶項目會進入一種「inactive」（非活躍）狀態。處於 fade-out 狀態的 idea 不會在一般的即時對話中被主動提及，以避免無關的舊資訊干擾當前對話。這是一種有意識的遺忘，但資料並非被完全刪除，而是被歸類為非活躍。
+    *   **Activation**：在 `meeting 0506` 的討論中被明確定義為一個獨立於 `importance` 的參數。`Activation` 用於判斷記憶的「活躍」程度，它會隨著時間推移而衰減（decay）。而 `importance` 則被視為一個相對靜態的指標，代表該記憶在最初建立時的重要性。當一個已經 fade-out 的項目在近期的會議中被反覆提及時，它的分數（特別是 activation/recency 分數）會再次提升，從而重新被「activate」，並可能再次出現在對話中。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E06_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E06_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E06_full_transcript.txt,
+VM-E07,core,high,decision_reasoning,long_term,Long-Term L1 + L2,為什麼標準 RAG 或 full transcript baseline 不足以處理研究會議記憶？,"0318, 0325, 0422","L1-0318-012, L1-0325-086, L1-0325-090, L1-0422-018, L1-0422-021",full transcript 與 raw RAG 都應該作為 baseline，但它們不擅長追蹤 topic lifecycle、被放棄的方向、以及跨時間的 decision status。標準 RAG 會抓到「曾經提過」的內容，卻不一定理解那件事後來被否決、淡出或轉向；這也是 custom memory structure 要證明的價值。,這題直接對應你 evaluation plan 的核心 claim，也能用來檢驗 raw transcript baseline 和 memory baseline 的差異。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,long_term_only,"L1-0307-020, L1-0318-007, L1-0318-012, L1-0318-021, L1-0325-063, L1-0422-018, L1-0429-066, L1-0506-001","根據提供的 context，標準 full transcript baseline 的一個主要挑戰是大型語言模型的 context window 限制。
+
+此資訊來自於 L2 主題 `memory evaluation strategy` 及其子主題 `Overall Memory System Evaluation` 的脈絡：
+
+*   **L2 主題：[L2-memory-evaluation-strategy] memory evaluation strategy**
+    *   **子主題：[L2-overall-memory-system-evaluation] Overall Memory System Evaluation**
+        *   **L1 證據 [L1-0325-063]**：提及評估策略將使用一個沒有三層記憶結構的 baseline 系統進行比較，這個 baseline 需要一次處理整個 transcript，但這項任務「因 context window 的限制而具有挑戰性 (challenging due to context window limitations)」。
+        *   **L1 證據 [L1-0318-012]** 與 **[L1-0422-018]**：這兩項證據確立了評估方法會將自訂記憶結構的系統與「標準 RAG 系統」及「使用完整原始 transcript 的 LLM」進行基準比較，以驗證自訂結構的效益。
+
+總結來說，Context 明確指出了 full transcript baseline 因 context window 限制而難以實作的挑戰。雖然 Context 將標準 RAG 作為比較基準，暗示其可能存在不足，但並未詳細說明標準 RAG 不足的具體原因。","根據提供的 context，標準 RAG 或 full transcript baseline 之所以不足以處理研究會議記憶，主要有以下幾個原因：
+
+1.  **處理方式過於簡單**：
+    *   標準 RAG 被描述為「最簡單的處理方式」，它僅是將逐字稿「切塊」，然後透過語意相似度來尋找相關內容 (`[0429#chunk-3]`, `[0429#chunk-11]`)。
+
+2.  **缺乏結構化與層次**：
+    *   相較之下，更進階的系統會先從逐字稿中抓取出「idea unit」，而不是逐句處理。
+    *   在 idea unit 之上，還會有「更高 level 的結論」，用以帶出「上層的脈絡」。標準 RAG 缺乏這種對資料進行整理和建立層次結構的能力 (`[0429#chunk-3]`, `[0429#chunk-11]`)。
+
+3.  **無法有效過濾無用資訊**：
+    *   進階系統能夠過濾掉「很不必要的閒聊資訊」（例如討論司機或誰還沒到場），而標準 RAG 可能會將這些不重要的資訊也一併儲存起來 (`[0429#chunk-11]`)。
+
+4.  **缺乏專門的記憶機制**：
+    *   context 中提到的「full system」包含 short-term 和 long-term 機制，其中 short-term 的部分可以更仔細地提供關於「最近在做什麼」的資訊。這表明一個單純的 RAG baseline 缺乏這種為會議記憶設計的特定架構 (`[0429#chunk-3]`)。","根據提供的 context，標準 RAG (Retrieval-Augmented Generation) 或 full transcript baseline 不足以處理研究會議記憶的原因主要有以下幾點：
+
+### 1. 缺乏對時間脈絡和決策演變的理解
+標準的 RAG 或 full transcript baseline 難以理解資訊隨時間的變化，例如一個決策被推翻、一個主題被放棄或一個方法的演進。
+
+*   **無法處理被否決的議題**：SPEAKER_02 在 `meeting 0325` 中明確指出，一般 RAG 雖然能找到某個議題曾被討論過，但無法知道這個議題在後續會議中「已經變成是不要再做它了」。
+*   **忽略時間順序與最終決策**：SPEAKER_01 在 `meeting 0325` 中補充，RAG 只會因為「相關」而找出所有提及過的片段，但無法理解「被講了五次 但最後寄送不要了」這種有時間關聯順序的最終決策。
+*   **無法呈現研究方法的演進**：在 `meeting 0429` 的討論中，評估長期記憶的其中一個問題是「我們這整個某一件事情的研究的方法从过去到现在完整的演进是什么」，這暗示了簡單的檢索方法難以呈現這種演變的完整脈絡。
+
+### 2. 資訊處理方式過於粗糙且效率不彰
+標準方法在處理長篇逐字稿時，其固定的處理模式會導致資訊遺失或檢索到不重要的內容。
+
+*   **固定的切塊（Chunking）問題**：許多方法會將逐字稿切成固定的 chunk。SPEAKER_01 在 `meeting 0422` 提到，這種方式可能將一個完整的想法切斷，導致語意不完整。而團隊討論的 `tool calling` 或 `adaptive window` (會議 `0506`) 則是為了解決這個問題，動態地找出語意完整的「idea units」。
+*   **檢索不必要的閒聊資訊**：SPEAKER_01 在 `meeting 0429` 指出，如果不是用更智能的方法，系統會存儲並可能檢索到「很不必要的閒聊的资讯」，例如誰還沒到或是一些無關的閒聊。
+*   **對長文本的處理限制**：SPEAKER_02 在 `meeting 0429` 提到，需要去確認對於現在的 LLM 來說，「long context」的極限是多長（以 token 數計算），這暗示了直接將全部逐字稿作為 context 的 baseline 方法會遇到模型的能力限制。
+
+### 3. 缺乏複雜的記憶結構與機制
+研究會議記憶需要模仿人類記憶的複雜機制，如長短期區分、遺忘與重要性權重，而標準 RAG 或 full transcript 缺乏這些結構。
+
+*   **單一的扁平化記憶**：團隊設計了 L1、L2、L3 的階層式記憶結構（`meeting 0408`）和獨立的長、短期記憶系統。SPEAKER_01 在 `meeting 0429` 中對比 RAG 時說明：「RAG 感覺就只是它是最簡單的處理方式啦，它就只是切塊，然後用語意去找相似度...我們是除了有切 idea unit 之外，我們 idea unit 上面還會有更高 level 的結論，它可以帶出那個上層的脈絡」。
+*   **沒有遺忘（Fade out）機制**：SPEAKER_02 在 `meeting 0429` 中強調，一個重要的測試點是模型應避免在對話中提及已經「fade out」的不重要事項，但同時又能在記憶深處保留這些紀錄。標準 RAG 只要語意相關就會檢索出來，無法做出這種區分。
+*   **缺乏重要性（Importance）與時效性（Recency）的權衡**：團隊的記憶架構中包含了 `importance` 和 `recency` 等分數來計算權重（`meeting 0408`），確保重要的舊資訊不會完全消失。這也是標準 RAG 所沒有的機制。
+
+總結來說，標準 RAG 和 full transcript baseline 主要被批評為無法處理研究會議中資訊的**時間動態性**、**決策演變**和**複雜的脈絡層次**。它們更像是一個靜態的資料庫，而不是一個能理解並模仿研究過程動態演進的記憶系統。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E07_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E07_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E07_full_transcript.txt,
+VM-E08,core,high,topic_synthesis,both,Hybrid,我們現在 evaluation 應該比較哪些 baseline 與 metrics？這個設計怎麼從 0318 的 paper review 演進到 0429 的三類問題？,"0318, 0429","L1-0318-007, L1-0318-010, L1-0318-011, L1-0318-012, L1-0429-011, L1-0429-013",0318 確立了 MEM0 / LOCOMO 風格的 evaluation 思路，包括 single-hop、multi-hop、temporal reasoning、open domain，以及 full transcript、RAG、memory system 的 baseline comparison，也提到用 LLM judge、看 latency 與 token。到 0429，題型被改寫成更貼近本專題的三類：short-term correctness、long-term evolution、decision reasoning，重點轉為不要漏 context、不要 hallucinate、要能對照 ground truth。,這題能測「最近的 evaluation state」和「歷史設計來源」是否能同時被取回，所以適合 both。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,both,"L1-0307-020, L1-0307-024, L1-0307-028, L1-0307-029, L1-0307-032, L1-0307-033, L1-0307-037, L1-0307-039, L1-0307-041, L1-0318-010, L1-0318-012, L1-0318-021, L1-0422-018, L1-0429-021, L1-0429-034, L1-0429-041","根據提供的 context，關於 evaluation 的 baseline、metrics 以及其設計演進的資訊如下：
+
+### 目前的 Evaluation 設計 (Baseline 與 Metrics)
+
+根據 L2 主題脈絡 `L2-memory-evaluation-strategy`，目前的 evaluation 設計分散在兩個子主題中：
+
+1.  **L2-overall-memory-system-evaluation (整體記憶系統評估)**
+    *   根據 04/29 的會議記錄 (L1-0429-021)，目前的計畫是進行一項**消融研究 (ablation study)**，用以驗證短期與長期記憶結合的效益。
+    *   **Baseline 設計**：此研究會將完整系統與**三個 baseline** 進行比較：
+        1.  僅使用 RAG (RAG only)
+        2.  僅使用短期記憶 (short-term memory only)
+        3.  第三個 baseline 在 context 中未被完整提及 (L1-0429-021)。
+
+2.  **L2-memory-mechanism-evaluation-metrics (記憶機制評估與指標)**
+    *   根據 04/29 的會議記錄 (L1-0429-034)，目前的計畫是比較**三種 transcript chunking (文本分塊) 方法**：
+        1.  動態分塊 (dynamic)
+        2.  固定大小分塊 (fixed-size)
+        3.  依發言輪次分塊 (per-turn)
+    *   **Metrics (評估指標)**：評估將使用兩個關鍵指標，但 context 並未完整說明是哪兩個指標 (L1-0429-034 內容為 ""two key metrics: com..."")。
+
+此外，最新的短期記憶摘要 (S006, last updated 0506) 也提到，評估計畫將使用如 BMR 的資料集來比較結構化記憶與 RAG 的表現，並會使用一個基準的 ground truth 資料集來正式評估文本分割的效能。不過，最終的評估計畫仍在等待確定 (definitive evaluation plan is pending)。
+
+### 從 03/18 到 04/29 的設計演進
+
+這個設計的演進脈絡可以在 `L2-overall-memory-system-evaluation` 的時間軸中看到：
+
+1.  **起點 (03/18 Paper Review)**：
+    *   在 03/18 的會議中，團隊參考了 LOCOMO 論文的方法，提議建立一個 benchmark (L1-0318-012)。
+    *   當時的設計是進行**三方比較**：
+        1.  LLM 加上完整的原始會議記錄 (full raw transcript)
+        2.  LLM 加上 RAG
+        3.  第三種比較方式在 context 中未被完整提及 (L1-0318-012)。
+
+2.  **演進至 04/29**：
+    *   到了 04/29，這個想法演變成了前述的**消融研究 (ablation study)** (L1-0429-021)。
+    *   比較的對象從外部方法 (如 LOCOMO 的 RAG、full context) 轉變為內部系統的不同組件，也就是比較「完整系統」與「僅 RAG」、「僅短期記憶」等 baseline 的表現。
+
+關於使用者問題中提到的「三類問題」，在目前的 context 中並未找到直接對應的資訊。04/29 的會議記錄 (L1-0429-021, L1-0429-034) 主要討論的是「三種 baseline」和「三種 chunking 方法」，而非「三類問題」。","根據提供的 context，回答如下：
+
+關於 evaluation 的 baseline 與 metrics，目前的 context 提供了以下資訊：
+
+*   **Baseline**：Context 中並未明確決定要比較哪些 baseline。不過，在 `[0307#chunk-3]` 中有提到，需要證明提出的架構比「一般的 LLM」更好，這暗示了「一般的 LLM」可能是一個比較的對象。此外，該段落也建議去尋找文獻中是否已有 benchmark 或 standardized test 可用來比較不同模型。
+*   **Metrics**：在 `[0429#chunk-8]` 中，針對「long-term evolution」類型的問題，提到評估的重點是「正確率」，並且模型「不能漏掉 context」，也就是不能遺漏在不同會議中討論過的相關要點。
+
+關於 evaluation 設計的演進，**目前 context 不足以回答此問題**。原因如下：
+
+1.  Context 中並未提及任何 `0318` 的會議或 paper review 內容，因此無法追溯從該時間點開始的演進過程。
+2.  Context 中最早的相關討論來自 `[0307#chunk-3]`，當時團隊在討論 long-term 和 short-term memory 的架構，並提到需要去研究如何評估（evaluate）這些架構的表現。
+3.  到了 `[0429#chunk-8]`，團隊已規劃出較具體的 evaluation 方法，將評估問題分為三類：
+    *   **Short-term**：確保短期的回答是正確的。
+    *   **Long-term evolution**：詢問某個研究方法從過去到現在的完整演進。
+    *   **Decision reasoning**：詢問做出某個決策的原因與相關討論。","根據提供的 context，我們現在 evaluation 應該比較的 baseline 與 metrics，以及這個設計從 0318 的 paper review 到 0429 的三類問題的演進如下：
+
+### Evaluation 的 Baseline 與 Metrics
+
+根據 `meeting 0429` 和 `meeting 0506` 的討論，目前的 evaluation 設計包含以下幾個部分：
+
+1.  **Ablation Study (消融研究)**：為了證明 short-term 和 long-term 記憶機制的必要性，計劃進行 ablation study，比較以下四種設定 (`meeting 0429`)：
+    *   **Baseline**: 僅使用 RAG (Retrieval-Augmented Generation)。
+    *   僅有 Short-term 記憶機制。
+    *   僅有 Long-term 記憶機制。
+    *   **Full System**: 完整的系統，包含 Short-term 和 Long-term 記憶。
+
+2.  **評估問題類型 (Evaluation Questions)**：設計了三類問題來評估記憶系統在不同層面的表現 (`meeting 0429`)：
+    *   **Short-term Correctness**: 測試模型對近期會議內容（短期記憶）回答的正確性。
+    *   **Long-term Evolution**: 測試模型是否能完整追溯某個研究方法或主題從過去到現在的演進脈絡，且不能漏掉關鍵的討論點或自己編造內容。
+    *   **Decision Reasoning**: 測試模型是否能理解並解釋某項決策背後的原因與討論過程。
+
+3.  **特殊機制評估 (Fade-out / 遺忘機制)**：除了上述三類問題，`meeting 0429` 中也特別提到要測試「遺忘」機制。評估點在於：
+    *   模型在一般對話中，應避免主動提及那些已經不重要或被「遺忘 (fade out)」的舊資訊。
+    *   但當被刻意提問時，模型仍應有能力從非活躍的記憶中將這些資訊調取出來。
+
+4.  **前處理 (Idea Unit 切割) 的評估**：在 `meeting 0506` 的討論中，提到了對會議逐字稿切割成 `idea units` 的前處理方法也需要評估。
+    *   **方法**: 比較 `adaptive window`（動態窗口）和 `fixed-size`（固定大小）切割方法。
+    *   **Metrics**: 使用人工標註的 `ground truth`（真實切點），計算不同方法的 `precision` 和 `recall`，以驗證切割的準確性。
+
+### 從 0318 到 0429 的設計演進
+
+Evaluation 的設計是逐步演進的，從參考外部論文的方法，到針對自身系統特性設計出更具體的評估方案。
+
+1.  **0318 Paper Review 階段**:
+    在 `meeting 0318`，團隊主要在回顧 `MEMO` 和 `MIRIX` 等論文是如何進行 evaluation 的。當時的討論集中在這些論文所使用的通用評估指標，例如：
+    *   **問題類型**: Single-hop, multi-hop, Temporal Reasoning, Open Domain。
+    *   **評估方式**: 使用 LLM 作為評審，判斷答案的對錯。
+    *   **比較對象**: 與 Full context (原始逐字稿) 或 RAG 進行比較。
+    這個階段主要是借鑒學術界的現有作法，尚未完全內化成自己的評估框架。
+
+2.  **演進過程**:
+    在後續的會議中（如 `meeting 0422`），團隊開始將評估方向與自身架構結合。他們討論到需要比較有三層記憶架構（working, short-term, long-term）和沒有三層架構的差別，並明確提出可以和 RAG 作為 baseline 比較。
+
+3.  **0429 形成三類問題**:
+    到了 `meeting 0429`，團隊將評估框架進一步具體化，從 0318 較為通用的問題類型（如 single-hop）演變為更貼合「研究會議」情境的三類特定問題：
+    *   **Short-term Correctness**: 直接對應近期記憶的準確度。
+    *   **Long-term Evolution**: 針對研究專案中「方法隨時間演變」的核心需求進行測試，這比 `Temporal Reasoning` 更具體。
+    *   **Decision Reasoning**: 專門測試模型對「決策脈絡」的理解，這是會議記憶中非常重要的一環。
+
+總結來說，evaluation 的設計從 `meeting 0318` 參考學術論文的通用指標，逐步演進到 `meeting 0429` 時，已經發展出一套更貼合自身系統（如 long-term 演進、decision reasoning、遺忘機制）和應用情境（研究會議）的具體評估計畫，包含明確的 ablation study 設計和三類核心問題。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E08_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E08_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E08_full_transcript.txt,
+VM-E09,core,medium,decision_reasoning,long_term,Long-Term L1 + L2,為什麼 0429 開始改用 token 而不是分鐘來衡量 dataset 是否足夠？,0429,"L1-0429-001, L1-0429-002, L1-0429-008, L1-0429-010",因為要跟 LLM 的 long-context 能力對齊，標準單位是 token，不是 meeting 分鐘數。分鐘只能描述錄音長度，不能直接映射模型 context window；因此 180 分鐘的 dataset 是否足夠，應該以 token 規模與當前模型上限比較。,這題適合測 decision rationale，也能檢查模型是否會把「資料長度」錯答成單純的錄音時間。,適合快速 sanity check 或 router/recent-state 測試。,long_term_only,"L1-0307-037, L1-0318-003, L1-0318-004, L1-0325-006, L1-0325-008, L1-0429-001, L1-0429-008, L1-0429-092","根據 L1-0429-001，團隊在 0429 的會議中決定改用 token 而不是分鐘來衡量資料量，是為了能更準確地評估資料集大小與大型語言模型（LLM）能力之間的關係。
+
+此決策的脈絡如下：
+*   L2 主題：`L2-transcript-segmentation-and-idea-unit-coverage` (transcript segmentation and idea-unit coverage)
+    *   Child L2 主題：`L2-evidence-grounding-and-line-coverage` (evidence grounding and line coverage)
+        *   L1 證據：`L1-0429-001` 指出，為了準確評估資料集大小相對於 LLM 的能力，團隊決定以 token 而非分鐘來衡量資料量。","根據提供的 context，在 [0325#chunk-2] 中有提到使用「分鐘」來衡量 dataset 的長度，例如「2000秒30分鐘」和「4751 100分鐘」。
+
+然而，context 中並未提及 0429 的會議內容，也沒有說明為何改用 token 來衡量 dataset 是否足夠。
+
+因此，目前 context 不足以回答此問題。","根據提供的 context，在 0429 的會議中，團隊開始討論如何評估他們現有的會議資料集（5 場會議，總計約 180 分鐘）是否足夠長，以符合大型語言模型（LLM）處理「長脈絡（long context）」的需求。
+
+改用 token 而不是分鐘來衡量的原因如下：
+
+1.  **「分鐘」不是 LLM 領域的標準單位**：SPEAKER_02 在會議中指出，直接用「180 分鐘」來衡量資料長度，並不能準確反映其在 LLM 處理能力中的定位。他提問團隊應該要明確定義，在 LLM 或 agent 的領域中，「long context」的標準到底是什麼（`meeting 0429`）。
+2.  **「Token」才是 LLM 的通用計算單位**：在 SPEAKER_02 提出質疑後，SPEAKER_04 回應，他們應該要去了解模型的極限，並意識到 LLM 通常是用「token」來計算長度，而非 turn 或字數（`meeting 0429`）。
+3.  **為了準確評估資料規模**：SPEAKER_02 最後總結，用分鐘來衡量並不是 agent 在定義「long」時的概念。改用 token 這個標準單位，才能讓團隊準確地知道他們的資料集相對於 LLM 的處理能力來說，規模到底有多大（`meeting 0429`）。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E09_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E09_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E09_full_transcript.txt,"transcript: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', 'status': 'RESOURCE_EXHAUSTED'}}"
+VM-E10,core,high,cross_meeting_recall,both,Hybrid,目前 short-term 和 long-term 的更新關係是什麼？為什麼不是先把 transcript routing 到其中一個 memory，而是兩邊平行更新？,0422,"L1-0422-001, L1-0422-008, L1-0422-011, L1-0422-013",0422 的共識是 STM 和 LTM 從同一份 transcript 平行更新，而不是先判斷某個 idea unit 應該只進哪一邊。理由是 STM 需要保存近期細節，LTM 需要保存較持久的研究脈絡；若先做單一路由，容易把本來同時有短期和長期價值的內容過早丟到其中一邊。,這題表面上看起來像 architecture 問題，但 wording 帶有 目前 和 為什麼，可以測 router 是否會正確用 both。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,both,"L1-0307-001, L1-0307-013, L1-0307-016, L1-0325-037, L1-0325-041, L1-0325-042, L1-0325-044, L1-0325-046, L1-0325-050, L1-0325-051, L1-0408-023, L1-0408-041, L1-0422-008, L1-0422-026, L1-0422-036","根據提供的 context，目前 short-term (STM) 和 long-term memory (LTM) 的更新關係是**平行更新**。
+
+這個決策的演變和原因可以從 L2 主題脈絡 `[L2-stm-ltm-integration]` 中找到：
+
+*   **目前的更新關係**：目前的架構是讓每一個傳入的 idea unit **平行地更新 short-term 和 long-term memory**。這個方法將 STM 和 LTM 視為兩個獨立的資料庫，兩者都會同時被更新 (L1-0408-023)。團隊在 2026-04-22 的會議中再次確認了維持此平行更新架構的決定 (L1-0422-008)。
+
+*   **不採用循序 routing 的原因**：團隊之所以不採用先更新其中一個 memory（例如讓資訊從 STM 淡出至 LTM）的模式，是因為認為該模型有缺陷。舊模型會導致 LTM 變得過時，無法反映一個主題的最新發展 (L1-0408-041)。因此，為了確保兩個 memory 都能反映最新狀態，改為採用平行更新的策略。
+
+這個演進過程如下：
+1.  **早期想法 (2026-03-25)**：STM 會處理 transcripts，並將被降級的主題移動到 LTM (L1-0325-046)。
+2.  **架構轉變 (2026-04-08)**：團隊放棄了資訊由 STM 淡出至 LTM 的模型，轉而將 STM 和 LTM 視為獨立資料庫進行平行更新 (L1-0408-023)，因為舊模型會導致 LTM 過時 (L1-0408-041)。
+3.  **再次確認 (2026-04-22)**：團隊決定維持平行更新的現行架構 (L1-0422-008)。","根據提供的 context，目前 short-term 和 long-term memory 的關係與更新方式如下：
+
+1.  **功能區別**：
+    *   **Short-term memory**：主要目的是記錄近期會議的內容，特別是與待辦事項 (to-do) 直接相關的資訊。例如，SPEAKER_01 提到 short-term memory 要記得近三次會議的內容，或是記得上次會議的 to-do，並在本次會議進行更新。SPEAKER_02 也補充，short-term memory 較重視會直接影響本週待辦事項的內容 ([0325#chunk-5])。
+    *   **Long-term memory**：主要用於處理更複雜、非線性、且可能隨時間演變的資訊。這包括曾經討論過但後來被否決的想法、專案目標的轉變，或是具有依賴關係的迭代過程。其目的是結構化地儲存這些開枝散葉的資訊，並記錄其時間脈絡，以便理解哪些內容雖然存在於記憶中，但不應再被執行 ([0325#chunk-5])。
+
+2.  **更新機制**：
+    *   **Short-term memory** 的更新方式是：將新的會議逐字稿與現有的 memory 進行比較。如果是關於已存在項目的更新，就會直接更新；如果是之前沒講過的新內容，就會附加 (append) 上去。同時，系統會記錄每個項目最後一次的更新時間，如果一個項目在近期會議中都沒被提到，就會被移除 ([0325#chunk-5])。
+    *   **Long-term memory** 的更新機制在 context 中沒有詳細說明，僅提到目前比較像是依靠 retrieval 的方式來存取 ([0325#chunk-5])。
+
+關於「為什麼不是先把 transcript routing 到其中一個 memory，而是兩邊平行更新？」這個問題，**目前 context 不足以回答此問題**。
+
+Context 中並未明確說明 short-term 和 long-term memory 是「平行更新」的，也未討論為何採用目前的架構而非先進行 routing。Context `[0429#chunk-19]` 中的討論甚至暗示了一種可能的循序流程（先讀取 transcript overview，再讀取 short-term memory 進行更新），但這似乎是針對未來架構的討論，而非對現狀的描述。因此，無法根據現有資訊解釋兩者之間的更新流程關係以及其背後的設計原因。","根據提供的 context，目前 short-term 和 long-term memory 的更新關係如下：
+
+1.  **更新關係：平行且獨立**
+    目前的設計是，short-term memory 和 long-term memory 是兩個分開的系統，各自獨立進行更新。當有新的會議逐字稿 (transcript) 產生時，這份逐字稿會同時被用來更新 short-term memory 和 long-term memory，兩者之間在更新時沒有交互作用。
+
+    *   **證據 (meeting 0408):** SPEAKER_04 明確指出：「也不是變成長期，因為長期和短期是分開更新的。長期更新長期自己，短期更新短期自己。」並解釋說，更新來源是同一份逐字稿：「直接拿這一次的組織稿分別給短期和長期，不是也可以嗎？...比較像兩個分開的資料庫」。
+    *   **證據 (meeting 0422):** SPEAKER_02 再次確認了這個設計：「因為我們現在是個別update就是他們不會通常跟 short term 在update的時候他們都會各自拿到完整的transcription在update的時候是不會有任何交互的」。
+
+2.  **原因：避免 long-term memory 資訊落後**
+    之所以不採用「先把 transcript routing 到其中一個 memory（例如 short-term），等資訊在 short-term 中消失後再移入 long-term」的作法，是為了避免 long-term memory 的內容跟不上最新的會議進度。
+
+    *   **證據 (meeting 0408):** SPEAKER_04 解釋，如果採用 short-term 消失後才進入 long-term 的方式，那麼 long-term memory 將無法即時反映最新的討論。例如，如果上週會議討論了主題 C 和 D，這些新資訊會先進到 short-term，但 long-term memory 可能還停留在更早之前的狀態，導致資訊延遲。
+
+總結來說，short-term 和 long-term memory 被設計為兩個功能不同的獨立資料庫，從同一份逐字稿來源平行更新，以確保兩邊的記憶都能即時反映會議的最新狀態，只是各自儲存的內容精細度和結構不同。Short-term memory 側重於近期的詳細資訊與待辦事項 (action item)，而 long-term memory 則是以階層式架構 (L1, L2, L3) 儲存較為精簡、宏觀的研究脈絡 (meeting 0422, 0506)。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E10_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E10_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E10_full_transcript.txt,
+VM-E11,core,high,cross_meeting_recall,long_term,Long-Term L1 + L2,Long-term memory 架構為什麼從早期的 STM/LTM 分離討論，轉成 object-based，再具體化成 L1/L2/L3？,"0307, 0325, 0408, 0506","L1-0307-012, L1-0307-013, L1-0307-015, L1-0325-001, L1-0325-004, L1-0408-006, L1-0506-034",0307 先把 short-term、working memory、以及較粗的 long-term 分開構想；0325 把 long-term 從複雜無損樹改成 object-based，強調會議脈絡而非完整保留；0408 進一步清楚定義出可追溯的 L1/L2/L3 層次；0506 則把這個層次和實際 long-term inspector / node update 的思考連起來。,這是目前系統設計的主軸題，適合當 demo 裡的長回答題。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,long_term_only,"L1-0307-021, L1-0307-037, L1-0318-003, L1-0325-004, L1-0325-029, L1-0408-006, L1-0408-017, L1-0422-005, L1-0422-009, L1-0422-015, L1-0429-060, L1-0506-043","根據提供的 context，Long-term memory 架構的演進脈絡如下：
+
+1.  **早期分離式記憶體討論**：
+    *   在 `L2-memory-processing-architecture` 主題中，早期的討論（2026-03-07）提及了為不同記憶體類型（如短期、長期等）建立更新機制的開發計畫 (L1-0307-021)。
+
+2.  **轉向 Object-based 模型**：
+    *   在 `L2-memory-processing-architecture` 主題中，後續的討論（2026-03-25）明確指出，為了揚棄一個「複雜、無損的樹狀結構」，架構將轉向「object-based 模型」(L1-0325-004)。這個新模型會由 LLM 處理逐字稿以提取要點、決策和行動項目。
+    *   這個 object-based 的概念在後續（2026-04-29）被進一步描述為基於「物件 (objects)」和「議題 (issues)」的架構，新資訊會創建「候選」物件，後續相關內容則會合併進去 (L1-0429-060)。
+
+3.  **具體化為 L1/L2/L3 層級架構**：
+    *   **L1/L2 層級的提出**：在 `L2-memory-processing-architecture` 主題中，於 2026-04-08 的會議紀錄顯示，團隊採用了一個三層級的階層式記憶體模型，其中 L1 是從會議中提取的結構化物件，而多個 L1 會被總結成一個 L2 節點 (L1-0408-006)。
+    *   **L1/L2/L3 層級的確立**：在 `L2-transcript-segmentation-and-idea-unit-coverage` -> `L2-idea-unit-extraction-and-coverage-repair` 的脈絡下，最新的證據（2026-05-06）確立了更完整的三層架構。這是一個基於主題的階層式結構，包含：
+        *   L3：高層級主題（如時間、事件類型、人物）
+        *   L2：子主題摘要
+        *   L1：從逐字稿中提取的資訊單元
+        (L1-0506-043)
+
+總結來說，架構的演進是從早期分離不同記憶體類型的想法，為了簡化複雜的樹狀結構而轉向更靈活的 object-based 模型，最終具體化為一個 L1/L2/L3 的階層式主題架構，以更好地組織和檢索資訊。","根據提供的 context，Long-term memory 架構的演進如下：
+
+1.  **初期的 STM/LTM 分離討論**：
+    *   會議初期曾討論將記憶體分為 working memory、short-term memory (STM) 和 long-term memory (LTM) 三種類型（[0325#chunk-5]）。
+    *   當時對 Long-term memory 的挑戰定義為：在研究情境下，需要處理想法會開枝散葉、反覆迭代、存在依賴關係，以及某些想法曾被提出但後續被否決等複雜的時間性資訊（[0325#chunk-5]）。
+
+2.  **轉向 Object-based 結構**：
+    *   為了更好地組織長期記憶，後續的討論將其具體化為一種 object-based 的結構。一個 long-term memory object（在 context 中被稱為 ""Outjet""）會包含 `Type`、`Content`（總結過的內容）、`Evidence`（原始逐字稿內容）以及 `Related Topics` 等欄位（[0422#chunk-7]）。
+
+3.  **具體化為 L1/L2/L3 的層級架構**：
+    *   這個 object-based 的結構進一步發展成 L1/L2/L3 的層級架構，目的是為了提供更完整的「脈絡」（[0422#chunk-7]）。
+    *   **L1** 是最底層（low level）的記憶，對應到前述的 memory object（[0422#chunk-7]）。
+    *   **L2 和 L3** 則是對 L1 的向上總結，例如 L2 可能是「月度總結」，L3 則是「整個大脈絡總結」（[0422#chunk-7]）。
+    *   這種設計的**理由**是，當系統檢索到一個符合條件的 L1 記憶時，可以同時帶出其所屬的 L2 和 L3 總結，從而讓模型在理解細節的同時，也能掌握其在整個專案中的高層次脈絡（[0422#chunk-7]）。","根據提供的 context，Long-term memory 架構的演進脈絡如下：
+
+1.  **早期討論：STM/LTM 分離架構 (meeting 0307)**
+    *   在早期的討論中，團隊將記憶體區分為短期 (Short-term) 和長期 (Long-term)。
+    *   **短期記憶 (STM)** 的定義是記得近期（例如三次會議內）的重要事情，如果一個項目在三次會議內沒有再被討論，就可能會被刪除或認為不重要 (`meeting 0307`)。
+    *   **長期記憶 (LTM)** 則被設想為用來記錄橫跨更長時間（例如一年）的研究脈絡、目標和主題，其架構會比短期記憶更為粗略 (`meeting 0307`)。
+    *   當時的想法是，短期記憶中的資訊在時間拉長後，需要轉換成另一種架構，成為長期記憶的一部分 (`meeting 0307`)。
+
+2.  **轉向 Object-based 方法 (meeting 0325)**
+    *   團隊後來討論認為，原先設想的樹狀結構 (`樹狀`) 可能不適合長期記憶，因為這種結構會打散記憶，使其難以包含時間權重衰退的機制 (`meeting 0325`)。
+    *   因此，新的想法是針對每一次會議，使用 LLM 從逐字稿中擷取出特定類型的「物件 (Object)」，例如 `decision`、`to do`、`method change`、`result` 等，作為長期記憶的結構 (`meeting 0325`)。這種方式旨在更好地處理時間脈絡。
+
+3.  **具體化為 L1/L2/L3 層級結構 (meeting 0408, 0422, 0506)**
+    *   這個階段將 Object-based 的想法進一步發展成一個具體的層級式架構，明確定義為 L1, L2, L3，全部用來處理長期記憶 (`meeting 0408`)。
+    *   **L1 (最精細層)**：代表每一次會議的記憶。它是透過處理單次會議的逐字稿，抽取出多個特定類型的物件（如 `decision`, `TODO`, `method change` 等）而形成。每個 L1 物件都可以追溯到原始的逐字稿證據 (evidence) (`meeting 0408`, `meeting 0422`)。
+    *   **L2 (中階摘要層)**：由數個 L1 節點向上總結而成。例如，每四次會議 (四個 L1) 會被整理成一個 L2 節點，可視為月度總結 (`meeting 0408`, `meeting 0506`)。
+    *   **L3 (最高層級)**：由所有的 L2 節點再次向上總結，形成最宏觀、最精簡的研究脈絡骨架 (`meeting 0408`, `meeting 0506`)。
+
+總結來說，架構的演進是從一個較為模糊的 STM/LTM 分離概念，為了更好地處理時間脈絡與資訊衰退，轉而採用以 Object 為基礎的方法來結構化單次會議的記憶。最終，這個 Object-based 的方法被整合並擴展成一個 L1/L2/L3 的層級式長期記憶架構，使其能夠在不同精細度上儲存和追溯會議內容，從而捕捉整個研究的演進脈絡。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E11_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E11_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E11_full_transcript.txt,
+VM-E12,core,medium,cross_meeting_recall,both,Hybrid,如果有人問：我們目前為什麼要先做 update，再晚一點才做 retrieve？後來 retrieve 的設計又變成什麼樣子？,"0307, 0408, 0506","L1-0307-014, L1-0307-016, L1-0408-007, L1-0506-038",0307 還在 update-first 階段，retrieve 還沒設計，當時目標只是先把 memory 寫進去；到 0408 才較明確出現 retrieve flow 的想法，也就是先 match L1，再帶上對應的 L2/L3；到 0506 則更強調 inspectability 和可視化，讓 retrieve 不只是回字串，而是能看 node、candidate、hierarchy 如何被帶出來。,這題可以測系統有沒有把 architecture roadmap 連成一條線，而不是把早期和現在的 retrieve 觀念混在一起。,適合快速 sanity check 或 router/recent-state 測試。,both,"L1-0307-001, L1-0307-014, L1-0307-016, L1-0307-021, L1-0325-004, L1-0325-029, L1-0325-033, L1-0325-037, L1-0325-041, L1-0325-042, L1-0325-044, L1-0325-050, L1-0325-051, L1-0325-065, L1-0408-006, L1-0408-008, L1-0408-057, L1-0422-027, L1-0506-021, L1-0506-031","根據提供的 context，針對您的問題回答如下：
+
+### 為什麼先做 update，晚點才做 retrieve？
+
+根據會議記錄，將記憶體系統的開發分為兩個階段，先完成「update」（將資訊加入記憶體），再處理「retrieve」（使用記憶體），這是一個計畫好的開發順序。
+
+- **L2 主題脈絡: [L2-memory-retrieval] memory retrieval**
+    - **L1 evidence: [2026-03-07 L1-0307-014]** 指出，記憶體系統的開發是分階段的，目前的焦點完全在「update」階段，而「retrieve」階段將在之後處理。
+- **L2 主題脈絡: [L2-memory-processing-architecture] memory processing architecture**
+    - **L1 evidence: [2026-03-07 L1-0307-021]** 也證實了此開發計畫，即先建立三種記憶體類型（短期、長期等）的更新機制，然後再處理檢索機制。
+
+### 後來 retrieve 的設計變成什麼樣子？
+
+隨著開發進程，主要挑戰從 update 轉移到 retrieve，其設計演變為一個多層次、多策略的系統：
+
+1.  **採用由下而上的檢索流程**：
+    - **L2 主題脈絡: [L2-memory-processing-architecture] memory processing architecture**
+        - **L1 evidence: [2026-04-08 L1-0408-006]** 說明檢索過程將是「由下而上」的。系統會先找到匹配的底層 L1 單位（從會議中提取的結構化物件），然後再帶出其上層的 L2（子主題）和 L3（主題）節點，以提供完整的脈絡。
+
+2.  **採用雙重標籤與多重匹配策略**：
+    - **Short-Term Memory: [S001]** 提到，為了優化檢索，系統對每個記憶單元採用了功能標籤（functional label）和主題標籤（theme label）的雙重標籤策略。
+    - **L2 主題脈絡: [L2-memory-retrieval] memory retrieval**
+        - **Latest evidence** 提出，資訊檢索的設計可以根據段落的「主題（theme）」或想法單元（idea unit）的「類型（type）」（例如：待辦事項）來匹配查詢。
+
+3.  **目前的開發挑戰**：
+    - **L2 主題脈絡: [L2-memory-retrieval] memory retrieval**
+        - **L1 evidence: [2026-03-25 L1-0325-065]** 指出，主要的開發挑戰已轉移到如何適當地加權來自三個記憶體層級（working, short-term, long-term）的檢索結果。
+    - **Short-Term Memory: [S001]** 也提到，最佳的搜尋優先順序仍在討論中。","根據提供的 context：
+
+目前 context 不足以完整回答「為什麼要先做 update，再晚一點才做 retrieve」以及「後來 retrieve 的設計變成什麼樣子」。
+
+不過，context 中有提到 `update memory` 的流程設計：
+
+*   **[0422#chunk-1]** 提到，更新記憶體（update memory）的過程包含「Read」和「Write」兩個部分。流程大致是：
+    1.  提供函數給 Gemini，讓它可以讀取（read）目前的記憶體資料庫（DB）和新的逐字稿。
+    2.  Gemini 讀取完後，會再拿到一個「Write」的函數，用來修改記憶體資料庫。
+
+這段描述了 `update` 自身的流程，但並未解釋其與 `retrieve` 的先後順序原因，也未提及 `retrieve` 的設計細節。","根據提供的 context，我們目前先做 update 再做 retrieve 的原因，以及後來 retrieve 的設計演變如下：
+
+**為什麼先做 update，晚一點才做 retrieve？**
+
+根據會議內容，團隊決定先處理記憶的 `update` 機制，是因為 `retrieve`（取用）的部分被認為是更複雜、更困難的挑戰，且當時尚未有明確的設計。
+
+*   在 `meeting 0307` 中，SPEAKER_01 明確提到團隊還沒有設計如何從記憶中取出內容（retrieve），目前的工作重心是記憶的 update 部分。
+*   在 `meeting 0325` 中，SPEAKER_01 進一步說明，相較於 update（被形容為「把它丟進去而已」），retrieval 是「最大的問題」，因為它涉及當 agent 需要回應時，如何權衡使用 working、short-term 和 long-term 這三種記憶。
+
+**後來 retrieve 的設計變成什麼樣子？**
+
+Retrieve 的設計隨著討論逐漸演進，從一個基於評分公式的想法，發展到讓 LLM 自主決策的架構。
+
+1.  **基於評分公式的檢索**：在 `meeting 0325` 中，SPEAKER_04 提出 long-term memory 的 retrieval 可以不依賴樹狀結構，而是透過一個綜合分數來抓取資訊。這個分數會結合語意相似度、一個會隨時間衰退的「recency」分數，以及一個為重要資訊設定下限（floor）的「importance」分數。這個想法在 `meeting 0408` 中被再次確認，目標是選出分數最高的項目讓 LLM 進行後續判斷。
+
+2.  **使用 Function Calling 讓 LLM 決策**：在 `meeting 0408` 中，SPEAKER_04 提出了一個新的設計，即使用 Gemini 的 function calling 功能（在 `meeting 0422` 中也稱為 Tool Calling）。這個設計的核心是提供給 LLM 兩個獨立的函數，一個用於取用短期記憶，另一個用於取用長期記憶。當使用者提出問題時，由 LLM 自行判斷該呼叫哪個函數來獲取最相關的資訊。例如，當問題是「上週的 TODO 是什麼？」，LLM 可能會判斷應該呼叫短期記憶的函數。這種設計讓 LLM 可以更靈活地決定使用哪種記憶。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E12_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E12_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E12_full_transcript.txt,
+VM-E13,stretch,low,recent_context,short_term,Short-Term only or Hybrid,speaker diarization 在整個設計裡是怎麼被處理的？目前為什麼可以先假設 speaker identity 已知？,0307,"L1-0307-004, L1-0307-006",實體會議的 diarization 很難，所以早期實驗允許先做簡化假設，把 speaker identity 視為已知；這是為了先把 memory architecture 做出來，而不是一開始就卡在 single-audio-source 的 speaker attribution。,這題能分辨模型是否會把資料前處理的暫時假設誤答成最終產品設計。,較適合作為補充題或壓力測試，不建議放第一輪 demo。,both,"L1-0307-004, L1-0307-006, L1-0307-024, L1-0307-025, L1-0307-028, L1-0325-006, L1-0429-048","根據提供的 context，關於 speaker diarization 的處理方式及假設 speaker identity 已知的原因如下：
+
+在 L2 主題 `[L2-dataset-selection] dataset selection` 中提到：
+
+*   **L1-0307-004**: 為了簡化實驗，目前的設計是假設 speaker identity 已知，藉此繞過在實體會議中從單一音訊來源進行 speaker diarization 的挑戰。
+*   **L1-0307-006**: 對於實體會議的 speaker diarization 是一個重大的未解決挑戰，因為從單一音訊來源很難區分不同的發言者。
+
+總結來說，目前之所以可以先假設 speaker identity 已知，是為了簡化實驗，並避開這個在技術上仍屬困難且未解決的挑戰。","根據提供的 context，關於 speaker diarization 的處理方式以及可以先假設 speaker identity 已知的原因如下：
+
+在 context 中，`[SPEAKER_00]` 提到了兩種情境：
+
+1.  **線上會議 (Online meetings)**：如使用 Zoom 或 Google Meet，系統可以直接假設誰在講話，並將語句附加到對應的發言者身上。
+2.  **實體會議 (Physical meetings)**：這被認為是更困難的情況，因為模型需要正確分辨在實體場域中是誰在說話。
+
+至於為什麼可以先假設 speaker identity 已知，`[SPEAKER_00]` 提出這是一個實驗上的簡化策略。他建議，如果想讓實驗簡化一點，可以先省略「分辨是誰講話」這個步驟 (`[0307#chunk-1]`)。","根據提供的 context，speaker diarization 在整個設計中的處理方式以及可以先假設 speaker identity 已知的原因如下：
+
+**Speaker Diarization 的處理方式：**
+
+在目前的設計中，處理 speaker diarization 的方式主要有兩種，取決於資料來源：
+
+1.  **使用外部資料集**：團隊使用的 ICSI 資料集是以 MRT 檔格式提供。這種檔案格式本身就包含了時間戳、文字內容以及說話者是誰的資訊 (`[SPEAKER_02]: 就是有時間戳、文字，也有誰說的。`)。這種預先標記好的資料被認為是最準確的，因此團隊可以直接使用這些已知的 speaker identity (meeting 0408)。
+2.  **使用 WhisperX 處理自有錄音**：當團隊處理自己的會議錄音時，會使用 WhisperX。這個工具轉錄出來的逐字稿會自動標記不同的說話者，例如 `SPEAKER_00`, `SPEAKER_01` 等 (`[SPEAKER_02]: transcript現在是WhisperX本來就會有什麼speaker幾然後講什麼他就會一行一行一行`)。有時團隊還會根據錄音檔對 WhisperX 產生的 turn 進行手動修正，以確保發言切分的正確性 (meeting 0422)。
+
+**可以先假設 Speaker Identity 已知的原因：**
+
+1.  **簡化實驗情境**：會議中提到，在實體場域中要讓模型正確分辨誰在說話是一個「更困難的情況」。為了在實驗初期能專注於記憶架構等核心問題，建議可以先簡化情境，省略處理 speaker diarization 這個步驟 (meeting 0307)。
+2.  **資料集本身已提供資訊**：如前述，團隊使用的主要資料集 (ICSI) 已經提供了完整的 speaker 標籤，因此在實驗上可以直接利用這些現成的資訊，而不需自行解決 diarization 的問題 (meeting 0408)。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E13_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E13_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E13_full_transcript.txt,
+VM-E14,stretch,high,conflict_or_update,both,Hybrid,如果 user 問最近專題展應該怎麼展示 fade-out 的價值，正確答案應該提到哪些核心點？,"0422, 0429, 0506","L1-0422-018, L1-0422-033, L1-0429-017, L1-0429-018, L1-0429-047, L1-0506-033, L1-0506-037",展示重點應該是：memory system 不只是記住更多，而是能讓不重要舊資訊在一般對話中 fade out，但在 explicit retrieval 或 human retuning 後仍能回來；這同時可以對比標準 RAG、說明 activation 與 importance 的差異，也能帶出 human-in-the-loop 的 tunable importance。,這題是你 demo narrative 的強題，能直接驗證 fade-out 機制和 HITL controllability 的說明是否一致。,適合展示跨會議記憶、L2/L3 脈絡或系統主張。,short_term_only,"L1-0307-001, L1-0307-016, L1-0307-024, L1-0307-028, L1-0307-029, L1-0307-032, L1-0307-033, L1-0307-037, L1-0307-039, L1-0307-041, L1-0325-037, L1-0325-041, L1-0325-042, L1-0325-044, L1-0325-050, L1-0325-051, L1-0506-006, L1-0506-013, L1-0506-022, L1-0506-036, L1-0506-038, L1-0506-039","根據提供的 context，在專題展展示 ""fade-out"" 的價值時，應該提到以下核心點：
+
+根據 [S021] LTM Node Attributes 的討論，""fade-out"" 對應的是長期記憶節點中「Activation」屬性的動態衰減（decay）機制。其核心價值在於與靜態的「Importance」分數分離設計，從而達到以下目的：
+
+1.  **保存重要想法的歷史意義**：透過將代表想法本身重要性的靜態分數「Importance」與代表近期活躍程度、會隨時間衰減的動態分數「Activation」分開，可以確保重要的歷史想法不會因為時間久遠而完全消失。
+2.  **確保重要資訊不被完全遺忘**：即使一個想法的「Activation」分數因為時間而衰減（fade-out），但如果它具有較高的「Importance」分數，它仍然會維持一個「baseline」值。這個設計可以防止重要但較舊的資訊在系統中完全沉沒。
+
+這些論點主要由 L1 evidence id `L1-0506-022`, `L1-0506-036`, `L1-0506-038`, `L1-0506-039` 所支持。","根據提供的 context，關於在專題展展示 fade-out 的價值，可以提及以下核心點：
+
+1.  **fade-out 的機制**：Context 中描述了一種記憶機制，如果某個主題（例如 B）在密集討論後，一段時間不再被提及，它就可能會從短期記憶中被清除或「push out window 而不見」。這可以被理解為「fade-out」的概念（[0408#chunk-9]）。
+
+2.  **與長期記憶的對比**：fade-out 的價值體現在它與長期記憶架構的互動上。即使一個主題從短期記憶中淡出，但如果它過去被大量討論，它在長期記憶中仍然會佔有較大的比例。這突顯了長期記憶能夠保存重要但不活躍資訊的價值（[0408#chunk-9]）。
+
+3.  **證明架構的優越性**：展示 fade-out 的核心目標是為了「prove 我們有長期記憶，以及有長期記憶架構和沒有這個架構的差別」（[0408#chunk-9]）。透過展示一個主題如何從短期記憶中 fade-out，但又能透過長期記憶在未來被重新喚醒（revisit），可以有效證明此架構的優越性。
+
+雖然 `[0429#chunk-9]` 中有提到「fade-out 的東西」，但對話在該處中斷，未提供更多細節。因此，核心論點主要基於 `[0408#chunk-9]` 中對短期與長期記憶機制的討論。","根據提供的 context，如果 user 詢問最近專題展應該如何展示 fade-out 的價值，正確答案應提到以下幾個核心點：
+
+### 1. Fade-out 的核心價值與概念
+fade-out 機制的核心價值在於，讓 agent 的記憶系統更接近人類的記憶模式，能夠有權重地處理資訊，而不是將所有歷史紀錄一視同仁。這能解決傳統 RAG 或一般 LLM 可能會抓取到早已不相關或被否決的舊資訊的問題 (meeting 0325, meeting 0422)。
+
+具體來說，其價值體現在：
+*   **避免輸出過時資訊**：在一般對話中，agent 會避免主動提及已經 fade-out 的主題（例如很久以前討論過但後來被放棄的想法），讓回覆更貼近當前的會議脈絡 (meeting 0429)。
+*   **理解決策演進**：系統不僅僅是儲存資訊，更能理解一個主題隨時間的演變，包括哪些想法曾被提出但後來「死掉」或停止討論 (meeting 0325)。
+*   **與 RAG 的區別**：傳統 RAG 只會根據語意相似度找出所有相關內容，但無法區分一個主題在時間軸上的狀態（例如：被否決）。fade-out 機制則能處理這種有時間順序關聯的記憶 (meeting 0325)。
+
+### 2. Fade-out 的實現機制
+會議中討論的 fade-out 並非單純的刪除，而是一個更細緻的權重系統：
+*   **基於分數的權重系統**：長期記憶中的每個物件 (object) 會有 `importance`（重要性）和 `recency`（近期性）或 `activation`（活躍度）等分數 (meeting 0325, meeting 0408, meeting 0429)。
+*   **時間衰退 (Decay)**：如果一個主題在後續會議中沒有再被提及，其 `recency` 或 `activation` 分數會隨時間衰退 (meeting 0408, meeting 0506)。
+*   **重要性下限 (Floor)**：特別重要的資訊，其分數會有一個下限 (floor)，確保它不會因為時間久遠而完全消失 (meeting 0408)。
+*   **非活躍狀態 (Inactive)**：當一個物件的分數低於某個閾值，它就會被視為「非活躍」或已 fade-out，在一般對話中不會被提取 (meeting 0429)。
+*   **重新激活 (Reactivation)**：如果一個非活躍的主題在近期的會議中被重新大量討論，它的分數會再次提升，從而回到活躍狀態 (meeting 0429)。
+
+### 3. 專題展的具體展示策略
+為了在專題展上具體展示 fade-out 的價值，可以採用以下策略：
+*   **設計比較實驗**：將搭載 fade-out 機制的 agent 與傳統的 RAG 或一般 LLM 進行對比，針對特定問題，展示兩者回答的差異 (meeting 0422)。
+*   **展示「死掉的議題」(Dead Topic) 測試**：
+    *   **情境**：設計一個問題，詢問一個在專案初期（例如，第一次會議）被提及，但之後再也沒有討論過的議題 (meeting 0325, meeting 0422)。
+    *   **預期結果**：傳統 RAG 可能會因為語意相關而抓出這個過時資訊；而具備 fade-out 機制的 agent 則會因為該議題的重要性已衰退，而不會在當前的待辦事項或總結中提及它 (meeting 0422)。
+*   **展示「非活躍但可追溯」的特性**：
+    *   **情境**：首先進行一般對話，證明 agent 不會主動提及已 fade-out 的議題。接著，使用一個特殊的指令或功能（例如，明確要求 agent 列出其 long-term memory 中的 inactive ideas）來證明這些資訊並未被完全刪除，只是被歸類為非活躍 (meeting 0429)。這能凸顯此機制與單純從資料庫刪除的區別。
+*   **展示「決策演進」的追蹤能力**：
+    *   **情境**：提出一個問題，例如「我們某個研究方法從過去到現在的完整演進是什麼？」(meeting 0429)。
+    *   **預期結果**：agent 能夠有條理地呈現整個決策脈絡，包括最初的想法、後來的修正、以及最終被否決的方案，並標示出各個時間點，證明它理解整個演化過程 (meeting 0429)。",,,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E14_structured.txt,,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E14_rag.txt,/home/kellychen/virtual-mentor/doc/evaluation_runs/contexts/VM-E14_full_transcript.txt,

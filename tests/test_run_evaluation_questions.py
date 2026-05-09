@@ -58,6 +58,29 @@ source L1: L1-0506-001
         with self.assertRaises(ValueError):
             run_evaluation_questions.parse_methods("structured,magic")
 
+    def test_parser_supports_all_transcript_scope(self) -> None:
+        args = run_evaluation_questions.build_parser().parse_args(
+            ["--transcript-scope", "all"]
+        )
+
+        self.assertEqual(args.transcript_scope, "all")
+
+    def test_format_error_keeps_exception_summary_compact(self) -> None:
+        message = run_evaluation_questions.format_error(
+            "structured",
+            TimeoutError("the read operation timed out"),
+        )
+
+        self.assertEqual(
+            message,
+            "structured: TimeoutError: the read operation timed out",
+        )
+
+    def test_has_successful_answer_requires_non_error_text(self) -> None:
+        self.assertTrue(run_evaluation_questions.has_successful_answer("answer"))
+        self.assertFalse(run_evaluation_questions.has_successful_answer(""))
+        self.assertFalse(run_evaluation_questions.has_successful_answer("ERROR: timeout"))
+
 
 if __name__ == "__main__":
     unittest.main()

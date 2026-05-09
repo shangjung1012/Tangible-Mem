@@ -120,6 +120,23 @@ class BaselineRetrievalTests(unittest.TestCase):
         self.assertNotIn("...(truncated)", context)
         self.assertIn("...(truncated)", limited)
 
+    def test_full_transcript_can_use_all_meetings_without_gold_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "0307.txt").write_text("0307 transcript", encoding="utf-8")
+            (root / "0506.txt").write_text("0506 transcript", encoding="utf-8")
+
+            context = baseline_retrieval.retrieve_full_transcript_context(
+                "",
+                transcript_dir=root,
+                scope="all",
+            )
+
+        self.assertIn("--- meeting 0307 ---", context)
+        self.assertIn("0307 transcript", context)
+        self.assertIn("--- meeting 0506 ---", context)
+        self.assertIn("0506 transcript", context)
+
 
 if __name__ == "__main__":
     unittest.main()

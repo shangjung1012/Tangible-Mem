@@ -1,0 +1,43 @@
+=== Memory Router ===
+strategy: both
+reason: query asks for recent state and historical rationale
+confidence: 0.85
+
+=== Short-Term Memory ===
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S021] LTM Node Attributes: Static Importance vs. Dynamic Activation/Decay, and Tunable Importance Design
+  score: 6.25
+  summary: The long-term memory model defines key node attributes: 'Importance' (a static score assigned at creation, now also tunable by users with system suggestions based on similarity search), 'Relevance' (dynamic, based on semantic similarity), and 'Recency' or 'Activation' (dynamic, decays over time). To preserve the historical significance of ideas, the static 'importance' score should be explicitly separated from the dynamic 'activation' parameter that handles decay. This separation ensures important but older ideas don't completely disappear by maintaining a 'baseline' value for high-importance items even as activation decays. The design of the human-in-the-loop system for tuning 'importance' remains an open issue, specifically regarding how users inspect/adjust scores and how the system proactively suggests related units for tuning.
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  source L1: L1-0506-022, L1-0506-036, L1-0506-038, L1-0506-039
+
+[S020] Memory Merging Policy: Meeting-Specific Scope
+  score: 2.25
+  summary: Memory node updates and merges are strictly limited to within a single m
+
+=== Long-Term Memory ===
+
+=== L2 主題脈絡 ===
+
+[L2-memory-lifecycle] memory lifecycle
+  state: This L2 topic has 31 linked L1 evidence objects across 6 meeting(s). Latest evidence: There is acknowledged uncertainty within the team regarding the precise implementation and application of the 'importance' score, particularly concerning the meaning of the term...
+  matched L1: L1-0506-033, L1-0506-041, L1-0422-041, L1-0422-033, L1-0506-037, L1-0506-035, L1-0429-048, L1-0429-018, L1-0422-039, L1-0429-017, L1-0506-040, L1-0506-036
+  promoted L3: L3-memory-lifecycle status=needs_split_review
+  timeline:
+    - [2026-04-22 L1-0422-033] The long-term memory system implements a forgetting mechanism using `relevancy` and `importance` scores. A memory node's relevancy score will decay over time if the topic does n...
+    - [2026-04-22 L1-0422-039] The primary efficiency gain from the 'forgetting' mechanism is not from faster per-node calculations, but from reducing the total number of nodes that need to be traversed durin...
+    - [2026-04-22 L1-0422-041] The memory system is designed with a rule that items with a sufficiently high importance score will never fade out, making them permanent.
+    - [2026-04-29 L1-0429-017] A 'fade out' mechanism is justified for managing memory importance. Less important information should not appear in normal dialogue to avoid clutter, but should remain retrievab...
+    - [2026-04-29 L1-0429-018] A 'fade out' mechanism will be implemented for memory management. Information with a low importance score will be hidden from normal dialogue but remain retrievable via a specif...
+
+[L2-memory-retrieval] memory retrieval
+  state: This L2 topic has 31 linked L1 evidence objects across 6 meeting(s). Latest evidence: It was proposed that information retrieval could be designed to match queries based on either a segment's 'theme' or an idea unit's 'type' (e.g., to-do), suggesting a need to su...
+  matched L1: L1-0408-008, L1-0408-056
+  promoted L3: L3-memory-retrieval status=needs_split_review
+  timeline:
+    - [2026-04-08 L1-0408-008] To handle topics that reappear over time, the retrieval score combines semantic similarity with a time-decaying 'recency' score. For items designated with high 'importance', the...
+    - [2026-04-08 L1-0408-056] To balance recency and long-term importance, a memory item's score should increase upon frequent retrie
