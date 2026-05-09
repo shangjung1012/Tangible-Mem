@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
+import signal
 import tempfile
 import time
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
-from short_term.merge import apply_merge_decision, run_with_timeout
+from short_term.merge import GeminiMergeDecider, apply_merge_decision, run_with_timeout
 from short_term.snapshot_loader import load_snapshot_tree, select_latest_meeting
 from short_term.update_memory import update_memory_from_snapshot
 
@@ -89,6 +92,13 @@ def _topic_decider(
 
 
 class ShortTermSnapshotLoaderTests(unittest.TestCase):
+    def test_missing_snapshot_reports_not_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            missing = Path(tmpdir) / "missing_bridge_0318.json"
+
+            with self.assertRaisesRegex(RuntimeError, "snapshot file not found"):
+                load_snapshot_tree(missing)
+
     def test_select_latest_meeting_uses_date_then_meeting_id(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             snapshot = _write_snapshot(
@@ -256,9 +266,59 @@ class ShortTermSnapshotUpdateTests(unittest.TestCase):
 
 
 class ShortTermMergeSafetyTests(unittest.TestCase):
+    def test_gemini_decider_sets_http_timeout_from_merge_timeout(self) -> None:
+        with (
+            patch.dict(os.environ, {"SHORT_TERM_MERGE_TIMEOUT_S": "13"}, clear=True),
+            patch("short_term.merge.load_api_keys", return_value=["test-key"]),
+            patch("short_term.merge.create_gemini_client", return_value=object()),
+        ):
+            GeminiMergeDecider()
+
+            self.assertEqual(os.environ.get("GEMINI_HTTP_TIMEOUT_S"), "13")
+
+    def test_gemini_decider_retries_transient_worker_errors(self) -> None:
+        with (
+            patch.dict(os.environ, {"SHORT_TERM_MERGE_RETRIES": "1"}, clear=True),
+            patch("short_term.merge.load_api_keys", return_value=["test-key"]),
+            patch("short_term.merge.create_gemini_client", return_value=object()),
+            patch(
+                "short_term.merge.run_with_timeout",
+                side_effect=[
+                    RuntimeError("short-term Gemini merge decision failed in worker (ClientError): 499 CANCELLED"),
+                    {
+                        "action": "create_new",
+                        "title": "Recovered",
+                        "summary": "Recovered after retry.",
+                        "related_topics": [],
+                    },
+                ],
+            ) as run_merge,
+        ):
+            decider = GeminiMergeDecider(timeout_s=1)
+            decision = decider(_obj("L1-0307-001", "Retry object."), [], _meeting("0307"))
+
+            self.assertEqual(decision["title"], "Recovered")
+            self.assertEqual(run_merge.call_count, 2)
+
     def test_run_with_timeout_raises_timeout_error(self) -> None:
         with self.assertRaisesRegex(TimeoutError, "timed out"):
             run_with_timeout(lambda: time.sleep(1), timeout_s=0.01, operation_name="slow merge")
+
+    def test_run_with_timeout_stops_function_that_ignores_alarm(self) -> None:
+        def ignore_alarm_then_sleep() -> dict[str, Any]:
+            signal.signal(signal.SIGALRM, signal.SIG_IGN)
+            time.sleep(0.3)
+            return {}
+
+        started_at = time.monotonic()
+        with self.assertRaisesRegex(TimeoutError, "timed out"):
+            run_with_timeout(
+                ignore_alarm_then_sleep,
+                timeout_s=0.05,
+                operation_name="signal ignoring merge",
+            )
+
+        self.assertLess(time.monotonic() - started_at, 0.25)
 
     def test_unknown_merge_unit_id_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown unit_id"):

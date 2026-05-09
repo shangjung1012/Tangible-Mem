@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import math
+import multiprocessing as mp
 import os
 import re
 import signal
 from copy import deepcopy
+from queue import Empty
 from pathlib import Path
 from typing import Any, Callable
 
@@ -16,6 +19,18 @@ from .schema import DEFAULT_MODEL_NAME, MERGE_DECISION_SCHEMA
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+|[\u4e00-\u9fff]+", re.IGNORECASE)
 MergeDecider = Callable[[dict[str, Any], list[dict[str, Any]], dict[str, Any]], dict[str, Any]]
+TRANSIENT_MERGE_ERROR_MARKERS = (
+    "429",
+    "499",
+    "500",
+    "502",
+    "503",
+    "504",
+    "CANCELLED",
+    "DEADLINE_EXCEEDED",
+    "RESOURCE_EXHAUSTED",
+    "UNAVAILABLE",
+)
 
 
 def _tokens(text: str) -> set[str]:
@@ -24,6 +39,21 @@ def _tokens(text: str) -> set[str]:
         if len(match) >= 2 or re.fullmatch(r"[\u4e00-\u9fff]+", match):
             output.add(match)
     return output
+
+
+def _env_int(name: str, default: int) -> int:
+    raw_value = os.getenv(name, "").strip()
+    if not raw_value:
+        return default
+    try:
+        return int(raw_value)
+    except ValueError:
+        return default
+
+
+def _is_transient_merge_error(exc: BaseException) -> bool:
+    message = str(exc).upper()
+    return any(marker in message for marker in TRANSIENT_MERGE_ERROR_MARKERS)
 
 
 def _topic_set(row: dict[str, Any]) -> set[str]:
@@ -228,6 +258,16 @@ def _extract_json(text: str) -> dict[str, Any]:
     return parsed
 
 
+def _run_func_and_report(
+    func: Callable[[], dict[str, Any]],
+    queue: Any,
+) -> None:
+    try:
+        queue.put(("ok", func()))
+    except BaseException as exc:  # pragma: no cover - exercised through parent
+        queue.put(("error", exc.__class__.__name__, str(exc)))
+
+
 def build_merge_prompt(
     *,
     source_obj: dict[str, Any],
@@ -279,6 +319,34 @@ def run_with_timeout(
 ) -> dict[str, Any]:
     if timeout_s <= 0:
         return func()
+    if hasattr(os, "fork"):
+        ctx = mp.get_context("fork")
+        queue = ctx.Queue(maxsize=1)
+        process = ctx.Process(target=_run_func_and_report, args=(func, queue))
+        process.start()
+        process.join(timeout_s)
+        if process.is_alive():
+            process.terminate()
+            process.join(1)
+            if process.is_alive():
+                process.kill()
+                process.join()
+            raise TimeoutError(f"{operation_name} timed out after {timeout_s:g}s")
+        try:
+            status, *payload = queue.get_nowait()
+        except Empty as exc:
+            raise RuntimeError(
+                f"{operation_name} worker exited without returning a result"
+            ) from exc
+        if status == "ok":
+            result = payload[0]
+            if not isinstance(result, dict):
+                raise RuntimeError(f"{operation_name} returned a non-object result")
+            return result
+        exc_type = payload[0] if payload else "Exception"
+        message = payload[1] if len(payload) > 1 else ""
+        raise RuntimeError(f"{operation_name} failed in worker ({exc_type}): {message}")
+
     if not hasattr(signal, "setitimer"):
         return func()
 
@@ -308,6 +376,9 @@ class GeminiMergeDecider:
             if timeout_s is None
             else timeout_s
         )
+        if self.timeout_s > 0 and not os.getenv("GEMINI_HTTP_TIMEOUT_S"):
+            os.environ["GEMINI_HTTP_TIMEOUT_S"] = str(max(1, math.ceil(self.timeout_s)))
+        self.max_retries = max(0, _env_int("SHORT_TERM_MERGE_RETRIES", 2))
         self.client = create_gemini_client(load_api_keys())
 
     def __call__(
@@ -321,21 +392,27 @@ class GeminiMergeDecider:
             candidates=candidates,
             meeting=meeting,
         )
-        return run_with_timeout(
-            lambda: _extract_json(
-                (
-                    self.client.models.generate_content(
-                        model=self.model_name,
-                        contents=prompt,
-                        config={
-                            "temperature": 0.1,
-                            "response_mime_type": "application/json",
-                            "response_json_schema": MERGE_DECISION_SCHEMA,
-                        },
-                    ).text
-                    or ""
+        for attempt in range(self.max_retries + 1):
+            try:
+                return run_with_timeout(
+                    lambda: _extract_json(
+                        (
+                            self.client.models.generate_content(
+                                model=self.model_name,
+                                contents=prompt,
+                                config={
+                                    "temperature": 0.1,
+                                    "response_mime_type": "application/json",
+                                    "response_json_schema": MERGE_DECISION_SCHEMA,
+                                },
+                            ).text
+                            or ""
+                        )
+                    ),
+                    timeout_s=self.timeout_s,
+                    operation_name="short-term Gemini merge decision",
                 )
-            ),
-            timeout_s=self.timeout_s,
-            operation_name="short-term Gemini merge decision",
-        )
+            except RuntimeError as exc:
+                if attempt >= self.max_retries or not _is_transient_merge_error(exc):
+                    raise
+        raise RuntimeError("short-term Gemini merge decision failed")

@@ -7,10 +7,17 @@ from .io_utils import load_json_object, normalize_str
 
 
 def load_snapshot_tree(path: Path | str) -> dict[str, Any]:
-    tree = load_json_object(Path(path))
+    snapshot_path = Path(path)
+    if not snapshot_path.exists():
+        raise RuntimeError(f"share_mem snapshot file not found: {snapshot_path}")
+    tree = load_json_object(snapshot_path)
     meetings = tree.get("meetings")
     if not isinstance(meetings, list):
-        raise RuntimeError(f"share_mem snapshot must contain meetings[]: {path}")
+        keys = ", ".join(sorted(str(key) for key in tree.keys()))
+        detail = f" Found top-level keys: {keys}" if keys else ""
+        raise RuntimeError(
+            f"share_mem snapshot must contain meetings[]: {snapshot_path}.{detail}"
+        )
     return tree
 
 
@@ -36,4 +43,3 @@ def select_latest_meeting(tree: dict[str, Any]) -> dict[str, Any]:
     if not meetings:
         raise RuntimeError("share_mem snapshot contains no meetings")
     return meetings[-1]
-
