@@ -77,6 +77,177 @@ EXPECTED_L2_ASSIGNMENTS = {
     "L1-0506-042": "memory processing architecture",
 }
 
+EXPECTED_L2_LABEL_ANCHORS = {
+    "agentic pipeline control": (
+        "agent",
+        "manager",
+        "tool calling",
+        "code-driven",
+        "control flow",
+        "main code",
+        "llm-controlled",
+    ),
+    "data fragmentation": (
+        "fragment",
+        "chunk",
+        "boundary",
+        "split",
+        "sentence",
+    ),
+    "dataset selection": (
+        "dataset",
+        "benchmark",
+        "locomo",
+        "memo",
+        "mirix",
+        "ground truth",
+    ),
+    "l2 topic grouping": (
+        "l2",
+        "topic",
+        "topic-tree",
+        "topic tree",
+        "cluster",
+        "grouping",
+    ),
+    "memory evaluation strategy": (
+        "evaluation",
+        "benchmark",
+        "llm-as-judge",
+        "llm as judge",
+        "locomo",
+        "memo",
+        "multi-hop",
+        "metric",
+    ),
+    "memory evidence anchoring": (
+        "evidence",
+        "grounding",
+        "quote",
+        "timestamp",
+        "anchor",
+        "source",
+    ),
+    "memory lifecycle": (
+        "activation",
+        "decay",
+        "recency",
+        "fade",
+        "inactive",
+        "discard",
+        "importance threshold",
+    ),
+    "memory processing architecture": (
+        "hierarchical",
+        "hierarchy",
+        "bottom-up",
+        "top-down",
+        "l1",
+        "l2",
+        "l3",
+        "rag",
+        "parent",
+        "topic-based",
+        "memory architecture",
+    ),
+    "memory retrieval": (
+        "retrieval",
+        "retrieve",
+        "recall",
+        "semantic search",
+        "query",
+        "prompt context",
+    ),
+    "memory update semantics": (
+        "update",
+        "supersede",
+        "append",
+        "evolution",
+        "timestamp",
+        "same topic",
+    ),
+    "pipeline observability and validation": (
+        "log",
+        "api call",
+        "validation",
+        "validator",
+        "debug",
+        "trace",
+        "inspection",
+        "visualization",
+    ),
+    "prompt design and instruction quality": (
+        "prompt",
+        "instruction",
+        "jargon",
+        "repair",
+        "agent understand",
+        "self-contained",
+    ),
+    "project demo strategy": (
+        "demo",
+        "poster",
+        "presentation",
+        "mvp",
+        "minimum viable",
+    ),
+    "research methodology": (
+        "methodology",
+        "research",
+        "paper",
+        "experiment",
+        "replication",
+        "study",
+    ),
+    "stm ltm integration": (
+        "short-term",
+        "short term",
+        "stm",
+        "long-term",
+        "long term",
+        "ltm",
+        "share_mem",
+    ),
+    "transcript segmentation and idea-unit coverage": (
+        "segment",
+        "segmentation",
+        "idea unit",
+        "chunk",
+        "line",
+        "coverage",
+        "gap",
+    ),
+}
+
+EXPECTED_L2_OBJECT_ANCHORS = {
+    "L1-0429-025": (
+        "fixed chunk size",
+        "approximately 20 lines",
+        "20 line",
+        "20行",
+        "文本區塊",
+    ),
+    "L1-0429-033": (
+        "20行",
+        "文本區塊",
+        "固定",
+        "非動態",
+    ),
+    "L1-0429-101": (
+        "40到80行",
+        "重疊",
+        "控制權",
+        "文本分塊",
+    ),
+    "L1-0506-028": (
+        "duplicate candidate",
+        "duplicate candidates",
+        "same idea unit",
+        "同一個 idea unit",
+        "重複的 candidate",
+    ),
+}
+
 
 def _write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -303,10 +474,43 @@ def _validate_unlinked(
     return issues
 
 
+def _matches_expected_assignment_anchor(
+    obj_id: str,
+    obj: dict[str, Any],
+    expected_label: str,
+) -> bool:
+    """Return whether an obj_id-specific expected topic still applies.
+
+    L1 ids are stable within one generated tree, but live re-extraction can
+    assign a different semantic object to the same numeric id. The expected
+    assignment gate is therefore content-scoped: it should catch regressions
+    for the known canonical object, not punish a new object that reused the id.
+    """
+
+    anchors = EXPECTED_L2_OBJECT_ANCHORS.get(obj_id) or EXPECTED_L2_LABEL_ANCHORS.get(
+        expected_label
+    )
+    if not anchors:
+        return True
+    topics = obj.get("topics", [])
+    topic_text = " ".join(str(topic) for topic in topics) if isinstance(topics, list) else ""
+    text = " ".join(
+        [
+            str(obj.get("content", "") or ""),
+            topic_text,
+        ]
+    ).lower()
+    normalized = text.replace("_", " ").replace("-", " ")
+    return any(anchor in normalized for anchor in anchors)
+
+
 def _validate_expected_assignments(l2_index: dict[str, Any], l1_index: dict[str, Any]) -> list[dict[str, Any]]:
     issues: list[dict[str, Any]] = []
     for obj_id, expected_label in EXPECTED_L2_ASSIGNMENTS.items():
         if obj_id not in l1_index:
+            continue
+        obj = l1_index[obj_id]
+        if not _matches_expected_assignment_anchor(obj_id, obj, expected_label):
             continue
         entry = l2_index.get(obj_id)
         actual_label = str(entry.get("l2_label", "") or "") if isinstance(entry, dict) else ""

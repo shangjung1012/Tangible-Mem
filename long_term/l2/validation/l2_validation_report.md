@@ -1,7 +1,7 @@
 # L2 Validation Report
 
 - L2 count: 18
-- Linked L1 count: 467
+- Linked L1 count: 468
 - Issue count: 1
 - Severe count: 0
 - Warning count: 1

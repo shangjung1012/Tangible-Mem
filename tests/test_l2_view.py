@@ -397,6 +397,53 @@ class L2ViewTests(unittest.TestCase):
             issue_codes = {issue["code"] for issue in report["issues"]}
             self.assertIn("expected_l2_assignment_mismatch", issue_codes)
 
+    def test_validate_l2_view_skips_known_assignment_when_live_rerun_obj_id_drifted(self) -> None:
+        tree = {
+            "tree_version": 3,
+            "last_updated_utc": "2026-05-09T00:00:00Z",
+            "project_profile": {},
+            "phases": [],
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "timestamp": "2026-04-29T00:00:00Z",
+                    "meeting_date": "2026-04-29",
+                    "source_file": "meeting_recording/transcript/grace/0429.txt",
+                    "phase_id": "",
+                    "memory_objects": [
+                        _obj(
+                            "L1-0429-025",
+                            "approach_change",
+                            "A fade in/out mechanism for memory activation will move old or unimportant ideas to inactive state and reactivate them later.",
+                            importance=0.8,
+                            topics=["memory lifecycle", "activation decay"],
+                        )
+                    ],
+                }
+            ],
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            share_root = Path(tmp) / "share_mem"
+            out_root = Path(tmp) / "long_term" / "l2"
+            validation_out = out_root / "validation"
+            refresh_share_mem_outputs(root=share_root, tree=tree, source_transcript_dir=Path(tmp))
+            build_l2_view_outputs(
+                share_mem_root=share_root,
+                output_root=out_root,
+                mode="deterministic",
+                clean=True,
+            )
+
+            report = validate_l2_view_outputs(
+                share_mem_root=share_root,
+                root=out_root,
+                out=validation_out,
+            )
+
+            issue_codes = {issue["code"] for issue in report["issues"]}
+            self.assertNotIn("expected_l2_assignment_mismatch", issue_codes)
+
     def test_assignment_rules_cover_early_grace_l2_directions(self) -> None:
         cases = [
             (
@@ -948,6 +995,136 @@ class L2ViewTests(unittest.TestCase):
                     "related_topics": ["data handling", "system architecture"],
                 },
                 "transcript segmentation and idea-unit coverage",
+            ),
+        ]
+
+        for obj, expected_label in cases:
+            with self.subTest(obj_id=obj["obj_id"]):
+                assignment = choose_l2_assignment(obj)
+                self.assertEqual("assign_l2", assignment["action"])
+                self.assertEqual(expected_label, assignment["l2_label"])
+
+    def test_assignment_rules_cover_live_quality_sample_regressions(self) -> None:
+        cases = [
+            (
+                {
+                    "obj_id": "L1-0429-004",
+                    "type": "finding",
+                    "importance": 0.62,
+                    "content": "The project's current dataset consists of approximately 180 minutes of audio from 5 meetings, but the corresponding transcripts have quality issues due to overlapping speech, requiring manual correction.",
+                    "related_topics": ["LOCOMO dataset", "data-quality finding", "evaluation methodology"],
+                },
+                "dataset selection",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-057",
+                    "type": "argument",
+                    "importance": 0.62,
+                    "content": "An ablation study should compare the full short-term plus long-term memory system against RAG-only, short-term-only, and long-term-only baselines.",
+                    "related_topics": ["evaluation methodology", "RAG"],
+                },
+                "memory evaluation strategy",
+            ),
+            (
+                {
+                    "obj_id": "L1-0506-009",
+                    "type": "argument",
+                    "importance": 0.64,
+                    "content": "System prompts should be self-contained and avoid jargon that the agent itself would not understand, because internal phrases such as downstream L1 agents can lead to unreliable outputs.",
+                    "related_topics": ["LLM usage modes", "system architecture", "debugging"],
+                },
+                "prompt design and instruction quality",
+            ),
+            (
+                {
+                    "obj_id": "L1-0506-028",
+                    "type": "approach_change",
+                    "importance": 0.7,
+                    "content": "A process has been implemented to log every prompt and its corresponding result for each agent interaction, enabling step-by-step verification of agent behavior.",
+                    "related_topics": ["debugging", "process control", "agent-based systems"],
+                },
+                "pipeline observability and validation",
+            ),
+            (
+                {
+                    "obj_id": "L1-0506-042",
+                    "type": "approach_change",
+                    "importance": 0.81,
+                    "content": "The initial importance of a memory unit is assigned by an LLM, with frequency of mention within a single meeting increasing the importance of all related idea units.",
+                    "related_topics": ["long-term memory", "data handling", "system architecture"],
+                },
+                "memory lifecycle",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-086",
+                    "type": "approach_change",
+                    "importance": 0.78,
+                    "content": "To address the lack of control and opacity in the current single-pass agent process, a new multi-step, externally controlled workflow will break tasks into smaller prompts and allow external checking throughout the process.",
+                    "related_topics": ["LLM usage modes", "human-computer interaction"],
+                },
+                "pipeline observability and validation",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-128",
+                    "type": "argument",
+                    "importance": 0.7,
+                    "content": "The specialized agent model is useful because each task-specific agent encapsulates its own knowledge, preventing the manager memory from becoming cluttered.",
+                    "related_topics": ["LLM usage modes"],
+                },
+                "agentic pipeline control",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-148",
+                    "type": "finding",
+                    "importance": 0.72,
+                    "content": "The current manager skill is a monolithic, single-pass process, making it impossible to test individual components in isolation and difficult to debug after cascading errors.",
+                    "related_topics": ["LLM features"],
+                },
+                "pipeline observability and validation",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-160",
+                    "type": "open_issue",
+                    "importance": 0.72,
+                    "content": "When updating a memory node from a large text block, the system must filter relevant input first; otherwise information bleeding can contaminate distinct nodes.",
+                    "related_topics": ["RAG"],
+                },
+                "memory update semantics",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-088",
+                    "type": "proposal",
+                    "importance": 0.7,
+                    "content": "An external program can track which sentences have already been processed with a boolean variable and call the agent only for the next unprocessed sentence.",
+                    "related_topics": ["LLM usage modes"],
+                },
+                "agentic pipeline control",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-094",
+                    "type": "action_item",
+                    "importance": 0.7,
+                    "content": "The second workflow step calls a transcript overview function that returns the total line count and a content preview so the agent understands the input size.",
+                    "related_topics": ["LLM features"],
+                },
+                "agentic pipeline control",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-173",
+                    "type": "approach_change",
+                    "importance": 0.71,
+                    "content": "為了解決關於記憶更新過程的困惑，將創建一個詳細的逐步演練，說明如何選擇相關句子來更新特定的記憶節點。",
+                    "related_topics": ["RAG", "evaluation methodology"],
+                },
+                "memory update semantics",
             ),
         ]
 
