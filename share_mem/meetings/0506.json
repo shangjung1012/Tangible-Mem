@@ -1,125 +1,141 @@
 {
   "meeting_id": "0506",
-  "timestamp": "2026-05-08T10:43:57Z",
+  "timestamp": "2026-05-09T08:52:38Z",
   "meeting_date": "2026-05-06",
-  "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\share_mem_experiments\\rerun_0506_input_20260508_184340\\0506.txt",
+  "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0506.txt",
   "phase_id": "",
   "memory_objects": [
     {
       "obj_id": "L1-0506-001",
       "type": "decision",
-      "content": "The system employs a top-down pipeline architecture that processes the transcript in fixed 80-line windows. A `context planner` reads the window, a `segment agent` identifies topics (`segments`), and then `idea units` are extracted.",
-      "importance": 0.83,
+      "content": "The current data processing architecture is a top-down, three-stage pipeline: 1) a `Context Planner` reads a fixed 80-line window; 2) a `Segment Agent` identifies broad topics (`Segments`); 3) an `Idea Unit Agent` extracts granular points (`Idea Units`) from the segments.",
+      "importance": 0.82,
       "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
       "related_topics": [
-        "memory system architecture",
-        "development workflow",
-        "data handling"
+        "code_architecture",
+        "data_pipeline",
+        "memory_architecture",
+        "data pipeline",
+        "data processing",
+        "memory architecture"
       ],
       "related_obj_ids": [],
       "legacy_type": "decision"
     },
     {
       "obj_id": "L1-0506-002",
-      "type": "decision",
-      "content": "To ensure complete transcript coverage and prevent data loss, the system implements two specific mechanisms: 1) Segments that cross the 80-line window boundary are marked as incomplete to be merged with the subsequent chunk. 2) Any transcript lines missed during idea unit extraction are automatically added back as a raw-text idea unit with a lower quality tag.",
-      "importance": 0.81,
+      "type": "approach_change",
+      "content": "To handle topics that span the fixed 80-line processing window, the `Segment Agent` is designed to mark the last segment within a window as incomplete. This allows the system to merge it with the content from the beginning of the subsequent window during the idea unit extraction phase.",
+      "importance": 0.8,
       "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
       "related_topics": [
-        "memory system architecture",
+        "data pipeline",
         "data handling",
-        "data management",
-        "output quality",
-        "development workflow",
-        "long-term memory implementation"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "decision"
-    },
-    {
-      "obj_id": "L1-0506-003",
-      "type": "decision",
-      "content": "An experimental \"adaptive window\" segmentation approach was abandoned after it performed poorly, resulting in lower confidence outputs and difficulties with precise boundary prediction. The code for this experiment has been overwritten.",
-      "importance": 0.72,
-      "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
-      "related_topics": [
-        "experimental setup",
-        "alternative approaches",
-        "data handling"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "decision"
-    },
-    {
-      "obj_id": "L1-0506-004",
-      "type": "approach_change",
-      "content": "To formally evaluate text segmentation performance, the adopted methodology is to use a ground truth dataset with pre-labeled breakpoints. This will enable the calculation of precision and recall metrics for comparing different methods, such as fixed-size windows versus adaptive approaches.",
-      "importance": 0.78,
-      "evidence": "[SPEAKER_02]: 因為他已經你們那時候是寫一個 prompt 嗎跟他說就是讓它去讓它去測就是算是寫一個測試版去看看他的結果怎麼樣然後再就是因為效果不好所以他就因為他說我蠻好奇效果的地方是怎麼怎麼 measure，因為通常我想像效果的應該是說我現在有了 ground truth，像我有 data，我已經知道正確的切點在哪個地方 假設說這一個100行的data裡面真正切對的話總共會有20個點那如果用fixed 的話就可以直接算了嘛如果用fixed 的話我可以直接算出說所以它是它如果是用每三句一切的話它的precision/recall 會是多少那如果是用window 的話其實supposedly它應該就是我每一句話丟進去之後 它去predict 他未來還有多長然後我可以直接去算說他的prediction...",
-      "related_topics": [
-        "research methodology",
-        "experimental setup",
-        "dataset selection",
-        "output quality"
+        "data processing",
+        "data_pipeline",
+        "data_handling",
+        "code_architecture"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
-      "obj_id": "L1-0506-005",
-      "type": "proposal",
-      "content": "A future version of the prompt is expected to include a repair mechanism that can merge low-quality, raw-text fallback units (resulting from missed lines) into adjacent, valid idea units.",
-      "importance": 0.69,
-      "evidence": "[SPEAKER_02]: 他不是透過正規的流程去形成的一個idea unit他的品質是比較差你們去觀察到為什麼他會被漏掉嗎 [SPEAKER_04]: 為什麼他會被漏掉就是那些漏掉那些prompt都是發生什麼事情我覺得應該是prompt判定的問題這個版本還沒有修改就是後面後面修改的版本那個fallback幾乎都被算是會被repair掉就是他會想辦法去變回上面那個idea unit或者下面那個idea unit但這個版本還沒有你們的idea unit是怎麼切的你們的prompt是用那個誰那個那個浩哲嗎浩哲的那個應該不是應該是我們自己",
+      "obj_id": "L1-0506-003",
+      "type": "approach_change",
+      "content": "The system ensures 100% transcript coverage through a verification and gap-filling process. After the initial extraction, a check is performed to find any lines that were missed ('gaps'). These missed lines are then used to create new, separate idea units, which are tagged as being of lower quality.",
+      "importance": 0.79,
+      "evidence": "[SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered the gap就是它原本在抽idea units的時候它沒有抽到這一行它沒有抽到這個line [SPEAKER_04]...",
       "related_topics": [
+        "data pipeline",
         "data handling",
-        "output quality",
-        "model configuration",
-        "implementation strategy"
+        "data quality",
+        "data processing",
+        "data_quality",
+        "data_pipeline",
+        "data_handling"
       ],
       "related_obj_ids": [],
-      "legacy_type": "todo"
+      "legacy_type": "method_change"
+    },
+    {
+      "obj_id": "L1-0506-004",
+      "type": "decision",
+      "content": "A previous experiment using adaptive window segmentation was rejected and abandoned. The approach performed poorly, increasing rejections and decreasing verifications, and the code has since been overwritten.",
+      "importance": 0.75,
+      "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+      "related_topics": [
+        "data processing",
+        "experimental design",
+        "data pipeline"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "result"
+    },
+    {
+      "obj_id": "L1-0506-005",
+      "type": "proposal",
+      "content": "To evaluate segmentation performance, a proposed method is to create a ground truth by manually labeling topic cut points in a sample transcript. This would enable calculating precision and recall to compare different segmentation approaches, such as fixed-window sizes versus adaptive methods.",
+      "importance": 0.73,
+      "evidence": "[SPEAKER_02]: 因為他已經你們那時候是寫一個 prompt 嗎跟他說就是讓它去讓它去測就是算是寫一個測試版去看看他的結果怎麼樣然後再就是因為效果不好所以他就因為他說我蠻好奇效果的地方是怎麼怎麼 measure，因為通常我想像效果的應該是說我現在有了 ground truth，像我有 data，我已經知道正確的切點在哪個地方 假設說這一個100行的data裡面真正切對的話總共會有20個點那如果用fixed 的話就可以直接算了嘛如果用fixed 的話我可以直接算出說所以它是它如果是用每三句一切的話它的precision/recall 會是多少那如果是用window 的話其實supposedly它應該就是我每一句話丟進去之後 它去predict 他未來還有多長然後我可以直接去算說他的prediction...",
+      "related_topics": [
+        "evaluation",
+        "evaluation_strategy",
+        "experimental_design",
+        "data_pipeline",
+        "benchmarking",
+        "evaluation strategy",
+        "experimental design",
+        "data processing"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-006",
-      "type": "finding",
-      "content": "Prepare a slide deck of all important prompts for presentations and refine them to be more generic, avoiding internal jargon.",
-      "importance": 0.62,
-      "evidence": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+      "type": "decision",
+      "content": "Implement a 'repair' mechanism for gaps in transcript coverage that merges missed lines into adjacent idea units, rather than creating new, low-quality units.",
+      "importance": 0.76,
+      "evidence": "[SPEAKER_02]: 他不是透過正規的流程去形成的一個idea unit他的品質是比較差你們去觀察到為什麼他會被漏掉嗎 [SPEAKER_04]: 為什麼他會被漏掉就是那些漏掉那些prompt都是發生什麼事情我覺得應該是prompt判定的問題這個版本還沒有修改就是後面後面修改的版本那個fallback幾乎都被算是會被repair掉就是他會想辦法去變回上面那個idea unit或者下面那個idea unit但這個版本還沒有你們的idea unit是怎麼切的你們的prompt是用那個誰那個那個浩哲嗎浩哲的那個應該不是應該是我們自己",
       "related_topics": [
-        "development workflow",
-        "project narrative",
-        "model configuration"
+        "data_pipeline",
+        "data_quality",
+        "implementation plan",
+        "data_handling"
       ],
       "related_obj_ids": [],
       "legacy_type": "todo"
     },
     {
       "obj_id": "L1-0506-007",
-      "type": "open_issue",
-      "content": "There is an ongoing, unresolved debate regarding the distinction between a `segment` and an `idea unit` and the necessity of the current top-down approach (segment -> idea unit). Team members lack consensus on the definitions, and a bottom-up alternative (idea unit -> group into segments) has been proposed but not adopted.",
-      "importance": 0.68,
-      "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+      "type": "argument",
+      "content": "The necessity of the `Segment` step before `Idea Unit` extraction is questionable. The distinction between a `Segment` (broad topic) and an `Idea Unit` (granular viewpoint) is unclear, and it's uncertain if an LLM can reliably differentiate them. This top-down approach contrasts with traditional bottom-up coding, and extracting idea units directly from the window might be a more viable alternative.",
+      "importance": 0.69,
+      "evidence": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
       "related_topics": [
-        "memory system architecture",
-        "development workflow",
-        "implementation strategy",
-        "alternative approaches"
+        "data pipeline",
+        "code architecture",
+        "memory architecture",
+        "data_pipeline",
+        "data processing",
+        "memory_architecture",
+        "code_architecture",
+        "definitions",
+        "experimental design"
       ],
       "related_obj_ids": [],
-      "legacy_type": "open_question"
+      "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0506-008",
       "type": "open_issue",
-      "content": "There is an unresolved debate on the best method for transcript segmentation. An initial \"adaptive window\" experiment failed due to boundary prediction difficulties. The discussion includes whether to pursue more precise adaptive methods (requiring ground truth for evaluation), stick with a simpler fixed-window approach, or rely on the downstream LLM's robustness to process larger, less-defined chunks without pre-segmentation.",
-      "importance": 0.63,
+      "content": "The optimal strategy for transcript segmentation remains an open question. A past experiment with adaptive segmentation performed poorly, and while the current system uses a fixed window, there are arguments that complex adaptive methods are unnecessary as the LLM can process larger, less precise chunks. A formal evaluation method using precision/recall against a manually labeled ground truth has been proposed to compare different approaches.",
+      "importance": 0.68,
       "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
       "related_topics": [
-        "data handling",
-        "experimental setup",
-        "memory system architecture",
-        "alternative approaches"
+        "data_pipeline",
+        "data processing",
+        "experimental_design",
+        "evaluation"
       ],
       "related_obj_ids": [],
       "legacy_type": "open_question"
@@ -127,556 +143,639 @@
     {
       "obj_id": "L1-0506-009",
       "type": "open_issue",
-      "content": "The current idea unit extraction process sometimes misses transcript lines, creating 'gaps' that are captured as low-quality raw text. This is believed to be a prompt issue, and while a future prompt version is expected to include a repair mechanism to merge these gaps, this solution is not yet implemented.",
+      "content": "The data extraction pipeline sometimes misses lines, creating 'gaps' in coverage. The current solution fills these gaps by creating new, low-quality idea units from the raw text. The cause is believed to be prompt-related, and a future, unimplemented version aims to 'repair' these gaps by merging them into adjacent idea units.",
       "importance": 0.68,
-      "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+      "evidence": "[SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered the gap就是它原本在抽idea units的時候它沒有抽到這一行它沒有抽到這個line [SPEAKER_04]...",
       "related_topics": [
-        "data handling",
-        "output quality",
-        "memory system implementation"
+        "data_quality",
+        "data_pipeline",
+        "data processing",
+        "data quality",
+        "data pipeline",
+        "development strategy"
       ],
       "related_obj_ids": [],
-      "legacy_type": "todo"
+      "legacy_type": "open_question"
     },
     {
       "obj_id": "L1-0506-010",
       "type": "proposal",
-      "content": "An alternative, bottom-up system architecture was proposed. This approach would first extract `idea units` from the transcript and then group adjacent units that share a common `theme` to form segments, a method that aligns with standard qualitative coding.",
-      "importance": 0.71,
-      "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+      "content": "An alternative pipeline architecture was proposed that would eliminate the `Segment` extraction step. Instead, `Idea Units` would be extracted directly from the 80-line processing window.",
+      "importance": 0.66,
+      "evidence": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
       "related_topics": [
-        "memory system architecture",
-        "alternative approaches",
-        "implementation strategy",
-        "data handling"
+        "memory_architecture",
+        "data_pipeline",
+        "code_architecture",
+        "development_strategy"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-011",
-      "type": "proposal",
-      "content": "As an alternative to precise pre-segmentation, it was proposed to have the downstream LLM process larger, less-defined chunks of text and identify the boundaries of topics by outputting the start and end line IDs for the segments it finds.",
-      "importance": 0.71,
-      "evidence": "[SPEAKER_03]: 這樣應該確實可以找出來但是就是對我們這樣的做這個LLM來說他他感覺就譬如說就算真的找到了這裡他把他切下來之後就是他沒有特別的明顯的優點因為他你把他兩個一起圍進去他也是可以就是LLM 的他也是完全在他的能力之下的 [SPEAKER_04]: 他還是完全可以吃進去你如果抓比較大的範圍他還是可以清楚的切在這裡如果你一次直接跟他講他可以直接切在這裡你是說切的意思是說如果叫他吐出來說切切在哪個地方這樣嗎譬如說我說每一句是一個 ID 好了你跟我說哪一個你吐出來說哪幾個 ID 是要切斷的他會給你一個清單然後他會有 start line ID 跟 end line ID然後他就會一直移動就會他會告訴你這裡開始這裡結束",
+      "type": "approach_change",
+      "content": "A hypothetical adaptive segmentation method was proposed where the model would first predict if a topic is 'long' or 'short', jump a corresponding number of lines, check for topic coherence, and then use a binary search-like process to find the precise boundary if the topic has changed.",
+      "importance": 0.68,
+      "evidence": "[SPEAKER_02]: 我現在想說好 譬如說 1 2 3 4 到 50 這樣好了對 然後 fixed 的話 當然就是說你就是就是照切嘛 就可以一定算是 precision/recall對 那如果是 dynamic 的話就譬如說好 你說我在講第一句話的時候 我覺得這一句話我覺得這個主題就是我猜它是長的那長的話我可能一次也許說也許是dynamic 的 fixed如果我覺得它是長的話我就是一次跳十句那我就是到十一的時候我來看它這個內容所以我就拿這個內容我把這裡面的內容加起來看這要看這一句跟現在在討論的這一句主題是不是相關的如果還是在講同樣的事情的話我可能就可以再 往後或是說我可以說慢慢的把它變然後如果剛剛已經10了我可以接下來就變一半是再加5要去看看然後或是再加接下來就再加2再加2然後去看那如果說我到11的時候...",
       "related_topics": [
-        "memory system architecture",
-        "alternative approaches",
-        "data handling"
+        "data_pipeline",
+        "data_processing",
+        "memory_architecture"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-012",
-      "type": "proposal",
-      "content": "Several hypothetical adaptive segmentation methods were proposed for exploration, such as having the model predict if a topic will be a \"short\" or \"extensive\" discussion, or using a dynamic, binary-search-like approach to find boundaries.",
-      "importance": 0.63,
-      "evidence": "[SPEAKER_02]: 因為他已經你們那時候是寫一個 prompt 嗎跟他說就是讓它去讓它去測就是算是寫一個測試版去看看他的結果怎麼樣然後再就是因為效果不好所以他就因為他說我蠻好奇效果的地方是怎麼怎麼 measure，因為通常我想像效果的應該是說我現在有了 ground truth，像我有 data，我已經知道正確的切點在哪個地方 假設說這一個100行的data裡面真正切對的話總共會有20個點那如果用fixed 的話就可以直接算了嘛如果用fixed 的話我可以直接算出說所以它是它如果是用每三句一切的話它的precision/recall 會是多少那如果是用window 的話其實supposedly它應該就是我每一句話丟進去之後 它去predict 他未來還有多長然後我可以直接去算說他的prediction...",
+      "type": "argument",
+      "content": "Complex adaptive search methods for finding precise segment boundaries are likely unnecessary because the LLM is capable of processing a larger, less precise chunk of text and still understanding the content.",
+      "importance": 0.74,
+      "evidence": "[SPEAKER_03]: 就是我們想法是它就是它沒有辦法真正的判定到哪一個它只要沒有完全精準它基本上就沒有效果就是這個感覺就會很正常就連我們人應該也沒有辦法抓到這件事情就是我們單看這個狀況我們也沒有辦法完全的知道它大概會持續多久所以就是這個會造成問題是會讓效果變差的問題是就是它只要一沒有對到那它一定就是還要再往前一點嘛 那這個往前一點就是會讓這個adaptive 它的效果就是就有點像是把它的它前面的預估白費了因為它只要它沒有辦法預估得那麼精準那它一定就是它在往前跳那既然它要往前跳的話那我們就是弄fixed，我本來是想是說譬如說我現在前面假設有一個是假設我們總共100句好了對假設說100句好了 [SPEAKER_03]: 這樣應該確實可以找出來但是就是對我們這樣的做這個LLM來說他他感覺就譬如說就算真的找到了...",
       "related_topics": [
-        "alternative approaches",
-        "data handling",
-        "experimental setup"
+        "data processing",
+        "data pipeline",
+        "model performance evaluation",
+        "memory_architecture"
       ],
       "related_obj_ids": [],
-      "legacy_type": "method_change"
+      "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0506-013",
-      "type": "approach_change",
-      "content": "A new guideline for prompt engineering was adopted: prompts should be made more generic and avoid internal project jargon (e.g., \"L1 agent\") to improve the language model's comprehension and the generalizability of the system.",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+      "type": "argument",
+      "content": "Adaptive segmentation is considered impractical. A past experiment showed it performed poorly, and the difficulty in predicting precise boundaries makes the process random. Furthermore, if the prediction is not perfect, it still requires boundary adjustments, which negates the benefits over a simpler fixed-window approach.",
+      "importance": 0.71,
+      "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
       "related_topics": [
-        "development workflow",
-        "implementation strategy",
-        "model configuration",
-        "output quality"
+        "data processing",
+        "data pipeline",
+        "experimental design"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "argument"
+    },
+    {
+      "obj_id": "L1-0506-014",
+      "type": "finding",
+      "content": "A past experiment with adaptive window segmentation performed poorly, leading to an increase in rejections and a decrease in verifications. The failure was attributed to the difficulty of predicting the exact cut-off line, which randomized the boundary processing problem.",
+      "importance": 0.62,
+      "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+      "related_topics": [
+        "data processing",
+        "data pipeline",
+        "experimental design",
+        "model performance evaluation"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "result"
+    },
+    {
+      "obj_id": "L1-0506-015",
+      "type": "approach_change",
+      "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+      "importance": 0.82,
+      "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+      "related_topics": [
+        "data pipeline",
+        "code_architecture",
+        "memory update mechanism",
+        "memory architecture",
+        "memory item structure"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
-      "obj_id": "L1-0506-014",
-      "type": "argument",
-      "content": "A counterargument was made against adaptive segmentation: if it's not perfectly precise, it's ineffective because boundary adjustments are still required, nullifying the benefit over a simpler fixed-window approach.",
-      "importance": 0.75,
-      "evidence": "[SPEAKER_03]: 就是我們想法是它就是它沒有辦法真正的判定到哪一個它只要沒有完全精準它基本上就沒有效果就是這個感覺就會很正常就連我們人應該也沒有辦法抓到這件事情就是我們單看這個狀況我們也沒有辦法完全的知道它大概會持續多久所以就是這個會造成問題是會讓效果變差的問題是就是它只要一沒有對到那它一定就是還要再往前一點嘛 那這個往前一點就是會讓這個adaptive 它的效果就是就有點像是把它的它前面的預估白費了因為它只要它沒有辦法預估得那麼精準那它一定就是它在往前跳那既然它要往前跳的話那我們就是弄fixed，我本來是想是說譬如說我現在前面假設有一個是假設我們總共100句好了對假設說100句好了",
-      "related_topics": [
-        "alternative approaches",
-        "data handling",
-        "experimental setup"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "argument"
-    },
-    {
-      "obj_id": "L1-0506-015",
-      "type": "argument",
-      "content": "A counterpoint was raised that complex, precise pre-segmentation might be unnecessary, as the downstream LLM is considered robust enough to process larger, less-defined chunks of text and identify boundaries within them.",
-      "importance": 0.75,
-      "evidence": "[SPEAKER_03]: 這樣應該確實可以找出來但是就是對我們這樣的做這個LLM來說他他感覺就譬如說就算真的找到了這裡他把他切下來之後就是他沒有特別的明顯的優點因為他你把他兩個一起圍進去他也是可以就是LLM 的他也是完全在他的能力之下的 [SPEAKER_04]: 他還是完全可以吃進去你如果抓比較大的範圍他還是可以清楚的切在這裡如果你一次直接跟他講他可以直接切在這裡你是說切的意思是說如果叫他吐出來說切切在哪個地方這樣嗎譬如說我說每一句是一個 ID 好了你跟我說哪一個你吐出來說哪幾個 ID 是要切斷的他會給你一個清單然後他會有 start line ID 跟 end line ID然後他就會一直移動就會他會告訴你這裡開始這裡結束",
-      "related_topics": [
-        "alternative approaches",
-        "data handling",
-        "memory system architecture",
-        "model execution parameters"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "argument"
-    },
-    {
       "obj_id": "L1-0506-016",
-      "type": "argument",
-      "content": "The primary rationale for using a fixed 80-line processing window was confirmed to be for easier debugging and verification, allowing the team to trace which part of the transcript is being processed at any time.",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+      "type": "approach_change",
+      "content": "The 'idea unit' is established as the fundamental atomic unit for memory updates. After being processed by agents and labeled, it becomes a 'candidate' for updating memory nodes.",
+      "importance": 0.8,
+      "evidence": "[SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個...",
       "related_topics": [
-        "development workflow",
-        "memory system architecture",
-        "experimental setup",
-        "alternative approaches",
-        "research methodology",
-        "implementation strategy"
+        "memory update mechanism",
+        "memory architecture",
+        "data pipeline",
+        "definitions",
+        "memory update"
       ],
       "related_obj_ids": [],
-      "legacy_type": "argument"
+      "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-017",
-      "type": "finding",
-      "content": "團隊內部對於「segment」（段落）和「idea unit」（想法單元）之間的概念與實踐區別存在持續且未解決的爭論，核心問題在於為何需要在提取想法單元之前預先切分段落。",
-      "importance": 0.57,
-      "evidence": "[SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方對 就可以參考這樣 對看一下這裡 這個時候他知道L1是什麼嗎他知道L1是什麼嗎就這個...",
+      "type": "approach_change",
+      "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+      "importance": 0.76,
+      "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
       "related_topics": [
-        "memory system architecture",
-        "research methodology",
-        "project goals"
+        "data pipeline",
+        "memory item structure",
+        "data handling",
+        "memory architecture",
+        "data processing",
+        "memory update",
+        "memory object model"
       ],
       "related_obj_ids": [],
-      "legacy_type": "open_question"
+      "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-018",
-      "type": "finding",
-      "content": "為了適當地評估文本分割的性能，應使用帶有預先標記斷點的基準數據集（ground truth）。這使得能夠計算不同方法（如固定窗口或自適應方法）的精確率（precision）和召回率（recall）。",
-      "importance": 0.61,
-      "evidence": "[SPEAKER_02]: 因為他已經你們那時候是寫一個 prompt 嗎跟他說就是讓它去讓它去測就是算是寫一個測試版去看看他的結果怎麼樣然後再就是因為效果不好所以他就因為他說我蠻好奇效果的地方是怎麼怎麼 measure，因為通常我想像效果的應該是說我現在有了 ground truth，像我有 data，我已經知道正確的切點在哪個地方 假設說這一個100行的data裡面真正切對的話總共會有20個點那如果用fixed 的話就可以直接算了嘛如果用fixed 的話我可以直接算出說所以它是它如果是用每三句一切的話它的precision/recall 會是多少那如果是用window 的話其實supposedly它應該就是我每一句話丟進去之後 它去predict 他未來還有多長然後我可以直接去算說他的prediction...",
+      "type": "proposal",
+      "content": "A \"bottom-up\" approach will be used to create idea units. This approach is chosen to prevent information from being missed, with the accepted trade-off that it may create semantically meaningless units that require subsequent filtering.",
+      "importance": 0.67,
+      "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
       "related_topics": [
-        "research methodology",
-        "experimental setup",
-        "output quality"
+        "data handling",
+        "data pipeline",
+        "data quality"
       ],
       "related_obj_ids": [],
-      "legacy_type": "result"
+      "legacy_type": "decision"
     },
     {
       "obj_id": "L1-0506-019",
       "type": "finding",
-      "content": "一項使用「自適應窗口」進行分割的初步實驗表現不佳，導致輸出被拒絕的比例增加，驗證的比例減少，顯示信心度較低。失敗歸因於難以精確預測邊界，導致邊界處理問題。",
-      "importance": 0.59,
-      "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+      "content": "A 'batch' is defined as a data repair mechanism that combines a segment cut off mid-thought with the following segment. This creates a complete, continuous block of text to provide full context for the L1 agent's type extraction process.",
+      "importance": 0.62,
+      "evidence": "[SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea unit合併成一個類似batch就是它會是一個話題交互的的一個區間就是會有可能會有上一個話題跟這個話題是有關聯它就把這兩個 [SPEAKER_01]: 就是剛剛說那個 segment 沒有結束就是他 他會標這個 segment 可能他跨到下一行他是沒有 他是被切掉 但他沒有結束因為他切 1 到 80但他那個 80 行有可能是被切掉這個時候他的 segment 就會去標他是 呃他是還沒有結束...",
       "related_topics": [
-        "experimental setup",
-        "alternative approaches",
-        "data handling"
+        "data handling",
+        "data pipeline",
+        "data quality",
+        "data fragmentation",
+        "data processing",
+        "data_handling",
+        "data_quality"
       ],
       "related_obj_ids": [],
-      "legacy_type": "result"
+      "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-020",
-      "type": "finding",
-      "content": "To address gaps in transcript coverage, the system's prompt engineering will be updated to include a repair mechanism. This future improvement will merge 'fallback' units (raw text from missed lines) into adjacent, valid idea units.",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_02]: 他不是透過正規的流程去形成的一個idea unit他的品質是比較差你們去觀察到為什麼他會被漏掉嗎 [SPEAKER_04]: 為什麼他會被漏掉就是那些漏掉那些prompt都是發生什麼事情我覺得應該是prompt判定的問題這個版本還沒有修改就是後面後面修改的版本那個fallback幾乎都被算是會被repair掉就是他會想辦法去變回上面那個idea unit或者下面那個idea unit但這個版本還沒有你們的idea unit是怎麼切的你們的prompt是用那個誰那個那個浩哲嗎浩哲的那個應該不是應該是我們自己",
-      "related_topics": [
-        "data handling",
-        "output quality",
-        "implementation strategy",
-        "data-quality finding",
-        "model execution parameters"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "method_change"
-    },
-    {
-      "obj_id": "L1-0506-021",
-      "type": "approach_change",
-      "content": "記憶節點的更新合併僅限於單次會議內部。系統不會跨會議進行記憶合併，每次會議都被視為一個獨立、自成一體的處理單元。",
-      "importance": 0.71,
-      "evidence": "[SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units",
-      "related_topics": [
-        "memory system architecture",
-        "long-term memory implementation",
-        "data handling",
-        "long-term memory",
-        "STM-LTM integration"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "decision"
-    },
-    {
-      "obj_id": "L1-0506-022",
-      "type": "decision",
-      "content": "The long-term memory model will distinguish between three key node attributes: 'Importance', a static score assigned at creation; 'Relevance', calculated dynamically during retrieval based on semantic similarity; and 'Recency' or 'Activation', a dynamic score that decays over time.",
-      "importance": 0.84,
-      "evidence": "[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...",
-      "related_topics": [
-        "long-term memory architecture",
-        "memory model",
-        "forgetting mechanism",
-        "memory system architecture",
-        "long-term memory implementation",
-        "development workflow",
-        "implementation strategy",
-        "long-term memory",
-        "memory system",
-        "implementation_strategy",
-        "forgetting_mechanism"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "decision"
-    },
-    {
-      "obj_id": "L1-0506-023",
-      "type": "finding",
-      "content": "對於 idea unit 的標籤（labeling），系統的目標是最終只給定一個精確的標籤。雖然初步可能有多個候選類型，但最終限制最多只能有兩個標籤，以求精確。",
-      "importance": 0.53,
-      "evidence": "[SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸 [SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的lab...",
-      "related_topics": [
-        "data handling",
-        "output quality",
-        "model configuration",
-        "memory system architecture"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "result"
-    },
-    {
-      "obj_id": "L1-0506-024",
-      "type": "approach_change",
-      "content": "為確保系統各步驟的合理性，導入了一套驗證流程。該流程會記錄每個 agent 每次執行的完整 prompt 和返回的 result，以便能夠追蹤和檢查每一步的輸入與輸出是否符合預期。",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_01]: 然後我們現在讓他每一版的每一次打的prompt然後每次回來result我們都有流程OK OK然後有什麼流程就是我們會有所有的檔案紀錄他每一次的prompt他打了多少次這個agent然後每次prompt [SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的...",
-      "related_topics": [
-        "development workflow",
-        "experimental setup",
-        "memory system implementation",
-        "data_handling",
-        "research methodology",
-        "output quality",
-        "model execution parameters"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "method_change"
-    },
-    {
-      "obj_id": "L1-0506-025",
       "type": "action_item",
-      "content": "建立一個驗證機制，能夠檢視每個agent處理步驟的輸入、輸出，並確認該步驟是合理且足夠的，才能進行到下一個步驟。",
-      "importance": 0.58,
-      "evidence": "[SPEAKER_01]: 然後我們現在讓他每一版的每一次打的prompt然後每次回來result我們都有流程OK OK然後有什麼流程就是我們會有所有的檔案紀錄他每一次的prompt他打了多少次這個agent然後每次prompt [SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的...",
+      "content": "Verify the quality of the automated idea unit segmentation, as it is currently an open question how to evaluate whether the segmentation is good.",
+      "importance": 0.68,
+      "evidence": "[SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的話譬如說這一個他本身他可能譬如說會是一個可能這一行他是個idea unit對然後這行可能是個idea unit嗯 或者是說這一行跟這一行他發現他會合併嘛說這兩個是 idea units還是 idea units 還是一定只有在一行...",
       "related_topics": [
-        "development_workflow",
-        "long-term_memory_implementation",
-        "output_quality"
+        "data_quality",
+        "data_pipeline",
+        "evaluation",
+        "data_processing"
       ],
       "related_obj_ids": [],
       "legacy_type": "todo"
     },
     {
-      "obj_id": "L1-0506-026",
-      "type": "argument",
-      "content": "從底層（例如每一句話）去切分 idea units 的策略，其主要優點是不會遺漏任何資訊。這個方法的代價是可能會產生一些無語義意義的 idea units（例如 '嗯啊'），這些無意義的單元需要在後續步驟中被識別和去除。",
-      "importance": 0.6,
-      "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容 [SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後...",
-      "related_topics": [
-        "data handling",
-        "data management",
-        "research methodology",
-        "implementation strategy",
-        "data_handling",
-        "development_workflow"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "argument"
-    },
-    {
-      "obj_id": "L1-0506-027",
+      "obj_id": "L1-0506-021",
       "type": "open_issue",
-      "content": "對於記憶檢索的策略存在疑問：應該優先使用主題標籤（theme/segment）還是功能標籤（如 to-do）進行搜尋？這牽涉到是否需要保留兩種標籤，以及如何設計檢索流程。",
-      "importance": 0.6,
-      "evidence": "[SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸 [SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的lab...",
+      "content": "A key design question for information retrieval is whether search queries should prioritize matching by a segment's 'theme' or by an idea unit's 'type' (e.g., to-do).",
+      "importance": 0.66,
+      "evidence": "[SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的label我覺得可能就是要兩個 label都在還是找一個 label",
       "related_topics": [
         "memory retrieval",
-        "memory system architecture",
-        "long-term memory implementation"
+        "memory architecture"
       ],
       "related_obj_ids": [],
       "legacy_type": "open_question"
     },
     {
+      "obj_id": "L1-0506-022",
+      "type": "open_issue",
+      "content": "It is an open question whether the agent labeling process is still necessary if the input text is already pre-segmented into small, constrained scopes.",
+      "importance": 0.59,
+      "evidence": "[SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他",
+      "related_topics": [
+        "data_pipeline",
+        "development_strategy",
+        "ablation"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-023",
+      "type": "open_issue",
+      "content": "It is uncertain whether every idea unit should result in a memory update, either by creating a new node or modifying an existing one.",
+      "importance": 0.62,
+      "evidence": "[SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧",
+      "related_topics": [
+        "memory update",
+        "memory management",
+        "data_pipeline"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-024",
+      "type": "open_issue",
+      "content": "The mechanism for refining multiple candidate labels from parallel agents down to one or two final types for a single idea unit is not defined.",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸",
+      "related_topics": [
+        "data_pipeline",
+        "memory item structure",
+        "data_processing"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-025",
+      "type": "open_issue",
+      "content": "There are conflicting definitions for the data structure term 'batch': one defines it as a repair mechanism combining two adjacent segments, while another defines it as a thematic grouping of related segments.",
+      "importance": 0.56,
+      "evidence": "[SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後就是它變成 怎麼好像沒有寫出來就是它變成idea unit之後它會它會再合併成一個那個就是它會變成它會把多個idea unit合併成一個類似batch就是它會是一個話題交互的的一個區間就是會有可能會有上一個話題跟這個話題是有關聯它就把這兩個 [SPEAKER_01]: 就是剛剛說那個 segment 沒有結束就是他 他會標這個 segment 可能他跨到下一行他是沒有 他是被切掉 但他沒有結束因為他切 1 到 80但他那個 80 行有可能是被切掉這個時候他的 segment 就會去標他是 呃他是還沒有結束...",
+      "related_topics": [
+        "data_handling",
+        "data_pipeline",
+        "definitions",
+        "memory_architecture"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-026",
+      "type": "proposal",
+      "content": "It was proposed that information retrieval could be designed to match queries based on either a segment's 'theme' or an idea unit's 'type' (e.g., to-do), suggesting a need to support both topic and type labels in search.",
+      "importance": 0.62,
+      "evidence": "[SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的label我覺得可能就是要兩個 label都在還是找一個 label",
+      "related_topics": [
+        "memory retrieval",
+        "memory architecture",
+        "experimental design"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-027",
+      "type": "proposal",
+      "content": "An alternative, hierarchical definition of the data structure was proposed: idea units (a single utterance) are grouped into a 'segment' (a single speaker's theme), and related segments are grouped into a 'batch' (a cross-segment, cross-speaker topic).",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個...",
+      "related_topics": [
+        "data structure",
+        "data handling",
+        "memory architecture",
+        "data_pipeline"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
+    },
+    {
       "obj_id": "L1-0506-028",
       "type": "argument",
-      "content": "由於系統平行地將 idea units 發送給多個專門的 agent (例如 decision agent、to-do agent)，同一個 idea unit 可能會被多個 agent 捕獲，從而產生重複的 candidate。這項設計選擇的權衡是，雖然平行處理提高了效率和專業化，但它也帶來了後續需要對重複的 candidate 進行比對、區分或合併的複雜性。",
-      "importance": 0.61,
-      "evidence": "[SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會...",
+      "content": "A 'bottom-up' approach to creating idea units is justified because it prevents information from being missed, despite the trade-off of creating meaningless units that require later filtering.",
+      "importance": 0.74,
+      "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
       "related_topics": [
-        "memory system architecture",
-        "implementation strategy",
-        "development workflow",
-        "data handling"
+        "data processing",
+        "data pipeline",
+        "data quality",
+        "data_handling",
+        "data_quality"
       ],
       "related_obj_ids": [],
       "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0506-029",
-      "type": "proposal",
-      "content": "提議一種用於組織對話內容的層級式資料結構，依序為：`idea units` (最小單位，如單一句子)、`segments` (共享共同主題的 idea units 群組)，以及 `topics` (相關主題/segment 的更高級別分組)。",
-      "importance": 0.55,
-      "evidence": "[SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個...",
-      "related_topics": [
-        "data handling",
-        "memory architecture",
-        "long-term memory architecture"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "method_change"
-    },
-    {
-      "obj_id": "L1-0506-030",
-      "type": "proposal",
-      "content": "為了實現有效的檢索，提議記憶項目應具備兩種標籤：一個用於內容/主題（theme），另一個用於其類型（如 'to-do'）。這將允許使用者按主題或按行動類型進行搜尋。",
-      "importance": 0.55,
-      "evidence": "[SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸 [SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的lab...",
-      "related_topics": [
-        "memory retrieval",
-        "memory system implementation",
-        "data handling"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "method_change"
-    },
-    {
-      "obj_id": "L1-0506-031",
       "type": "argument",
-      "content": "記憶節點的更新合併僅在單次會議的範圍內進行，而不會跨會議合併。此設計的理由是將每次會議視為一個獨立、自成一體的處理單元。",
-      "importance": 0.59,
-      "evidence": "[SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units",
+      "content": "The selection of six agent types (Decision, To-Do, etc.) is justified on the basis that they represent common, distinct categories of information that arise in meetings, which in turn determines how information is merged into memory.",
+      "importance": 0.72,
+      "evidence": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
       "related_topics": [
-        "memory system architecture",
-        "long-term memory implementation",
-        "data handling",
-        "STM-LTM integration",
-        "long-term memory"
+        "memory object model",
+        "memory management",
+        "data processing",
+        "definitions"
       ],
       "related_obj_ids": [],
       "legacy_type": "argument"
     },
     {
-      "obj_id": "L1-0506-032",
-      "type": "finding",
-      "content": "確立了資料的層級結構：最底層是「idea units」（如一句話），多個相關的 idea units 組成一個「segment」（具有一個 theme），而多個 segment 則可歸於一個更大的「topic」之下。",
-      "importance": 0.6,
-      "evidence": "[SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這邊是一個有一些我覺得現在的我們那個切斷的方式有點多最底層的是idea units 它可能是我講的一句話這樣 然後接下來可能我講的這段話裡面雖然有三個idea units，但是我把它當成但是它都是在講同一個主題所以這三個idea units 它會連結到同一個segment 去然後譬如說我講完這三件事情了譬如說換成上榮這樣然後它也是講了譬如說三個idea兩個idea units好了 那他講的兩個idea units又是包含同一個有一個主題叫segment 2那現在假設說我講的這一串跟這個 segment 1的主題它有點像 theme 對應該算這個...",
+      "obj_id": "L1-0506-030",
+      "type": "argument",
+      "content": "Using small segments for processing is justified by the reasoning that a more constrained scope might reduce model hallucinations.",
+      "importance": 0.66,
+      "evidence": "[SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他",
       "related_topics": [
-        "memory system architecture",
-        "data handling",
-        "long-term memory architecture"
+        "data processing",
+        "data pipeline",
+        "model performance evaluation",
+        "data_handling"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "argument"
+    },
+    {
+      "obj_id": "L1-0506-031",
+      "type": "finding",
+      "content": "The source transcript data is generated by Whisper and has specific characteristics: it indicates speaker changes but lacks precise timestamps, providing only the order of speech. Segments can contain text from multiple speakers, and line breaks generally correspond to pauses.",
+      "importance": 0.57,
+      "evidence": "[SPEAKER_02]: 然後剛剛講到剛剛講到label label都是什麼都是theme的label theme的label因為現在你先講一下現在的label現在的label就是是針對idea units就是最小的單位是idea units對然後它會是屬於某一個segment 這樣嗎 它會是屬於某個segment會對它會屬於所以它會它中間是有relationship的所以每一個segment ID它會對應它應該你應該是可以你去到某一串的idea units對就是一樣這樣就是這個 segment然後會看到這是segments然後會看到很多idea unit這些idea unit都是在這個 segment裡面然後會有對應得好的數字這個 segment 它是針對它是針對錄音 檔的segment對不對?組織稿這都...",
+      "related_topics": [
+        "data sourcing",
+        "data quality",
+        "Whisper",
+        "data_sourcing"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "result"
+    },
+    {
+      "obj_id": "L1-0506-032",
+      "type": "action_item",
+      "content": "The system uses six specific agent types to label idea units: Decision, To-Do, Method Change, Result, Argument, and Open Question. These categories define the classification schema and determine how information is merged into memory.",
+      "importance": 0.77,
+      "evidence": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+      "related_topics": [
+        "memory item structure",
+        "memory architecture",
+        "definitions"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
+    },
+    {
+      "obj_id": "L1-0506-033",
+      "type": "approach_change",
+      "content": "The memory object model separates static and dynamic properties. Each L1 node has a static 'importance' score to preserve its original significance, a dynamic 'activation'/'recency' score that decays over time, and a 'relevance' score for semantic retrieval.",
+      "importance": 0.83,
+      "evidence": "[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...",
+      "related_topics": [
+        "memory object model",
+        "memory_architecture",
+        "importance",
+        "forgetting mechanism",
+        "memory management",
+        "memory architecture",
+        "LTM",
+        "memory_management",
+        "human-computer interaction",
+        "long-term memory management"
       ],
       "related_obj_ids": [],
       "legacy_type": "decision"
     },
     {
-      "obj_id": "L1-0506-033",
-      "type": "approach_change",
-      "content": "為了優化檢索，系統將採用雙標籤（dual-labeling）策略。每個記憶單元除了有功能性標籤（如 to-do），還會增加一個主題標籤（theme label），讓搜尋時可以同時根據主題和功能類型進行過濾。",
-      "importance": 0.64,
-      "evidence": "[SPEAKER_04]: 你們label是標多個嗎一個idea對他會是多個然後才去確定說他到底屬於哪一個就是最後只有一個label對他有那個限制他盡量不要超過兩個就是很精確的標然後不得已超過給他兩個type對喔那個有存嗎欸 [SPEAKER_00]: 那你的label最後就是你剛說要不要什麼to-do那些對不對對是六個吧因為我在想搜尋的時候到底應該先從theme 去作為label 搜尋還是先去用to-do 搜尋 什麼意思就是因為你現在不是有一篇先解釋這個 segment是什麼主題然後下面再有什麼 to-do那你之後新來的東西檢索是先去找 to-do的時候還是先用主題是不是 to-do可是這樣不是會 to-do的東西會比較多嗎可是它下面存的就是以to-do就是不然就是我們要再加一個label加一個主題的lab...",
-      "related_topics": [
-        "memory retrieval",
-        "memory system architecture",
-        "data handling"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "method_change"
-    },
-    {
       "obj_id": "L1-0506-034",
       "type": "approach_change",
-      "content": "在 idea unit 切割過程中，採用了修復機制（repair mechanism）來處理不完整的片段。此機制會將零碎的語句與其上下文中最相關的部分進行合併，以確保資訊的完整性，避免遺漏。",
-      "importance": 0.64,
-      "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容 [SPEAKER_04]: 你現在也要repair機制它就是把那個fallback就是看它上面哪一點點跟下面哪一點點跟哪一個比較好對對對對對所以我們下次確保它八十行不會漏就一定會包在segment對對對對然後...",
+      "content": "The long-term memory system is designed with a hierarchical structure: L1 nodes contain granular information from meetings, L2 nodes summarize a broader context like multiple meetings, and L3 nodes provide an even higher-level summary.",
+      "importance": 0.73,
+      "evidence": "[SPEAKER_01]: 對 這個是long term的系統這是分開的然後現在這個是在做long term的系統所以L1是long term然後short term是什麼 L2嗎因為它的L1是long term的Long term的每一個unit就是這個然後我們會我們上次說大概四個 四場會議會抓出一個L2就是這四場他比較大的脈絡會在這裡然後L3會是現在所有的脈絡再抓一個出來所以這邊他只會去 [SPEAKER_04]: 我先問一下一次的Meeting的內容就可以產生三個階層的東西 可是這是一次好了這是可能是0307好了那這個0307裡面其實就會有很多很多個Object這樣然後每個Object都有各自的importance等一下你就畫它的結構長什麼樣子它的結構譬如說它就會所以它L2接下來的會是不同的日期嗎嗯就是...",
       "related_topics": [
-        "data handling",
-        "implementation strategy",
-        "data management"
+        "memory_architecture",
+        "long-term memory management",
+        "LTM",
+        "memory architecture",
+        "memory management"
       ],
       "related_obj_ids": [],
-      "legacy_type": "method_change"
+      "legacy_type": "decision"
     },
     {
       "obj_id": "L1-0506-035",
       "type": "approach_change",
-      "content": "A dynamic visualization tool will be created to demonstrate the memory system's behavior. This tool will animate the construction and updating of the memory graph over time, making abstract concepts like node creation, updates, and decay tangible for development and presentation purposes.",
-      "importance": 0.64,
-      "evidence": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+      "content": "L1 memory nodes are created on a per-meeting basis. While related idea units within a single meeting can be consolidated into one L1 node, this merging does not occur across different meetings.",
+      "importance": 0.78,
+      "evidence": "[SPEAKER_01]: 然後用別人的inspector在做什麼就是你點這個candidate然後你可以看到他這是這個candidate然後他的importance然後 然後下面會有它的證據它就是併了那幾行這樣這個系統是你們自己搭的嗎它只是一個前端它只是一個簡單的前端對我知道我說是你們自己弄這個前端出來的用程式產出來的什麼用程式產出來的好OK OK 然後就是會最後你final更新的node這樣這個conflict decision就是我們就是agent他會去看說他到底他會先看符不符合我們的rule然後如果需要去更新的話他就會去打API叫他更新這樣然後那個內容應該可能等一下簡報有然後就是他會有一個最後我們final更新出來的node [SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memo...",
       "related_topics": [
-        "development workflow",
-        "long-term memory implementation",
-        "memory system",
-        "long-term memory architecture",
-        "development_workflow"
+        "memory_architecture",
+        "data_pipeline",
+        "long-term memory management",
+        "memory architecture",
+        "LTM",
+        "data handling",
+        "memory management"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0506-036",
+      "type": "action_item",
+      "content": "The initial 'importance' score for a memory node is determined by an LLM at creation time, with one contributing factor being the frequency a topic is mentioned within a single meeting.",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_04]: 它會有一個viewpoint的table如果它頻繁地提到的話那它之後的evolve會有一點點的加權頻繁指的是說同一次meeting不是跨meeting同一次meeting裡面它被講到了比較多次那所有有這個viewpoint的idea units 它都會增加它的就譬如說它可能不屬於同一個idea units對然後它都有提到就是你每次的update的時候你會去看所有目前有的idea units 然後如果它們有重複被提到那可能這三個idea unit它的importance都會加成一點點那它會有個default importance的值嗎?譬如說我今天第一個idea unit進來了它的importance的...那個importance都是在...importance在L2還是在L3?在...",
+      "related_topics": [
+        "importance",
+        "data_pipeline",
+        "memory management",
+        "LTM",
+        "model_configuration"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
+    },
+    {
+      "obj_id": "L1-0506-037",
       "type": "decision",
-      "content": "To assist with human-in-the-loop tuning, implement a feature where the system uses similarity search to find and suggest related idea units for a potential importance increase when a user adjusts a given unit.",
-      "importance": 0.73,
+      "content": "A human-in-the-loop system should be implemented to allow users to manually tune the 'importance' of memory nodes. This system would also suggest applying similar changes to other semantically related nodes.",
+      "importance": 0.78,
       "evidence": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
       "related_topics": [
-        "long-term memory",
-        "memory system",
-        "implementation_strategy",
-        "memory_retrieval"
+        "memory_management",
+        "importance",
+        "human-computer interaction",
+        "memory management"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
+    },
+    {
+      "obj_id": "L1-0506-038",
+      "type": "proposal",
+      "content": "A visualization tool should be created to inspect the L1, L2, and L3 memory structure, dynamically showing how new information creates or updates nodes to make the agent's memory state transparent.",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...",
+      "related_topics": [
+        "memory_architecture",
+        "human-computer interaction",
+        "development_strategy",
+        "memory architecture",
+        "development practices"
       ],
       "related_obj_ids": [],
       "legacy_type": "todo"
     },
     {
-      "obj_id": "L1-0506-037",
-      "type": "open_issue",
-      "content": "A fundamental architectural debate exists between two models for the long-term memory system: a time-based structure where hierarchy is based on meeting chronology, versus a topic-based structure organized by semantic themes. The choice significantly impacts how revisited topics are handled, with the time-based model creating new nodes for each mention and the topic-based model updating a single evolutionary node.",
-      "importance": 0.68,
-      "evidence": "[SPEAKER_02]: 還是說那一場因為那一場會議的那一場會議的時間軸是共用它就是同一個日期我想的是說在我們現在在我們的memory system裡面其實就是最底層是一堆的L1對不對就是L1 L1 L1假設說L1 L1起來變成L2然後這樣變L2然後最後他們假設說有L3的最高的節點這樣現在是這個每一個idea unit它有一個importance的 還是是在這裡是L1就有了嗎L1有是在L1然後它每一個節點裡面它有個importance然後有一個 還有什麼?activation嗎?activation然後還有relevance 跟 recency。relevance 跟 recency然後跟activation。那你說的是importance 在當時建立node的當下就會有好那我們現在假設現在memory系統...",
-      "related_topics": [
-        "long-term memory architecture",
-        "memory system architecture",
-        "memory_architecture",
-        "long-term_memory_architecture"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "open_question"
-    },
-    {
-      "obj_id": "L1-0506-038",
-      "type": "open_issue",
-      "content": "The design of a human-in-the-loop system for tuning memory node 'importance' remains an open issue, including how users would inspect and adjust scores and how the system could proactively suggest related units for tuning.",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 wei...",
-      "related_topics": [
-        "long-term memory",
-        "memory system",
-        "implementation strategy",
-        "long-term_memory"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "open_question"
-    },
-    {
       "obj_id": "L1-0506-039",
-      "type": "argument",
-      "content": "為了保存一個想法的歷史意義，應該將其靜態的「重要性」分數與處理衰減的動態「激活」參數分開。這種分離可以防止重要但陳舊的想法因時間流逝而完全消失，因為「激活」值會隨時間下降，但高重要性的項目可以有一個「底線」值。",
-      "importance": 0.7,
-      "evidence": "[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...",
+      "type": "open_issue",
+      "content": "There are conflicting explanations for the memory hierarchy's aggregation logic. It is unclear whether higher-level nodes (e.g., L2) are intended to summarize content from a single meeting or aggregate information across multiple meetings.",
+      "importance": 0.66,
+      "evidence": "[SPEAKER_01]: 對 這個是long term的系統這是分開的然後現在這個是在做long term的系統所以L1是long term然後short term是什麼 L2嗎因為它的L1是long term的Long term的每一個unit就是這個然後我們會我們上次說大概四個 四場會議會抓出一個L2就是這四場他比較大的脈絡會在這裡然後L3會是現在所有的脈絡再抓一個出來所以這邊他只會去 [SPEAKER_04]: 我先問一下一次的Meeting的內容就可以產生三個階層的東西 可是這是一次好了這是可能是0307好了那這個0307裡面其實就會有很多很多個Object這樣然後每個Object都有各自的importance等一下你就畫它的結構長什麼樣子它的結構譬如說它就會所以它L2接下來的會是不同的日期嗎嗯就是...",
       "related_topics": [
-        "forgetting_mechanism",
-        "long-term_memory_architecture",
-        "memory_system_architecture",
-        "forgetting mechanism",
-        "long-term memory",
-        "memory system",
-        "long-term_memory",
-        "long-term memory architecture",
-        "memory retrieval"
+        "memory architecture",
+        "long-term memory management",
+        "data pipeline",
+        "memory management",
+        "LTM"
       ],
       "related_obj_ids": [],
-      "legacy_type": "argument"
+      "legacy_type": "open_question"
     },
     {
       "obj_id": "L1-0506-040",
-      "type": "approach_change",
-      "content": "The long-term memory (LTM) system will be designed with a three-tier hierarchical structure: L1 nodes representing fine-grained idea units from a single meeting, L2 nodes summarizing a block of L1s (e.g., from four meetings), and L3 nodes providing the highest-level summary.",
-      "importance": 0.78,
-      "evidence": "[SPEAKER_01]: 對 這個是long term的系統這是分開的然後現在這個是在做long term的系統所以L1是long term然後short term是什麼 L2嗎因為它的L1是long term的Long term的每一個unit就是這個然後我們會我們上次說大概四個 四場會議會抓出一個L2就是這四場他比較大的脈絡會在這裡然後L3會是現在所有的脈絡再抓一個出來所以這邊他只會去",
+      "type": "open_issue",
+      "content": "The exact implementation and usage of the 'importance' score for memory nodes are not yet finalized, leading to uncertainty about how nodes are filtered or discarded, including the meaning of the term 'discard as L1'.",
+      "importance": 0.65,
+      "evidence": "[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1 [SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡",
       "related_topics": [
-        "long-term memory architecture",
-        "memory system architecture",
-        "memory model",
-        "memory_model"
+        "importance",
+        "memory management",
+        "memory object model",
+        "forgetting mechanism"
       ],
       "related_obj_ids": [],
-      "legacy_type": "method_change"
+      "legacy_type": "open_question"
     },
     {
       "obj_id": "L1-0506-041",
-      "type": "proposal",
-      "content": "Two competing architectural models for the memory hierarchy are being considered. A time-based model would structure the hierarchy based on meeting chronology, creating new L1 nodes for each mention of a topic. In contrast, a topic-based model would organize nodes by semantic themes, updating a single existing L1 node with new information and a timestamp to create an evolutionary history.",
+      "type": "finding",
+      "content": "Each L1 memory node is characterized by multiple scores: a static 'importance' score for initial significance, a 'relevance' score for semantic similarity during retrieval, and a dynamic 'recency'/'activation' score that decays over time.",
       "importance": 0.7,
-      "evidence": "[SPEAKER_02]: 還是說那一場因為那一場會議的那一場會議的時間軸是共用它就是同一個日期我想的是說在我們現在在我們的memory system裡面其實就是最底層是一堆的L1對不對就是L1 L1 L1假設說L1 L1起來變成L2然後這樣變L2然後最後他們假設說有L3的最高的節點這樣現在是這個每一個idea unit它有一個importance的 還是是在這裡是L1就有了嗎L1有是在L1然後它每一個節點裡面它有個importance然後有一個 還有什麼?activation嗎?activation然後還有relevance 跟 recency。relevance 跟 recency然後跟activation。那你說的是importance 在當時建立node的當下就會有好那我們現在假設現在memory系統...",
+      "evidence": "[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...",
       "related_topics": [
-        "long-term memory architecture",
-        "memory system architecture",
-        "alternative approaches",
-        "memory_retrieval"
+        "memory object model",
+        "memory architecture",
+        "importance",
+        "memory retrieval"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "result"
+    },
+    {
+      "obj_id": "L1-0506-042",
+      "type": "finding",
+      "content": "There is acknowledged uncertainty within the team regarding the precise implementation and application of the 'importance' score, particularly concerning the meaning of the term 'discard as L1' found in a prompt.",
+      "importance": 0.63,
+      "evidence": "[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1 [SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡",
+      "related_topics": [
+        "importance",
+        "memory management",
+        "LTM",
+        "definitions"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-043",
+      "type": "decision",
+      "content": "A hierarchical, theme-based memory structure is adopted, consisting of three levels: L3 for high-level themes (e.g., Time, Event Type, People), L2 for sub-topic summaries, and L1 for granular idea units from discussions.",
+      "importance": 0.75,
+      "evidence": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
+      "related_topics": [
+        "memory architecture",
+        "memory object model",
+        "memory management",
+        "memory update mechanism",
+        "forgetting mechanism",
+        "memory_architecture",
+        "memory_management",
+        "long-term memory"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "decision"
+    },
+    {
+      "obj_id": "L1-0506-044",
+      "type": "finding",
+      "content": "The definition of \"脉络\" (long-term context) was clarified. It is not merely time-based but is defined as the system's ability to find and update all related past points when a topic is revisited.",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_01]: 因為我們當初這個欸你說你們原本是長這樣嗎原本我們原本的時間我們原本就是以時間下去分因為我們是看TiM那一篇所以我們才想說我們long term想要抓脈絡的話 [SPEAKER_02]: 是以時間的效率而設計應該講一下這個脈絡怎麼轉因為我現在等於是說如果我現在只有一次的Meeting的話我就只會長出這樣子嗎對但一次Meeting其實也沒有脈絡問題就是這個詳細因為我想要這個好像不是脈絡這比較像是架構對不對但是架構的話應該說我想像的是脈絡的意思是說今天我的Meeting我今天談到一個主題的時候我會找到所有過去相關的點然後就update然後我在任何一個時刻",
+      "related_topics": [
+        "definitions",
+        "long-term memory",
+        "memory_retrieval",
+        "memory update",
+        "memory retrieval"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "decision"
+    },
+    {
+      "obj_id": "L1-0506-045",
+      "type": "approach_change",
+      "content": "The demonstration strategy will feature a dynamic, animated visualization of the memory graph as it evolves. It will use color to show topic activity, offer a 'playback' function for node history, and highlight the 'Inspector' system for human-in-the-loop importance weighting.",
+      "importance": 0.69,
+      "evidence": "[SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也可以很容易去present對好 所以你們現在有大概想我覺得你們現在大概在那一天的話可...",
+      "related_topics": [
+        "demonstration",
+        "demonstration strategy",
+        "human-computer interaction",
+        "importance",
+        "memory architecture",
+        "memory update"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
-      "obj_id": "L1-0506-042",
-      "type": "argument",
-      "content": "長期記憶系統的架構存在一個根本性的權衡：是採用基於會議時間順序的時間結構，還是採用基於語義主題（如「排程」、「預算」）的主題結構。",
-      "importance": 0.64,
-      "evidence": "[SPEAKER_02]: 還是說那一場因為那一場會議的那一場會議的時間軸是共用它就是同一個日期我想的是說在我們現在在我們的memory system裡面其實就是最底層是一堆的L1對不對就是L1 L1 L1假設說L1 L1起來變成L2然後這樣變L2然後最後他們假設說有L3的最高的節點這樣現在是這個每一個idea unit它有一個importance的 還是是在這裡是L1就有了嗎L1有是在L1然後它每一個節點裡面它有個importance然後有一個 還有什麼?activation嗎?activation然後還有relevance 跟 recency。relevance 跟 recency然後跟activation。那你說的是importance 在當時建立node的當下就會有好那我們現在假設現在memory系統...",
-      "related_topics": [
-        "long-term_memory_architecture",
-        "memory_architecture",
-        "memory_system_architecture",
-        "long-term memory architecture",
-        "memory system architecture",
-        "alternative approaches",
-        "research methodology"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "argument"
-    },
-    {
-      "obj_id": "L1-0506-043",
-      "type": "argument",
-      "content": "時間導向與主題導向的記憶架構在處理重複出現的主題時存在關鍵差異：時間模型為每次提及創建新的L1節點以保留時間順序，而主題模型則建議更新現有節點，在單一節點內創建一個演化歷史。",
-      "importance": 0.65,
+      "obj_id": "L1-0506-046",
+      "type": "open_issue",
+      "content": "A design conflict exists regarding how to handle recurring topics: either update the original L1 node with new timestamps and content, or create a new L1 node for each mention and let retrieval surface the timeline.",
+      "importance": 0.69,
       "evidence": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
       "related_topics": [
-        "long-term_memory_architecture",
-        "memory_system_architecture",
-        "data_handling",
-        "long-term memory architecture",
-        "memory system architecture",
-        "alternative approaches",
-        "data handling"
+        "memory update mechanism",
+        "memory architecture",
+        "memory management",
+        "data handling",
+        "memory retrieval",
+        "memory_retrieval",
+        "memory_architecture"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "open_question"
+    },
+    {
+      "obj_id": "L1-0506-047",
+      "type": "argument",
+      "content": "A bottom-up retrieval process, which finds matching low-level L1 units before pulling in parent L2/L3 nodes, is argued to be inefficient. This critique suggests the approach may require scanning all L1 nodes, thus losing the performance benefit of the hierarchical tree structure.",
+      "importance": 0.67,
+      "evidence": "[SPEAKER_03]: 我會知道說從我的記憶體打開來看我會知道說現在目前如果我用visualization我來看說relevancy的node在哪最High relevancy的node在哪個地方是在哪些主題上面就是老師妳說如果妳在long term的時候要記什麼什麼milestone或是主題的演變那如果妳就是單看long term直接去問一個說妳的milestone是怎麼變化或是去說妳的主題是什麼變化她今天在看的時候是不是就是要把整個東西全部掃一次 [SPEAKER_04]: 所以我們的做法就是你先去找最low level的idea unit去找哪些有match到那如果有match到的話可能最後match完賽完算十個那這十個可能有些分布在 [SPEAKER_03]: 有些分布在這裡然後有些分布在這裡那它...",
+      "related_topics": [
+        "memory retrieval",
+        "memory architecture",
+        "memory system performance",
+        "memory_retrieval",
+        "memory_architecture"
       ],
       "related_obj_ids": [],
       "legacy_type": "argument"
     },
     {
-      "obj_id": "L1-0506-044",
-      "type": "argument",
-      "content": "在時間導向的記憶結構中，檢索時不僅應提供匹配的底層L1單元，還應提供其L2/L3父節點，以便為大型語言模型提供必要的時間背景。",
-      "importance": 0.59,
-      "evidence": "[SPEAKER_04]: 那但是整個 memory 架構它是以一個主題上面的有點像是它的我的記憶對現在是有點像這樣我感覺起來好像它比較像是 project management 嗎就是其實感覺會比較容易拉出時間的脈絡就是因為我們拉到假設你今天最後送給 LLM 的 prompt 可能決定要送他可能十個 object 好了那這十個 object 它會自己去帶出上面的 L2 跟 L3就是這些 object 連到 L2 L3 然後他這樣就可以看到說除了0314在做什麼還可以看到0307到0328在做什麼 [SPEAKER_01]: 因為我們當初這個欸你說你們原本是長這樣嗎原本我們原本的時間我們原本就是以時間下去分因為我們是看TiM那一篇所以我們才想說我們long term想要抓脈絡的話 [SPEAKER_02]:...",
+      "obj_id": "L1-0506-048",
+      "type": "proposal",
+      "content": "To handle recurring topics, one proposal is to update the original L1 node by adding new timestamps and content, preserving its history internally.",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...",
       "related_topics": [
-        "memory_retrieval",
-        "long-term_memory_architecture",
-        "memory_system_architecture"
+        "memory update mechanism",
+        "memory management",
+        "data duplication"
       ],
       "related_obj_ids": [],
-      "legacy_type": "argument"
+      "legacy_type": "method_change"
+    },
+    {
+      "obj_id": "L1-0506-049",
+      "type": "approach_change",
+      "content": "A bottom-up retrieval process will be used, where the system first finds matching low-level L1 units, which then pull in their parent L2 (sub-topic) and L3 (theme) nodes for context.",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_03]: 我會知道說從我的記憶體打開來看我會知道說現在目前如果我用visualization我來看說relevancy的node在哪最High relevancy的node在哪個地方是在哪些主題上面就是老師妳說如果妳在long term的時候要記什麼什麼milestone或是主題的演變那如果妳就是單看long term直接去問一個說妳的milestone是怎麼變化或是去說妳的主題是什麼變化她今天在看的時候是不是就是要把整個東西全部掃一次 [SPEAKER_04]: 所以我們的做法就是你先去找最low level的idea unit去找哪些有match到那如果有match到的話可能最後match完賽完算十個那這十個可能有些分布在 [SPEAKER_03]: 有些分布在這裡然後有些分布在這裡那它...",
+      "related_topics": [
+        "memory_retrieval",
+        "memory_architecture"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
     }
   ]
 }

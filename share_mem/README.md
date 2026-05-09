@@ -10,7 +10,7 @@ integration surfaces and the parts still under the ultimate quality loop.
 ## Rebuild
 
 ```bash
-uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
+uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --output-root share_mem --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --taxonomy v2-memory-roles --include-legacy-type --clean
 ```
 
 The command processes every `.txt` file under the transcript directory in
@@ -42,22 +42,22 @@ The old temporal pipeline and older import paths are archived under
 `long_term/archive/legacy_temporal_l2_l3/`; the multi-agent L1 source of truth
 is now under `share_mem/l1/`.
 
-## L1 Type v2 Side-by-Side Experiment
+## L1 Type v2
 
-The default `share_mem/` build still uses the canonical v1 taxonomy:
-`decision`, `todo`, `method_change`, `result`, `open_question`, `argument`.
+The current canonical Grace `share_mem/` output uses the v2 memory-role
+taxonomy: `decision`, `action_item`, `open_issue`, `proposal`, `argument`,
+`finding`, and `approach_change`. It also keeps `legacy_type` for compatibility
+diffing against the old taxonomy: `decision`, `todo`, `method_change`,
+`result`, `open_question`, and `argument`.
 
-To evaluate the v2 memory-role taxonomy without overwriting canonical output,
+To evaluate prompt or taxonomy changes without overwriting canonical output,
 write to an experiment root:
 
 ```bash
 uv run share_mem/build_tree.py --output-root share_mem_experiments/type_v2_legacy_<timestamp> --taxonomy v2-memory-roles --include-legacy-type --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
 ```
 
-In that mode `type` is one of `decision`, `action_item`, `open_issue`,
-`proposal`, `argument`, `finding`, or `approach_change`. Each L1 object also
-has `legacy_type` for side-by-side diffing against the old taxonomy; it is not
-canonical memory content.
+`legacy_type` is migration/debug metadata. It is not canonical memory content.
 
 After an experiment run, compare it with the current baseline:
 
@@ -69,10 +69,15 @@ This writes `comparison_report.md`, `comparison_report.json`, and
 `manual_review_queue.json`. Promote nothing from the experiment unless the
 manual queue and per-meeting gates have been reviewed.
 
-## Topic-Tree View
+## Experimental Topic-Tree View
 
-The topic-tree is an append-only view over canonical L1 evidence. It does not
-replace or rewrite `tree.json` or `meetings/<meeting_id>.json`.
+The first `share_mem` topic-tree builder remains available for experiments and
+tests, but it is not the active long-term topic layer. The active L2 topic view
+now lives under `long_term/l2/` and is built directly from clean immutable L1
+evidence.
+
+The experimental topic-tree is an append-only view over canonical L1 evidence.
+It does not replace or rewrite `tree.json` or `meetings/<meeting_id>.json`.
 
 Build it after the L1 store is stable:
 
@@ -97,8 +102,10 @@ share_mem/tree.json
   -> topic_tree.json and topic_index.json materialized by replay
 ```
 
-`topic_tree.json` is a rebuildable cache. The source of truth for topic
-evolution is `topic_updates/`.
+When this experimental view is built, `topic_tree.json` is a rebuildable cache
+and the source of truth for topic evolution is `topic_updates/`. These root
+outputs are not required for the current canonical Grace handoff; check
+`manifest.json` `topic_view.exists` before depending on them.
 
 In `--mode hybrid`, the builder first creates deterministic candidates from
 related topics, `related_obj_ids`, `memory_relations_index.json`, lexical
@@ -121,10 +128,8 @@ These files are generated and can be rebuilt:
 - `manifest.json`: schema version, source directory, meeting IDs, counts, and hash.
 - `snapshots/`: bridge snapshots from the share_mem L1 bridge.
 - `l1_quality_index.json`, `memory_relations_index.json`, `memory_activity_index.json`: multi-agent sidecars next to `tree.json`.
-- experiment-only `legacy_type`: side-by-side compatibility label for v2 runs, not a canonical v1 field.
-- `topic_updates/<meeting_id>.json`: append-only topic-tree delta for one meeting.
-- `topic_tree.json`: materialized topic-tree view replayed from `topic_updates/`.
-- `topic_index.json`: `obj_id` to topic path, event, and state-version lookup.
+- `legacy_type`: compatibility label for v2 runs, not canonical memory content.
+- optional experiment-only `topic_updates/<meeting_id>.json`, `topic_tree.json`, and `topic_index.json` when `build_topic_view.py` is run.
 
 `research_logs/` contains multi-agent stage artifacts and can be large. New
 runs write `extraction_packets.json` for the bounded idea-unit packets consumed
@@ -143,6 +148,6 @@ Use `share_mem.store` for shared L1 reads:
 - `get_l1_object(obj_id)`
 - `load_recent_meetings(limit=3)`
 
-Short-term and topic-tree consumers should read through this API instead of
+Short-term and long-term consumers should read through this API instead of
 depending on the archived `long_term/archive/legacy_temporal_l2_l3/tree.json`
 temporal artifact.

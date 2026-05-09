@@ -330,6 +330,14 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "gemini api",
             "api usage fees",
             "api access",
+            "ai studio",
+            "google cloud project",
+            "cloud project",
+            "api billing",
+            "billing account",
+            "cost management",
+            "linked project",
+            "api key",
             "direct payment",
             "direct budget",
             "credit",
@@ -341,6 +349,53 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "vertex ai",
             "policy change",
             "payment method",
+        ),
+    ),
+    (
+        "mentor_agent_dialogue_source",
+        (
+            "mentor agent",
+            "own interactions",
+            "past dialogues",
+            "past dialogue",
+            "source of its knowledge",
+            "research discussions",
+            "respond to user queries",
+            "built from past",
+        ),
+    ),
+    (
+        "style_prompting_definition",
+        (
+            "conversational style",
+            "specific person's style",
+            "speaking style",
+            "brevity",
+            "positivity",
+            "machine-readable definition",
+            "standard methodology",
+            "quantifying",
+            "prompt a language model",
+            "reproduce it",
+        ),
+    ),
+    (
+        "stm_ltm_reactivation",
+        (
+            "sentence-by-sentence",
+            "sentence-level",
+            "topic is revisited",
+            "revisited",
+            "pulling relevant history",
+            "relevant history",
+            "active context",
+            "absent from short-term",
+            "short-term memory",
+            "long-term memory",
+            "句子級別",
+            "重新討論",
+            "歷史脈絡",
+            "拉回短期記憶",
         ),
     ),
     (
@@ -479,6 +534,9 @@ SPECIFIC_SEMANTIC_ANCHORS = {
     "agent_orchestration_state",
     "code_driven_llm_control",
     "api_access_budget",
+    "mentor_agent_dialogue_source",
+    "style_prompting_definition",
+    "stm_ltm_reactivation",
     "real_time_demo",
     "agent_modularity",
     "separation_of_concerns",
@@ -503,6 +561,7 @@ TRANSLATION_EVIDENCE_SEMANTIC_ANCHORS = {
     "agent_modularity",
     "taxonomy_labeling",
     "six_role_set",
+    "stm_ltm_reactivation",
 }
 
 WATCHLIST_MARKERS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -808,6 +867,12 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                 and score.get("semantic_anchor_similarity", 0.0) >= 0.30
                 and score.get("evidence_similarity", 0.0) >= 0.28
                 and score.get("semantic_score", 0.0) >= 0.45
+            )
+            or (
+                score.get("translation_evidence_anchor_overlap", 0.0) >= 1.0
+                and score.get("semantic_anchor_similarity", 0.0) >= 0.75
+                and score.get("evidence_similarity", 0.0) >= 0.20
+                and score.get("semantic_score", 0.0) >= 0.60
             )
             or (
                 score.get("evidence_dominant_anchor_overlap", 0.0) >= 1.0

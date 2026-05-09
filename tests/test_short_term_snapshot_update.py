@@ -305,10 +305,15 @@ class ShortTermMergeSafetyTests(unittest.TestCase):
             run_with_timeout(lambda: time.sleep(1), timeout_s=0.01, operation_name="slow merge")
 
     def test_run_with_timeout_stops_function_that_ignores_alarm(self) -> None:
-        def ignore_alarm_then_sleep() -> dict[str, Any]:
-            signal.signal(signal.SIGALRM, signal.SIG_IGN)
-            time.sleep(0.3)
-            return {}
+        if hasattr(signal, "SIGALRM"):
+            def ignore_alarm_then_sleep() -> dict[str, Any]:
+                signal.signal(signal.SIGALRM, signal.SIG_IGN)
+                time.sleep(0.3)
+                return {}
+        else:
+            def ignore_alarm_then_sleep() -> dict[str, Any]:
+                time.sleep(0.3)
+                return {}
 
         started_at = time.monotonic()
         with self.assertRaisesRegex(TimeoutError, "timed out"):

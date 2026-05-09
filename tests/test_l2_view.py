@@ -1100,6 +1100,66 @@ class L2ViewTests(unittest.TestCase):
             ),
             (
                 {
+                    "obj_id": "L1-0408-004",
+                    "type": "argument",
+                    "importance": 0.63,
+                    "content": "The dataset is justified by prior use in academic research for Automatic Speech Recognition (ASR) and meeting summarization, indicating established value for this work.",
+                    "related_topics": ["dataset_selection", "research_methodology", "benchmarking"],
+                },
+                "dataset selection",
+            ),
+            (
+                {
+                    "obj_id": "L1-0408-054",
+                    "type": "proposal",
+                    "importance": 0.72,
+                    "content": "An alternative memory consolidation model based on discussion density stores a topic in long-term memory when it is discussed intensely over a short period, even if not mentioned again.",
+                    "related_topics": ["long-term memory management", "memory architecture"],
+                },
+                "memory lifecycle",
+            ),
+            (
+                {
+                    "obj_id": "L1-0422-015",
+                    "type": "argument",
+                    "importance": 0.68,
+                    "content": "A counter-argument against the iterative method is that a single-pass approach could group non-adjacent ideas by maintaining a global vector across generated nodes.",
+                    "related_topics": ["memory architecture", "experimental design"],
+                },
+                "transcript segmentation and idea-unit coverage",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-058",
+                    "type": "argument",
+                    "importance": 0.68,
+                    "content": "Due to a deadline, an experiment comparing three long-term memory update strategies, fixed chunking, iterative merging, and the incremental method, has been postponed.",
+                    "related_topics": ["experimental design", "long-term memory management"],
+                },
+                "memory evaluation strategy",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-107",
+                    "type": "argument",
+                    "importance": 0.74,
+                    "content": "As an alternative to an LLM-orchestrated workflow, a code-driven architecture was proposed where the main workflow is defined in the application's logic and the LLM is used for specific sub-tasks within that fixed flow.",
+                    "related_topics": ["code_architecture", "development_strategy"],
+                },
+                "agentic pipeline control",
+            ),
+            (
+                {
+                    "obj_id": "L1-0429-145",
+                    "type": "open_issue",
+                    "importance": 0.67,
+                    "content": "An unresolved architectural decision is whether to continue with the current single-prompt approach or refactor the system into a multi-agent architecture.",
+                    "related_topics": ["code_architecture", "development_strategy"],
+                },
+                "agentic pipeline control",
+            ),
+            (
+                {
                     "obj_id": "L1-0506-009",
                     "type": "argument",
                     "importance": 0.64,

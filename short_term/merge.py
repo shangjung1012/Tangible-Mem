@@ -6,8 +6,9 @@ import multiprocessing as mp
 import os
 import re
 import signal
+import threading
 from copy import deepcopy
-from queue import Empty
+from queue import Empty, Queue
 from pathlib import Path
 from typing import Any, Callable
 
@@ -268,6 +269,23 @@ def _run_func_and_report(
         queue.put(("error", exc.__class__.__name__, str(exc)))
 
 
+def _read_worker_report(queue: Any, operation_name: str) -> dict[str, Any]:
+    try:
+        status, *payload = queue.get_nowait()
+    except Empty as exc:
+        raise RuntimeError(
+            f"{operation_name} worker exited without returning a result"
+        ) from exc
+    if status == "ok":
+        result = payload[0]
+        if not isinstance(result, dict):
+            raise RuntimeError(f"{operation_name} returned a non-object result")
+        return result
+    exc_type = payload[0] if payload else "Exception"
+    message = payload[1] if len(payload) > 1 else ""
+    raise RuntimeError(f"{operation_name} failed in worker ({exc_type}): {message}")
+
+
 def build_merge_prompt(
     *,
     source_obj: dict[str, Any],
@@ -332,23 +350,20 @@ def run_with_timeout(
                 process.kill()
                 process.join()
             raise TimeoutError(f"{operation_name} timed out after {timeout_s:g}s")
-        try:
-            status, *payload = queue.get_nowait()
-        except Empty as exc:
-            raise RuntimeError(
-                f"{operation_name} worker exited without returning a result"
-            ) from exc
-        if status == "ok":
-            result = payload[0]
-            if not isinstance(result, dict):
-                raise RuntimeError(f"{operation_name} returned a non-object result")
-            return result
-        exc_type = payload[0] if payload else "Exception"
-        message = payload[1] if len(payload) > 1 else ""
-        raise RuntimeError(f"{operation_name} failed in worker ({exc_type}): {message}")
+        return _read_worker_report(queue, operation_name)
 
     if not hasattr(signal, "setitimer"):
-        return func()
+        queue: Queue[tuple[Any, ...]] = Queue(maxsize=1)
+        thread = threading.Thread(
+            target=_run_func_and_report,
+            args=(func, queue),
+            daemon=True,
+        )
+        thread.start()
+        thread.join(timeout_s)
+        if thread.is_alive():
+            raise TimeoutError(f"{operation_name} timed out after {timeout_s:g}s")
+        return _read_worker_report(queue, operation_name)
 
     def _handle_timeout(_signum: int, _frame: Any) -> None:
         raise TimeoutError(f"{operation_name} timed out after {timeout_s:g}s")

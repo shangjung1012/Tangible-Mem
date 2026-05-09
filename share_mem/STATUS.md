@@ -17,12 +17,12 @@ new `long_term` L2/L3 retrieval and `short_term` context loading.
   importance, and topics for direct lookup.
 - `share_mem/manifest.json` records meeting count, object count, meeting ids,
   source transcript directory, tree hash, and topic view status.
-- `share_mem/topic_tree.json`, `share_mem/topic_updates/<meeting_id>.json`, and
-  `share_mem/topic_index.json` are a sidecar topic-tree view, not a replacement
-  for raw L1.
 - `long_term/l2/` is the active generated L2 view over `share_mem` L1. It is
   meant for long-term retrieval context and does not require every L1 object to
   be linked.
+- The older `share_mem` topic-tree sidecar builder remains experimental. The
+  current canonical root may have `manifest.json` `topic_view.exists=false`;
+  partner integrations should use `long_term/l2/` for active topic context.
 
 ## Stable Enough For Partner Work
 
@@ -54,7 +54,7 @@ Partner guidance:
   `share_mem/meetings/`, or `share_mem.store.load_share_tree()` as the L1
   source.
 - Retrieval should remain bottom-up: find relevant L1 first, then pull L2/L3
-  or topic-tree context as sidecar context.
+  context from `long_term/l2/` as sidecar context.
 - `short_term` integration can start by using `load_recent_meetings(limit=3)`
   or equivalent reads from `share_mem/tree.json`.
 - Do not mutate old L1 objects to represent updates. Add new L1 evidence and
@@ -74,23 +74,20 @@ force a core JSON format break:
 - L1 extraction prompt wording and candidate quality.
 - v2 type assignment distribution.
 - `importance` calibration and matching gates.
-- Topic-tree assignment quality.
-- Topic labels and topic paths.
-- `current_state` and `timeline_digest` wording in topic-tree nodes.
+- Experimental topic-tree assignment quality if that branch is revisited.
 - L2 labels and deterministic assignment rules.
 - Validator thresholds for large topics and expected concept links.
 
 Current generated state:
 
 - Grace meetings: 7 (`0307`, `0318`, `0325`, `0408`, `0422`, `0429`, `0506`).
-- L1 objects: 545.
-- Topic-tree sidecar: exists, with 54 topics and 545 topic events.
-- Topic validation: 0 severe issues; current warnings are large-topic review
-  diagnostics, not schema blockers.
-- Long-term L2 topic view: exists under `long_term/l2/`, with 18 L2 topics, 467
-  linked L1 objects, 78 intentionally unlinked low-review L1 objects, and 0
-  severe validation issues. The only current warning is the explainable large
-  `transcript segmentation and idea-unit coverage` topic.
+- L1 objects: 509.
+- Topic-tree sidecar: not generated in the canonical root; `manifest.json`
+  currently reports `topic_view.exists=false`.
+- Long-term L2 topic view: exists under `long_term/l2/`, with 16 L2 topics, 394
+  linked L1 objects, 115 intentionally unlinked or low-signal L1 objects, and 0
+  severe validation issues. Current warnings are review diagnostics: 26
+  high-importance unlinked objects and one large-topic warning.
 
 These files should be treated as generated outputs:
 
@@ -101,22 +98,21 @@ These files should be treated as generated outputs:
 - `share_mem/l1_quality_index.json`
 - `share_mem/memory_activity_index.json`
 - `share_mem/memory_relations_index.json`
-- `share_mem/topic_updates/*.json`
-- `share_mem/topic_tree.json`
-- `share_mem/topic_index.json`
 - `share_mem/research_logs/`
-- `share_mem/topic_research_logs/`
 - `share_mem/snapshots/`
+- optional experiment-only `share_mem/topic_updates/`,
+  `share_mem/topic_tree.json`, `share_mem/topic_index.json`, and
+  `share_mem/topic_research_logs/`
 
-## Topic-Tree Notes
+## Experimental Topic-Tree Notes
 
 - Use the term `topic-tree`.
-- The topic-tree is a sidecar/view.
+- The topic-tree is a sidecar/view and is not the active long-term topic layer.
 - `topic_updates/` is the append-only source of truth for the topic-tree view.
 - `topic_tree.json` and `topic_index.json` are materialized outputs that can be
   rebuilt from `topic_updates/`.
-- `topic_index.json` supports `obj_id -> topic path` lookup for future
-  retrieval.
+- Active retrieval work should prefer `long_term/l2/l2_index.json` and
+  `long_term/l2/l2_view.json`.
 
 Current known quality work:
 
@@ -132,7 +128,7 @@ Build canonical L1:
 uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --output-root share_mem --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --taxonomy v2-memory-roles --include-legacy-type --clean
 ```
 
-Build topic-tree sidecar:
+Build experimental topic-tree sidecar:
 
 ```powershell
 uv run share_mem/build_topic_view.py --tree share_mem/tree.json --output-root share_mem --mode hybrid --model gemini-2.5-pro --clean-topic-view

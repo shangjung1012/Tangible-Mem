@@ -1055,6 +1055,161 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
         self.assertEqual(report["summary"]["watchlist_unmatched_count"], 0)
 
+    def test_compare_l1_runs_matches_full_rerun_false_positive_rewordings(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0325",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-style",
+                            "type": "argument",
+                            "content": (
+                                "A key difficulty in prompting an LLM to adopt a specific "
+                                "person's style is the lack of a standardized, machine-readable "
+                                "definition for style, such as brevity or positivity."
+                            ),
+                            "importance": 0.7,
+                            "evidence": (
+                                "We do not have a standard methodology for quantifying style, "
+                                "including brevity and positivity, for prompting the model."
+                            ),
+                            "related_topics": ["style prompting"],
+                        },
+                        {
+                            "obj_id": "old-ai-studio-billing",
+                            "type": "finding",
+                            "content": (
+                                "AI Studio usage is billed through the linked Google Cloud "
+                                "Project, and the API key is tied to that project's billing account."
+                            ),
+                            "importance": 0.7,
+                            "evidence": (
+                                "AI Studio follows the selected Google Cloud Project, so API key "
+                                "usage is charged through that project."
+                            ),
+                            "related_topics": ["API billing"],
+                        },
+                    ],
+                },
+                {
+                    "meeting_id": "0408",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-mentor-source",
+                            "type": "action_item",
+                            "content": (
+                                "The mentor agent will be built from the team's own interactions, "
+                                "which become the source of its knowledge for research discussions."
+                            ),
+                            "importance": 0.7,
+                            "evidence": (
+                                "The mentor agent is based on our past dialogue and uses it to "
+                                "answer research questions."
+                            ),
+                            "related_topics": ["mentor agent"],
+                        },
+                        {
+                            "obj_id": "old-stm-ltm-reactivation",
+                            "type": "approach_change",
+                            "content": (
+                                "Sentence-level processing lets the system detect when a topic "
+                                "is revisited and pull relevant history from long-term memory "
+                                "back into the active short-term context."
+                            ),
+                            "importance": 0.74,
+                            "evidence": (
+                                "When a topic absent from short-term memory is discussed again, "
+                                "retrieve the relevant long-term history into active context."
+                            ),
+                            "related_topics": ["long-term memory", "short-term memory"],
+                        },
+                    ],
+                },
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0325",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-style",
+                            "type": "argument",
+                            "legacy_type": "argument",
+                            "content": (
+                                "There is no standard methodology for defining or quantifying "
+                                "a person's conversational style from text. It remains open what "
+                                "features, such as brevity and positivity, constitute style and "
+                                "how to prompt a model to reproduce it."
+                            ),
+                            "importance": 0.71,
+                            "evidence": (
+                                "No standard methodology defines conversational style; features "
+                                "like brevity or positivity must be identified before prompting."
+                            ),
+                            "related_topics": ["persona evaluation"],
+                        },
+                        {
+                            "obj_id": "new-ai-studio-billing",
+                            "type": "approach_change",
+                            "legacy_type": "method_change",
+                            "content": (
+                                "API billing and cost management will be handled through a "
+                                "centralized Google Cloud Project, including Gemini API usage."
+                            ),
+                            "importance": 0.75,
+                            "evidence": (
+                                "AI Studio and Gemini API usage are tied to the Google Cloud "
+                                "Project selected for billing and cost management."
+                            ),
+                            "related_topics": ["cost management"],
+                        },
+                    ],
+                },
+                {
+                    "meeting_id": "0408",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-mentor-source",
+                            "type": "decision",
+                            "legacy_type": "decision",
+                            "content": (
+                                "The mentor agent use case is built from past dialogues and "
+                                "responds to user queries rather than processing information live."
+                            ),
+                            "importance": 0.73,
+                            "evidence": (
+                                "The mentor agent is built from past dialogues and uses them to "
+                                "respond to user queries."
+                            ),
+                            "related_topics": ["demo strategy"],
+                        },
+                        {
+                            "obj_id": "new-stm-ltm-reactivation",
+                            "type": "argument",
+                            "legacy_type": "argument",
+                            "content": (
+                                "Processing transcripts sentence by sentence helps detect when "
+                                "a topic absent from short-term memory is revisited, allowing "
+                                "relevant history from long-term memory to return to active context."
+                            ),
+                            "importance": 0.73,
+                            "evidence": (
+                                "Sentence-by-sentence processing detects revisited topics and "
+                                "pulls relevant long-term history into the active context."
+                            ),
+                            "related_topics": ["STM-LTM integration"],
+                        },
+                    ],
+                },
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+
     def test_compare_l1_runs_matches_candidate_object_merge_mechanism(self) -> None:
         baseline = {
             "meetings": [
