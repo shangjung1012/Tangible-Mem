@@ -8,10 +8,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LONG_TERM_DIR = REPO_ROOT / "long_term"
-sys.path.insert(0, str(LONG_TERM_DIR))
+sys.path.insert(0, str(REPO_ROOT))
 
-from multi_agent_agents import (  # noqa: E402
+from share_mem.l1.multi_agent_agents import (  # noqa: E402
     CANDIDATE_SCHEMA,
     IDEA_SCHEMA,
     IDEA_REPAIR_SCHEMA,
@@ -26,7 +25,7 @@ from multi_agent_agents import (  # noqa: E402
     l1_fallback_agent,
     l1_type_agent,
 )
-from multi_agent_pipeline import (  # noqa: E402
+from share_mem.l1.multi_agent_pipeline import (  # noqa: E402
     EXTRACTION_BATCH_OVERLAP_UNITS,
     MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
     TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
@@ -37,11 +36,11 @@ from multi_agent_pipeline import (  # noqa: E402
     refine_cross_window_boundaries,
     run_multi_agent_l1_pipeline,
 )
-from multi_agent_reducer import (  # noqa: E402
+from share_mem.l1.multi_agent_reducer import (  # noqa: E402
     reduce_l1_patch,
     resolve_cross_type_conflicts,
 )
-from multi_agent_state import (  # noqa: E402
+from share_mem.l1.multi_agent_state import (  # noqa: E402
     GroundedCandidate,
     IdeaUnit,
     L1Candidate,
@@ -51,14 +50,14 @@ from multi_agent_state import (  # noqa: E402
     WindowPlan,
     parse_transcript_lines,
 )
-from multi_agent_validators import (  # noqa: E402
+from share_mem.l1.multi_agent_validators import (  # noqa: E402
     MAX_IDEA_UNITS_PER_SEGMENT,
     coarsen_segments_for_window,
     normalize_idea_completeness,
     repair_idea_units_for_segment,
     repair_segment_coverage,
 )
-from multi_agent_verifier import ground_candidates, verify_l1_candidates  # noqa: E402
+from share_mem.l1.multi_agent_verifier import ground_candidates, verify_l1_candidates  # noqa: E402
 
 
 class FakeRunner:
@@ -561,9 +560,15 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(metrics["idea_units"]["compaction_fallback_count"], 0)
         self.assertEqual(metrics["extraction_batches"]["continuation_actions"]["merge"], 1)
         self.assertEqual(metrics["extraction_batches"]["idea_units_per_batch"]["max"], 1.0)
+        self.assertEqual(metrics["extraction_packets"]["idea_units_per_packet"]["max"], 1.0)
         self.assertEqual(metrics["extraction_batches"]["oversized_batch_count"], 0)
+        self.assertEqual(metrics["extraction_packets"]["oversized_packet_count"], 0)
         self.assertEqual(
             metrics["extraction_batches"]["target_idea_units_per_batch"],
+            TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
+        )
+        self.assertEqual(
+            metrics["extraction_packets"]["target_idea_units_per_packet"],
             TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
         )
         self.assertEqual(
@@ -577,8 +582,11 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertEqual(metrics["extraction_batches"]["split_family_count"], 0)
         self.assertEqual(metrics["extraction_batches"]["tiny_remainder_avoided_count"], 0)
         self.assertTrue(metrics["previous_context"]["enabled"])
+        self.assertEqual(metrics["previous_context"]["extraction_packet_count"], 1)
         self.assertEqual(metrics["previous_context"]["batches_with_items"], 1)
+        self.assertEqual(metrics["previous_context"]["packets_with_items"], 1)
         self.assertEqual(metrics["previous_context"]["items_per_batch"]["max"], 1.0)
+        self.assertEqual(metrics["previous_context"]["items_per_packet"]["max"], 1.0)
         self.assertEqual(metrics["candidates"]["raw_by_type"]["result"], 1)
         self.assertEqual(metrics["candidates"]["rejection_reasons"]["duplicate_of"], 1)
         self.assertEqual(metrics["final_l1"]["viewpoint_recurrence_count"], 1)
@@ -1521,6 +1529,7 @@ class MultiAgentPipelineTests(unittest.TestCase):
         self.assertIn("Do not pad", prompt)
         self.assertIn("do not restate each idea unit as a candidate", prompt)
         self.assertIn("Split-family scope metadata (not evidence):", prompt)
+        self.assertIn("parent_extraction_packet_id=PB-001", prompt)
         self.assertIn("overlap_unit_ids=U-1", prompt)
         self.assertIn("Do not cite sibling metadata", prompt)
         self.assertEqual(len(candidates), MAX_L1_CANDIDATES_PER_TYPE)
@@ -1606,7 +1615,10 @@ class MultiAgentPipelineTests(unittest.TestCase):
         )
 
         prompt = runner.calls[0][1]
-        self.assertIn("Previous batch context (unverified, read-only; not evidence)", prompt)
+        self.assertIn(
+            "Previous extraction-packet context (unverified, read-only; not evidence)",
+            prompt,
+        )
         self.assertIn("not passed grounding or final reduction yet", prompt)
         self.assertIn("Do not increase candidate count", prompt)
         self.assertIn("Every source_unit_id must still come from the current bounded idea units", prompt)

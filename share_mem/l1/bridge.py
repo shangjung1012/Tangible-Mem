@@ -170,7 +170,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help=(
             "Experimental: pass compact read-only summaries from previous "
-            "extraction batches into typed L1 agents."
+            "extraction packets into typed L1 agents."
         ),
     )
     parser.add_argument(

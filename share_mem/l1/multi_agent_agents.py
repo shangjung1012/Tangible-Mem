@@ -686,17 +686,17 @@ Validator report:
 
 
 def format_previous_context_for_prompt(previous_context: dict[str, Any] | None) -> str:
-    """Render compact previous-batch hints for typed agents."""
+    """Render compact previous extraction-packet hints for typed agents."""
     if not previous_context or not previous_context.get("enabled"):
         return ""
     items = previous_context.get("items", [])
     if not items:
         return (
-            "Previous batch context: enabled, but no prior unverified candidate "
+            "Previous extraction-packet context: enabled, but no prior unverified candidate "
             "summaries are available yet."
         )
     lines = [
-        "Previous batch context (unverified, read-only; not evidence):",
+        "Previous extraction-packet context (unverified, read-only; not evidence):",
         "- Use only to resolve pronouns, understand continuation, and avoid duplicates.",
         "- These summaries have not passed grounding or final reduction yet.",
         "- Do not increase candidate count just because previous context mentions a topic.",
@@ -726,11 +726,11 @@ def format_batch_metadata_for_prompt(batch_metadata: dict[str, Any] | None) -> s
     )
     lines = [
         "Split-family scope metadata (not evidence):",
-        f"- parent_batch_id={parent_batch_id}; split_index={split_index}/{split_count}",
+        f"- parent_extraction_packet_id={parent_batch_id}; split_index={split_index}/{split_count}",
         f"- split_reason={split_reason or 'bounded extraction chunk'}",
-        "- If this batch is part of a split family, avoid creating a partial candidate solely because the chunk boundary cuts a larger idea.",
+        "- If this extraction packet is part of a split family, avoid creating a partial candidate solely because the chunk boundary cuts a larger idea.",
         "- Overlap idea units may be cited as normal bounded evidence when they appear below.",
-        "- Do not cite sibling metadata or infer from unseen sibling batches.",
+        "- Do not cite sibling metadata or infer from unseen sibling extraction packets.",
     ]
     if overlap_unit_ids:
         lines.append(f"- overlap_unit_ids={', '.join(overlap_unit_ids)}")
@@ -777,7 +777,7 @@ The same idea unit may support other memory types; do not suppress valid {obj_ty
 {"Every candidate must include legacy_type using one of: " + ", ".join(sorted(LEGACY_COMPATIBILITY_DESCRIPTIONS)) + ". Use the closest old taxonomy role for comparison only." if include_legacy_type else ""}
 Normally return 0-4 candidates. You may return up to {MAX_L1_CANDIDATES_PER_TYPE} only
 when there are clearly distinct durable {obj_type} memories. Return an empty list when
-the batch has no durable {obj_type}. Do not pad the response to fill the limit.
+this extraction packet has no durable {obj_type}. Do not pad the response to fill the limit.
 
 Only output durable long-term memory:
 - keep project-level decisions, method changes, concrete follow-ups, stable findings,
@@ -799,7 +799,7 @@ Only output durable long-term memory:
 - use 0.50-0.70 for useful but local meeting-level context
 Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
 
-Extraction scope: {extraction_scope or "(single bounded batch)"}
+Extraction packet: {extraction_scope or "(single bounded extraction packet)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
 Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "(none)"}
 
@@ -877,7 +877,7 @@ def l1_fallback_agent(
     taxonomy: str = "v1",
     include_legacy_type: bool = False,
 ) -> list[L1Candidate]:
-    """Conservative fallback when typed agents produce nothing for a non-empty batch."""
+    """Conservative fallback when typed agents produce nothing for a non-empty extraction packet."""
     segment_ids = segment_ids or []
     taxonomy = normalize_taxonomy(taxonomy)
     type_definitions = type_definitions_for_taxonomy(taxonomy)
@@ -893,18 +893,18 @@ def l1_fallback_agent(
     batch_metadata_text = format_batch_metadata_for_prompt(batch_metadata)
     prompt = f"""
 You are general_l1_fallback_agent in a multi-agent long-term memory pipeline.
-This fallback runs only because the typed L1 agents produced no candidates for this bounded batch.
+This fallback runs only because the typed L1 agents produced no candidates for this bounded extraction packet.
 
 Read only the bounded idea units below. Propose a small number of durable L1 candidates only if
-the batch clearly contains one of these types: {allowed_types}.
-Return an empty candidates list if the batch is purely filler, logistics, acknowledgements, or unclear.
+this extraction packet clearly contains one of these types: {allowed_types}.
+Return an empty candidates list if the extraction packet is purely filler, logistics, acknowledgements, or unclear.
 Do not invent information outside the supplied unit IDs.
 Prior context may help disambiguate references, but it is never evidence.
 Return at most {MAX_FALLBACK_CANDIDATES} candidates.
 {"Every candidate must include legacy_type using one of: " + ", ".join(sorted(LEGACY_COMPATIBILITY_DESCRIPTIONS)) + "." if include_legacy_type else ""}
 Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
 
-Extraction scope: {extraction_scope or "(single bounded batch)"}
+Extraction packet: {extraction_scope or "(single bounded extraction packet)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
 Known related topics: {", ".join(existing_topics[:80]) if existing_topics else "(none)"}
 

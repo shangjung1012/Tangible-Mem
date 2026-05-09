@@ -13,7 +13,7 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 - Canonical multi-agent L1 extraction code now lives under `share_mem/l1/`. `long_term/` keeps the active recall surface plus the generated L2 view entrypoints; the old temporal L1/L2/L3 pipeline is archived.
 - `long_term/tree.json` is now archived under `long_term/archive/legacy_temporal_l2_l3/tree.json`, not the source of truth for new L1 recall. New L2 work should use `share_mem/tree.json` or `share_mem/meetings/` as its L1 base.
 - The current L1 research mainline is still multi-agent extraction. `full` / `monolithic` and `incremental` remain baselines or references, not the primary development path.
-- Multi-agent L1 is a staged prompt pipeline, not autonomous long-lived agents: `prior_context_pack -> context_planner -> segmentation -> repair/coarsening -> boundary refinement -> idea units -> bounded type agents -> grounding -> conflict resolution -> verifier -> reducer -> persist L1 -> relation/activity sidecars`.
+- Multi-agent L1 is a staged prompt pipeline, not autonomous long-lived agents: `prior_context_pack -> context_planner -> segmentation -> repair/coarsening -> boundary refinement -> idea units -> extraction packets -> bounded type agents -> grounding -> conflict resolution -> verifier -> reducer -> persist L1 -> relation/activity sidecars`.
 - Canonical Grace L1 currently uses v2 memory roles in `type`: `decision`, `action_item`, `open_issue`, `proposal`, `argument`, `finding`, and `approach_change`.
 - `legacy_type` is retained on canonical Grace L1 objects for compatibility diffing and rollback checks only.
 - Additional L1 type experiments should still write to separate `share_mem_experiments/...` roots and be compared before promotion.

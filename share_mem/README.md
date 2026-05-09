@@ -23,8 +23,18 @@ Build flow:
 share_mem/build_tree.py
   -> share_mem.l1.bridge
   -> share_mem.l1.multi_agent_pipeline
-  -> segmentation / boundary refinement / idea units / typed agents / grounding / verifier / reducer
+  -> segmentation / boundary refinement / idea units / extraction packets
+     / typed agents / grounding / verifier / reducer
   -> outputs under share_mem/
+```
+
+An extraction packet is a bounded working unit, not a memory layer: the pipeline
+groups related idea units into a small packet so each typed L1 agent sees a
+controlled scope before producing L1 candidates. The packet is intentionally
+between idea units and candidates:
+
+```text
+segment -> idea unit -> extraction packet -> candidate -> L1 object
 ```
 
 `long_term/` keeps the active recall surface and reserved L2 view entrypoints.
@@ -116,10 +126,12 @@ These files are generated and can be rebuilt:
 - `topic_tree.json`: materialized topic-tree view replayed from `topic_updates/`.
 - `topic_index.json`: `obj_id` to topic path, event, and state-version lookup.
 
-`research_logs/` contains multi-agent stage artifacts and can be large. Each
-run includes `prompts/`, `responses/`, and structured `api_calls/` debug
-artifacts for LLM input/output inspection. Do not commit raw prompts,
-responses, credential paths, API keys, or raw Codex JSONL.
+`research_logs/` contains multi-agent stage artifacts and can be large. New
+runs write `extraction_packets.json` for the bounded idea-unit packets consumed
+by typed L1 agents; `extraction_batches.json` may also be present as a legacy
+compatibility alias. Each run includes `prompts/`, `responses/`, and structured
+`api_calls/` debug artifacts for LLM input/output inspection. Do not commit raw
+prompts, responses, credential paths, API keys, or raw Codex JSONL.
 
 ## Reader API
 

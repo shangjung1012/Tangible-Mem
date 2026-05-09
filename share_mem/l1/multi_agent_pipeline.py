@@ -261,7 +261,12 @@ def build_continuation_batches(
     transcript_lines: list[TranscriptLine] | None = None,
     idea_units: list[IdeaUnit] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Merge bounded segment continuations into extraction batches."""
+    """Merge bounded segment continuations into extraction packets.
+
+    The returned records keep the legacy ``batch_id`` key for compatibility,
+    but user-facing docs and prompts should call each record an extraction
+    packet: a bounded group of idea units consumed by typed L1 agents.
+    """
     sorted_segments = sorted(
         segments,
         key=lambda segment: (segment.line_start, segment.line_end, segment.segment_id),
@@ -935,6 +940,74 @@ def build_metrics_summary(
     previous_context_by_batch = previous_context_by_batch or {}
     previous_context_item_counts = _previous_context_item_counts(previous_context_by_batch)
 
+    extraction_packet_metrics = {
+        "count": len(extraction_batches),
+        "idea_units_per_packet": _score_summary(
+            [float(count) for count in batch_unit_counts]
+        ),
+        "oversized_packet_count": sum(
+            count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH
+            for count in batch_unit_counts
+        ),
+        "target_idea_units_per_packet": TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
+        "max_idea_units_per_packet": MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
+        "overlap_units_per_split": EXTRACTION_BATCH_OVERLAP_UNITS,
+        "packets_over_target_cap": sum(
+            count > TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH
+            for count in batch_unit_counts
+        ),
+        "split_family_count": len(split_family_ids),
+        "split_packet_count": sum(
+            1
+            for batch in extraction_batches
+            if str(batch.get("parent_batch_id", "") or "").strip()
+        ),
+        "overlap_unit_count": sum(
+            len(batch.get("overlap_unit_ids", []))
+            for batch in extraction_batches
+            if isinstance(batch.get("overlap_unit_ids", []), list)
+        ),
+        "tiny_remainder_avoided_count": len(tiny_remainder_keys),
+        "continuation_actions": _counter_dict(
+            Counter(
+                str(decision.get("action", "unknown") or "unknown")
+                for decision in continuation_decisions
+            )
+        ),
+        "fallback_packet_count": len(batch_fallback_reports),
+    }
+    extraction_batch_metrics = {
+        **extraction_packet_metrics,
+        "idea_units_per_batch": extraction_packet_metrics["idea_units_per_packet"],
+        "oversized_batch_count": extraction_packet_metrics["oversized_packet_count"],
+        "target_idea_units_per_batch": extraction_packet_metrics[
+            "target_idea_units_per_packet"
+        ],
+        "max_idea_units_per_batch": extraction_packet_metrics["max_idea_units_per_packet"],
+        "batches_over_target_cap": extraction_packet_metrics["packets_over_target_cap"],
+        "split_batch_count": extraction_packet_metrics["split_packet_count"],
+        "fallback_batch_count": extraction_packet_metrics["fallback_packet_count"],
+    }
+    previous_context_metrics = {
+        "enabled": any(
+            context.get("enabled") for context in previous_context_by_batch.values()
+        ),
+        "extraction_packet_count": len(previous_context_by_batch),
+        "packets_with_items": sum(
+            1
+            for context in previous_context_by_batch.values()
+            if context.get("enabled") and context.get("items")
+        ),
+        "items_per_packet": _score_summary(previous_context_item_counts),
+        # Legacy aliases retained for older reports/tests.
+        "batch_count": len(previous_context_by_batch),
+        "batches_with_items": sum(
+            1
+            for context in previous_context_by_batch.values()
+            if context.get("enabled") and context.get("items")
+        ),
+        "items_per_batch": _score_summary(previous_context_item_counts),
+    }
     return {
         "line_count": line_count,
         "windows": {
@@ -948,12 +1021,10 @@ def build_metrics_summary(
             "final_count": len(final_segments),
             "coverage_rate": _score_summary(segment_coverage_rates),
             "coverage_repair_count": sum(
-                len(report.get("repair_segment_ids", []))
-                for report in coverage_reports
+                len(report.get("repair_segment_ids", [])) for report in coverage_reports
             ),
             "coarsened_group_count": sum(
-                len(report.get("merged_groups", []))
-                for report in coarsening_reports
+                len(report.get("merged_groups", [])) for report in coarsening_reports
             ),
             "boundary_refinement_actions": _counter_dict(
                 Counter(
@@ -986,54 +1057,9 @@ def build_metrics_summary(
                 0,
             ),
         },
-        "extraction_batches": {
-            "count": len(extraction_batches),
-            "idea_units_per_batch": _score_summary(
-                [float(count) for count in batch_unit_counts]
-            ),
-            "oversized_batch_count": sum(
-                count > MAX_IDEA_UNITS_PER_EXTRACTION_BATCH
-                for count in batch_unit_counts
-            ),
-            "target_idea_units_per_batch": TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH,
-            "max_idea_units_per_batch": MAX_IDEA_UNITS_PER_EXTRACTION_BATCH,
-            "overlap_units_per_split": EXTRACTION_BATCH_OVERLAP_UNITS,
-            "batches_over_target_cap": sum(
-                count > TARGET_IDEA_UNITS_PER_EXTRACTION_BATCH
-                for count in batch_unit_counts
-            ),
-            "split_family_count": len(split_family_ids),
-            "split_batch_count": sum(
-                1
-                for batch in extraction_batches
-                if str(batch.get("parent_batch_id", "") or "").strip()
-            ),
-            "overlap_unit_count": sum(
-                len(batch.get("overlap_unit_ids", []))
-                for batch in extraction_batches
-                if isinstance(batch.get("overlap_unit_ids", []), list)
-            ),
-            "tiny_remainder_avoided_count": len(tiny_remainder_keys),
-            "continuation_actions": _counter_dict(
-                Counter(
-                    str(decision.get("action", "unknown") or "unknown")
-                    for decision in continuation_decisions
-                )
-            ),
-            "fallback_batch_count": len(batch_fallback_reports),
-        },
-        "previous_context": {
-            "enabled": any(
-                context.get("enabled") for context in previous_context_by_batch.values()
-            ),
-            "batch_count": len(previous_context_by_batch),
-            "batches_with_items": sum(
-                1
-                for context in previous_context_by_batch.values()
-                if context.get("enabled") and context.get("items")
-            ),
-            "items_per_batch": _score_summary(previous_context_item_counts),
-        },
+        "extraction_packets": extraction_packet_metrics,
+        "extraction_batches": extraction_batch_metrics,
+        "previous_context": previous_context_metrics,
         "candidates": {
             "raw_count": len(raw_candidates),
             "raw_by_type": _counter_dict(
@@ -1169,6 +1195,7 @@ def run_multi_agent_l1_pipeline(
                 "windows": len(window_plans),
                 "segments": len(all_segments),
                 "idea_units": len(all_idea_units),
+                "extraction_packets": len(extraction_batches),
                 "extraction_batches": len(extraction_batches),
                 "raw_candidates": len(raw_candidates),
                 "grounded_candidates": len(grounded_candidates),
@@ -1436,8 +1463,9 @@ def run_multi_agent_l1_pipeline(
             idea_units=all_idea_units,
         )
         logger.write_json("continuation_merges.json", continuation_decisions)
+        logger.write_json("extraction_packets.json", extraction_batches)
         logger.write_json("extraction_batches.json", extraction_batches)
-        mark_completed("extraction_batches:written")
+        mark_completed("extraction_packets:written")
 
         raw_candidates = []
         batch_fallback_reports = []
@@ -1460,6 +1488,7 @@ def run_multi_agent_l1_pipeline(
                     f"l1_{obj_type}_agent:start",
                     {
                         "extraction_scope": batch["batch_id"],
+                        "extraction_packet_id": batch["batch_id"],
                         "segment_ids": batch["segment_ids"],
                         "idea_units": len(batch_units),
                         "previous_context_items": len(previous_context.get("items", [])),
@@ -1483,6 +1512,7 @@ def run_multi_agent_l1_pipeline(
                     f"l1_{obj_type}_agent:done",
                     {
                         "extraction_scope": batch["batch_id"],
+                        "extraction_packet_id": batch["batch_id"],
                         "candidates": len(candidates),
                     },
                 )
@@ -1493,6 +1523,7 @@ def run_multi_agent_l1_pipeline(
                     "l1_fallback_agent:start",
                     {
                         "extraction_scope": batch["batch_id"],
+                        "extraction_packet_id": batch["batch_id"],
                         "segment_ids": batch["segment_ids"],
                         "idea_units": len(batch_units),
                     },
@@ -1513,6 +1544,7 @@ def run_multi_agent_l1_pipeline(
                 batch_fallback_reports.append(
                     {
                         "batch_id": batch["batch_id"],
+                        "extraction_packet_id": batch["batch_id"],
                         "segment_ids": batch["segment_ids"],
                         "idea_units": len(batch_units),
                         "fallback_candidates": len(fallback_candidates),
@@ -1523,6 +1555,7 @@ def run_multi_agent_l1_pipeline(
                     "l1_fallback_agent:done",
                     {
                         "extraction_scope": batch["batch_id"],
+                        "extraction_packet_id": batch["batch_id"],
                         "candidates": len(fallback_candidates),
                     },
                 )
@@ -1537,8 +1570,10 @@ def run_multi_agent_l1_pipeline(
                 }
             )
         logger.write_json("raw_candidates.json", raw_candidates)
+        logger.write_json("extraction_packet_fallbacks.json", batch_fallback_reports)
         logger.write_json("batch_fallbacks.json", batch_fallback_reports)
         if previous_context_enabled:
+            logger.write_json("previous_context_by_packet.json", previous_context_by_batch)
             logger.write_json("previous_context_by_batch.json", previous_context_by_batch)
         mark_completed("raw_candidates:written")
 
