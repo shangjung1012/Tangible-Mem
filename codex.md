@@ -21,7 +21,7 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 - `long_term/l2/l2_view.json` and `long_term/l2/l2_index.json` are generated views over clean immutable L1 evidence. They do not replace `share_mem/tree.json`, and the builder may intentionally leave low-value or isolated L1 objects unlinked.
 - The first `share_mem` topic-tree implementation remains experimental / append-only sidecar. It can be built with `uv run share_mem/build_topic_view.py --tree share_mem/tree.json --mode hybrid --model gemini-2.5-pro`, but the active long-term topic layer is now `long_term/l2/`; root-level `share_mem/topic_tree.json`, `topic_updates/`, and `topic_index.json` are not required for the current canonical handoff and may be absent when `manifest.json` reports `topic_view.exists=false`.
 - Topic-tree remains a view, not the canonical raw L1 store. `share_mem/tree.json` and `meetings/<meeting_id>.json` remain immutable evidence; topic state is rebuildable from `topic_updates/`.
-- Recall starts from semantic L1 retrieval over `share_mem/tree.json`, then expands upward through `long_term/l2/l2_index.json` and `long_term/l2/l2_view.json` for compact L2 topic context, with optional L3 sidecar context. Temporal parent-chain expansion is legacy fallback only.
+- Recall starts from semantic L1 retrieval over `share_mem/tree.json`, always includes a compact global topic map, then expands upward through materialized L3 child L2 context when `long_term/l3/l3_index.json` covers a seed. If no materialized child L2 exists, it falls back to `long_term/l2/l2_index.json` and `long_term/l2/l2_view.json`. Temporal parent-chain expansion is legacy fallback only.
 - Multi-agent quality, recurrence, relation, and activity metadata live in sidecars such as `l1_quality_index.json`, `memory_relations_index.json`, and `memory_activity_index.json`; the canonical L1 schema remains clean.
 - Multi-agent research logs now include structured `api_calls/` artifacts in addition to `prompts/` and `responses/`; keep them out of commits when they contain raw prompts/responses or sensitive local paths.
 - Legacy `summarize phase`, `bridge`, `build-tree`, and old temporal snapshots are archived under `long_term/archive/legacy_temporal_l2_l3/` for historical reference only.
@@ -36,10 +36,10 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 
 ## Windows Local Worktree State
 
-- On this Windows device, the local worktree has untracked local artifacts: `04_08_bridge_test_results.json`, `test_bridge.py`, and `long_term/grace output/`.
+- On this Windows device, the local worktree has untracked local artifacts: `04_08_bridge_test_results.json`, `agents.md`, and `test_bridge.py`.
 - Treat those files as local working artifacts unless a future update explicitly promotes them through docs or a reviewed commit.
 - The partial Grace run under `long_term/grace output/...0307_multi_agent` reports `argument` and `open_question` as deferred. That artifact is stale: current repo code and tests include both types in the bounded type-agent loop.
-- `uv run python -m unittest discover -s tests` currently hits Windows temp SQLite cleanup locks (`WinError 32`) in incremental/short-term tests. Track this as a separate Windows test hygiene follow-up, not as a blocker for the P0 topic-tree evaluation.
+- `uv run python -m unittest discover -s tests` currently hits a short-term Windows shell-script execution issue (`WinError 193` from trying to execute a `.sh` file directly). Track this as a separate short-term Windows test hygiene follow-up, not as a blocker for the long-term L2/L3 work.
 
 Useful commands:
 
@@ -49,6 +49,8 @@ uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/gra
 uv run long_term/cli.py --help
 uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
 uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
+uv run long_term/cli.py validate-l3-view --share-mem-root share_mem --l2-root long_term/l2 --l3-root long_term/l3 --out long_term/l3/validation
+uv run python long_term/evaluate_retrieval.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out long_term/eval --no-llm
 uv run long_term/cli.py build-l2-view --help
 uv run long_term/cli.py validate-l2-view --help
 uv run python -m unittest discover -s tests
@@ -58,15 +60,16 @@ uv run python -m unittest discover -s tests
 
 | Status | Priority | Task | Canonical next step |
 | --- | --- | --- | --- |
-| active | P0 | Materialize reviewed L3 promotions above the current L2 topic view. | The design and sidecar helper exist. Next step is a reviewed splitter that maps an overcrowded old L2 to one L3 parent plus at least two child L2 topics without mutating raw L1 evidence. |
+| active | P0 | Curate retrieval eval expected L1 ids and tune noisy L2 misses. | The first retrieval eval report now has strong L2/L3 hits but stale expected L1 ids. Next step is to review selected seed ids, update the demo query gold set, and tune the `L1 到 L2 的分群` query miss. |
 | active | P1 | Validate current multi-agent L1 plus sidecars on real Grace/ICSI meetings. | Run a small repeatable set, inspect `status.json`, `run_summary.json`, `metrics_summary.json`, `l1_quality_index.json`, relation/activity sidecars, and final `tree.json` diffs. |
-| active | P1 | Tighten recall behavior around L1 -> L2/L3 parent-chain context. | Check whether retrieved answers get enough high-level context without flooding prompts. Prefer compact L2/L3 plus linked sidecar context before inventing a new retrieval store. |
 | active | P2 | Keep multi-agent cost and failure visibility under control. | When a run is slow or interrupted, inspect per-run `status.json` and `run_summary.json` first. Add targeted fixes only where artifacts show a bottleneck. |
-| active | P2 | Fix Windows full unittest SQLite cleanup locks. | Investigate temp SQLite connection cleanup in incremental and short-term tests after the topic-tree comparison path is clear. This is local test hygiene, not a P0 topic-tree blocker. |
+| active | P2 | Fix Windows full unittest short-term script launch. | `tests/test_short_term_snapshot_update.py` currently tries to execute a `.sh` script directly on Windows and raises `WinError 193`. This is short-term Windows test hygiene, not a blocker for long-term L2/L3 work. |
+| done | P0 | Materialize reviewed L3 promotions above the current L2 topic view. | Deterministic `build-l2-view` now writes `l3_promotions.json`, `l3_view.json`, `l3_index.json`, and `l2_merge_review.json` without mutating raw L1 evidence or active L2 artifacts. |
 | done | P0 | Merge the selected long-term Codex chats into one canonical handoff flow. | Use this `codex.md` as the single entrypoint for future chats. |
 | done | P0 | Rebuild canonical L1 under `share_mem/` from Grace transcripts. | Current canonical Grace `share_mem` has 7 meetings and 509 v2 L1 objects with `legacy_type` compatibility metadata. |
-| done | P0 | Add active share_mem-based L2 view under `long_term/l2`. | Current L2 topic view has 16 topics, 449 linked L1 objects, 60 intentionally unlinked or low-signal L1 objects, and 0 severe validation issues. |
-| done | P0 | Wire active recall to the new `long_term/l2` upward context. | `long_term/recall.py` now starts from semantic L1 hits in `share_mem/tree.json`, uses `l2_index.json` for L1 -> L2 lookup, and formats compact L2 state/timeline context from `l2_view.json`. Missing L2 assignments are non-fatal. |
+| done | P0 | Add active share_mem-based L2 view under `long_term/l2`. | Current L2 topic view has 15 topics, 477 linked L1 objects, 32 intentionally unlinked or low-signal L1 objects, and 0 severe validation issues. |
+| done | P0 | Wire active recall to the new `long_term/l2` upward context. | `long_term/recall.py` now starts from semantic L1 hits in `share_mem/tree.json`, includes a compact global topic map, prefers materialized child L2 context via `l3_index.json`, and falls back to sliced active L2 context when needed. Missing L2 assignments are non-fatal. |
+| done | P1 | Tighten recall behavior around L1 -> L2/L3 parent-chain context. | The prompt formatter is now evidence-first: Global Topic Map, L1 Evidence Seeds, L2 / Child-L2 Evolution Context, and optional Retrieval Debug. Large topics are sliced instead of injected whole. |
 | done | P1 | Adopt semantic L1 retrieval with parent-chain expansion. | Current code and `doc/l1_l2_update_retrieve_flow.md` are the source of truth; archived retrieve plans have been removed from active docs. |
 | done | P1 | Adopt compact L2/L3 schema. | Active L2/L3 are generated sidecars over `share_mem` L1; temporal artifacts remain archived history. |
 | done | P2 | Keep incremental bridge as a reference path. | SQLite issue tables are working state for incremental mode only; do not migrate `tree.json` to SQL just because incremental mode uses SQLite internally. |
@@ -328,6 +331,15 @@ Cross-device restore rule:
 - Do not depend on Codex UI session import as the only handoff mechanism; session formats and local auth state can change.
 
 ## Handoff Log
+
+### 2026-05-09 - Add Layered L3 Retrieval And Validation
+
+- `build-l2-view` now defaults to deterministic L3 sidecar generation and writes `long_term/l3/l3_promotions.json`, `l3_view.json`, `l3_index.json`, and `l2_merge_review.json`.
+- Current generated L2 state: 7 Grace meetings, 509 L1 objects, 15 L2 topics, 477 linked L1 objects, and 32 unlinked low-signal/isolated L1 objects.
+- Current generated L3 state: 2 L3 parents, 6 materialized child L2 topics, and 184 assigned L1 objects. Promotion coverage validation reports 0 unassigned L1, 0 duplicate assignments, and 0 invalid `l3_index` references.
+- L3 validation reports 0 severe issues and 8 warnings. The warnings are child-size / retrieval-slice diagnostics: two child L2 nodes under transcript segmentation are still large enough to deserve future split review, but prompt formatting slices them instead of injecting the full timeline.
+- Retrieval is now always-on layered for meeting-memory queries: L1 evidence seeds first, compact Global Topic Map always present, materialized child L2 preferred through `l3_index`, active L2 fallback when needed, and optional debug metrics for tests/eval.
+- The first retrieval eval smoke report uses 8 demo-safe queries. It currently has L2 hit rate 0.875, L3 hit rate 1.0, prompt budget pass rate 1.0, and expected L1 recall 0.0 because the demo expected L1 ids are stale and need curation from selected seed ids.
 
 ### 2026-05-09 - Harden L1/L2 Quality Gates After Full Grace Rerun
 

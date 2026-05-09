@@ -89,6 +89,47 @@ def _l2_view() -> dict:
     }
 
 
+def _promoted_l3_view() -> dict:
+    return {
+        "l3_nodes": [
+            {
+                "l3_id": "L3-memory-retrieval",
+                "label": "memory retrieval",
+                "promoted_from_l2_id": "L2-memory-retrieval",
+                "child_l2_nodes": [
+                    {
+                        "l2_id": "L2-semantic-l1-search",
+                        "label": "semantic L1 search",
+                        "current_state": "Search starts from concrete semantic L1 hits.",
+                        "linked_obj_ids": ["L1-0307-001"],
+                        "timeline_digest": [
+                            {
+                                "meeting_id": "0307",
+                                "meeting_date": "2026-03-07",
+                                "obj_id": "L1-0307-001",
+                                "summary": "The team chose L1 evidence as the recall entrypoint.",
+                            }
+                        ],
+                        "event_count": 1,
+                    }
+                ],
+            }
+        ]
+    }
+
+
+def _promoted_l3_index() -> dict:
+    return {
+        "L1-0307-001": {
+            "obj_id": "L1-0307-001",
+            "source_l2_id": "L2-memory-retrieval",
+            "l3_id": "L3-memory-retrieval",
+            "child_l2_id": "L2-semantic-l1-search",
+            "child_l2_label": "semantic L1 search",
+        }
+    }
+
+
 class RecallL2ViewTests(unittest.TestCase):
     def test_l1_hit_expands_to_l2_view_context(self) -> None:
         with patch.object(recall, "embed_text", return_value=[1.0]), patch.object(
@@ -168,7 +209,7 @@ class RecallL2ViewTests(unittest.TestCase):
             }
         )
 
-        self.assertIn("=== L2 主題脈絡 ===", formatted)
+        self.assertIn("=== L2 / Child-L2 Evolution Context ===", formatted)
         self.assertIn("[L2-memory-retrieval] memory retrieval", formatted)
         self.assertIn("Recall starts from semantic L1 evidence", formatted)
         self.assertIn("matched L1: L1-0307-001", formatted)
@@ -281,6 +322,152 @@ class RecallL2ViewTests(unittest.TestCase):
         self.assertEqual(child_context["matched_l1_ids"], ["L1-0307-001"])
         self.assertIn("materialized L3: L3-memory-retrieval", formatted)
         self.assertIn("materialized child L2: L2-semantic-l1-search semantic L1 search", formatted)
+
+    def test_recall_prefers_materialized_child_l2_over_old_source_l2(self) -> None:
+        with patch.object(recall, "embed_text", return_value=[1.0]), patch.object(
+            recall,
+            "search_l1_semantic",
+            return_value=[_l1_hit()],
+        ):
+            result = recall.recall(
+                query="How should recall use L1 evidence?",
+                plan={
+                    "complexity": "simple",
+                    "search_targets": ["long_term_l1", "long_term_l2", "long_term_l3"],
+                    "keywords": [],
+                },
+                tree=_tree(),
+                api_key="test-key",
+                l2_index=_l2_index(),
+                l2_view=_l2_view(),
+                l3_view=_promoted_l3_view(),
+                l3_index=_promoted_l3_index(),
+                relations_index={},
+                include_retrieval_debug=True,
+            )
+
+        self.assertIn("global_topic_map", result)
+        self.assertEqual(result["long_term_l2"][0]["source"], "long_term_child_l2")
+        self.assertEqual(result["long_term_l2"][0]["l2_id"], "L2-semantic-l1-search")
+        self.assertEqual(result["long_term_l2"][0]["parent_l3_id"], "L3-memory-retrieval")
+        self.assertEqual(result["retrieval_debug"]["selected_child_l2_count"], 1)
+
+    def test_recall_falls_back_to_l2_when_l3_index_has_no_seed(self) -> None:
+        with patch.object(recall, "embed_text", return_value=[1.0]), patch.object(
+            recall,
+            "search_l1_semantic",
+            return_value=[_l1_hit()],
+        ):
+            result = recall.recall(
+                query="How should recall use L1 evidence?",
+                plan={
+                    "complexity": "simple",
+                    "search_targets": ["long_term_l1", "long_term_l2"],
+                    "keywords": [],
+                },
+                tree=_tree(),
+                api_key="test-key",
+                l2_index=_l2_index(),
+                l2_view=_l2_view(),
+                l3_view=_promoted_l3_view(),
+                l3_index={},
+                relations_index={},
+                include_retrieval_debug=True,
+            )
+
+        self.assertEqual(result["long_term_l2"][0]["source"], "long_term_l2")
+        self.assertEqual(result["long_term_l2"][0]["l2_id"], "L2-memory-retrieval")
+
+    def test_formatter_orders_l1_evidence_before_l2_context(self) -> None:
+        formatted = recall.format_recall_for_prompt(
+            {
+                "global_topic_map": {
+                    "l3_families": [
+                        {
+                            "l3_id": "L3-memory-retrieval",
+                            "label": "memory retrieval",
+                            "child_l2": [
+                                {
+                                    "l2_id": "L2-semantic-l1-search",
+                                    "label": "semantic L1 search",
+                                }
+                            ],
+                        }
+                    ],
+                    "l2_topics": [],
+                },
+                "long_term_l1": [_l1_hit()],
+                "long_term_l2": [
+                    {
+                        "source": "long_term_child_l2",
+                        "parent_l3_id": "L3-memory-retrieval",
+                        "parent_l3_label": "memory retrieval",
+                        "l2_id": "L2-semantic-l1-search",
+                        "label": "semantic L1 search",
+                        "matched_l1_ids": ["L1-0307-001"],
+                        "topic_size": 1,
+                        "selected_event_count": 1,
+                        "omitted_event_count": 0,
+                        "current_state": "Search starts from concrete semantic L1 hits.",
+                        "timeline_digest": [
+                            {
+                                "meeting_id": "0307",
+                                "meeting_date": "2026-03-07",
+                                "obj_id": "L1-0307-001",
+                                "summary": "The team chose L1 evidence as the recall entrypoint.",
+                            }
+                        ],
+                    }
+                ],
+                "long_term_l3": [
+                    {"l3_id": "L3-memory-retrieval", "label": "memory retrieval"}
+                ],
+                "retrieval_debug": {"selected_l1_count": 1},
+            },
+            include_debug=True,
+        )
+
+        self.assertIn("=== Global Topic Map ===", formatted)
+        self.assertIn("=== L1 Evidence Seeds ===", formatted)
+        self.assertIn("=== L2 / Child-L2 Evolution Context ===", formatted)
+        self.assertLess(
+            formatted.index("=== L1 Evidence Seeds ==="),
+            formatted.index("=== L2 / Child-L2 Evolution Context ==="),
+        )
+        self.assertIn("evidence: The team agreed recall should start", formatted)
+        self.assertIn("parent L3: L3-memory-retrieval memory retrieval", formatted)
+
+    def test_global_topic_map_uses_event_count_when_linked_ids_are_absent(self) -> None:
+        global_map = recall.build_global_topic_map(
+            {
+                "l2_nodes": [
+                    {
+                        "l2_id": "L2-unpromoted",
+                        "label": "unpromoted topic",
+                        "event_count": 7,
+                    }
+                ]
+            },
+            {
+                "l3_nodes": [
+                    {
+                        "l3_id": "L3-memory-retrieval",
+                        "label": "memory retrieval",
+                        "promoted_from_l2_id": "L2-memory-retrieval",
+                        "child_l2_nodes": [
+                            {
+                                "l2_id": "L2-semantic-l1-search",
+                                "label": "semantic L1 search",
+                                "event_count": 5,
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(global_map["l3_families"][0]["child_l2"][0]["event_count"], 5)
+        self.assertEqual(global_map["l2_topics"][0]["event_count"], 7)
 
 
 if __name__ == "__main__":

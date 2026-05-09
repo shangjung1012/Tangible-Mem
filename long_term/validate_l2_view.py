@@ -24,6 +24,7 @@ from build_l2_view import (
     load_l2_view,
 )
 from share_mem.store import build_l1_index, load_share_tree
+from validate_l3_view import validate_l3_view_outputs
 
 EXPECTED_L2_ASSIGNMENTS = {
     "L1-0307-005": "memory update semantics",
@@ -663,6 +664,12 @@ def validate_l2_view_outputs(
     _write_json(out_root / "l2_validation_report.json", report)
     _write_json(out_root / "manual_l2_review_queue.json", manual_queue)
     (out_root / "l2_validation_report.md").write_text(_markdown_report(report), encoding="utf-8")
+    validate_l3_view_outputs(
+        share_mem_root=share_root,
+        l2_root=l2_root,
+        l3_root=l2_root.parent / "l3",
+        out=l2_root.parent / "l3" / "validation",
+    )
     return report
 
 

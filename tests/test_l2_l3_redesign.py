@@ -74,15 +74,10 @@ class L2L3RedesignTests(unittest.TestCase):
 
         formatted = recall.format_recall_for_prompt(recall_result)
 
-        self.assertIn("=== 研究計畫輪廓 (L3) ===", formatted)
-        self.assertIn("目標：建立會議語音語料庫", formatted)
-        self.assertIn("目前階段：轉錄流程建立", formatted)
-        self.assertIn("確立做法：", formatted)
-        self.assertIn("長期懸案：", formatted)
-        self.assertIn("[✓確立] Transcriber 截短檔案", formatted)
-        self.assertIn("[✗棄用] 遞增音調蜂鳴聲", formatted)
-        self.assertIn("[→演進] 男性專用訓練資料", formatted)
-        self.assertIn("[懸案] 多波形顯示尚未實作", formatted)
+        self.assertIn("=== Legacy Temporal L2 Fallback ===", formatted)
+        self.assertIn("[Phase P-007 | Bmr027 ~ Bmr030]", formatted)
+        self.assertIn("summary: 同意書流程完善與轉錄工具改進", formatted)
+        self.assertNotIn("=== 研究計畫輪廓 (L3) ===", formatted)
         self.assertNotIn("方法論：", formatted)
         self.assertNotIn("關鍵決策", formatted)
 

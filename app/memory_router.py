@@ -8,14 +8,14 @@ SHORT_TERM_HINTS = (
     "現在",
     "最新",
     "最近",
-    "今天",
-    "上次",
-    "下一步",
     "待辦",
+    "下一步",
+    "進度",
+    "狀態",
     "todo",
     "owner",
     "負責",
-    "進度",
+    "action",
     "status",
     "next step",
     "action item",
@@ -24,16 +24,16 @@ SHORT_TERM_HINTS = (
 LONG_TERM_HINTS = (
     "為什麼",
     "原因",
+    "怎麼演變",
+    "演變",
     "演進",
     "歷史",
     "之前",
-    "後來",
-    "當初",
-    "設計",
     "架構",
-    "主題",
-    "方法變更",
-    "決策",
+    "設計",
+    "跨會議",
+    "長期",
+    "long-term",
     "l1",
     "l2",
     "l3",
@@ -45,6 +45,7 @@ LONG_TERM_HINTS = (
     "history",
     "evolution",
     "across meetings",
+    "manager-agent",
 )
 
 
@@ -56,7 +57,7 @@ def _contains_any(query: str, hints: tuple[str, ...]) -> bool:
 def _looks_like_meeting_memory_query(query: str) -> bool:
     return bool(
         re.search(
-            r"(會議|記憶|memory|meeting|待辦|進度|決策|設計|架構|主題|l1|l2|l3|promotion|promote|topic|retrieve|recall)",
+            r"(會議|記憶|memory|meeting|待辦|進度|架構|設計|演進|演變|之前|長期|短期|l1|l2|l3|promotion|promote|topic|retrieve|retrieval|recall|manager-agent)",
             query,
             flags=re.IGNORECASE,
         )
@@ -64,10 +65,11 @@ def _looks_like_meeting_memory_query(query: str) -> bool:
 
 
 def plan_memory_retrieval(query: str) -> dict[str, Any]:
-    """Route a user query to short-term, long-term, both, or no memory.
+    """Route a user query to the memory layers.
 
-    This deterministic first-pass router is intentionally cheap and testable.
-    A later LLM planner can replace or augment it without changing callers.
+    Meeting-memory retrieval is intentionally long-term-on by default. Recent
+    status hints can add short-term context, but they should not suppress the
+    long-term topic map and evidence-first retrieval path.
     """
     clean_query = str(query or "").strip()
     if not clean_query:
@@ -80,20 +82,14 @@ def plan_memory_retrieval(query: str) -> dict[str, Any]:
 
     has_short = _contains_any(clean_query, SHORT_TERM_HINTS)
     has_long = _contains_any(clean_query, LONG_TERM_HINTS)
+    meeting_memory_query = _looks_like_meeting_memory_query(clean_query)
 
-    if has_short and has_long:
+    if has_short:
         return {
             "targets": ["short_term", "long_term"],
             "strategy": "both",
-            "reason": "query asks for recent state and historical rationale",
-            "confidence": 0.85,
-        }
-    if has_short:
-        return {
-            "targets": ["short_term"],
-            "strategy": "short_term_only",
-            "reason": "query asks for recent status, TODOs, owners, or next steps",
-            "confidence": 0.8,
+            "reason": "query has recent-status hints; include long-term context as background",
+            "confidence": 0.85 if meeting_memory_query or has_long else 0.75,
         }
     if has_long:
         return {
@@ -102,12 +98,12 @@ def plan_memory_retrieval(query: str) -> dict[str, Any]:
             "reason": "query asks for history, rationale, method evolution, or cross-meeting context",
             "confidence": 0.8,
         }
-    if _looks_like_meeting_memory_query(clean_query):
+    if meeting_memory_query:
         return {
-            "targets": ["short_term", "long_term"],
-            "strategy": "both",
-            "reason": "ambiguous meeting-memory query; retrieve both for coverage",
-            "confidence": 0.55,
+            "targets": ["long_term"],
+            "strategy": "long_term_only",
+            "reason": "meeting-memory query; retrieve long-term topic context",
+            "confidence": 0.6,
         }
     return {
         "targets": [],

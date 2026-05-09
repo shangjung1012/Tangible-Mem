@@ -130,9 +130,11 @@ class MemoryDemoReadinessTests(unittest.TestCase):
                     model_name="test-model",
                 )
 
-        self.assertIn("=== L2 主題脈絡 ===", context)
+        self.assertIn("=== Global Topic Map ===", context)
+        self.assertIn("=== L1 Evidence Seeds ===", context)
+        self.assertIn("=== L2 / Child-L2 Evolution Context ===", context)
         self.assertIn("matched L1: L1-0307-001", context)
-        self.assertIn("timeline:", context)
+        self.assertIn("timeline_digest:", context)
         self.assertIn("The team chose semantic L1 hits", context)
         self.assertIn("Use semantic L1 hits before expanding to L2.", context)
 

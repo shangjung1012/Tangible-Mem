@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,6 +31,8 @@ FALLBACK_MAX_RESULTS = 8
 DEFAULT_L2_ROOT = Path(__file__).resolve().parent / "l2"
 DEFAULT_L3_PROMOTIONS_PATH = Path(__file__).resolve().parent / "l3" / "l3_promotions.json"
 DEFAULT_L3_VIEW_PATH = Path(__file__).resolve().parent / "l3" / "l3_view.json"
+DEFAULT_L3_INDEX_PATH = Path(__file__).resolve().parent / "l3" / "l3_index.json"
+TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+", re.IGNORECASE)
 
 
 # ===================================================================
@@ -230,6 +234,11 @@ def load_l3_promotions(path: Path | None = None) -> dict[str, Any]:
 def load_l3_view(path: Path | None = None) -> dict[str, Any]:
     """Load optional materialized L3 sidecar with child L2 assignments."""
     return _load_json_object(path or DEFAULT_L3_VIEW_PATH)
+
+
+def load_l3_index(path: Path | None = None) -> dict[str, Any]:
+    """Load optional obj_id -> materialized child L2 assignment index."""
+    return _load_json_object(path or DEFAULT_L3_INDEX_PATH)
 
 
 def _l2_nodes_by_id(l2_view: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -483,6 +492,321 @@ def expand_l2_view_context(
                 row["materialized_l3"] = materialized
         output.append(row)
     return output
+
+
+def _tokens(text: str) -> set[str]:
+    return {
+        token.lower()
+        for token in TOKEN_RE.findall(str(text or "").lower())
+        if token.strip()
+    }
+
+
+def _truncate_text(text: Any, max_chars: int) -> str:
+    clean = " ".join(str(text or "").split())
+    if len(clean) <= max_chars:
+        return clean
+    return clean[: max(0, max_chars - 15)].rstrip() + "...(truncated)"
+
+
+def _timeline_event_date(entry: dict[str, Any]) -> str:
+    return str(entry.get("meeting_date") or entry.get("meeting_id") or "")
+
+
+def _node_event_count(node: dict[str, Any], timeline: list[Any] | None = None) -> int:
+    try:
+        count = int(node.get("event_count", 0) or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count:
+        return count
+    if timeline is not None:
+        return len(timeline)
+    linked = node.get("linked_obj_ids")
+    if isinstance(linked, list):
+        return len(linked)
+    return 0
+
+
+def _select_timeline_slice(
+    timeline: list[Any],
+    matched_l1_ids: list[str],
+    *,
+    max_events: int,
+    max_event_chars: int,
+) -> tuple[list[dict[str, Any]], int]:
+    matched = set(matched_l1_ids)
+    rows = [row for row in timeline if isinstance(row, dict)]
+    rows.sort(key=_timeline_event_date)
+    selected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add(row: dict[str, Any]) -> None:
+        if len(selected) >= max_events:
+            return
+        obj_id = str(row.get("obj_id", "") or "")
+        key = obj_id or f"{row.get('meeting_id', '')}:{row.get('summary', '')}"
+        if key in seen:
+            return
+        seen.add(key)
+        selected.append(
+            {
+                "meeting_id": str(row.get("meeting_id", "") or ""),
+                "meeting_date": str(row.get("meeting_date", "") or ""),
+                "obj_id": obj_id,
+                "summary": _truncate_text(row.get("summary", row.get("content", "")), max_event_chars),
+            }
+        )
+
+    for row in rows:
+        if str(row.get("obj_id", "") or "") in matched:
+            add(row)
+    for row in rows:
+        add(row)
+    return selected, max(0, len(rows) - len(selected))
+
+
+def _node_query_similarity(query: str, node: dict[str, Any]) -> float:
+    query_tokens = _tokens(query)
+    if not query_tokens:
+        return 0.0
+    text = " ".join(
+        [
+            str(node.get("label", "") or ""),
+            str(node.get("current_state", "") or ""),
+            str(node.get("split_reason", "") or ""),
+            " ".join(str(x) for x in node.get("assignment_criteria", []) if str(x).strip())
+            if isinstance(node.get("assignment_criteria"), list)
+            else "",
+        ]
+    )
+    node_tokens = _tokens(text)
+    return len(query_tokens & node_tokens) / len(query_tokens) if node_tokens else 0.0
+
+
+def build_global_topic_map(
+    l2_view: dict[str, Any] | None,
+    l3_view: dict[str, Any] | None,
+    *,
+    max_chars: int = 800,
+) -> dict[str, Any]:
+    """Build a compact navigation map from materialized L3 plus remaining L2 labels."""
+    promoted_source_l2_ids: set[str] = set()
+    l3_families: list[dict[str, Any]] = []
+    char_count = 0
+
+    for l3_node in (l3_view or {}).get("l3_nodes", []) if isinstance(l3_view, dict) else []:
+        if not isinstance(l3_node, dict):
+            continue
+        children = []
+        for child in l3_node.get("child_l2_nodes", []) if isinstance(l3_node.get("child_l2_nodes"), list) else []:
+            if not isinstance(child, dict):
+                continue
+            child_row = {
+                "l2_id": str(child.get("l2_id", "") or ""),
+                "label": str(child.get("label", "") or ""),
+                "event_count": _node_event_count(child),
+            }
+            row_text = f"{child_row['l2_id']} {child_row['label']}"
+            if char_count + len(row_text) > max_chars and children:
+                continue
+            char_count += len(row_text)
+            children.append(child_row)
+        family = {
+            "l3_id": str(l3_node.get("l3_id", "") or ""),
+            "label": str(l3_node.get("label", "") or ""),
+            "child_l2": children,
+        }
+        promoted_source_l2_id = str(l3_node.get("promoted_from_l2_id", "") or "")
+        if promoted_source_l2_id:
+            promoted_source_l2_ids.add(promoted_source_l2_id)
+        family_text = f"{family['l3_id']} {family['label']}"
+        if char_count + len(family_text) <= max_chars or not l3_families:
+            char_count += len(family_text)
+            l3_families.append(family)
+
+    l2_topics: list[dict[str, Any]] = []
+    for node in (l2_view or {}).get("l2_nodes", []) if isinstance(l2_view, dict) else []:
+        if not isinstance(node, dict):
+            continue
+        l2_id = str(node.get("l2_id", "") or "")
+        if l2_id in promoted_source_l2_ids:
+            continue
+        row = {
+            "l2_id": l2_id,
+            "label": str(node.get("label", "") or ""),
+            "event_count": _node_event_count(node),
+        }
+        row_text = f"{row['l2_id']} {row['label']}"
+        if char_count + len(row_text) > max_chars and l2_topics:
+            continue
+        char_count += len(row_text)
+        l2_topics.append(row)
+
+    return {
+        "source": "long_term_global_topic_map",
+        "note": "Navigation context only; do not use as standalone factual evidence.",
+        "l3_families": l3_families,
+        "l2_topics": l2_topics,
+        "char_count": char_count,
+    }
+
+
+def select_layered_l2_context(
+    query: str,
+    l1_results: list[dict[str, Any]],
+    l2_index: dict[str, Any] | None,
+    l2_view: dict[str, Any] | None,
+    *,
+    l3_view: dict[str, Any] | None = None,
+    l3_index: dict[str, Any] | None = None,
+    max_relevant_l2_summaries: int = 3,
+    max_expanded_l2_topics: int = 2,
+    max_events_per_l2: int = 6,
+    max_events_per_child_l2: int = 8,
+    max_event_chars: int = 280,
+    prefer_materialized_l3: bool = True,
+    topic_size_penalty: float = 0.05,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    if not l1_results or not l2_index or not l2_view:
+        return [], [], {
+            "selected_l2_count": 0,
+            "selected_child_l2_count": 0,
+            "omitted_event_count": 0,
+            "large_l2_expanded_without_child_split": False,
+        }
+
+    l2_lookup = _l2_nodes_by_id(l2_view)
+    l3_nodes = {
+        str(node.get("l3_id", "") or ""): node
+        for node in (l3_view or {}).get("l3_nodes", []) if isinstance(node, dict)
+    } if isinstance(l3_view, dict) else {}
+    groups: dict[str, dict[str, Any]] = {}
+
+    for seed in l1_results:
+        obj_id = str(seed.get("obj_id", "") or "")
+        if not obj_id:
+            continue
+        assignment = l2_index.get(obj_id) if isinstance(l2_index, dict) else None
+        if not isinstance(assignment, dict):
+            continue
+        l3_assignment = l3_index.get(obj_id) if isinstance(l3_index, dict) else None
+        if prefer_materialized_l3 and isinstance(l3_assignment, dict):
+            l3_id = str(l3_assignment.get("l3_id", "") or "")
+            child_l2_id = str(l3_assignment.get("child_l2_id", "") or "")
+            l3_node = l3_nodes.get(l3_id)
+            child_node = _child_l2_nodes_by_id(l3_node or {}).get(child_l2_id)
+            if child_node:
+                key = f"child:{child_l2_id}"
+                groups.setdefault(
+                    key,
+                    {
+                        "source": "long_term_child_l2",
+                        "parent_l3_id": l3_id,
+                        "parent_l3_label": str((l3_node or {}).get("label", "") or ""),
+                        "promoted_from_l2_id": str((l3_node or {}).get("promoted_from_l2_id", "") or ""),
+                        "l2_id": child_l2_id,
+                        "label": str(child_node.get("label", "") or ""),
+                        "current_state": str(child_node.get("current_state", "") or ""),
+                        "node": child_node,
+                        "matched_l1_ids": [],
+                        "matched_seed_scores": [],
+                        "matched_importance": [],
+                    },
+                )
+                group = groups[key]
+                group["matched_l1_ids"].append(obj_id)
+                group["matched_seed_scores"].append(float(seed.get("score", 0.0) or 0.0))
+                group["matched_importance"].append(float(seed.get("importance", 0.0) or 0.0))
+                continue
+        l2_id = str(assignment.get("l2_id", "") or "")
+        node = l2_lookup.get(l2_id)
+        if not node:
+            continue
+        key = f"l2:{l2_id}"
+        groups.setdefault(
+            key,
+            {
+                "source": "long_term_l2",
+                "l2_id": l2_id,
+                "label": str(node.get("label") or assignment.get("l2_label") or ""),
+                "current_state": str(node.get("current_state", "") or ""),
+                "node": node,
+                "matched_l1_ids": [],
+                "matched_seed_scores": [],
+                "matched_importance": [],
+            },
+        )
+        group = groups[key]
+        group["matched_l1_ids"].append(obj_id)
+        group["matched_seed_scores"].append(float(seed.get("score", 0.0) or 0.0))
+        group["matched_importance"].append(float(seed.get("importance", 0.0) or 0.0))
+
+    rows: list[dict[str, Any]] = []
+    for group in groups.values():
+        node = group.pop("node")
+        timeline = node.get("timeline_digest", []) if isinstance(node.get("timeline_digest"), list) else []
+        topic_size = _node_event_count(node, timeline=timeline)
+        seed_scores = group.pop("matched_seed_scores")
+        importances = group.pop("matched_importance")
+        seed_score_aggregate = max(seed_scores) if seed_scores else 0.0
+        seed_count_coverage = len(set(group["matched_l1_ids"])) / max(1, len(l1_results))
+        query_similarity = _node_query_similarity(query, node)
+        importance = sum(importances) / len(importances) if importances else 0.0
+        currentness = 0.5
+        if timeline:
+            currentness = 1.0
+        l2_score = (
+            0.45 * seed_score_aggregate
+            + 0.25 * seed_count_coverage
+            + 0.15 * query_similarity
+            + 0.10 * currentness
+            + 0.05 * importance
+            - topic_size_penalty * math.log(topic_size + 1)
+        )
+        max_events = max_events_per_child_l2 if group["source"] == "long_term_child_l2" else max_events_per_l2
+        selected_timeline, omitted = _select_timeline_slice(
+            timeline,
+            group["matched_l1_ids"],
+            max_events=max_events,
+            max_event_chars=max_event_chars,
+        )
+        row = {
+            **group,
+            "topic_size": topic_size,
+            "selected_event_count": len(selected_timeline),
+            "omitted_event_count": omitted,
+            "timeline_digest": selected_timeline,
+            "selection_score": round(l2_score, 4),
+        }
+        if group["source"] == "long_term_l2" and topic_size > max_events_per_l2:
+            row["retrieval_slice"] = "selected_slice"
+        rows.append(row)
+
+    rows.sort(key=lambda row: -float(row.get("selection_score", 0.0) or 0.0))
+    selected = rows[:max(max_relevant_l2_summaries, max_expanded_l2_topics)]
+    selected = selected[:max_expanded_l2_topics] + selected[max_expanded_l2_topics:max_relevant_l2_summaries]
+    selected = selected[:max_relevant_l2_summaries]
+    l3_contexts: dict[str, dict[str, Any]] = {}
+    for row in selected:
+        parent_l3_id = str(row.get("parent_l3_id", "") or "")
+        if parent_l3_id:
+            l3_contexts[parent_l3_id] = {
+                "l3_id": parent_l3_id,
+                "label": str(row.get("parent_l3_label", "") or ""),
+                "source": "long_term_l3_topic_family",
+            }
+    debug = {
+        "selected_l2_count": sum(1 for row in selected if row.get("source") == "long_term_l2"),
+        "selected_child_l2_count": sum(1 for row in selected if row.get("source") == "long_term_child_l2"),
+        "omitted_event_count": sum(int(row.get("omitted_event_count", 0) or 0) for row in selected),
+        "large_l2_expanded_without_child_split": any(
+            row.get("source") == "long_term_l2" and int(row.get("topic_size", 0) or 0) > max_events_per_l2
+            and int(row.get("selected_event_count", 0) or 0) >= int(row.get("topic_size", 0) or 0)
+            for row in selected
+        ),
+    }
+    return selected, list(l3_contexts.values()), debug
 
 
 # ===================================================================
@@ -799,10 +1123,22 @@ def recall(
     l2_view: dict[str, Any] | None = None,
     l3_promotions: dict[str, Any] | None = None,
     l3_view: dict[str, Any] | None = None,
+    l3_index: dict[str, Any] | None = None,
     l2_index_path: Path | None = None,
     l2_view_path: Path | None = None,
     l3_promotions_path: Path | None = None,
     l3_view_path: Path | None = None,
+    l3_index_path: Path | None = None,
+    max_l1_seeds_for_prompt: int = 8,
+    max_global_topic_map_chars: int = 800,
+    max_relevant_l2_summaries: int = 3,
+    max_expanded_l2_topics: int = 2,
+    max_events_per_l2: int = 6,
+    max_events_per_child_l2: int = 8,
+    max_event_chars: int = 280,
+    prefer_materialized_l3: bool = True,
+    topic_size_penalty: float = 0.05,
+    include_retrieval_debug: bool = False,
     use_legacy_parent_fallback: bool = True,
 ) -> dict[str, Any]:
     """Execute a recall plan and return retrieved memories."""
@@ -834,10 +1170,27 @@ def recall(
         l3_promotions = load_l3_promotions(l3_promotions_path)
     if l3_view is None:
         l3_view = load_l3_view(l3_view_path)
+    if l3_index is None:
+        l3_index = load_l3_index(l3_index_path)
 
     stm_results: list[dict[str, Any]] = []
     l1_results: list[dict[str, Any]] = []
     l2_results: list[dict[str, Any]] = []
+    l3_results: list[dict[str, Any]] = []
+    global_topic_map = build_global_topic_map(
+        l2_view,
+        l3_view,
+        max_chars=max_global_topic_map_chars,
+    )
+    retrieval_debug: dict[str, Any] = {
+        "selected_l1_count": 0,
+        "selected_l2_count": 0,
+        "selected_child_l2_count": 0,
+        "global_topic_map_chars": int(global_topic_map.get("char_count", 0) or 0),
+        "expanded_context_chars": 0,
+        "omitted_event_count": 0,
+        "large_l2_expanded_without_child_split": False,
+    }
     l3_profile = None
 
     # --- short-term search (keyword-based; unchanged) ---
@@ -892,14 +1245,28 @@ def recall(
         else:
             l1_results = l1_candidates
         l1_results = expand_relation_graph(tree, l1_results, relations_index)
+        l1_results = sorted(
+            l1_results,
+            key=lambda row: -float(row.get("score", 0.0) or 0.0),
+        )[:max_l1_seeds_for_prompt]
 
-        l2_results = expand_l2_view_context(
+        l2_results, l3_results, topic_debug = select_layered_l2_context(
+            query,
             l1_results,
             l2_index,
             l2_view,
-            l3_promotions=l3_promotions,
             l3_view=l3_view,
+            l3_index=l3_index,
+            max_relevant_l2_summaries=max_relevant_l2_summaries,
+            max_expanded_l2_topics=max_expanded_l2_topics,
+            max_events_per_l2=max_events_per_l2,
+            max_events_per_child_l2=max_events_per_child_l2,
+            max_event_chars=max_event_chars,
+            prefer_materialized_l3=prefer_materialized_l3,
+            topic_size_penalty=topic_size_penalty,
         )
+        retrieval_debug.update(topic_debug)
+        retrieval_debug["selected_l1_count"] = len(l1_results)
         if not l2_results and use_legacy_parent_fallback:
             l2_results, l3_profile = expand_parent_chain(tree, l1_results)
         elif "long_term_l3" in targets:
@@ -914,6 +1281,9 @@ def recall(
         "long_term_results": l1_results,  # backward compatibility alias
         "long_term_l1": l1_results,
         "long_term_l2": l2_results,
+        "long_term_l3": l3_results,
+        "global_topic_map": global_topic_map,
+        "retrieval_debug": retrieval_debug if include_retrieval_debug else {},
         "project_profile": l3_profile,
     }
 
@@ -922,7 +1292,7 @@ def recall(
 # Format for prompt injection
 # ===================================================================
 
-def format_recall_for_prompt(recall_result: dict[str, Any]) -> str:
+def _format_recall_for_prompt_legacy(recall_result: dict[str, Any]) -> str:
     """Format recall results for prompt injection.
 
     Output order: L3 -> L2 -> L1 -> short-term.
@@ -1082,3 +1452,145 @@ def format_recall_for_prompt(recall_result: dict[str, Any]) -> str:
                 )
 
     return "\n".join(parts) if parts else "（無相關記憶）"
+
+
+def format_recall_for_prompt(
+    recall_result: dict[str, Any],
+    *,
+    include_debug: bool = False,
+) -> str:
+    """Format evidence-first layered long-term context for prompt injection."""
+    parts: list[str] = []
+
+    global_map = recall_result.get("global_topic_map")
+    if isinstance(global_map, dict) and (
+        global_map.get("l3_families") or global_map.get("l2_topics")
+    ):
+        parts.append("=== Global Topic Map ===")
+        parts.append("Low-resolution navigation context only; not standalone factual evidence.")
+        for family in global_map.get("l3_families", []):
+            if not isinstance(family, dict):
+                continue
+            parts.append(f"- L3 {family.get('l3_id', '')}: {family.get('label', '')}".rstrip())
+            for child in family.get("child_l2", []):
+                if isinstance(child, dict):
+                    parts.append(
+                        f"  - child L2 {child.get('l2_id', '')}: {child.get('label', '')}".rstrip()
+                    )
+        if global_map.get("l2_topics"):
+            parts.append("- Unpromoted L2 topics:")
+            for topic in global_map.get("l2_topics", []):
+                if isinstance(topic, dict):
+                    parts.append(f"  - {topic.get('l2_id', '')}: {topic.get('label', '')}".rstrip())
+
+    l1_results = recall_result.get(
+        "long_term_l1",
+        recall_result.get("long_term_results", []),
+    )
+    if l1_results:
+        parts.append("\n=== L1 Evidence Seeds ===")
+
+        def _sort_key(item: dict[str, Any]) -> str:
+            return item.get("meeting_date") or item.get("timestamp") or item.get("meeting_id", "")
+
+        for item in sorted(l1_results, key=_sort_key):
+            date_str = item.get("meeting_date") or item.get("timestamp", "")[:10]
+            parts.append(
+                f"- [{item.get('meeting_id', '?')} | {date_str} | {item.get('obj_id', '?')}] "
+                f"type={item.get('type', '?')} importance={item.get('importance', '?')} "
+                f"score={item.get('score', '?')}"
+            )
+            if item.get("content"):
+                parts.append(f"  content: {_truncate_text(item.get('content', ''), 100)}")
+            if item.get("evidence"):
+                parts.append(f"  evidence: {_truncate_text(item.get('evidence', ''), 100)}")
+
+    l2_results = recall_result.get("long_term_l2", [])
+    topic_l2_results = [item for item in l2_results if item.get("l2_id")]
+    if topic_l2_results:
+        parts.append("\n=== L2 / Child-L2 Evolution Context ===")
+        for node in topic_l2_results:
+            l2_id = node.get("l2_id", "?")
+            label = node.get("label", "")
+            parts.append(f"\n[{l2_id}] {label}".rstrip())
+            if node.get("parent_l3_id"):
+                parts.append(
+                    f"  parent L3: {node.get('parent_l3_id')} {node.get('parent_l3_label', '')}".rstrip()
+                )
+            materialized = node.get("materialized_l3")
+            if isinstance(materialized, dict) and materialized.get("l3_id"):
+                parts.append(f"  materialized L3: {materialized['l3_id']}")
+            promotion = node.get("promoted_to_l3")
+            if isinstance(promotion, dict) and promotion.get("l3_id"):
+                parts.append(
+                    f"  promoted L3: {promotion.get('l3_id', '')} status={promotion.get('status', '')}".rstrip()
+                )
+                for child in promotion.get("child_l2_candidates", []):
+                    if isinstance(child, dict) and child.get("child_l2_id"):
+                        parts.append(
+                            f"  child L2: {child.get('child_l2_id')} {child.get('label', '')}".rstrip()
+                        )
+            matched_l1_ids = node.get("matched_l1_ids", [])
+            if matched_l1_ids:
+                parts.append(f"  matched L1: {', '.join(str(x) for x in matched_l1_ids)}")
+            topic_size = node.get("topic_size")
+            if topic_size is None and isinstance(node.get("linked_obj_ids"), list):
+                topic_size = len(node["linked_obj_ids"])
+            selected_count = node.get("selected_event_count")
+            if selected_count is None and isinstance(node.get("timeline_digest"), list):
+                selected_count = len(node["timeline_digest"])
+            parts.append(
+                f"  topic_size={topic_size if topic_size is not None else '?'} "
+                f"selected_event_count={selected_count if selected_count is not None else '?'} "
+                f"omitted_event_count={node.get('omitted_event_count', 0)}"
+            )
+            if node.get("current_state"):
+                parts.append(f"  current_state: {_truncate_text(node['current_state'], 260)}")
+            timeline = node.get("timeline_digest", [])
+            if timeline:
+                parts.append("  timeline_digest:")
+                for entry in timeline:
+                    if not isinstance(entry, dict):
+                        continue
+                    date_str = entry.get("meeting_date") or entry.get("meeting_id", "?")
+                    obj_id = entry.get("obj_id", "")
+                    summary = entry.get("summary", "")
+                    parts.append(f"    - [{date_str} {obj_id}] {summary}".rstrip())
+
+            if isinstance(materialized, dict):
+                for child in materialized.get("child_l2_contexts", []):
+                    if not isinstance(child, dict) or not child.get("l2_id"):
+                        continue
+                    parts.append(
+                        f"  materialized child L2: {child.get('l2_id')} {child.get('label', '')}".rstrip()
+                    )
+
+    phase_l2_results = [item for item in l2_results if not item.get("l2_id")]
+    if phase_l2_results:
+        parts.append("\n=== Legacy Temporal L2 Fallback ===")
+        for phase in phase_l2_results:
+            phase_id = phase.get("phase_id", "?")
+            tr = phase.get("time_range", {})
+            parts.append(f"- [Phase {phase_id} | {tr.get('start', '?')} ~ {tr.get('end', '?')}]")
+            if phase.get("summary"):
+                parts.append(f"  summary: {phase['summary']}")
+
+    stm = recall_result.get("short_term_results", [])
+    if stm:
+        parts.append("\n=== Short-Term Memory Supplement ===")
+        for item in stm:
+            if item.get("type") == "action_item":
+                parts.append(
+                    f"- [TODO] {item.get('content', '')} "
+                    f"(status={item.get('status', '')})"
+                )
+            else:
+                parts.append(f"- [{item.get('meeting_id', '?')}] {item.get('summary', '')}")
+
+    debug = recall_result.get("retrieval_debug")
+    if include_debug and isinstance(debug, dict) and debug:
+        parts.append("\n=== Retrieval Debug ===")
+        for key in sorted(debug):
+            parts.append(f"- {key}: {debug[key]}")
+
+    return "\n".join(parts) if parts else "No relevant memory context found."

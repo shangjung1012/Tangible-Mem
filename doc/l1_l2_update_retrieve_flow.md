@@ -37,6 +37,7 @@ meeting transcript
   -> long_term/l3/l3_promotions.json             # oversized L2 review sidecar
   -> long_term/l3/l3_view.json                   # materialized L3 + child L2 sidecar
   -> long_term/l3/l3_index.json                  # L1 obj_id -> child L2 assignment
+  -> long_term/l3/l2_merge_review.json           # review-only tiny child L2 merge candidates
 ```
 
 Build canonical L1:
@@ -66,6 +67,12 @@ uv run long_term/cli.py validate-l2-view \
   --share-mem-root share_mem \
   --root long_term/l2 \
   --out long_term/l2/validation
+
+uv run long_term/cli.py validate-l3-view \
+  --share-mem-root share_mem \
+  --l2-root long_term/l2 \
+  --l3-root long_term/l3 \
+  --out long_term/l3/validation
 ```
 
 ## L1 Extraction
@@ -166,6 +173,9 @@ Materialized L3 output is written separately:
 
 - `long_term/l3/l3_view.json`: L3 parent plus child L2 nodes.
 - `long_term/l3/l3_index.json`: `obj_id -> l3_id / child_l2_id` assignment.
+- `long_term/l3/l2_merge_review.json`: tiny/weak child L2 merge review queue.
+- `long_term/l3/validation/`: split coverage, child size, prompt budget, and
+  merge review reports.
 
 The materializer only promotes candidates that already have at least two child
 L2 definitions. By default, it assigns every old L2 timeline item to exactly
@@ -194,6 +204,9 @@ LLM status for L3:
   missing assignments, and low-confidence suggestions fall back to local
   `assignment_criteria` and are marked for manual review.
 - Raw L1 evidence remains immutable in both modes.
+- Tiny child L2 nodes are never merged automatically. `l2_merge_review.json`
+  recommends sibling merge candidates for human review; accepted merges should
+  be represented as sidecar changes in a later step.
 
 ## Short-Term Memory
 
@@ -261,28 +274,42 @@ user question
   -> agent answer
 ```
 
-Routing is deterministic for now:
+Routing is deterministic for now, but meeting-memory queries keep long-term
+context on by default:
 
-- short-term only: latest status, TODOs, owners, next steps, current progress.
-- long-term only: history, rationale, architecture, method evolution, prior decisions.
-- both: questions that combine recent state with historical explanation.
-- none: non-meeting questions.
+- queries with recent-status hints retrieve both short-term and long-term;
+- historical, rationale, architecture, method evolution, and topic questions
+  retrieve long-term;
+- non-meeting questions retrieve none.
 
 Long-term retrieval starts from semantic L1 search over `share_mem/tree.json`.
-After L1 hits are found, recall expands upward:
+Every long-term retrieval also includes a compact global topic map, then expands
+only a small number of L2 / child L2 contexts from the selected L1 seeds:
 
 ```text
 L1 hit obj_id
-  -> long_term/l2/l2_index.json
-  -> l2_id
-  -> long_term/l2/l2_view.json
-  -> compact L2 state + timeline digest
-  -> optional long_term/l3/l3_promotions.json review context
-  -> optional long_term/l3/l3_view.json materialized child L2 context
+  -> compact global topic map from l3_view + unpromoted l2_view labels
+  -> long_term/l3/l3_index.json if the seed is in a promoted topic
+  -> materialized child L2 context
+  -> otherwise long_term/l2/l2_index.json and l2_view.json fallback
+  -> compact evolution slice, not full large-topic timeline
 ```
 
 Missing L2 assignments are non-fatal; the system can still answer from L1.
 Legacy temporal phase/profile expansion is fallback only.
+
+Prompt sections are ordered evidence-first:
+
+```text
+=== Global Topic Map ===
+=== L1 Evidence Seeds ===
+=== L2 / Child-L2 Evolution Context ===
+=== Retrieval Debug ===        # debug only
+```
+
+The global topic map is navigation context only. Concrete facts should be
+grounded in L1 evidence; L2/child L2 supplies cross-meeting evolution; L3 is a
+topic family layer.
 
 ## Demo-Safe Questions
 

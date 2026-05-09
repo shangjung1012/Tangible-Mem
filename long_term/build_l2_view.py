@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from share_mem.store import iter_l1_objects, iter_meetings, load_share_tree, normalize_share_tree
 from l3_promotion import (
+    build_l2_merge_review_sidecar,
     build_l3_materialization_sidecar,
     build_l3_promotion_sidecar,
     create_gemini_child_assignment_proposer,
@@ -34,7 +35,7 @@ L2_UNLINKED_FILE_NAME = "unlinked_l1_report.json"
 L2_ASSIGNMENT_REVIEW_FILE_NAME = "l2_assignment_review_report.json"
 L2_RESEARCH_LOGS_DIR_NAME = "l2_research_logs"
 SUPPORTED_L2_MODES = {"deterministic", "hybrid"}
-SUPPORTED_L3_MODES = {"deterministic", "llm-assisted"}
+SUPPORTED_L3_MODES = {"off", "deterministic", "llm-assisted"}
 
 TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+", re.IGNORECASE)
 SLUG_RE = re.compile(r"[^a-z0-9\u4e00-\u9fff]+", re.IGNORECASE)
@@ -1249,6 +1250,22 @@ def clean_l2_outputs(output_root: Path | str) -> None:
             shutil.rmtree(path)
 
 
+def clean_l3_outputs(output_root: Path | str) -> None:
+    root = Path(output_root).parent / "l3"
+    for file_name in (
+        "l3_promotions.json",
+        "l3_view.json",
+        "l3_index.json",
+        "l2_merge_review.json",
+    ):
+        path = root / file_name
+        if path.exists():
+            path.unlink()
+    validation = root / "validation"
+    if validation.exists():
+        shutil.rmtree(validation)
+
+
 def _event_id(meeting_id: str, index: int) -> str:
     return f"L2E-{meeting_id}-{index:03d}"
 
@@ -1372,6 +1389,9 @@ def _build_outputs(
     l3_mode: str = "deterministic",
     model: str | None = None,
     l3_source_l2_ids: set[str] | None = None,
+    l3_thresholds: dict[str, float] | None = None,
+    l3_materialization: bool = True,
+    l3_assignment_confidence_threshold: float = 0.55,
 ) -> dict[str, Any]:
     source_tree_hash = stable_hash(tree)
     linked_by_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1517,17 +1537,52 @@ def _build_outputs(
             model_name=model_name,
         )
 
-    l3_promotion_sidecar = build_l3_promotion_sidecar(
-        l2_view,
-        total_l1_count=source_l1_count,
-        child_taxonomy_proposer=child_taxonomy_proposer,
-        llm_source_l2_ids=l3_source_l2_ids,
-    )
-    l3_materialization_sidecar = build_l3_materialization_sidecar(
-        l2_view,
-        l3_promotion_sidecar,
-        assignment_proposer=child_assignment_proposer,
-    )
+    if l3_mode == "off":
+        l3_promotion_sidecar = {
+            "schema_version": 1,
+            "generated_at_utc": utc_now_iso(),
+            "source": "long_term_l2_view",
+            "total_l1_count": source_l1_count,
+            "promotion_count": 0,
+            "llm_usage": {"used": False, "stage": "none"},
+            "promotions": [],
+        }
+        l3_materialization_sidecar = {
+            "schema_version": 1,
+            "generated_at_utc": utc_now_iso(),
+            "source": "long_term_l3_materialization",
+            "materialized_l3_count": 0,
+            "l3_nodes": [],
+            "l3_index": {},
+            "llm_usage": {"used": False, "stage": "none"},
+        }
+    else:
+        l3_promotion_sidecar = build_l3_promotion_sidecar(
+            l2_view,
+            total_l1_count=source_l1_count,
+            thresholds=l3_thresholds,
+            child_taxonomy_proposer=child_taxonomy_proposer,
+            llm_source_l2_ids=l3_source_l2_ids,
+        )
+        l3_materialization_sidecar = (
+            build_l3_materialization_sidecar(
+                l2_view,
+                l3_promotion_sidecar,
+                assignment_proposer=child_assignment_proposer,
+                assignment_confidence_threshold=l3_assignment_confidence_threshold,
+            )
+            if l3_materialization
+            else {
+                "schema_version": 1,
+                "generated_at_utc": utc_now_iso(),
+                "source": "long_term_l3_materialization",
+                "materialized_l3_count": 0,
+                "l3_nodes": [],
+                "l3_index": {},
+                "llm_usage": {"used": False, "stage": "none"},
+            }
+        )
+    l2_merge_review_sidecar = build_l2_merge_review_sidecar(l3_materialization_sidecar)
     return {
         "l2_view": l2_view,
         "l2_index": dict(sorted(l2_index.items())),
@@ -1536,6 +1591,7 @@ def _build_outputs(
         "assignment_review_report": assignment_review_report,
         "l3_promotion_sidecar": l3_promotion_sidecar,
         "l3_materialization_sidecar": l3_materialization_sidecar,
+        "l2_merge_review_sidecar": l2_merge_review_sidecar,
         "manifest": manifest,
     }
 
@@ -1548,6 +1604,9 @@ def build_l2_view_outputs(
     model: str | None = None,
     l3_mode: str = "deterministic",
     l3_source_l2_ids: set[str] | None = None,
+    l3_thresholds: dict[str, float] | None = None,
+    l3_materialization: bool = True,
+    l3_assignment_confidence_threshold: float = 0.55,
     clean: bool = False,
     dry_run: bool = False,
 ) -> dict[str, Any]:
@@ -1560,6 +1619,7 @@ def build_l2_view_outputs(
     tree = load_share_mem_l1_tree(share_root)
     if clean and not dry_run:
         clean_l2_outputs(out_root)
+        clean_l3_outputs(out_root)
 
     outputs = _build_outputs(
         tree=tree,
@@ -1569,6 +1629,9 @@ def build_l2_view_outputs(
         l3_mode=l3_mode,
         model=model,
         l3_source_l2_ids=l3_source_l2_ids,
+        l3_thresholds=l3_thresholds,
+        l3_materialization=l3_materialization,
+        l3_assignment_confidence_threshold=l3_assignment_confidence_threshold,
     )
     if dry_run:
         return outputs["manifest"]
@@ -1586,6 +1649,7 @@ def build_l2_view_outputs(
         out_root.parent / "l3" / "l3_index.json",
         outputs["l3_materialization_sidecar"].get("l3_index", {}),
     )
+    _write_json(out_root.parent / "l3" / "l2_merge_review.json", outputs["l2_merge_review_sidecar"])
     return outputs["manifest"]
 
 
@@ -1632,6 +1696,44 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "May be passed multiple times. Deterministic L3 splits are still preserved."
         ),
     )
+    parser.add_argument(
+        "--l3-absolute-threshold",
+        type=float,
+        default=24,
+        help="Promote L2 when linked L1 count reaches this absolute threshold.",
+    )
+    parser.add_argument(
+        "--l3-share-threshold",
+        type=float,
+        default=0.30,
+        help="Promote L2 when it owns this share of linked L1 and passes the minimum count.",
+    )
+    parser.add_argument(
+        "--l3-share-minimum-l1-count",
+        type=float,
+        default=12,
+        help="Minimum linked L1 count before share-based L3 promotion applies.",
+    )
+    parser.add_argument(
+        "--l3-min-child-l2-count",
+        type=float,
+        default=2,
+        help="Minimum child L2 candidate count required for materialization.",
+    )
+    parser.add_argument(
+        "--l3-assignment-confidence-threshold",
+        type=float,
+        default=0.55,
+        help=(
+            "Reserved confidence threshold for LLM-assisted child assignment validation. "
+            "The deterministic validator still owns fallback behavior."
+        ),
+    )
+    parser.add_argument(
+        "--no-l3-materialization",
+        action="store_true",
+        help="Write L3 promotions but skip materialized l3_view/l3_index child assignments.",
+    )
     parser.add_argument("--clean", action="store_true", help="Clean generated L2 outputs.")
     parser.add_argument("--dry-run", action="store_true", help="Validate inputs without writing.")
     return parser.parse_args(argv)
@@ -1646,6 +1748,14 @@ def main(argv: list[str] | None = None) -> None:
         model=args.model,
         l3_mode=args.l3_mode,
         l3_source_l2_ids=set(args.l3_source_l2_id) if args.l3_source_l2_id else None,
+        l3_thresholds={
+            "absolute_l1_threshold": args.l3_absolute_threshold,
+            "share_threshold": args.l3_share_threshold,
+            "share_minimum_l1_count": args.l3_share_minimum_l1_count,
+            "min_child_l2_count": args.l3_min_child_l2_count,
+        },
+        l3_materialization=not bool(args.no_l3_materialization),
+        l3_assignment_confidence_threshold=args.l3_assignment_confidence_threshold,
         clean=bool(args.clean),
         dry_run=bool(args.dry_run),
     )

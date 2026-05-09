@@ -72,6 +72,8 @@ Build and validate L2:
 ```bash
 uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
 uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
+uv run long_term/cli.py validate-l3-view --share-mem-root share_mem --l2-root long_term/l2 --l3-root long_term/l3 --out long_term/l3/validation
+uv run python long_term/evaluate_retrieval.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out long_term/eval --no-llm
 ```
 
 Update short-term memory from a share_mem snapshot:

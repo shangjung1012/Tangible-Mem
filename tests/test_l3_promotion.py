@@ -12,6 +12,7 @@ if str(LONG_TERM_DIR) not in sys.path:
 
 from l3_promotion import (  # noqa: E402
     DEFAULT_L3_PROMOTION_THRESHOLDS,
+    build_l2_merge_review_sidecar,
     build_child_assignment_prompt,
     build_child_taxonomy_prompt,
     build_l3_materialization_sidecar,
@@ -161,6 +162,26 @@ class L3PromotionTests(unittest.TestCase):
             ],
         )
 
+    def test_memory_evaluation_has_reviewed_deterministic_child_candidates(self) -> None:
+        node = _l2_node(80, meeting_count=6)
+        node["l2_id"] = "L2-memory-evaluation-strategy"
+        node["label"] = "memory evaluation strategy"
+
+        sidecar = build_l3_promotion_sidecar({"l2_nodes": [node]}, total_l1_count=120)
+
+        record = sidecar["promotions"][0]
+        self.assertEqual(record["source_l2_id"], "L2-memory-evaluation-strategy")
+        self.assertEqual(record["status"], "promotion_candidate")
+        self.assertEqual(
+            record["mapping"]["new_child_l2_ids"],
+            [
+                "L2-overall-memory-system-evaluation",
+                "L2-memory-mechanism-evaluation-metrics",
+                "L2-evaluation-datasets-ground-truth",
+            ],
+        )
+        self.assertEqual(record["llm_usage"]["used"], False)
+
     def test_llm_taxonomy_proposal_can_supply_child_l2_candidates(self) -> None:
         node = _l2_node(30, meeting_count=4)
 
@@ -209,8 +230,8 @@ class L3PromotionTests(unittest.TestCase):
         known["l2_id"] = "L2-transcript-segmentation-and-idea-unit-coverage"
         known["label"] = "transcript segmentation and idea-unit coverage"
         unknown = _l2_node(30, meeting_count=4)
-        unknown["l2_id"] = "L2-memory-evaluation-strategy"
-        unknown["label"] = "memory evaluation strategy"
+        unknown["l2_id"] = "L2-memory-retrieval"
+        unknown["label"] = "memory retrieval"
         calls: list[str] = []
 
         def proposer(l2_node: dict) -> dict:
@@ -243,12 +264,12 @@ class L3PromotionTests(unittest.TestCase):
             generated_at_utc="2026-05-09T00:00:00Z",
         )
 
-        self.assertEqual(calls, ["L2-memory-evaluation-strategy"])
+        self.assertEqual(calls, ["L2-memory-retrieval"])
         records = {record["source_l2_id"]: record for record in sidecar["promotions"]}
         self.assertEqual(records["L2-transcript-segmentation-and-idea-unit-coverage"]["llm_usage"]["used"], False)
-        self.assertEqual(records["L2-memory-evaluation-strategy"]["status"], "promotion_candidate")
+        self.assertEqual(records["L2-memory-retrieval"]["status"], "promotion_candidate")
         self.assertEqual(
-            records["L2-memory-evaluation-strategy"]["mapping"]["new_child_l2_ids"],
+            records["L2-memory-retrieval"]["mapping"]["new_child_l2_ids"],
             ["L2-benchmark-and-dataset-evaluation", "L2-llm-as-judge-scoring"],
         )
 
@@ -288,20 +309,20 @@ class L3PromotionTests(unittest.TestCase):
             {"l2_nodes": [memory_eval, retrieval]},
             total_l1_count=100,
             child_taxonomy_proposer=proposer,
-            llm_source_l2_ids={"L2-memory-evaluation-strategy"},
+            llm_source_l2_ids={"L2-memory-retrieval"},
             generated_at_utc="2026-05-09T00:00:00Z",
         )
 
-        self.assertEqual(calls, ["L2-memory-evaluation-strategy"])
+        self.assertEqual(calls, ["L2-memory-retrieval"])
         records = {record["source_l2_id"]: record for record in sidecar["promotions"]}
         self.assertEqual(records["L2-memory-evaluation-strategy"]["status"], "promotion_candidate")
-        self.assertEqual(records["L2-memory-retrieval"]["status"], "needs_split_review")
-        self.assertEqual(records["L2-memory-retrieval"]["llm_usage"]["used"], False)
+        self.assertEqual(records["L2-memory-retrieval"]["status"], "promotion_candidate")
+        self.assertEqual(records["L2-memory-retrieval"]["llm_usage"]["used"], True)
 
     def test_llm_supplied_child_taxonomy_materializes_unknown_large_l2(self) -> None:
         node = _l2_node(3, meeting_count=2)
-        node["l2_id"] = "L2-memory-evaluation-strategy"
-        node["label"] = "memory evaluation strategy"
+        node["l2_id"] = "L2-custom-evaluation-topic"
+        node["label"] = "custom evaluation topic"
         node["timeline_digest"] = [
             {
                 "meeting_id": "0318",
@@ -361,7 +382,7 @@ class L3PromotionTests(unittest.TestCase):
 
         self.assertEqual(promotions["promotions"][0]["status"], "promotion_candidate")
         self.assertEqual(materialized["materialized_l3_count"], 1)
-        self.assertEqual(materialized["l3_nodes"][0]["promoted_from_l2_id"], "L2-memory-evaluation-strategy")
+        self.assertEqual(materialized["l3_nodes"][0]["promoted_from_l2_id"], "L2-custom-evaluation-topic")
         self.assertEqual(set(materialized["l3_index"]), {"L1-a", "L1-b", "L1-c"})
 
     def test_llm_prompts_use_only_promoted_l2_compact_evidence(self) -> None:
@@ -536,6 +557,55 @@ class L3PromotionTests(unittest.TestCase):
         )
         self.assertEqual(materialized["l3_nodes"][0]["coverage"]["assigned_l1_count"], 3)
         self.assertEqual(materialized["l3_nodes"][0]["manual_review_count"], 2)
+
+    def test_tiny_child_l2_is_reported_as_merge_candidate(self) -> None:
+        l3_view = {
+            "l3_nodes": [
+                {
+                    "l3_id": "L3-memory-retrieval",
+                    "label": "memory retrieval",
+                    "child_l2_nodes": [
+                        {
+                            "l2_id": "L2-benchmark-evaluation",
+                            "label": "benchmark evaluation",
+                            "assignment_criteria": ["benchmark", "locomo", "memo"],
+                            "timeline_digest": [
+                                {"obj_id": "L1-a", "summary": "LOCOMO benchmark setup."},
+                                {"obj_id": "L1-b", "summary": "MEMO benchmark setup."},
+                            ],
+                            "linked_obj_ids": ["L1-a", "L1-b"],
+                            "meeting_ids": ["0318"],
+                            "event_count": 2,
+                        },
+                        {
+                            "l2_id": "L2-dataset-benchmark-evaluation",
+                            "label": "dataset benchmark evaluation",
+                            "assignment_criteria": ["benchmark", "dataset", "locomo"],
+                            "timeline_digest": [
+                                {"obj_id": "L1-c", "summary": "Dataset benchmark and LOCOMO quality."},
+                                {"obj_id": "L1-d", "summary": "Dataset quality for benchmark scoring."},
+                                {"obj_id": "L1-e", "summary": "Benchmark dataset coverage."},
+                                {"obj_id": "L1-f", "summary": "Evaluation dataset notes."},
+                                {"obj_id": "L1-g", "summary": "Dataset setup."},
+                            ],
+                            "linked_obj_ids": ["L1-c", "L1-d", "L1-e", "L1-f", "L1-g"],
+                            "meeting_ids": ["0318", "0429"],
+                            "event_count": 5,
+                        },
+                    ],
+                }
+            ]
+        }
+
+        review = build_l2_merge_review_sidecar(l3_view, generated_at_utc="2026-05-09T00:00:00Z")
+
+        self.assertEqual(review["schema_version"], 1)
+        self.assertEqual(review["merge_review_count"], 1)
+        item = review["merge_reviews"][0]
+        self.assertEqual(item["source_child_l2_id"], "L2-benchmark-evaluation")
+        self.assertEqual(item["recommended_target_child_l2_id"], "L2-dataset-benchmark-evaluation")
+        self.assertEqual(item["action"], "merge_candidate")
+        self.assertIn("too_few_l1_nodes", item["reason_codes"])
 
 
 if __name__ == "__main__":

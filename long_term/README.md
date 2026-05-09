@@ -28,6 +28,12 @@ uv run long_term/cli.py validate-l2-view \
   --share-mem-root share_mem \
   --root long_term/l2 \
   --out long_term/l2/validation
+
+uv run long_term/cli.py validate-l3-view \
+  --share-mem-root share_mem \
+  --l2-root long_term/l2 \
+  --l3-root long_term/l3 \
+  --out long_term/l3/validation
 ```
 
 The current L2 implementation is deterministic and does not call Gemini. It
@@ -64,6 +70,9 @@ uv run long_term/cli.py build-l2-view \
 - `long_term/l3/l3_promotions.json`: oversized L2 promotion candidates.
 - `long_term/l3/l3_view.json`: materialized L3 parents with child L2 nodes.
 - `long_term/l3/l3_index.json`: `obj_id -> L3 / child L2` lookup.
+- `long_term/l3/l2_merge_review.json`: review-only tiny/weak child L2 merge candidates.
+- `long_term/l3/validation/`: L3 split coverage, child-size, prompt-budget, and merge-review reports.
+- `long_term/eval/`: retrieval parameter evaluation queries and reports.
 
 ## Recall Path
 
@@ -72,15 +81,16 @@ Long-term recall is bottom-up:
 ```text
 query
   -> semantic L1 retrieval from share_mem/tree.json
-  -> l2_index.json lookup by obj_id
-  -> l2_view.json compact topic context
-  -> optional l3_promotions.json review context
-  -> optional l3_view.json materialized child L2 context
+  -> compact global topic map from l3_view + unpromoted l2_view labels
+  -> l3_index.json lookup by seed obj_id, when available
+  -> materialized child L2 context first
+  -> l2_index.json / l2_view.json fallback when no child L2 assignment exists
   -> formatted prompt context
 ```
 
-Missing L2 assignments are non-fatal. Legacy temporal phase/profile expansion is
-compatibility fallback only.
+Missing L2 assignments are non-fatal. Large L2 topics are sliced for prompt
+budget safety and should not inject their full timeline. Legacy temporal
+phase/profile expansion is compatibility fallback only.
 
 ## L3 Promotion
 
@@ -94,6 +104,7 @@ The current L3 implementation is materialized as sidecars only:
 - promotion review sidecar: `long_term/l3/l3_promotions.json`
 - materialized child L2 sidecars: `long_term/l3/l3_view.json` and
   `long_term/l3/l3_index.json`
+- merge-review sidecar: `long_term/l3/l2_merge_review.json`
 
 This does not rewrite raw L1 evidence, `l2_index.json`, or `l2_view.json`.
 
@@ -113,11 +124,36 @@ oversized L2 during review:
 Even in LLM-assisted mode, raw L1 evidence, `l2_index.json`, and `l2_view.json`
 are not rewritten.
 
+Tiny child L2 nodes are not merged automatically. The builder writes
+`l2_merge_review.json` so a reviewer can decide whether a child L2 with fewer
+than three L1 events should be merged into a sibling. The validator checks that
+tiny child L2 nodes appear in that review sidecar.
+
+## Retrieval Evaluation
+
+Run the lightweight retrieval-only parameter grid:
+
+```bash
+uv run python long_term/evaluate_retrieval.py \
+  --queries long_term/eval/long_term_retrieval_queries.jsonl \
+  --out long_term/eval \
+  --no-llm
+```
+
+The default CLI run is a quick single-parameter smoke pass. Pass comma-separated
+values such as `--top-k-raw 10,20,30` or `--topic-size-penalty 0,0.05,0.10`
+when you want a larger grid. The report compares expected L1/L2/L3 hits, prompt
+character budget, omitted events, and whether a large L2 was expanded without
+child split context. It does not call a final answer LLM; retrieval may still
+use embeddings.
+
 ## Current Generated State
 
 - Source L1: 7 Grace meetings, 509 L1 objects.
 - L2 view: 15 L2 topics, 477 linked L1 objects, 32 unlinked L1 objects.
-- Validation: 0 severe issues; 0 manual-review warnings.
+- L2 validation: 0 severe issues; 0 warnings.
+- L3 validation: 0 severe issues; 8 warnings, all from oversized child L2 /
+  prompt-slice diagnostics rather than assignment coverage failures.
 - Materialized L3: 2 parents, 6 child L2 topics, 184 assigned L1 objects, 0 unassigned L1 objects.
 - Reviewed deterministic L3: `L3-transcript-segmentation-and-idea-unit-coverage`.
 - LLM-assisted L3: `L3-memory-evaluation-strategy`.

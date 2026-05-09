@@ -16,11 +16,11 @@ from memory_router import plan_memory_retrieval  # noqa: E402
 
 
 class MemoryRouterTests(unittest.TestCase):
-    def test_recent_status_query_routes_short_term_only(self) -> None:
-        plan = plan_memory_retrieval("目前最新待辦和 owner 是誰？")
+    def test_recent_status_query_routes_short_term_and_long_term(self) -> None:
+        plan = plan_memory_retrieval("目前 action items 是什麼？")
 
-        self.assertEqual(plan["targets"], ["short_term"])
-        self.assertEqual(plan["strategy"], "short_term_only")
+        self.assertEqual(plan["targets"], ["short_term", "long_term"])
+        self.assertEqual(plan["strategy"], "both")
         self.assertGreaterEqual(plan["confidence"], 0.7)
 
     def test_history_rationale_query_routes_long_term_only(self) -> None:
@@ -36,6 +36,18 @@ class MemoryRouterTests(unittest.TestCase):
         self.assertEqual(plan["targets"], ["long_term"])
         self.assertEqual(plan["strategy"], "long_term_only")
         self.assertGreaterEqual(plan["confidence"], 0.7)
+
+    def test_manager_agent_evolution_query_routes_long_term(self) -> None:
+        plan = plan_memory_retrieval("manager-agent 架構怎麼演變？")
+
+        self.assertIn("long_term", plan["targets"])
+        self.assertNotIn("short_term", plan["targets"])
+
+    def test_non_meeting_greeting_routes_none(self) -> None:
+        plan = plan_memory_retrieval("早安，謝謝")
+
+        self.assertEqual(plan["targets"], [])
+        self.assertEqual(plan["strategy"], "none")
 
     def test_recent_plus_history_query_routes_both(self) -> None:
         plan = plan_memory_retrieval("目前最新進度是什麼，跟之前的設計演進有什麼差異？")

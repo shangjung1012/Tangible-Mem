@@ -77,6 +77,14 @@ DEFAULT_L3_PROMOTION_THRESHOLDS: dict[str, float] = {
     "min_child_l2_count": 2,
 }
 
+CHILD_L2_SIZE_BUCKETS = {
+    "needs_merge_review": (0, 2),
+    "weak_child_l2": (3, 4),
+    "ideal": (5, 25),
+    "acceptable_but_watch": (26, 35),
+    "needs_split_review": (36, None),
+}
+
 DEFAULT_CHILD_L2_CANDIDATES_BY_SOURCE_L2_ID: dict[str, list[dict[str, Any]]] = {
     "L2-transcript-segmentation-and-idea-unit-coverage": [
         {
@@ -113,6 +121,51 @@ DEFAULT_CHILD_L2_CANDIDATES_BY_SOURCE_L2_ID: dict[str, list[dict[str, Any]]] = {
                 "line",
                 "range",
                 "support",
+            ],
+        },
+    ],
+    "L2-memory-evaluation-strategy": [
+        {
+            "child_l2_id": "L2-overall-memory-system-evaluation",
+            "label": "Overall Memory System Evaluation",
+            "split_reason": "Separate overall evaluation design, ablation setup, and benchmark comparison strategy.",
+            "assignment_criteria": [
+                "evaluation plan",
+                "ablation",
+                "baseline",
+                "system evaluation",
+                "rag-only",
+                "short-term-only",
+                "long-term-only",
+            ],
+        },
+        {
+            "child_l2_id": "L2-memory-mechanism-evaluation-metrics",
+            "label": "Memory Mechanism Evaluation & Metrics",
+            "split_reason": "Separate scoring criteria, LLM-as-judge behavior, metrics, and correctness checks.",
+            "assignment_criteria": [
+                "llm-as-judge",
+                "llm as judge",
+                "metric",
+                "scoring",
+                "correctness",
+                "judge",
+                "quality",
+            ],
+        },
+        {
+            "child_l2_id": "L2-evaluation-datasets-ground-truth",
+            "label": "Evaluation Datasets & Ground Truth",
+            "split_reason": "Separate LOCOMO/MEMO/MIRIX dataset choice, ground truth, and multi-hop question design.",
+            "assignment_criteria": [
+                "locomo",
+                "memo",
+                "mirix",
+                "dataset",
+                "ground truth",
+                "multi-hop",
+                "multi hop",
+                "question",
             ],
         },
     ],
@@ -155,6 +208,71 @@ def _entry_text(entry: dict[str, Any]) -> str:
             str(entry.get("obj_id", "") or ""),
         ]
     )
+
+
+def _jaccard(left: set[str], right: set[str]) -> float:
+    if not left and not right:
+        return 0.0
+    union = left | right
+    return len(left & right) / len(union) if union else 0.0
+
+
+def child_l2_size_bucket(event_count: int) -> str:
+    count = int(event_count or 0)
+    if count < 3:
+        return "needs_merge_review"
+    if count <= 4:
+        return "weak_child_l2"
+    if count <= 25:
+        return "ideal"
+    if count <= 35:
+        return "acceptable_but_watch"
+    return "needs_split_review"
+
+
+def _child_event_count(child: dict[str, Any]) -> int:
+    try:
+        count = int(child.get("event_count", 0) or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count:
+        return count
+    linked = _as_list(child.get("linked_obj_ids"))
+    if linked:
+        return len(linked)
+    return len(_as_list(child.get("timeline_digest")))
+
+
+def _child_similarity(source: dict[str, Any], target: dict[str, Any]) -> tuple[float, list[str]]:
+    source_label = _tokens(str(source.get("label", "") or ""))
+    target_label = _tokens(str(target.get("label", "") or ""))
+    source_criteria = _tokens(" ".join(str(x) for x in _as_list(source.get("assignment_criteria"))))
+    target_criteria = _tokens(" ".join(str(x) for x in _as_list(target.get("assignment_criteria"))))
+    source_timeline = _tokens(" ".join(_entry_text(x) for x in _as_list(source.get("timeline_digest")) if isinstance(x, dict)))
+    target_timeline = _tokens(" ".join(_entry_text(x) for x in _as_list(target.get("timeline_digest")) if isinstance(x, dict)))
+    source_meetings = {str(x) for x in _as_list(source.get("meeting_ids")) if str(x).strip()}
+    target_meetings = {str(x) for x in _as_list(target.get("meeting_ids")) if str(x).strip()}
+
+    label_score = _jaccard(source_label, target_label)
+    criteria_score = _jaccard(source_criteria, target_criteria)
+    timeline_score = _jaccard(source_timeline, target_timeline)
+    meeting_score = _jaccard(source_meetings, target_meetings)
+    score = (
+        0.30 * label_score
+        + 0.35 * criteria_score
+        + 0.25 * timeline_score
+        + 0.10 * meeting_score
+    )
+    reason_codes: list[str] = []
+    if label_score >= 0.25:
+        reason_codes.append("label_overlap")
+    if criteria_score >= 0.25:
+        reason_codes.append("assignment_criteria_overlap")
+    if timeline_score >= 0.15:
+        reason_codes.append("timeline_overlap")
+    if meeting_score >= 0.20:
+        reason_codes.append("meeting_overlap")
+    return round(score, 4), reason_codes
 
 
 def _extract_json_object(raw_text: str) -> dict[str, Any]:
@@ -498,6 +616,7 @@ def _assign_timeline_to_children(
     l2_node: dict[str, Any],
     child_candidates: list[dict[str, Any]],
     assignment_proposer: ChildAssignmentProposer | None = None,
+    assignment_confidence_threshold: float = L3_ASSIGNMENT_CONFIDENCE_THRESHOLD,
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[str, Any]]]:
     children = [
         child
@@ -536,7 +655,7 @@ def _assign_timeline_to_children(
             proposed_child_id = str(llm_assignment.get("child_l2_id", "") or "").strip()
             confidence = float(llm_assignment.get("confidence", 0.0) or 0.0)
             llm_reason = str(llm_assignment.get("reason", "") or "")
-            if proposed_child_id in child_ids and confidence >= L3_ASSIGNMENT_CONFIDENCE_THRESHOLD:
+            if proposed_child_id in child_ids and confidence >= assignment_confidence_threshold:
                 child_id = proposed_child_id
                 score = confidence
                 reason = "llm_assignment"
@@ -590,6 +709,7 @@ def build_l3_materialization_sidecar(
     *,
     generated_at_utc: str | None = None,
     assignment_proposer: ChildAssignmentProposer | None = None,
+    assignment_confidence_threshold: float = L3_ASSIGNMENT_CONFIDENCE_THRESHOLD,
 ) -> dict[str, Any]:
     """Materialize promotion candidates into L3 nodes with child L2 assignments.
 
@@ -621,6 +741,7 @@ def build_l3_materialization_sidecar(
             source_node,
             children,
             assignment_proposer=assignment_proposer,
+            assignment_confidence_threshold=assignment_confidence_threshold,
         )
         child_nodes: list[dict[str, Any]] = []
         for child in children:
@@ -694,6 +815,104 @@ def build_l3_materialization_sidecar(
                 else "Default materialization uses deterministic assignment criteria or human-reviewed child candidates."
             ),
         },
+    }
+
+
+def build_l2_merge_review_sidecar(
+    l3_view: dict[str, Any],
+    *,
+    generated_at_utc: str | None = None,
+) -> dict[str, Any]:
+    """Build a sidecar review queue for tiny or oversized materialized child L2s.
+
+    This is review-only. It recommends possible sibling merge targets but does
+    not rewrite child assignments, the active L2 view, or raw L1 evidence.
+    """
+    merge_reviews: list[dict[str, Any]] = []
+    child_size_summary: list[dict[str, Any]] = []
+
+    for parent in _as_list(l3_view.get("l3_nodes")):
+        if not isinstance(parent, dict):
+            continue
+        parent_l3_id = str(parent.get("l3_id", "") or "")
+        children = [
+            child
+            for child in _as_list(parent.get("child_l2_nodes"))
+            if isinstance(child, dict) and str(child.get("l2_id", "") or "").strip()
+        ]
+        for child in children:
+            child_id = str(child.get("l2_id", "") or "")
+            event_count = _child_event_count(child)
+            bucket = child_l2_size_bucket(event_count)
+            child_size_summary.append(
+                {
+                    "parent_l3_id": parent_l3_id,
+                    "child_l2_id": child_id,
+                    "label": str(child.get("label", "") or ""),
+                    "event_count": event_count,
+                    "size_bucket": bucket,
+                }
+            )
+
+            if bucket not in {"needs_merge_review", "weak_child_l2", "needs_split_review"}:
+                continue
+
+            reason_codes: list[str] = []
+            action = "manual_review"
+            if bucket == "needs_merge_review":
+                reason_codes.append("too_few_l1_nodes")
+                action = "merge_candidate"
+            elif bucket == "weak_child_l2":
+                reason_codes.append("weak_child_l2")
+                action = "merge_review"
+            else:
+                reason_codes.append("too_many_l1_nodes")
+                action = "split_review"
+
+            best_target: dict[str, Any] | None = None
+            best_score = 0.0
+            best_reasons: list[str] = []
+            if bucket in {"needs_merge_review", "weak_child_l2"}:
+                for sibling in children:
+                    sibling_id = str(sibling.get("l2_id", "") or "")
+                    if sibling_id == child_id:
+                        continue
+                    score, sibling_reasons = _child_similarity(child, sibling)
+                    if score > best_score:
+                        best_score = score
+                        best_target = sibling
+                        best_reasons = sibling_reasons
+                if best_target is not None and best_score >= 0.18:
+                    reason_codes.extend(best_reasons or ["highest_sibling_similarity"])
+                else:
+                    best_target = None
+                    action = "manual_merge_review"
+
+            merge_reviews.append(
+                {
+                    "parent_l3_id": parent_l3_id,
+                    "source_child_l2_id": child_id,
+                    "source_child_l2_label": str(child.get("label", "") or ""),
+                    "source_event_count": event_count,
+                    "recommended_target_child_l2_id": (
+                        str(best_target.get("l2_id", "") or "") if best_target else ""
+                    ),
+                    "recommended_target_label": (
+                        str(best_target.get("label", "") or "") if best_target else ""
+                    ),
+                    "similarity_score": round(best_score, 4),
+                    "reason_codes": sorted(set(reason_codes)),
+                    "action": action,
+                }
+            )
+
+    return {
+        "schema_version": L3_PROMOTION_SCHEMA_VERSION,
+        "generated_at_utc": generated_at_utc if generated_at_utc is not None else _utc_now_iso(),
+        "source": "long_term_l3_child_l2_merge_review",
+        "merge_review_count": len(merge_reviews),
+        "merge_reviews": merge_reviews,
+        "child_size_summary": child_size_summary,
     }
 
 

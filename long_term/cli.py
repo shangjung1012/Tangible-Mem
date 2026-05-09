@@ -22,6 +22,10 @@ COMMANDS: dict[str, CommandSpec] = {
         module_path="validate_l2_view",
         description="Validate the generated L2 view and linked L1 evidence.",
     ),
+    "validate-l3-view": CommandSpec(
+        module_path="validate_l3_view",
+        description="Validate L3 promotion, child L2, and merge-review sidecars.",
+    ),
 }
 
 LEGACY_COMMANDS = {
@@ -36,6 +40,7 @@ LEGACY_COMMANDS = {
 ALIASES = {
     "build-l2": "build-l2-view",
     "validate-l2": "validate-l2-view",
+    "validate-l3": "validate-l3-view",
 }
 
 LEGACY_NOTE = (

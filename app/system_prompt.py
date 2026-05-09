@@ -45,3 +45,17 @@ TEMPLATE_MEETING_QA = """
 8. 當問題同時涉及近期狀態與歷史演進時，優先呼叫 `get_memory_context`，讓 router 同時取回兩邊 context；必要時再補叫單一工具。
 9. 若是一般寒暄或不需要會議資料即可回答的問題，可以不呼叫工具。
 """
+
+MEMORY_CONTEXT_RULES = """
+
+Memory context rules:
+- Global Topic Map is navigation context only. Do not use it as standalone factual evidence.
+- For concrete factual claims, rely on L1 Evidence Seeds first.
+- L2 / child L2 context explains cross-meeting topic evolution and current state.
+- L3 only names a topic family or parent context; it is not a detail source.
+- If L1 evidence conflicts with L2/L3 summaries, prefer the L1 evidence.
+- Even when the question looks local, briefly include L2 background when it helps explain the current decision.
+- Do not claim facts that are not present in the provided context.
+"""
+
+TEMPLATE_MEETING_QA = TEMPLATE_MEETING_QA + MEMORY_CONTEXT_RULES

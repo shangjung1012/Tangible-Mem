@@ -10,6 +10,7 @@ LONG_TERM_L2_INDEX_PATH = LONG_TERM_DIR / "l2" / "l2_index.json"
 LONG_TERM_L2_VIEW_PATH = LONG_TERM_DIR / "l2" / "l2_view.json"
 LONG_TERM_L3_PROMOTIONS_PATH = LONG_TERM_DIR / "l3" / "l3_promotions.json"
 LONG_TERM_L3_VIEW_PATH = LONG_TERM_DIR / "l3" / "l3_view.json"
+LONG_TERM_L3_INDEX_PATH = LONG_TERM_DIR / "l3" / "l3_index.json"
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -149,6 +150,18 @@ def retrieve_long_term_context(
         l2_view_path=LONG_TERM_L2_VIEW_PATH,
         l3_promotions_path=LONG_TERM_L3_PROMOTIONS_PATH,
         l3_view_path=LONG_TERM_L3_VIEW_PATH,
+        l3_index_path=LONG_TERM_L3_INDEX_PATH,
+        top_k_raw=30,
+        max_l1_seeds_for_prompt=8,
+        max_global_topic_map_chars=800,
+        max_relevant_l2_summaries=3,
+        max_expanded_l2_topics=2,
+        max_events_per_l2=6,
+        max_events_per_child_l2=8,
+        max_event_chars=280,
+        prefer_materialized_l3=True,
+        topic_size_penalty=0.05,
+        include_retrieval_debug=False,
     )
     context = format_recall_for_prompt(result)
     if len(context) > max_context_chars:
