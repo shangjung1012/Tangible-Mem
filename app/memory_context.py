@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,7 @@ def retrieve_memory_context(
     query: str,
     api_key: str,
     model_name: str,
+    planner_model_name: str | None = None,
     max_context_chars: int = 4000,
 ) -> str:
     plan = plan_memory_retrieval(query)
@@ -86,6 +88,7 @@ def retrieve_memory_context(
                     query=query,
                     api_key=api_key,
                     model_name=model_name,
+                    planner_model_name=planner_model_name,
                     max_context_chars=long_term_budget,
                 )[:long_term_budget],
             ]
@@ -127,13 +130,15 @@ def retrieve_long_term_context(
     query: str,
     api_key: str,
     model_name: str,
+    planner_model_name: str | None = None,
     max_context_chars: int = 4000,
 ) -> str:
     tree = load_json_object(LONG_TERM_TREE_PATH)
     if not tree:
         return "（無長期記憶）"
 
-    plan = plan_recall(query=query, api_key=api_key, model_name=model_name)
+    effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
+    plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
     long_targets = [t for t in plan.get("search_targets", []) if t.startswith("long_term_")]
     if not long_targets:
         long_targets = ["long_term_l1", "long_term_l2", "long_term_l3"]

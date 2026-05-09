@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -276,6 +277,45 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertGreaterEqual(payload["metrics"]["selected_l1_count"], 1)
             self.assertIn("formatted_prompt_context", payload)
 
+    def test_llm_trace_uses_planner_model_separately_from_answer_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "recall_planner.plan_recall",
+                return_value={
+                    "complexity": "simple",
+                    "search_targets": ["long_term_l1"],
+                    "keywords": ["memory", "retrieval"],
+                },
+            ) as planner, patch(
+                "recall.recall",
+                return_value={
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-0307-001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1},
+                },
+            ) as recall_call, patch(
+                "recall.format_recall_for_prompt",
+                return_value="=== L1 Evidence Seeds ===\nL1-0307-001",
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root).run_trace(
+                    "memory retrieval",
+                    no_llm=False,
+                    model_name="gemini-2.5-pro",
+                    planner_model_name="gemini-2.5-flash",
+                )
+
+        self.assertTrue(result["use_llm_planner"])
+        self.assertEqual(result["planner_model"], "gemini-2.5-flash")
+        self.assertEqual(result["answer_model"], "gemini-2.5-pro")
+        self.assertEqual(planner.call_args.kwargs["model_name"], "gemini-2.5-flash")
+        self.assertEqual(recall_call.call_args.kwargs["model_name"], "gemini-2.5-pro")
+
     def test_no_llm_experiment_writes_strategy_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -296,6 +336,45 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertTrue((run_dir / "contexts" / "q001" / "layered_memory.txt").exists())
             self.assertIn("avg_context_tokens", result["summary"])
             self.assertIn("layered_memory", result["queries"][0]["strategies"])
+
+    def test_experiment_records_planner_model_and_passes_it_to_trace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "memory_observatory.services.experiment_runner.RetrievalTraceService.run_trace",
+                return_value={
+                    "strategy": "layered_memory",
+                    "query": "How does memory retrieval work?",
+                    "l1_evidence_seeds": [{"obj_id": "L1-0307-001"}],
+                    "l2_evolution_context": [],
+                    "l3_navigation": [],
+                    "context": "layered context",
+                    "metrics": {
+                        "estimated_context_tokens": 3,
+                        "total_ms": 1,
+                        "retrieval_ms": 1,
+                        "generation_ms": 0,
+                    },
+                },
+            ) as trace_call:
+                result = run_experiment(
+                    repo_root=root,
+                    queries_path=root / "long_term" / "eval" / "long_term_retrieval_queries.jsonl",
+                    out=root / "memory_observatory" / "runs",
+                    strategies=["layered_memory"],
+                    retrieval_mode="lexical",
+                    no_llm=False,
+                    generate_answers=False,
+                    model="gemini-2.5-pro",
+                    planner_model="gemini-2.5-flash",
+                    max_context_chars=2000,
+                )
+
+        self.assertEqual(result["config"]["model"], "gemini-2.5-pro")
+        self.assertEqual(result["config"]["planner_model"], "gemini-2.5-flash")
+        self.assertEqual(trace_call.call_args.kwargs["model_name"], "gemini-2.5-pro")
+        self.assertEqual(trace_call.call_args.kwargs["planner_model_name"], "gemini-2.5-flash")
 
     def test_formatter_can_expand_l1_evidence_for_observatory_answers(self) -> None:
         long_content = "A standard RAG approach is insufficient because it cannot track rejected versus adopted topic lifecycle state."

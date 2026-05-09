@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import sys
 import time
+import os
 from pathlib import Path
 from typing import Any
 
 from .data_loader import ObservatoryDataLoader, REPO_ROOT
 from .token_utils import context_token_metrics
+
+DEFAULT_PLANNER_MODEL = os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
 
 
 def _ensure_long_term_path(repo_root: Path) -> None:
@@ -68,6 +71,7 @@ class RetrievalTraceService:
         no_llm: bool = True,
         include_debug: bool = True,
         model_name: str = "gemini-2.5-pro",
+        planner_model_name: str | None = None,
         max_context_chars: int = 4000,
     ) -> dict[str, Any]:
         started = time.perf_counter()
@@ -75,6 +79,7 @@ class RetrievalTraceService:
         from recall_planner import plan_recall
 
         tree = self.loader.load_share_tree()
+        effective_planner_model = planner_model_name or DEFAULT_PLANNER_MODEL or model_name
         if no_llm:
             plan = _heuristic_plan(query)
             api_key: str | list[str] = ""
@@ -85,7 +90,7 @@ class RetrievalTraceService:
                 api_key = load_api_keys()
             except Exception:
                 api_key = ""
-            plan = plan_recall(query=query, api_key=api_key, model_name=model_name)
+            plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
             plan["search_targets"] = ["long_term_l1", "long_term_l2", "long_term_l3"]
         params = self._recall_params()
         result = recall(
@@ -137,6 +142,8 @@ class RetrievalTraceService:
             "query": query,
             "retrieval_mode": retrieval_mode,
             "use_llm_planner": not no_llm,
+            "planner_model": effective_planner_model if not no_llm else "heuristic",
+            "answer_model": model_name,
             "plan": plan,
             "global_topic_map": result.get("global_topic_map", {}),
             "l1_evidence_seeds": result.get("long_term_l1", []),

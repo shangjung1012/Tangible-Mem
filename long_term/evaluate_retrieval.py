@@ -105,12 +105,14 @@ def run_retrieval_once(
     api_key: str | list[str],
     model_name: str,
     params: dict[str, Any],
+    planner_model_name: str | None = None,
     embed_cache: EmbedCache | None = None,
     use_llm_planner: bool = True,
     retrieval_mode: str = "semantic",
 ) -> dict[str, Any]:
+    effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
     plan = (
-        plan_recall(query=query, api_key=api_key, model_name=model_name)
+        plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
         if use_llm_planner
         else _heuristic_plan(query)
     )
@@ -204,6 +206,7 @@ def evaluate_retrieval_grid(
     out: Path | str = DEFAULT_OUT,
     api_key: str | list[str] | None = None,
     model_name: str = "gemini-2.5-pro",
+    planner_model_name: str | None = None,
     share_mem_root: Path | str = REPO_ROOT / "share_mem",
     grid: dict[str, list[Any]] | None = None,
     use_llm_planner: bool = True,
@@ -233,6 +236,7 @@ def evaluate_retrieval_grid(
                 tree=tree,
                 api_key=api_key or "",
                 model_name=model_name,
+                planner_model_name=planner_model_name,
                 params=params,
                 embed_cache=embed_cache,
                 use_llm_planner=use_llm_planner,
@@ -292,6 +296,8 @@ def evaluate_retrieval_grid(
         "run_count": len(runs),
         "retrieval_mode": retrieval_mode,
         "use_llm_planner": use_llm_planner,
+        "model": model_name,
+        "planner_model": planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
         "runs": runs,
         "best_params": runs[0]["params"] if runs else {},
     }
@@ -333,6 +339,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--out", default=str(DEFAULT_OUT))
     parser.add_argument("--share-mem-root", default=str(REPO_ROOT / "share_mem"))
     parser.add_argument("--model", default=os.getenv("GEMINI_MODEL", "gemini-2.5-pro"))
+    parser.add_argument(
+        "--planner-model",
+        default=os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
+        help="Model used only for LLM recall planning. Recall scoring still uses --model.",
+    )
     parser.add_argument("--top-k-raw", default="20,30")
     parser.add_argument("--max-l1-seeds-for-prompt", default="5,8")
     parser.add_argument("--max-events-per-l2", default="2")
@@ -365,6 +376,7 @@ def main(argv: list[str] | None = None) -> None:
         out=args.out,
         share_mem_root=args.share_mem_root,
         model_name=args.model,
+        planner_model_name=args.planner_model,
         grid=grid,
         use_llm_planner=not bool(args.no_llm),
         retrieval_mode=args.retrieval_mode,

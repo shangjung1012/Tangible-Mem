@@ -46,12 +46,15 @@ async function runTrace() {
   const mode = $("#traceMode").value;
   const noLlm = $("#traceNoLlm").checked;
   const debug = $("#traceDebug").checked;
-  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=${debug}`);
+  const plannerModel = encodeURIComponent($("#tracePlannerModel").value || "");
+  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=${debug}&planner_model=${plannerModel}`);
   const out = $("#traceOutput");
   out.replaceChildren(
     card("Query / Plan", `${data.metrics.selected_l1_count} L1, ${data.metrics.selected_l2_count} L2, ${data.metrics.selected_child_l2_count} child L2`, [
       { text: data.retrieval_mode },
       { text: data.use_llm_planner ? "LLM planner" : "heuristic" },
+      { text: `planner: ${data.planner_model || ""}` },
+      { text: `answer: ${data.answer_model || ""}` },
     ]),
     section("Global Topic Map", JSON.stringify(data.global_topic_map, null, 2)),
     listSection("L1 Evidence Seeds", data.l1_evidence_seeds, (item) =>
@@ -218,6 +221,7 @@ $("#runExperiment").addEventListener("click", async () => {
       retrieval_mode: "lexical",
       no_llm: true,
       generate_answers: false,
+      planner_model: "gemini-2.5-flash",
       max_context_chars: 4000,
     }),
   });

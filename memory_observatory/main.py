@@ -135,12 +135,14 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
         retrieval_mode: str = Query("lexical", pattern="^(lexical|semantic)$"),
         no_llm: bool = True,
         include_debug: bool = True,
+        planner_model: str | None = None,
     ) -> dict[str, Any]:
         return RetrievalTraceService(root).run_trace(
             query=query,
             retrieval_mode=retrieval_mode,
             no_llm=no_llm,
             include_debug=include_debug,
+            planner_model_name=planner_model,
         )
 
     @app.get("/api/feedback/importance")
@@ -207,6 +209,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
             no_llm=bool(payload.get("no_llm", True)),
             generate_answers=bool(payload.get("generate_answers", False)),
             model=payload.get("model", "gemini-2.5-pro"),
+            planner_model=payload.get("planner_model"),
             max_context_chars=int(payload.get("max_context_chars", 4000) or 4000),
         )
         return {"run_id": result["run_id"], "summary": result["summary"]}

@@ -152,6 +152,19 @@ seed count, child-L2 events, expanded topic count, and topic-size penalty. The
 report compares expected L1/L2/L3 hits, prompt character budget, omitted events,
 and whether a large L2 was expanded without child split context.
 
+For API-backed planner experiments, `--model` remains the recall/answer model
+and `--planner-model` controls only the Gemini recall planner. The intended fast
+live setting is:
+
+```bash
+uv run python long_term/evaluate_retrieval.py \
+  --queries long_term/eval/long_term_retrieval_queries.jsonl \
+  --out long_term/eval \
+  --retrieval-mode lexical \
+  --model gemini-2.5-pro \
+  --planner-model gemini-2.5-flash
+```
+
 ## Current Generated State
 
 - Source L1: 7 Grace meetings, 509 L1 objects.

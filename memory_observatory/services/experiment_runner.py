@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -197,9 +198,11 @@ def run_experiment(
     no_llm: bool = True,
     generate_answers: bool = False,
     model: str = "gemini-2.5-pro",
+    planner_model: str | None = None,
     max_context_chars: int = 4000,
 ) -> dict[str, Any]:
     repo = Path(repo_root)
+    effective_planner_model = planner_model or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
     loader = ObservatoryDataLoader(repo)
     query_rows = loader.load_eval_queries(queries_path)
     strategy_list = [str(item).strip() for item in strategies if str(item).strip()]
@@ -213,6 +216,7 @@ def run_experiment(
         "no_llm": no_llm,
         "generate_answers": generate_answers,
         "model": model,
+        "planner_model": effective_planner_model,
         "max_context_chars": max_context_chars,
     }
     report_store.write_json(run_dir / "run_config.json", config)
@@ -258,6 +262,7 @@ def run_experiment(
                 no_llm=no_llm,
                 include_debug=True,
                 model_name=model,
+                planner_model_name=effective_planner_model,
                 max_context_chars=max_context_chars,
             )
             layered["scores"] = _score_layered(row, layered)

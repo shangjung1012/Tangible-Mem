@@ -107,6 +107,44 @@ class MemoryRouterTests(unittest.TestCase):
         self.assertIn("=== Long-Term Memory ===", context)
         self.assertIn("historical long-term context", context)
 
+    def test_long_term_context_uses_planner_model_separately_from_answer_model(self) -> None:
+        with patch.object(
+            memory_context,
+            "load_json_object",
+            return_value={"meetings": []},
+        ), patch.object(
+            memory_context,
+            "plan_recall",
+            return_value={
+                "complexity": "simple",
+                "search_targets": ["long_term_l1"],
+                "keywords": ["memory"],
+            },
+        ) as planner, patch.object(
+            memory_context,
+            "recall",
+            return_value={
+                "global_topic_map": {},
+                "long_term_l1": [],
+                "long_term_l2": [],
+                "long_term_l3": [],
+            },
+        ) as recall_call, patch.object(
+            memory_context,
+            "format_recall_for_prompt",
+            return_value="formatted context",
+        ):
+            context = memory_context.retrieve_long_term_context(
+                query="memory retrieval",
+                api_key="test-key",
+                model_name="answer-model",
+                planner_model_name="planner-model",
+            )
+
+        self.assertEqual(context, "formatted context")
+        self.assertEqual(planner.call_args.kwargs["model_name"], "planner-model")
+        self.assertEqual(recall_call.call_args.kwargs["model_name"], "answer-model")
+
     def test_unified_context_preserves_both_sections_when_truncated(self) -> None:
         with patch.object(
             memory_context,

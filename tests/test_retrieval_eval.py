@@ -59,6 +59,34 @@ class RetrievalEvalTests(unittest.TestCase):
         self.assertEqual(kwargs["plan"]["search_targets"], ["long_term_l1", "long_term_l2", "long_term_l3"])
         self.assertEqual(kwargs["retrieval_mode"], "lexical")
 
+    def test_llm_mode_can_use_separate_planner_model(self) -> None:
+        with patch.object(
+            evaluate_retrieval,
+            "plan_recall",
+            return_value={
+                "complexity": "simple",
+                "search_targets": ["long_term_l1"],
+                "keywords": ["memory"],
+            },
+        ) as planner, patch.object(
+            evaluate_retrieval,
+            "recall",
+            return_value={"long_term_l1": [], "long_term_l2": [], "long_term_l3": [], "retrieval_debug": {}},
+        ) as recall_call:
+            evaluate_retrieval.run_retrieval_once(
+                query="memory retrieval",
+                tree={"meetings": []},
+                api_key="test-key",
+                model_name="answer-model",
+                planner_model_name="planner-model",
+                params={"top_k_raw": 10},
+                use_llm_planner=True,
+                retrieval_mode="lexical",
+            )
+
+        self.assertEqual(planner.call_args.kwargs["model_name"], "planner-model")
+        self.assertEqual(recall_call.call_args.kwargs["model_name"], "answer-model")
+
     def test_eval_script_writes_json_and_markdown_report(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

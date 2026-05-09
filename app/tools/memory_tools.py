@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from config import GEMINI_API_KEY, MAX_RECALL_CONTEXT_CHARS, MODEL_NAME
+from config import GEMINI_API_KEY, MAX_RECALL_CONTEXT_CHARS, MODEL_NAME, PLANNER_MODEL_NAME
 from memory_context import (
     retrieve_long_term_context,
     retrieve_memory_context,
@@ -27,6 +27,7 @@ def get_memory_context(query: str) -> dict[str, str]:
         query=query,
         api_key=GEMINI_API_KEY,
         model_name=MODEL_NAME,
+        planner_model_name=PLANNER_MODEL_NAME,
         max_context_chars=MAX_RECALL_CONTEXT_CHARS,
     )
     log_tool_result("get_memory_context", query, context)
@@ -70,6 +71,7 @@ def get_long_term_memory_context(query: str) -> dict[str, str]:
         query=query,
         api_key=GEMINI_API_KEY,
         model_name=MODEL_NAME,
+        planner_model_name=PLANNER_MODEL_NAME,
         max_context_chars=MAX_RECALL_CONTEXT_CHARS,
     )
     log_tool_result("get_long_term_memory_context", query, context)

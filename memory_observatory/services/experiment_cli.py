@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from .data_loader import REPO_ROOT
@@ -20,6 +21,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-llm", action="store_true", help="Do not call planner, embedding API, or final answer LLM.")
     parser.add_argument("--generate-answers", action="store_true")
     parser.add_argument("--model", default="gemini-2.5-pro")
+    parser.add_argument(
+        "--planner-model",
+        default=os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
+        help="Model used only for LLM recall planning. Answer generation still uses --model.",
+    )
     parser.add_argument("--max-context-chars", type=int, default=4000)
     return parser.parse_args()
 
@@ -36,6 +42,7 @@ def main() -> None:
         no_llm=args.no_llm or not args.generate_answers,
         generate_answers=args.generate_answers,
         model=args.model,
+        planner_model=args.planner_model,
         max_context_chars=args.max_context_chars,
     )
     print(f"wrote Memory Observatory run: {Path(args.out) / result['run_id']}")

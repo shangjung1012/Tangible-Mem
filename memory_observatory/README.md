@@ -64,6 +64,27 @@ No-LLM mode does not call the Gemini planner, embedding API, or final answer
 LLM. It uses lexical RAG, heuristic layered recall planning, deterministic token
 estimates, and retrieval/context-build timing.
 
+## Run With Flash Planner And Pro Answers
+
+When you want live answers but still want faster planning, keep `--model` for
+answer generation and set `--planner-model` separately:
+
+```bash
+uv run python memory_observatory/run_experiment.py \
+  --queries long_term/eval/long_term_retrieval_queries.jsonl \
+  --out memory_observatory/runs \
+  --strategies full_context,rag_baseline,layered_memory \
+  --retrieval-mode lexical \
+  --generate-answers \
+  --model gemini-2.5-pro \
+  --planner-model gemini-2.5-flash
+```
+
+`--planner-model` is used only for the Gemini recall planner. Layered recall
+and answer generation still use `--model`. The same split is available through
+the `/api/retrieval/trace` `planner_model` query parameter and the
+`GEMINI_PLANNER_MODEL` environment variable.
+
 Each run writes:
 
 - `run_config.json`

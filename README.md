@@ -45,6 +45,8 @@ GEMINI_API_KEY=your_api_key_here
 GEMINI_API_KEYS=key_1,key_2,key_3
 # optional: 預設生成模型（bridge / summarize / planner / gate）
 GEMINI_MODEL=gemini-2.5-pro
+# optional: planner-only model for long-term recall planning
+GEMINI_PLANNER_MODEL=gemini-2.5-flash
 # optional: 長期記憶 semantic retrieval 使用的 embedding 模型
 GEMINI_EMBED_MODEL=text-embedding-004
 ```
@@ -88,6 +90,9 @@ Run a no-LLM comparison lab experiment:
 ```bash
 uv run python memory_observatory/run_experiment.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out memory_observatory/runs --strategies full_context,rag_baseline,layered_memory --retrieval-mode lexical --no-llm
 ```
+
+For live answer experiments, keep `--model gemini-2.5-pro` for answers and use
+`--planner-model gemini-2.5-flash` only for the recall planner.
 
 Update short-term memory from a share_mem snapshot:
 
