@@ -1,0 +1,1029 @@
+{
+  "query_id": "q002",
+  "query": "manager-agent 架構是怎麼演變出來的？",
+  "strict_gold_obj_ids": [
+    "L1-0429-107",
+    "L1-0429-139",
+    "L1-0429-145"
+  ],
+  "expected_obj_ids": [
+    "L1-0318-002",
+    "L1-0318-006",
+    "L1-0506-015",
+    "L1-0506-017"
+  ],
+  "expected_l2_ids": [
+    "L2-agentic-pipeline-control"
+  ],
+  "expected_l3_ids": [],
+  "notes": "Manager-agent and typed-agent orchestration evolution.",
+  "strategies": {
+    "full_context": {
+      "strategy": "full_context",
+      "context": "=== Full Context Baseline ===\n\n--- meeting 0307 ---\n[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。\n[SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。\n[SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是 Zoom，你拿到 transcript 時，它會直接標出這段聲音是我這邊進來的，也就是我講的；維希講話就會標成維希。它會直接標好。可是我們現在的來源不是這樣。\n[SPEAKER_01]: 跑了一次之後，它會產生一個 Memory。這個 Memory 的樣子我還沒有仔細設計過。大概來說，首先它會為每一次 meeting 建一個 summary。\n[SPEAKER_01]: 像我剛剛跑了 16 跟 17 這兩次。原本是 16，現在是 17，它會更新這一邊，把它變成 2。meeting window 就是這一次的 summary。你會發現它會直接加一個 17 出來，接下來還有幾個 action items。\n[SPEAKER_01]: 這個 action items 主要是它會自己判斷哪一個事件需要記起來。比如說我們之前有一些持續性的內容，像是要調查 GPU 的東西。它還有一個特點，就是如果今天又講到上次提到的東西，它會把相關記憶更新。\n[SPEAKER_00]: 左邊是只有 16，右邊是跑完 17 之後的結果。它會去更新。你說哪一個是 16？左邊是 16，右邊是 17 嗎？左邊沒有 16 嗎？還是 16 是第一個？所以左邊這個 16，就是一次 meeting 完之後它建構出來的記憶架構。\n[SPEAKER_01]: 右邊現在等於是這個 model。\n[SPEAKER_00]: 你是說把 16、17 都當成 input 嗎？還是跑 17？\n[SPEAKER_01]: 第一次是 16，因為一開始什麼都沒有，所以 16 跑完之後會產生一個 memory。17 則是根據 16 去 update，它會判斷這個要不要更新。\n[SPEAKER_00]: 如果是第一次使用，它會從零生出一個吧。第二次使用時，它會根據現有的記憶體去更新。所以你現在想展現的是它怎麼更新，對不對？在 17 那邊，舊的節點都還在，然後像剛剛那樣長出一條線，因為某些東西是 16 所不存在的 item。\n[SPEAKER_01]: 對。現在這個 demo 是：如果 16 已經討論過某個東西，17 又再提到，它就會更新。其實如果 16 講過，17 又提到，它會把這個 item 的 meeting ID 加一，並補上一些內容。\n[SPEAKER_00]: 這邊要怎麼看出它是又被講過一次？那邊看起來好像是一樣的對話。\n[SPEAKER_01]: 以這個點來說，代表我們在下一次 meeting 的時候沒有解決它，也可能根本沒有提到它。\n[SPEAKER_00]: 那有沒有例子是某一件事情在兩次 meeting 都被提到？\n[SPEAKER_01]: 像這個 item 可能是標註的部分。原本 16 可能有提到你們先去標註什麼；在 17 裡，SPEAKER_02 會說它已經經過標註，並且觀察到一些問題之類的。\n[SPEAKER_00]: 所以同一件事情在 16 的時候有點像是 TODO，但 17 的時候有一些進展狀態。\n[SPEAKER_01]: 對。現在是這樣：它會有一個 item，這個 item 之後可以再設計，但目前會記錄這是什麼東西，有 title 跟一些記錄。16 這邊可能只是簡單說某件事要去做，17 就會更新相關進度。\n[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。\n[SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。\n[SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。\n[SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。\n[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？\n[SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。\n[SPEAKER_00]: 三次內的重要事情，這是 short term。Long term 是陳佑貞那邊主要負責。我覺得如果是這樣，佑貞剛剛看的那篇所謂 long term，應該不是我們一般想像中大腦裡的 long term，對不對？\n[SPEAKER_02]: 對，所以我們才想說要挑戰它。我們現在會覺得它抓得很瑣碎、很知識點，是因為它本身的設定比較沒有 focus 在跨時間軸要抓什麼。\n[SPEAKER_00]: 它抓的是時間問題嗎？它比較像是抓今天這個資訊本身，或是資訊有沒有被推翻。我們在看那一篇時，我猜它比較是從 large language model 相關 work 延伸出來的。所以他們講 long term 的時候，跟我們講的 long term 應該會滿不一樣。\n[SPEAKER_00]: 我覺得還是有一點相近。相近的是概念，但情境跟做法不一樣。看起來那篇的情境其實也是在處理短期記憶，只是不是 real time。\n[SPEAKER_01]: 因為我自己覺得那篇的問題是，如果上下文太長，model 會忘記前面的內容。但我們目前的架構在 short term 的部分只會記得三次；如果超過三次，它會覺得不重要就刪掉。可是如果今天我們曾經提過某些東西，我現在有點不知道距離怎麼定義。\n[SPEAKER_00]: 因為你現在做的東西，某方面對我來說就像 long term memory 了，已經超過這一次 session 的記憶。你說 session 是什麼意思？16 是上週五的 meeting，17 是現在的 meeting。你可以想像我們今天講三次 meeting，就是 17、16、15。這個機制其實某方面已經比剛才佑貞那篇還要長，因為你的歷史更長。\n[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。\n[SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。\n[SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所以到最後，long term 跟 short term 應該會需要結合。\n[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。\n[SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用到最多的資訊。\n[SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。\n[SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。在做 update 時，我們現在的 Short Term Memory 會做快速 update；但是 Long Term Memory 在適時的時候，應該要可以調一些東西出來，然後改變我們 real time 要講的內容。像我們現在的 Long Term 應該是從 script 調出來。\n[SPEAKER_01]: Short term 的 memory 說不定也可以，但現在 long term 是直接讀每一次的組織稿。那 working 呢？Working 真的只有 real time，對不對？對，因為是 real time，所以我們的想法就是單純記錄現在講了什麼。\n[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？\n[SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。\n[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。\n[SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。\n[SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起來很 make sense，也很 reasonable。\n[SPEAKER_00]: 但要怎麼證明我們後面的確需要這些架構？別人可能會說搞不好用一般的 LLM 就好，你怎麼確定這個比較好？他們是怎麼證明的？我的想像是應該會有 history in dataset，也應該會有 benchmarking，但我不是很確定。\n[SPEAKER_00]: 可以去看一下。然後再看能不能用同樣方式，搭配我們自己的 dataset 做那種類型的測試。我覺得最後的 demo 可以是：原本 vanilla agent 對話會是這樣；用了這個架構之後會變成那樣。你可以設計幾個問題直接問下去，看到它的答案不同。\n[SPEAKER_00]: 某些東西是 signal，表示它有 short term memory；某些問題則用來展現它有 long term memory。也就是要怎麼證明這件事情的存在。他們的 paper 裡應該會有吧？我記得他們可能就是拿過去的問題來測。\n[SPEAKER_00]: 對，你們下次可以講一下：像他們這些 work 是怎麼證明他們 model 的表現。\n[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。\n[SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。\n[SPEAKER_01]: 我們想問一下 API key 的使用，因為我們跑 Memory 之類的會需要用到 API key。這個部分有辦法報帳，還是要怎麼處理？\n[SPEAKER_00]: 像我們以前打的是 Gemini 的 API。你們那個一年額度應該不夠用。一年？一年不會有 token，它只有信用卡進去後給的 300 美金，但我們好像都用完了。那個都是可以報帳的。\n[SPEAKER_00]: 我們可能用一個實驗室帳號，然後用那個 API key。那個東西可以先建立起來。其他人如果要用，也會知道要用那個 API key。用我們實驗室的帳號，然後那些費用都可以報帳。就不用用自己的。\n[SPEAKER_00]: 好，我可能得離開了。還有什麼後面的嗎？\n[SPEAKER_01]: 如果我們是建立在拿別人的 open source 來改，這件事情是可以的嗎？\n[SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，例如剛剛那個 memory topology。我還有點難以看出它的 long term 強在哪裡、哪裡不一樣。\n[SPEAKER_00]: 如果有某種方式可以 highlight，證明它 exhibit 出 long term memory 這件事，例如一個事件的發展不一樣。原本的 agent 不會有那樣的記憶；如果用這個架構，它會有那樣的記憶。如果能在 talk 裡看得出來會比較好。\n[SPEAKER_00]: 好，所以接下來應該是你們中研院的申請要先處理。你們需要寫什麼計畫嗎？還是直接申請就好？\n[SPEAKER_01]: 他昨天辦的說明會要填的欄位，我看一下。我再分享好了。要填名字、郵件、履歷、成績單、研究成果、實習動機。\n[SPEAKER_00]: 研究成果是什麼意思？他們是要你提交研究成果嗎？\n[SPEAKER_01]: 研究成果應該是可放可不放。它要填的是這些，研究成果不是必須，因為它也有開放研究生，所以可能有人大學有做過專題就可以放。\n[SPEAKER_00]: 這些都是你要寫的檔案，對不對？那就好好寫。\n[SPEAKER_00]: 如果你們確定的話，我也許可以問問一些老師，就是中研院那邊的人。不過你們三個人最終應該不會都在同一個人那邊。\n[SPEAKER_00]: 他們應該不太可能一次收三位。我猜他們通常會說可以收幾個大學部、幾個研究生之類的。所以你們先把這些東西都寫好，盡量展現誠意。因為如果我聯絡他們，他們就會打開你們的東西來看。\n[SPEAKER_00]: OK，那就這樣。你研究一下我的 deadline 是什麼時候。是 3 月 7 號嗎？我覺得是你們丟出去之後，我才會收到信，對不對？\n[SPEAKER_01]: 我看起來它沒有說，只說資料繳交時間。我看一下，它有一個 FAQ。\n[SPEAKER_01]: 他沒有說，只說申請時間是這樣，然後就沒了。那上下班時間是比照全職專任研究人員嗎？它有開放大學部嗎？有，有大學生。暑假要是在學學生。OK。\n[SPEAKER_02]: 她說推薦信沒有截止日期，但是會在 3 月 16 日開始審查，因為我們的截止日是 3 月 15 日。\n[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？\n[SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。\n[SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。\n[SPEAKER_00]: 好，那就先這樣，掰掰。\n[SPEAKER_01]: 欸，那個誰，陳佑貞在幹嘛？你的格式要不要來跟我對一下？什麼格式？你說。\n[SPEAKER_01]: 我現在在 app 同層建 short term，short term 裡面吃的是 meeting_recording 裡 transcript 的東西。我的也是吃這個啊，我的也是吃 transcript。我的意思是整個資料夾的格式，如果你知道要怎麼推，我們才不會有兩份 meeting transcript 之類的。我看一下，我現在只有一個檔案，就是一個 Python 檔而已。\n[SPEAKER_02]: 那我只要把我的 Python 檔改成讀你的那個就沒事？對，它就是一個 Python 檔，你應該可以直接 pull 下來。好，我跟你講，我現在原本用的是 Python 版的 Membrane，現在應該會直接從 open source 開始改。我把那個 GitHub pull 下來，看你要不要一起做。可以啊，我覺得我們可以一起做。\n[SPEAKER_04]: 雖然我單純就只是一來一回而已，但我覺得 long term 要改得比較多。感覺可以。若文的內容好像還有滿多在講類似的東西。我覺得 Memory 產出的資料好簡陋。你說它抓出來的那些東西嗎？對，就是它抓出來之後很瑣碎。不過我覺得有一部分也是因為我們的對話紀錄頗瑣碎。\n[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。\n[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。\n[SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。\n[SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還好，所以我一開始也是報一堆錯。那我們前面有錄音嗎？我從中間開始錄，這樣有點尷尬。\n[SPEAKER_01]: 太好了，中間有滿多東西。我是從開始講那個的時候錄。你剛剛今天會議有錄嗎？對，我剛剛有一部錄影。那可以，謝謝。不過是從你們講中研院之後開始。OK，時間不太久。\n\n--- meeting 0318 ---\n[SPEAKER_02]: 喔，那個圖是他們自己畫的喔。\n[SPEAKER_01]: 他們畫了一個蠻可愛的動畫，就是他基本上他們也是在處理長文字\n[SPEAKER_01]: 但我覺得他們的 Long Context 應該都弄不到像我們那麼 long 吧。\n[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。\n[SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要有一個 shared blackboard，因為每個 agent 現在都只有自己那個 chunk，然後還有前一個 agent summarize 過來的東西，但他們沒有一個 global 的理解。\n[SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看到某一句話下面一半，那根本就抓不起來人們的意思。\n[SPEAKER_01]: 然後這是 2024 年。\n[SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？\n[SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。\n[SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？\n[SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。\n[SPEAKER_01]: 然後呢，這個比如 agent 這個人，他是一直會去有一個把 chunk 丟進去。我覺得他沒有自己看完這一邊，這個 manager 感覺最後他就是做什麼 worker agent segmentation、manager agent 的 integration。他是回答問題，只是我不知道他接 input preparation agent、channel agent communication。\n[SPEAKER_01]: 他這個反正他就是個 chatbot 嘛，然後我還沒有仔細看他的 manager 是要做什麼事情，對。但是 anyway，這一篇也是 2024 年了啦，所以以現在的這種 model 來說，2024 年是這個老技術，對。\n[SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。\n[SPEAKER_01]: NAACL嗎\n[SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conversations，10 個對話，然後裡面大概有 600 個 dialogue turns，然後 total 是 26000 個 tokens，一個 session 這樣。然後 LOCOMO 它自己有產生大概 200 個問題。\n[SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。\n[SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？\n[SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。\n[SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。\n[SPEAKER_01]: 像是什麼，\n[SPEAKER_02]: 我想要問哪一部電影的導演的出生地，就是這個。他去找就要跳兩次，他不是一個很直接的問題。他要先找到這部電影的導演是誰，然後再去找這部導演的出生地是哪裡，類似這種概念。然後 one-hop 就是他可以直接馬上，就是不用跳一跳，就可以直接問這個問題、直接得到這個問題的解答。\n[SPEAKER_01]: OK。\n[SPEAKER_01]: 所以他是以 linguistic 上來說，他這個回答是需要跳幾個嗎？Linguistic 是指就譬如說是語言上面說，譬如說我媽媽的我媽媽的哥哥。\n[SPEAKER_02]: 應該不是，應該是子問題，就是它的答案需要跳過、需要幾個子問題的答案。\n[SPEAKER_01]: 那那個子問題指的是說，它的 conversation data 裡面它是有幾個連續問題這件事情嘛？譬如說譬如說我問\n[SPEAKER_02]: 也不會是連續問題，只要是斷，他只要是斷點。\n[SPEAKER_01]: 所以 conversation 指的是 chatbot 的 conversation，還是是什麼的 conversation？\n[SPEAKER_02]: Chatbot 他做了兩個 LLM，然後去對話，他的兩個 agent 對話。所以 single-hop 的意思應該就是說，我丟一個問題，然後我直接找一個答案。\n[SPEAKER_01]: 然後 multi-hop 是說，我丟了一個問題，然後我要中間經過幾次的對答，然後得到一個答案這樣。\n[SPEAKER_02]: 應該不是幾次對答，是你那個問題的問題本身。就比如說有個問題是，我們這邊會議的 mentor 是誰，就是你們；或者是他有個問題是，我們這個會議的 mentor 的的什麼兒子是誰這種。所以我們之前有討論到老師的兒子是誰，他會找 mentor 是你，然後他會說找到你之後，他再問你是那個兒子。\n[SPEAKER_01]: 那這個部分是他自己本身，他的 model 裡面的 reasoning 這件事情，他們要跳幾個 hop 這樣，對不對？你不是說他會問說你的 mentor 是誰，然後他回答說是 Grace，他說那 Grace 的小孩是誰。他這邊的 hop 只是說背後的 reasoning 裡面有。\n[SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？\n[SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。\n[SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？\n[SPEAKER_02]: 對\n[SPEAKER_01]: Temporal Reasoning。然後 open domain 是就開放性問題。所以它的 scale，它是，\n...(truncated)",
+      "included_meetings": [
+        "0307",
+        "0318",
+        "0325",
+        "0408",
+        "0422",
+        "0429",
+        "0506"
+      ],
+      "included_meeting_count": 7,
+      "included_file_count": 7,
+      "full_context_source": "transcripts",
+      "truncated": true,
+      "truncated_from_chars": 145790,
+      "metrics": {
+        "context_char_count": 12015,
+        "estimated_context_tokens": 7217,
+        "actual_input_tokens": 6446,
+        "actual_output_tokens": 340,
+        "actual_total_tokens": 8166,
+        "token_source": "actual_usage_metadata",
+        "included_meeting_count": 7,
+        "included_file_count": 7,
+        "full_context_source": "transcripts",
+        "truncated": true,
+        "truncated_from_chars": 145790,
+        "retrieval_ms": 0.0,
+        "context_build_ms": 1.175,
+        "total_ms": 18778.368,
+        "generation_ms": 18777.193
+      },
+      "answer": "根據提供的資料，manager-agent 架構的出現是為了解決一個更早、更簡單的循序（sequentially）agent 模型所遇到的問題。\n\n演變過程如下：\n\n1.  **初始模型**：有一個處理長篇文章的 agent 模型，作法是將長文切成許多小區塊（chunks），每一個 agent 負責處理一個 chunk 的摘要。這個過程是循序的，第二個 agent 在處理自己的 chunk 時，需要讀取第一個 agent 產出的摘要，依此類推，資訊一路向下傳遞 (meeting 0318 / SPEAKER_01)。\n\n2.  **初始模型的問題**：\n    *   **缺乏全域理解**：每個 agent 只知道自己負責的 chunk 和前一個 agent 傳來的摘要，沒有一個整體的、全域的理解。因此有人提出應該要有一個「共享黑板」（shared blackboard）的概念 (meeting 0318 / SPEAKER_01)。\n    *   **隨機切分問題**：文章是隨機按大小切分的，可能會將一句話切成兩半，導致 agent 無法理解文意 (meeting 0318 / SPEAKER_01)。\n\n3.  **Manager-Agent 架構的提出**：為了解決上述問題，後續的架構中出現了 **manager agent** 的角色。這個 manager agent 會接收所有 worker agent 處理完的資訊，並進行最終的整合，以回答問題或達成特定任務，從而建立一個更全面的理解 (meeting 0318 / SPEAKER_01)。"
+    },
+    "rag_baseline": {
+      "strategy": "rag_baseline",
+      "context": "=== Traditional Lexical RAG ===\n\n[rag-0318-L1-L20] meeting=0318 lines=1-20 score=0.6667\n[SPEAKER_02]: 喔，那個圖是他們自己畫的喔。\n[SPEAKER_01]: 他們畫了一個蠻可愛的動畫，就是他基本上他們也是在處理長文字\n[SPEAKER_01]: 但我覺得他們的 Long Context 應該都弄不到像我們那麼 long 吧。\n[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。\n[SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要有一個 shared blackboard，因為每個 agent 現在都只有自己那個 chunk，然後還有前一個 agent summarize 過來的東西，但他們沒有一個 global 的理解。\n[SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看到某一句話下面一半，那根本就抓不起來人們的意思。\n[SPEAKER_01]: 然後這是 2024 年。\n[SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？\n[SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。\n[SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？\n[SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。\n[SPEAKER_01]: 然後呢，這個比如 agent 這個人，他是一直會去有一個把 chunk 丟進去。我覺得他沒有自己看完這一邊，這個 manager 感覺最後他就是做什麼 worker agent segmentation、manager agent 的 integration。他是回答問題，只是我不知道他接 input preparation agent、channel agent communication。\n[SPEAKER_01]: 他這個反正他就是個 chatbot 嘛，然後我還沒有仔細看他的 manager 是要做什麼事情，對。但是 anyway，這一篇也是 2024 年了啦，所以以現在的這種 model 來說，2024 年是這個老技術，對。\n[SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。\n[SPEAKER_01]: NAACL嗎\n[SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conversations，10 個對話，然後裡面大概有 600 個 dialogue turns，然後 total 是 26000 個 tokens，一個 session 這樣。然後 LOCOMO 它自己有產生大概 200 個問題。\n[SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。\n[SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？\n[SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。\n[SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。\n\n[rag-0429-L286-L305] meeting=0429 lines=286-305 score=0.6667\n[SPEAKER_02]: 然後也許它中間會說，針對每一個 idea unit，你會先有一個小小的 summary，然後用這個 summary 去找我的 memory 現在有相對應的這個東西。這是一個我很 structured 去講說這個 function 裡面要發生的事情。嗯。\n[SPEAKER_02]: 那如果我講出這件事情，那你說我們也許不會這麼在意說它到底會不會切很準的 idea units，這我們可能沒有辦法確定。可是我們至少知道說，你做的事情就是第一件事你要先去找出 idea units，然後接下來每一個 idea unit 你都要去找。\n[SPEAKER_02]: 它不存在說我自己覺得我要不要 update 這件事情。\n[SPEAKER_00]: 不是，是每一個 idea unit 你都去找，然後找的任務是你去看有沒有相關。\n[SPEAKER_02]: 那相關的意思是什麼？如果照這樣說的話，那這樣的解法是什麼嗎？那我的理解是做到你剛剛那個事情，就是在我們第一度，可能在。\n[SPEAKER_00]: 就是可能第二步，我忘記第幾，就第二步跟第三步中間加上一步說你要先仔細去拆分 idea unit，是這樣子嗎？\n[SPEAKER_02]: 就是要先做拆分這件事情。因為如果先，呃，好，那假設拆分，那是這麼說好了。我覺得你有一個 tool calling 的 file 是 OK 的，對，但是我覺得每一個 function 它自己可以有它自己，比如說它想要去幫它做那個任務。\n[SPEAKER_02]: 對，所以你的 tool calling 它可能是比較單純是你就是先讀到這個 script，那接下來你就是會去 call read transcript 這個東西。然後接下來你會去做，就是我在想的是說，有一些任務是不是可以不用把它寫在這個 build。你現在有點像是 build 整個流程嘛，對，那但是某一些它其實是任務裡面的事情。\n[SPEAKER_02]: 然後你可以直接再寫一個，就是說好，今天我 call 了這個 function 之後，比如說像我要分 idea units，你想用 Large Language Model 去做。對，那它的 input 可能會是這幾行句子，然後去拆解 idea units，然後你給它所有的 rule 是什麼。\n[SPEAKER_02]: 然後它的 output 會是一個 JSON string 的 object，然後你會回傳這個東西。那你的 tool calling 的話，可能就是說，好，你現在要 call 的第一件事情是你要 read 這個 segment。\n[SPEAKER_02]: 然後 read segment，它的 output 就會是 an array of idea units，對嗎？然後接下來你下一步的 tool calling 就會是說，你現在哪一個，就是 update memory。那你的 update memory 的 input，就是剛才 read transcript 它 output 出來的那個 object。然後 update memory 這個 function 裡面。\n[SPEAKER_02]: 它就是會說，我 given 一個 object array，然後呢，我去 loop through。那一樣我也是去 call 一個 API，說我去看說它有多相似或是怎麼樣的。我 call 完這樣，你覺得呢？\n[SPEAKER_00]: 所以你的意思是，因為我們現在全部都是在同一個 session。就同一個 session 是指說，假設我們把它想成是同一個 chat session，然後我問它東西，它會回傳東西嘛，那我再把這東西拿去跟另外一個 session 去確認，就叫它幫我分。有點像是說你可能有一個 manager 在這個地方，然後有一些小小的 agent 在處理一些不同的任務。\n[SPEAKER_02]: 對，所以你現在寫的那個東西，我預期它比較像就是個 manager。就像我有好多的人可以讓我 call。那我說好，第一件事情是，我先去 call 假設說益心要試試看 dynamic 去算 given 現在這個句子我要跳幾行。那我可能說好，那我的 manager 第一件事情是我去讀還沒有被讀過的這一行，我讀到它之後，我會先去 call 這個 agent，說你去判斷我要跳多少。\n[SPEAKER_00]: 好，然後回來之後就說我覺得你要跳多少。好，那我懂你的意思。那我的問題就是說，因為這個東西它沒有辦法並行地去用嘛。就是你今天一定要等待這個 agent 回傳之後，你才能去問那個 manager，就是你才能跟 manager 說你要跳幾行嘛，對吧？因為你要跳幾行，比如說你要跳 1 到 20 行，那你就不能同時跑兩個 agent 說。\n[SPEAKER_00]: 呃，我可能就是因為它下一步一定是要遞片。那你這一步跑了多少嗎？那如果你今天去問另外一個 agent，為什麼不要把這個問題直接問原本的 manager 就好了？\n[SPEAKER_02]: 什麼意思？\n[SPEAKER_00]: 就是你剛剛說 manager 是指就是它會回傳一個假設 1 到 10 行嘛，那這一到十要看過一些 agent framework 嗎？嗯。\n[SPEAKER_02]: 嗯，你當然可以把所有的東西全部都寫在同一個東西去處理，但是你分 agent 的話，它其實就是可以去精緻地處理那件事情。或者是說譬如說你有一個 agent，它就是在負責處理跳行這件事情，那它可能就會根據跳行這件事情，它可能會有一些 context，因為它的任務就是 predict 我要跳幾行，它就是專門做這件事情的人。\n[SPEAKER_02]: 對，所以這時候它可以有很多它說我要根據這一次的 meeting 內容，它可以是針對這件事情去做比較精細，或是比較 intelligent 的東西。那它的負責，它做的事情就只是說，你交代給我現在是這一個句子，我要來根據我各種的 skill，我去 output 一個句子要是什麼給你。那 manager 的事情，manager 就是發派任務而已。\n\n[rag-0429-L301-L320] meeting=0429 lines=301-320 score=0.6667\n[SPEAKER_00]: 呃，我可能就是因為它下一步一定是要遞片。那你這一步跑了多少嗎？那如果你今天去問另外一個 agent，為什麼不要把這個問題直接問原本的 manager 就好了？\n[SPEAKER_02]: 什麼意思？\n[SPEAKER_00]: 就是你剛剛說 manager 是指就是它會回傳一個假設 1 到 10 行嘛，那這一到十要看過一些 agent framework 嗎？嗯。\n[SPEAKER_02]: 嗯，你當然可以把所有的東西全部都寫在同一個東西去處理，但是你分 agent 的話，它其實就是可以去精緻地處理那件事情。或者是說譬如說你有一個 agent，它就是在負責處理跳行這件事情，那它可能就會根據跳行這件事情，它可能會有一些 context，因為它的任務就是 predict 我要跳幾行，它就是專門做這件事情的人。\n[SPEAKER_02]: 對，所以這時候它可以有很多它說我要根據這一次的 meeting 內容，它可以是針對這件事情去做比較精細，或是比較 intelligent 的東西。那它的負責，它做的事情就只是說，你交代給我現在是這一個句子，我要來根據我各種的 skill，我去 output 一個句子要是什麼給你。那 manager 的事情，manager 就是發派任務而已。\n[SPEAKER_02]: 我就是現在丟說，你現在這個人，我丟這個句子給你，你丟那個 line 給我。\n[SPEAKER_02]: 然後接下來呢，好，下一個 agent。下一個 agent 是說，好，given 這個東西，我可能去 check 裡面是不是唯一一個 idea unit，還是我需要去切分。或是說其實它不完整，它可能還有 continue，接下來句子可能還會是跟這個相關連的，你切得不對。那它可能會回傳回來說，我覺得這個還是 not complete，這是 incomplete，或是回傳跟你說它其實應該要再被切割。\n[SPEAKER_02]: 對，或是說它跟你說這個是 complete、完整。那 manager 它不需要每一件事情它都要寫在它很大的一個 memory 裡面，它就是真的是去 call 人而已，它去 call 這個 agent 做這件事，或去 call 這個 agent 做這件事情。所以你可以想像說，譬如說今天每一個 agent，它會針對它的任務，會有一些以那個任務來說重要的一些 resource。\n[SPEAKER_02]: 比如說跳行這件事情好了，它搞不好會有一些資訊說目前這個 transcription 裡面，目前有幾個是長段落、有幾個是短段落，它之前大概什麼樣的主題它都是被分成是長段落的、哪些都分成短段落等等的。我只是舉個例，它可能針對這個任務，它在執行這個任務過程當中會有一些 additional knowledge。\n[SPEAKER_02]: 對，那這些不管是 knowledge 的一些存取，或者它不需要全部都是放在同一個 manager 裡面。也就是說，這時候假設說比如說跳段這件事情，你可以想像說今天它的任務就是你給我一個句子，我 output 一個 end line 給你。那所以這個 agent 我可以任意地調整，我今天可以說我是一個 fixed。\n[SPEAKER_02]: 好，你給我一個句子，它是第 21 行，那如果我是一個 fixed agent，我就是 21 加 3，我就是把 24 留給你。對。那或者是說我今天說我是 dynamic。dynamic 的話，它的方式會有什麼。對，因為它可能會這樣這樣這樣，所以我吐一個東西給你。對，但你是可以想像說，今天我要 call 這個斷行 agent 的時候，你甚至可能可以有個 parameter。\n[SPEAKER_02]: 你說我是要 call static，還是 dynamic，還是要什麼。那這個 agent 就會根據我得到的 input 去吐東西給你。\n[SPEAKER_00]: 所以你的 agent 它是自己獨立的一個 skill。那我可以理解這個 agent 的好處在哪裡，就是我知道這個 agent 的用處、好處在哪。那我現在在想的是，那 agent 大概會有哪些 agent。就比如說分析這一段話裡面有幾個 idea unit，或者是分析說就是。\n[SPEAKER_02]: 其實就是你剛才那個 build，那個 tool calling 裡面哪些東西它可以變成是有一個。就是你還是在做 tool calling 啊，你在 call 那一支 agent 在做這件事情。\n[SPEAKER_02]: 對 所以你的拖calling它可能是比較單純是你就是先讀到這個script那接下來你就是會去call read transcript這個東西然後接下來你會去做就是我在想的是說有一些任務是不是可以不用把它寫在這個build你現在有點像是build整個流程嘛對 那但是某一些它其實是任務裡面的事情\n[SPEAKER_02]: 然后你可以直接把它再写一个你可以把它再写一个是说好今天我call了这个房选之后比如说像我要分idea units你想用large language model去做对那他的input就会是他的input可能会是就是这几行句子然后他然后去采集idea units然后你给他所有的rule是什么\n[SPEAKER_02]: 然後它的 output 會是一個 JSON 的 string 的一個 object然後這個東西 然後你會回傳這個東西那你的 tool calling 的話可能就是說好 你現在要 call 的第一件事情是你要 read 這個 segment\n[SPEAKER_02]: 然后resegment它的output就会是an arrayan array of id units 对吗然后接下来你下一步的tool calling就会是说你现在哪一个就是update memory那你的update memory的input就是刚才retranscript它output出来的那个object然后这个那这个function里面你去call了这个update memory那这个memory这个update memory这个function里面\n[SPEAKER_02]: 它的它就是會說我就是我given一個object array然後呢我去loop through那一樣我也是好我去call一個就是就API說我去看說它有多相似或是怎麼樣的我call完這樣你覺得呢\n[SPEAKER_00]: 所以你的意思是因為我們現在全部都是在同一個可以說就我們來的session好了就同一個session是指說就是那個session就是我們我問他就是假設我們把他想成是同一個的session然後我問他東西他會回傳東西嗎那我再把這東西拿去跟另外一個session去確認就叫他幫我分有點像是說你可能有一個manager在這個地方然後有一些小小的agent在處理一些不同的任務\n\n[rag-0429-L316-L335] meeting=0429 lines=316-335 score=0.6667\n[SPEAKER_02]: 然后你可以直接把它再写一个你可以把它再写一个是说好今天我call了这个房选之后比如说像我要分idea units你想用large language model去做对那他的input就会是他的input可能会是就是这几行句子然后他然后去采集idea units然后你给他所有的rule是什么\n[SPEAKER_02]: 然後它的 output 會是一個 JSON 的 string 的一個 object然後這個東西 然後你會回傳這個東西那你的 tool calling 的話可能就是說好 你現在要 call 的第一件事情是你要 read 這個 segment\n[SPEAKER_02]: 然后resegment它的output就会是an arrayan array of id units 对吗然后接下来你下一步的tool calling就会是说你现在哪一个就是update memory那你的update memory的input就是刚才retranscript它output出来的那个object然后这个那这个function里面你去call了这个update memory那这个memory这个update memory这个function里面\n[SPEAKER_02]: 它的它就是會說我就是我given一個object array然後呢我去loop through那一樣我也是好我去call一個就是就API說我去看說它有多相似或是怎麼樣的我call完這樣你覺得呢\n[SPEAKER_00]: 所以你的意思是因為我們現在全部都是在同一個可以說就我們來的session好了就同一個session是指說就是那個session就是我們我問他就是假設我們把他想成是同一個的session然後我問他東西他會回傳東西嗎那我再把這東西拿去跟另外一個session去確認就叫他幫我分有點像是說你可能有一個manager在這個地方然後有一些小小的agent在處理一些不同的任務\n[SPEAKER_02]: 對 所以你現在寫的那個東西我預期它比較像就是個Manager就像我有好多的好多的人可以讓我Call那我說好 第一件事情是好 我先去Call假設說羿昕要試試那Dynamic去算Given現在這個句子我要跳幾行那我可能說好那我的Manager第一件事情是我去讀還沒有被讀過的這一行我讀到它之後我會先去Call這個Agent說你去判斷我要跳多少\n[SPEAKER_00]: 好然後回來之後就說我覺得你要跳多少好那我懂你的意思那我的問題就是說因為這個東西他沒有辦法並行的去用嘛就是你今天一定要等待這個agent回傳之後你才能去問那個manager就是你才能跟manager說你要跳幾行嘛對吧因為你要跳幾行比如說你要跳1到20行那你就不能就是你不能同時跑兩個agent說\n[SPEAKER_00]: 呃我可能就是因為他下一步一定是要depend on你這一步跑了多少嗎那如果你今天去問另外一個agent為什麼不要把這個問題直接問原本的manager就好了\n[SPEAKER_00]: 那你call了這個function嘛對不對那這個function裡面他其實就是會呼叫一個他自己的就是一個比較細緻的一個task那就fulfill這個任務\n[SPEAKER_00]: 嗯所以我的就是好我知道這個agent所以我的呃這個我因為一開始一開始講的意思我以為是說就是呃剛剛就是我目前的做法是\n[SPEAKER_00]: 怎麼說勒就是他不能控制那這樣子就可能會比較能控制嗎\n[SPEAKER_02]: 可以啊像你的agent不是就可以你現在不就知道說我現在agent設定成怎麼樣我就會知道我的agent回傳是怎麼樣嗎\n[SPEAKER_00]: 我說不是就是精細度的部分就是因為你一樣也是用一個AI去讓你去判斷說他今天要跳幾行啊他只是就我知道分\n[SPEAKER_02]: 我剛剛講的不能控制不是說你的切東西跟intelligence上對不對我是說流程上面我能不能控制\n[SPEAKER_02]: 那我们刚说我们把这个如果有个manager跟agent的角色的话manager他丢这个任务过去我会回得到一个return的东西然后我根据这个return的东西我丢下一个我丢到下一个function call里面我return的一个东西\n[SPEAKER_02]: 那我再丟到下一個function call return一個東西這件事情是你是code你是知道的就譬如說我一個80行的東西丟進去我就會知道它一定會是每一行都會存在在某一個idea units裡面它會是個object假設說有三個那我會知道它一定會去更新三次\n[SPEAKER_00]: 呃就是流程就是現在的流程跟呃拆分成agent他今天只是把每一個步驟讓別的agent去處理吧就是我知道拆成agent是好的但是我一開始針對目前就是我現在寫的這個方法的呃就改成agent跟目前這個方法他的流程的清楚因為像是manager他是去派發任務嘛但我現在其實也是\n[SPEAKER_02]: 那個其實也可以說是Manager我覺得你應該要再把它切乾淨一點它是Manager的角色就好了可是你現在這個Manager有做很多細緻agent的事情比如說你自己去判斷要丟幾行你自己判斷要不要update你自己去判斷要不要幹嘛幹嘛它不是只是單純的hand over它的任務而已啊\n[SPEAKER_00]: 對啊所以我這樣才懂因為我剛剛一直在卡在\n[SPEAKER_02]: 然後我剛剛講的是沒有辦法控制的事情其實有點像這個樣子因為你的manager他的skill你是從頭寫到尾嘛對不對對所以你中間每一個東西你想要換一下你都要再從頭再丟到尾對嗎什麼叫從頭丟到尾就是你就要從1你每次我換了一個東西我覺得他的流程就是從1要一直跑到10\n\n[rag-0429-L331-L350] meeting=0429 lines=331-350 score=0.6667\n[SPEAKER_02]: 那我再丟到下一個function call return一個東西這件事情是你是code你是知道的就譬如說我一個80行的東西丟進去我就會知道它一定會是每一行都會存在在某一個idea units裡面它會是個object假設說有三個那我會知道它一定會去更新三次\n[SPEAKER_00]: 呃就是流程就是現在的流程跟呃拆分成agent他今天只是把每一個步驟讓別的agent去處理吧就是我知道拆成agent是好的但是我一開始針對目前就是我現在寫的這個方法的呃就改成agent跟目前這個方法他的流程的清楚因為像是manager他是去派發任務嘛但我現在其實也是\n[SPEAKER_02]: 那個其實也可以說是Manager我覺得你應該要再把它切乾淨一點它是Manager的角色就好了可是你現在這個Manager有做很多細緻agent的事情比如說你自己去判斷要丟幾行你自己判斷要不要update你自己去判斷要不要幹嘛幹嘛它不是只是單純的hand over它的任務而已啊\n[SPEAKER_00]: 對啊所以我這樣才懂因為我剛剛一直在卡在\n[SPEAKER_02]: 然後我剛剛講的是沒有辦法控制的事情其實有點像這個樣子因為你的manager他的skill你是從頭寫到尾嘛對不對對所以你中間每一個東西你想要換一下你都要再從頭再丟到尾對嗎什麼叫從頭丟到尾就是你就要從1你每次我換了一個東西我覺得他的流程就是從1要一直跑到10\n[SPEAKER_02]: 現在我想要很簡單的去測試這個斷行的agent這件事情我就想要很簡單去測這個斷行這件事情他切的效果如何像你現在這個架構上是我沒有辦法做到這件事情的我一定就是要改我的prompt之後他的流程從1跑到10然後我去抓出那個斷行他斷什麼東西他一定就是從頭要跑到尾嘛對不對\n[SPEAKER_02]: 對但是如果有這個agent有這個skill的話我可以說我可以去測試這個agent比如說我可以測試說我丟給他同一個句子但是我內容agent的判斷方式不一樣他吐出來的東西給我會是什麼不一樣我可以一個一個step去測試他的狀態是什麼我不用每一次我改了一次之後我都是他要從流程一到十把跑完\n[SPEAKER_00]: 其實現在的流程他可以改成就是一樣是一個 manager但其實每次tool calling的時候其實除了tool之外他可以附帶 prompt\n[SPEAKER_00]: 就是它除了tool calling 的output之外它可以附帶Prompt所以其實我知道分層的agent可能有一定的好處但是我的意思是說現在這個東西它其實有點像是Manager那你回來之後我可以把我目前的output配上Prompt再一起發回給這個Manager這個Manager其實也可以像是你剛剛說的那個agent嗯\n[SPEAKER_02]: 就是比如說他最後也會是一個自動化的流程就是就算你區分很多個agent的話最後他還會是一個還是會是一個只是說你每個agent都可以去各自的去tune各自也去測試但各自測試的好處只在於消耗的token會比較少也不是啊就是說我可以比較去知道說每一個agent如果我改了一下之後他的output會長什麼樣子\n[SPEAKER_02]: 然後還有另外一個事情是因為以現在的話我們每一次做完的時候它都是1要跑到10嘛所以中間它每一個factor它\n...(truncated)",
+      "retrieved_chunk_count": 6,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "rag-0318-L1-L20",
+          "meeting_id": "0318",
+          "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0318.txt",
+          "start_line": 1,
+          "end_line": 20,
+          "text": "[SPEAKER_02]: 喔，那個圖是他們自己畫的喔。\n[SPEAKER_01]: 他們畫了一個蠻可愛的動畫，就是他基本上他們也是在處理長文字\n[SPEAKER_01]: 但我覺得他們的 Long Context 應該都弄不到像我們那麼 long 吧。\n[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。\n[SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要有一個 shared blackboard，因為每個 agent 現在都只有自己那個 chunk，然後還有前一個 agent summarize 過來的東西，但他們沒有一個 global 的理解。\n[SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看到某一句話下面一半，那根本就抓不起來人們的意思。\n[SPEAKER_01]: 然後這是 2024 年。\n[SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？\n[SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。\n[SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？\n[SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。\n[SPEAKER_01]: 然後呢，這個比如 agent 這個人，他是一直會去有一個把 chunk 丟進去。我覺得他沒有自己看完這一邊，這個 manager 感覺最後他就是做什麼 worker agent segmentation、manager agent 的 integration。他是回答問題，只是我不知道他接 input preparation agent、channel agent communication。\n[SPEAKER_01]: 他這個反正他就是個 chatbot 嘛，然後我還沒有仔細看他的 manager 是要做什麼事情，對。但是 anyway，這一篇也是 2024 年了啦，所以以現在的這種 model 來說，2024 年是這個老技術，對。\n[SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。\n[SPEAKER_01]: NAACL嗎\n[SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conversations，10 個對話，然後裡面大概有 600 個 dialogue turns，然後 total 是 26000 個 tokens，一個 session 這樣。然後 LOCOMO 它自己有產生大概 200 個問題。\n[SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。\n[SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？\n[SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。\n[SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。",
+          "score": 0.6667,
+          "matched_terms": [
+            "agent",
+            "manager"
+          ]
+        },
+        {
+          "chunk_id": "rag-0429-L286-L305",
+          "meeting_id": "0429",
+          "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0429.txt",
+          "start_line": 286,
+          "end_line": 305,
+          "text": "[SPEAKER_02]: 然後也許它中間會說，針對每一個 idea unit，你會先有一個小小的 summary，然後用這個 summary 去找我的 memory 現在有相對應的這個東西。這是一個我很 structured 去講說這個 function 裡面要發生的事情。嗯。\n[SPEAKER_02]: 那如果我講出這件事情，那你說我們也許不會這麼在意說它到底會不會切很準的 idea units，這我們可能沒有辦法確定。可是我們至少知道說，你做的事情就是第一件事你要先去找出 idea units，然後接下來每一個 idea unit 你都要去找。\n[SPEAKER_02]: 它不存在說我自己覺得我要不要 update 這件事情。\n[SPEAKER_00]: 不是，是每一個 idea unit 你都去找，然後找的任務是你去看有沒有相關。\n[SPEAKER_02]: 那相關的意思是什麼？如果照這樣說的話，那這樣的解法是什麼嗎？那我的理解是做到你剛剛那個事情，就是在我們第一度，可能在。\n[SPEAKER_00]: 就是可能第二步，我忘記第幾，就第二步跟第三步中間加上一步說你要先仔細去拆分 idea unit，是這樣子嗎？\n[SPEAKER_02]: 就是要先做拆分這件事情。因為如果先，呃，好，那假設拆分，那是這麼說好了。我覺得你有一個 tool calling 的 file 是 OK 的，對，但是我覺得每一個 function 它自己可以有它自己，比如說它想要去幫它做那個任務。\n[SPEAKER_02]: 對，所以你的 tool calling 它可能是比較單純是你就是先讀到這個 script，那接下來你就是會去 call read transcript 這個東西。然後接下來你會去做，就是我在想的是說，有一些任務是不是可以不用把它寫在這個 build。你現在有點像是 build 整個流程嘛，對，那但是某一些它其實是任務裡面的事情。\n[SPEAKER_02]: 然後你可以直接再寫一個，就是說好，今天我 call 了這個 function 之後，比如說像我要分 idea units，你想用 Large Language Model 去做。對，那它的 input 可能會是這幾行句子，然後去拆解 idea units，然後你給它所有的 rule 是什麼。\n[SPEAKER_02]: 然後它的 output 會是一個 JSON string 的 object，然後你會回傳這個東西。那你的 tool calling 的話，可能就是說，好，你現在要 call 的第一件事情是你要 read 這個 segment。\n[SPEAKER_02]: 然後 read segment，它的 output 就會是 an array of idea units，對嗎？然後接下來你下一步的 tool calling 就會是說，你現在哪一個，就是 update memory。那你的 update memory 的 input，就是剛才 read transcript 它 output 出來的那個 object。然後 update memory 這個 function 裡面。\n[SPEAKER_02]: 它就是會說，我 given 一個 object array，然後呢，我去 loop through。那一樣我也是去 call 一個 API，說我去看說它有多相似或是怎麼樣的。我 call 完這樣，你覺得呢？\n[SPEAKER_00]: 所以你的意思是，因為我們現在全部都是在同一個 session。就同一個 session 是指說，假設我們把它想成是同一個 chat session，然後我問它東西，它會回傳東西嘛，那我再把這東西拿去跟另外一個 session 去確認，就叫它幫我分。有點像是說你可能有一個 manager 在這個地方，然後有一些小小的 agent 在處理一些不同的任務。\n[SPEAKER_02]: 對，所以你現在寫的那個東西，我預期它比較像就是個 manager。就像我有好多的人可以讓我 call。那我說好，第一件事情是，我先去 call 假設說益心要試試看 dynamic 去算 given 現在這個句子我要跳幾行。那我可能說好，那我的 manager 第一件事情是我去讀還沒有被讀過的這一行，我讀到它之後，我會先去 call 這個 agent，說你去判斷我要跳多少。\n[SPEAKER_00]: 好，然後回來之後就說我覺得你要跳多少。好，那我懂你的意思。那我的問題就是說，因為這個東西它沒有辦法並行地去用嘛。就是你今天一定要等待這個 agent 回傳之後，你才能去問那個 manager，就是你才能跟 manager 說你要跳幾行嘛，對吧？因為你要跳幾行，比如說你要跳 1 到 20 行，那你就不能同時跑兩個 agent 說。\n[SPEAKER_00]: 呃，我可能就是因為它下一步一定是要遞片。那你這一步跑了多少嗎？那如果你今天去問另外一個 agent，為什麼不要把這個問題直接問原本的 manager 就好了？\n[SPEAKER_02]: 什麼意思？\n[SPEAKER_00]: 就是你剛剛說 manager 是指就是它會回傳一個假設 1 到 10 行嘛，那這一到十要看過一些 agent framework 嗎？嗯。\n[SPEAKER_02]: 嗯，你當然可以把所有的東西全部都寫在同一個東西去處理，但是你分 agent 的話，它其實就是可以去精緻地處理那件事情。或者是說譬如說你有一個 agent，它就是在負責處理跳行這件事情，那它可能就會根據跳行這件事情，它可能會有一些 context，因為它的任務就是 predict 我要跳幾行，它就是專門做這件事情的人。\n[SPEAKER_02]: 對，所以這時候它可以有很多它說我要根據這一次的 meeting 內容，它可以是針對這件事情去做比較精細，或是比較 intelligent 的東西。那它的負責，它做的事情就只是說，你交代給我現在是這一個句子，我要來根據我各種的 skill，我去 output 一個句子要是什麼給你。那 manager 的事情，manager 就是發派任務而已。",
+          "score": 0.6667,
+          "matched_terms": [
+            "agent",
+            "manager"
+          ]
+        },
+        {
+          "chunk_id": "rag-0429-L301-L320",
+          "meeting_id": "0429",
+          "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0429.txt",
+          "start_line": 301,
+          "end_line": 320,
+          "text": "[SPEAKER_00]: 呃，我可能就是因為它下一步一定是要遞片。那你這一步跑了多少嗎？那如果你今天去問另外一個 agent，為什麼不要把這個問題直接問原本的 manager 就好了？\n[SPEAKER_02]: 什麼意思？\n[SPEAKER_00]: 就是你剛剛說 manager 是指就是它會回傳一個假設 1 到 10 行嘛，那這一到十要看過一些 agent framework 嗎？嗯。\n[SPEAKER_02]: 嗯，你當然可以把所有的東西全部都寫在同一個東西去處理，但是你分 agent 的話，它其實就是可以去精緻地處理那件事情。或者是說譬如說你有一個 agent，它就是在負責處理跳行這件事情，那它可能就會根據跳行這件事情，它可能會有一些 context，因為它的任務就是 predict 我要跳幾行，它就是專門做這件事情的人。\n[SPEAKER_02]: 對，所以這時候它可以有很多它說我要根據這一次的 meeting 內容，它可以是針對這件事情去做比較精細，或是比較 intelligent 的東西。那它的負責，它做的事情就只是說，你交代給我現在是這一個句子，我要來根據我各種的 skill，我去 output 一個句子要是什麼給你。那 manager 的事情，manager 就是發派任務而已。\n[SPEAKER_02]: 我就是現在丟說，你現在這個人，我丟這個句子給你，你丟那個 line 給我。\n[SPEAKER_02]: 然後接下來呢，好，下一個 agent。下一個 agent 是說，好，given 這個東西，我可能去 check 裡面是不是唯一一個 idea unit，還是我需要去切分。或是說其實它不完整，它可能還有 continue，接下來句子可能還會是跟這個相關連的，你切得不對。那它可能會回傳回來說，我覺得這個還是 not complete，這是 incomplete，或是回傳跟你說它其實應該要再被切割。\n[SPEAKER_02]: 對，或是說它跟你說這個是 complete、完整。那 manager 它不需要每一件事情它都要寫在它很大的一個 memory 裡面，它就是真的是去 call 人而已，它去 call 這個 agent 做這件事，或去 call 這個 agent 做這件事情。所以你可以想像說，譬如說今天每一個 agent，它會針對它的任務，會有一些以那個任務來說重要的一些 resource。\n[SPEAKER_02]: 比如說跳行這件事情好了，它搞不好會有一些資訊說目前這個 transcription 裡面，目前有幾個是長段落、有幾個是短段落，它之前大概什麼樣的主題它都是被分成是長段落的、哪些都分成短段落等等的。我只是舉個例，它可能針對這個任務，它在執行這個任務過程當中會有一些 additional knowledge。\n[SPEAKER_02]: 對，那這些不管是 knowledge 的一些存取，或者它不需要全部都是放在同一個 manager 裡面。也就是說，這時候假設說比如說跳段這件事情，你可以想像說今天它的任務就是你給我一個句子，我 output 一個 end line 給你。那所以這個 agent 我可以任意地調整，我今天可以說我是一個 fixed。\n[SPEAKER_02]: 好，你給我一個句子，它是第 21 行，那如果我是一個 fixed agent，我就是 21 加 3，我就是把 24 留給你。對。那或者是說我今天說我是 dynamic。dynamic 的話，它的方式會有什麼。對，因為它可能會這樣這樣這樣，所以我吐一個東西給你。對，但你是可以想像說，今天我要 call 這個斷行 agent 的時候，你甚至可能可以有個 parameter。\n[SPEAKER_02]: 你說我是要 call static，還是 dynamic，還是要什麼。那這個 agent 就會根據我得到的 input 去吐東西給你。\n[SPEAKER_00]: 所以你的 agent 它是自己獨立的一個 skill。那我可以理解這個 agent 的好處在哪裡，就是我知道這個 agent 的用處、好處在哪。那我現在在想的是，那 agent 大概會有哪些 agent。就比如說分析這一段話裡面有幾個 idea unit，或者是分析說就是。\n[SPEAKER_02]: 其實就是你剛才那個 build，那個 tool calling 裡面哪些東西它可以變成是有一個。就是你還是在做 tool calling 啊，你在 call 那一支 agent 在做這件事情。\n[SPEAKER_02]: 對 所以你的拖calling它可能是比較單純是你就是先讀到這個script那接下來你就是會去call read transcript這個東西然後接下來你會去做就是我在想的是說有一些任務是不是可以不用把它寫在這個build你現在有點像是build整個流程嘛對 那但是某一些它其實是任務裡面的事情\n[SPEAKER_02]: 然后你可以直接把它再写一个你可以把它再写一个是说好今天我call了这个房选之后比如说像我要分idea units你想用large language model去做对那他的input就会是他的input可能会是就是这几行句子然后他然后去采集idea units然后你给他所有的rule是什么\n[SPEAKER_02]: 然後它的 output 會是一個 JSON 的 string 的一個 object然後這個東西 然後你會回傳這個東西那你的 tool calling 的話可能就是說好 你現在要 call 的第一件事情是你要 read 這個 segment\n[SPEAKER_02]: 然后resegment它的output就会是an arrayan array of id units 对吗然后接下来你下一步的tool calling就会是说你现在哪一个就是update memory那你的update memory的input就是刚才retranscript它output出来的那个object然后这个那这个function里面你去call了这个update memory那这个memory这个update memory这个function里面\n[SPEAKER_02]: 它的它就是會說我就是我given一個object array然後呢我去loop through那一樣我也是好我去call一個就是就API說我去看說它有多相似或是怎麼樣的我call完這樣你覺得呢\n[SPEAKER_00]: 所以你的意思是因為我們現在全部都是在同一個可以說就我們來的session好了就同一個session是指說就是那個session就是我們我問他就是假設我們把他想成是同一個的session然後我問他東西他會回傳東西嗎那我再把這東西拿去跟另外一個session去確認就叫他幫我分有點像是說你可能有一個manager在這個地方然後有一些小小的agent在處理一些不同的任務",
+          "score": 0.6667,
+          "matched_terms": [
+            "agent",
+            "manager"
+          ]
+        },
+        {
+          "chunk_id": "rag-0429-L316-L335",
+          "meeting_id": "0429",
+          "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0429.txt",
+          "start_line": 316,
+          "end_line": 335,
+          "text": "[SPEAKER_02]: 然后你可以直接把它再写一个你可以把它再写一个是说好今天我call了这个房选之后比如说像我要分idea units你想用large language model去做对那他的input就会是他的input可能会是就是这几行句子然后他然后去采集idea units然后你给他所有的rule是什么\n[SPEAKER_02]: 然後它的 output 會是一個 JSON 的 string 的一個 object然後這個東西 然後你會回傳這個東西那你的 tool calling 的話可能就是說好 你現在要 call 的第一件事情是你要 read 這個 segment\n[SPEAKER_02]: 然后resegment它的output就会是an arrayan array of id units 对吗然后接下来你下一步的tool calling就会是说你现在哪一个就是update memory那你的update memory的input就是刚才retranscript它output出来的那个object然后这个那这个function里面你去call了这个update memory那这个memory这个update memory这个function里面\n[SPEAKER_02]: 它的它就是會說我就是我given一個object array然後呢我去loop through那一樣我也是好我去call一個就是就API說我去看說它有多相似或是怎麼樣的我call完這樣你覺得呢\n[SPEAKER_00]: 所以你的意思是因為我們現在全部都是在同一個可以說就我們來的session好了就同一個session是指說就是那個session就是我們我問他就是假設我們把他想成是同一個的session然後我問他東西他會回傳東西嗎那我再把這東西拿去跟另外一個session去確認就叫他幫我分有點像是說你可能有一個manager在這個地方然後有一些小小的agent在處理一些不同的任務\n[SPEAKER_02]: 對 所以你現在寫的那個東西我預期它比較像就是個Manager就像我有好多的好多的人可以讓我Call那我說好 第一件事情是好 我先去Call假設說羿昕要試試那Dynamic去算Given現在這個句子我要跳幾行那我可能說好那我的Manager第一件事情是我去讀還沒有被讀過的這一行我讀到它之後我會先去Call這個Agent說你去判斷我要跳多少\n[SPEAKER_00]: 好然後回來之後就說我覺得你要跳多少好那我懂你的意思那我的問題就是說因為這個東西他沒有辦法並行的去用嘛就是你今天一定要等待這個agent回傳之後你才能去問那個manager就是你才能跟manager說你要跳幾行嘛對吧因為你要跳幾行比如說你要跳1到20行那你就不能就是你不能同時跑兩個agent說\n[SPEAKER_00]: 呃我可能就是因為他下一步一定是要depend on你這一步跑了多少嗎那如果你今天去問另外一個agent為什麼不要把這個問題直接問原本的manager就好了\n[SPEAKER_00]: 那你call了這個function嘛對不對那這個function裡面他其實就是會呼叫一個他自己的就是一個比較細緻的一個task那就fulfill這個任務\n[SPEAKER_00]: 嗯所以我的就是好我知道這個agent所以我的呃這個我因為一開始一開始講的意思我以為是說就是呃剛剛就是我目前的做法是\n[SPEAKER_00]: 怎麼說勒就是他不能控制那這樣子就可能會比較能控制嗎\n[SPEAKER_02]: 可以啊像你的agent不是就可以你現在不就知道說我現在agent設定成怎麼樣我就會知道我的agent回傳是怎麼樣嗎\n[SPEAKER_00]: 我說不是就是精細度的部分就是因為你一樣也是用一個AI去讓你去判斷說他今天要跳幾行啊他只是就我知道分\n[SPEAKER_02]: 我剛剛講的不能控制不是說你的切東西跟intelligence上對不對我是說流程上面我能不能控制\n[SPEAKER_02]: 那我们刚说我们把这个如果有个manager跟agent的角色的话manager他丢这个任务过去我会回得到一个return的东西然后我根据这个return的东西我丢下一个我丢到下一个function call里面我return的一个东西\n[SPEAKER_02]: 那我再丟到下一個function call return一個東西這件事情是你是code你是知道的就譬如說我一個80行的東西丟進去我就會知道它一定會是每一行都會存在在某一個idea units裡面它會是個object假設說有三個那我會知道它一定會去更新三次\n[SPEAKER_00]: 呃就是流程就是現在的流程跟呃拆分成agent他今天只是把每一個步驟讓別的agent去處理吧就是我知道拆成agent是好的但是我一開始針對目前就是我現在寫的這個方法的呃就改成agent跟目前這個方法他的流程的清楚因為像是manager他是去派發任務嘛但我現在其實也是\n[SPEAKER_02]: 那個其實也可以說是Manager我覺得你應該要再把它切乾淨一點它是Manager的角色就好了可是你現在這個Manager有做很多細緻agent的事情比如說你自己去判斷要丟幾行你自己判斷要不要update你自己去判斷要不要幹嘛幹嘛它不是只是單純的hand over它的任務而已啊\n[SPEAKER_00]: 對啊所以我這樣才懂因為我剛剛一直在卡在\n[SPEAKER_02]: 然後我剛剛講的是沒有辦法控制的事情其實有點像這個樣子因為你的manager他的skill你是從頭寫到尾嘛對不對對所以你中間每一個東西你想要換一下你都要再從頭再丟到尾對嗎什麼叫從頭丟到尾就是你就要從1你每次我換了一個東西我覺得他的流程就是從1要一直跑到10",
+          "score": 0.6667,
+          "matched_terms": [
+            "agent",
+            "manager"
+          ]
+        },
+        {
+          "chunk_id": "rag-0429-L331-L350",
+          "meeting_id": "0429",
+          "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0429.txt",
+          "start_line": 331,
+          "end_line": 350,
+          "text": "[SPEAKER_02]: 那我再丟到下一個function call return一個東西這件事情是你是code你是知道的就譬如說我一個80行的東西丟進去我就會知道它一定會是每一行都會存在在某一個idea units裡面它會是個object假設說有三個那我會知道它一定會去更新三次\n[SPEAKER_00]: 呃就是流程就是現在的流程跟呃拆分成agent他今天只是把每一個步驟讓別的agent去處理吧就是我知道拆成agent是好的但是我一開始針對目前就是我現在寫的這個方法的呃就改成agent跟目前這個方法他的流程的清楚因為像是manager他是去派發任務嘛但我現在其實也是\n[SPEAKER_02]: 那個其實也可以說是Manager我覺得你應該要再把它切乾淨一點它是Manager的角色就好了可是你現在這個Manager有做很多細緻agent的事情比如說你自己去判斷要丟幾行你自己判斷要不要update你自己去判斷要不要幹嘛幹嘛它不是只是單純的hand over它的任務而已啊\n[SPEAKER_00]: 對啊所以我這樣才懂因為我剛剛一直在卡在\n[SPEAKER_02]: 然後我剛剛講的是沒有辦法控制的事情其實有點像這個樣子因為你的manager他的skill你是從頭寫到尾嘛對不對對所以你中間每一個東西你想要換一下你都要再從頭再丟到尾對嗎什麼叫從頭丟到尾就是你就要從1你每次我換了一個東西我覺得他的流程就是從1要一直跑到10\n[SPEAKER_02]: 現在我想要很簡單的去測試這個斷行的agent這件事情我就想要很簡單去測這個斷行這件事情他切的效果如何像你現在這個架構上是我沒有辦法做到這件事情的我一定就是要改我的prompt之後他的流程從1跑到10然後我去抓出那個斷行他斷什麼東西他一定就是從頭要跑到尾嘛對不對\n[SPEAKER_02]: 對但是如果有這個agent有這個skill的話我可以說我可以去測試這個agent比如說我可以測試說我丟給他同一個句子但是我內容agent的判斷方式不一樣他吐出來的東西給我會是什麼不一樣我可以一個一個step去測試他的狀態是什麼我不用每一次我改了一次之後我都是他要從流程一到十把跑完\n[SPEAKER_00]: 其實現在的流程他可以改成就是一樣是一個 manager但其實每次tool calling的時候其實除了tool之外他可以附帶 prompt\n[SPEAKER_00]: 就是它除了tool calling 的output之外它可以附帶Prompt所以其實我知道分層的agent可能有一定的好處但是我的意思是說現在這個東西它其實有點像是Manager那你回來之後我可以把我目前的output配上Prompt再一起發回給這個Manager這個Manager其實也可以像是你剛剛說的那個agent嗯\n[SPEAKER_02]: 就是比如說他最後也會是一個自動化的流程就是就算你區分很多個agent的話最後他還會是一個還是會是一個只是說你每個agent都可以去各自的去tune各自也去測試但各自測試的好處只在於消耗的token會比較少也不是啊就是說我可以比較去知道說每一個agent如果我改了一下之後他的output會長什麼樣子\n[SPEAKER_02]: 然後還有另外一個事情是因為以現在的話我們每一次做完的時候它都是1要跑到10嘛所以中間它每一個factor它中間的各種的effect它都是疊加在一起的譬如說我第一次的line切在哪裡它會影響到我後面去怎麼切idea unit會影響到我怎麼決定我要怎麼樣要不要update我的memory等等你一次跑完下去之後它是所有步驟都做完了\n[SPEAKER_02]: 對 那今天如果說其實問題是idea units切的不好或是idea units判斷completed這件事情有問題的話那它一次都是每一個它都是接著去把它做完所以你其實你也不太知道說到底問題在哪個地方\n[SPEAKER_00]: 但如果有辦法輸出他完整的call哪一個流程是不是就可以就是他為什麼會call這個然後他call了什麼然後結果出來給他是什麼理論上是不是也可以知道他在做的東西是什麼\n[SPEAKER_02]: 嗯?什麼意思?你說有agent的話嗎?\n[SPEAKER_00]: 是tool calling的部分就是如果我們tool calling能把它每一次呼叫的tool然後跟為什麼呼叫這個tool的原因都列出來的話理論上也可以知道它會怎麼處理因為我覺得tool calling其實也算是因為它可以一次call很多個function所以它變成說它是\n[SPEAKER_00]: 把很多的很多的需求然後一次送給Gemini可是那個Gemini也是會分別把這個需求的結果回傳給你所以他也算是很多個agent只是他是每一次一次來回的形式這樣剛剛說的那個問題現在是步驟嘛其實你每個步驟的pront也可以去改啊就是他今天不是不能改他今天改的方式只是有點像是你每次的結果出來之後你可以根據他的就是像剛剛的嘛你可以根據那個log因為log你一定可以看出他讀了幾行\n[SPEAKER_00]: 跟他讀了幾行回去的時候他卻返回說他今天想要再讀那一行所以他每個步驟的prompt是分開的他今天的prompt不是合在一起就他雖然是合在一起但是他每個步驟的單獨的該做的事情他都是分開說的嗯總之我的意見就是把重要的東西把它分成agent去處理\n[SPEAKER_02]: 然後然後呃然後你要你們要可以確保知道說每一件事情到底做什麼譬如說像剛才欸剛剛好像那時候斷掉了所以每一句都會有一個boolean值去check他是不是被讀過嗎\n[SPEAKER_00]: 我剛剛看程式碼裡面有啊我們對程式碼是熟悉的嗎\n[SPEAKER_00]: 對我知道就是他這個是你就是你問完之後嘛問完是什麼意思就是他今天我們剛剛開始看這邊就是",
+          "score": 0.6667,
+          "matched_terms": [
+            "agent",
+            "manager"
+          ]
+        },
+        {
+          "chunk_id": "rag-0506-L46-L65",
+          "meeting_id": "0506",
+          "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0506.txt",
+          "start_line": 46,
+          "end_line": 65,
+          "text": "[SPEAKER_02]: 那那個memory上面現在的話是有會分成short term跟long term的嗎?\n[SPEAKER_01]: 對 這個是long term的系統這是分開的然後現在這個是在做long term的系統所以L1是long term然後short term是什麼 L2嗎因為它的L1是long term的Long term的每一個unit就是這個然後我們會我們上次說大概四個 四場會議會抓出一個L2就是這四場他比較大的脈絡會在這裡然後L3會是現在所有的脈絡再抓一個出來所以這邊他只會去\n[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這譬如說 20 行進來對 然後你進來然後它就一定一件事情它會在這個地方 這個地方可能後續,因為說那誰進來之後那這一句他會譬如說某種visualization他就會發現說這件事情如果你可以動態展說他會發現這個L1的節點亮了那他現在就加了一個node上去對然後這時候他L2他一加上去的時候L2他裡面會覺得update 它會有個 summary 在 L2 的節點裡面它會 summarize 下面的 L1 相關的東西所以我每加上一個 L1 的節點的時候L2 會改變然後 L2 改變之後最終L1 可能不會改變的因為 L1 是最 high level 的東西應該微小的改變所以 L1 你可能覺得說那像這時候 L1 它其實不會改變那你可以展示說當某一種情況譬如說本來在做這件事你決定不做了 對這件事情那可能譬如說超過幾天L1這件事情可能會在某一件事情譬如說決定decide這件事情我們放掉就是我們不做這件事情然後那你可能說喔那L2的話它也會改變那在這個時候L1的某一個東西可能會開始有一點點修正就是比較可視化它的那個感覺對對對然後這樣大家就有點像是說我是用視覺化去展示這個agent的memory裡面的狀態就是它現在existing的結構節點有長這樣子 那你假設說今天我real time有一個新的 transcript進來我process完它一個一個丟進去的時候我的memory的長相節點會長這個樣子 然後那 importance 跟那個的部分現在是怎麼算啊?importance 跟 relevance 啊?relevance 就是用那個 semantic 的...這裡好像都沒有就是...importance 也是靠 prompt 讓它去想在...那時候我們有講過說他被講過幾次會是一個 Indication 對不對?被講過...就有我們有一個算是一個...一個公式譬如說這一件事情\n[SPEAKER_04]: 它會有一個viewpoint的table如果它頻繁地提到的話那它之後的evolve會有一點點的加權頻繁指的是說同一次meeting不是跨meeting同一次meeting裡面它被講到了比較多次那所有有這個viewpoint的idea units 它都會增加它的就譬如說它可能不屬於同一個idea units對然後它都有提到就是你每次的update的時候你會去看所有目前有的idea units 然後如果它們有重複被提到那可能這三個idea unit它的importance都會加成一點點那它會有個default importance的值嗎?譬如說我今天第一個idea unit進來了它的importance的...那個importance都是在...importance在L2還是在L3?在最底下,其實最底下是L1然後對上面是L3對對對,L1就有importance了嘛 L1就會,就是你在...importance是跟著每一個unit, idea unit?importance是在你那個candidate出現之後他才會最後去去assign importance。importance算是你確定要存成node之後他才會給你然後,那在那個generate成一個node的當下他的importance的預設值是多少? 預設值 應該不會有預設值 因為是給LLM去判斷的所以就是LLM直接照我們給他importance的準則然後它去但我在想是importance這件事情可是它是一個相對的嗎還是就它應該是有兩個值的 一個importance 一個relevance 是嗎relevance是後面retrieve的時候算semantic的相似度\n[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1\n[SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡\n[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 weight那我如果 increase 某一個 idea unit 之後你這時候可以算 similarity所以如果我覺得這句話非常 important增強它的 importance 的話其他 relevant 的 idea units 我都直接跟你 confirm所以這些也是相關的你要不要把它全部都勾成是要 increase 它的 importance所以這個地方你就可以帶進來說我們 human 跟 AI共同的去 model就是我過去 Meeting 資料我怎麼去設定它的 importance level你一開始的初始值是由 LLM 設定但是它過程當中 user 可以自己一直去給動那個 weight 然後LLM會去也是會去知道就是human現在比較這個對這個來說他其實是要improve對然後最後他的考量點可能所以到最後可能不能就只有LLM最後可能會變這個如果要變得比較personalized的話他就會知道說喔這個人應該說這支agent對他在處理的時候哪一個類型的哪一個類型的資料我們可能不會是看literal說喔這句話講你可能要說他底層 在講什麼類型相關的東西的時候好像都會被標成會被這個user去重新再把它tune成importance變成比較高的對另外一個就是今天user 如果自己去調高或者是調低它的importance的時候它到那個因為long term的時候它不是會fade嗎對那如果是user曾經把它調成importance的時候 它在對抗那個越來越久 越來越久 我們有聽到它的importance可能必須要 它的decay的速度要比較慢因為它曾經被有所提高 說這件事情是重要的所以你終於可以 你們想要強調的可能就是說過去的這種 譬如說不管是哪一種方式去long term的記憶或者是fade out 它都是system 自己的logic 都去 去做那但是我們是提供一個human跟AI可以合作的那我們今天每個 transcription進來的時候我的user是可以去tune它裡面每一個memory節每一個Potential L1節點它的Impact level那但是我一個一個去標的太困難了所以我會先有一個Default的一個值對然後那那我可以去改那我改了之後我可以譬如剛剛講的我改了某一個我提高了我用similarity去看所有其他idea units類似的 類似的concept它不一定要是文字一模一樣但如果是類似的講法的東西我直接問你說這些你要不要調高如果不要的話就不要那如果要的話就調高那調高之後這件事情我們會去調整在最後long term的時候它fade out的時候我們會去考量如果user有tune過它曾經是很重要的話它decay的速度會比別的從來都沒有被調過的還要慢\n[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很\n[SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如說你判定錯了這個其實很重要我還是可以那我未來再判定你不是有那個0到幾0到幾那個那未來可以根據你過去的判定 predict 它的 importance level 的時候它可以變更個人化一點好 那個部分可以從剛剛那個介面的那個 Interaction 做到那接下來說 importance 這件事情它是 static 的對 那但是 long term 之後會變成是\n[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差不多但是隨著時間的推移你當時在memory裡面的你是說其他場會議嗎\n[SPEAKER_02]: 還是說那一場因為那一場會議的那一場會議的時間軸是共用它就是同一個日期我想的是說在我們現在在我們的memory system裡面其實就是最底層是一堆的L1對不對就是L1 L1 L1假設說L1 L1起來變成L2然後這樣變L2然後最後他們假設說有L3的最高的節點這樣現在是這個每一個idea unit它有一個importance的 還是是在這裡是L1就有了嗎L1有是在L1然後它每一個節點裡面它有個importance然後有一個 還有什麼?activation嗎?activation然後還有relevance 跟 recency。relevance 跟 recency然後跟activation。那你說的是importance 在當時建立node的當下就會有好那我們現在假設現在memory系統已經長這樣子了 好那假設我們現在假設這是其實就是這個禮拜的Meeting的結果假設我們這是第一次Meeting到下一次Meeting來的時候假設我一個新的node過來了L1的node過來了那他L1他過來他怎麼決定他要去加在哪個L2裡面L1他會因為他是順時間順序就應該說這個L1裡面應該是很多很多個這個很多很多個Object然後每個Object都有一個這個東西 就是它這個代表的是一場會議然後裡面會有很多的這個東西欸 好 那等一下我就慢慢把它畫清楚一點好了可以說嗎 我們先講一下我們上禮拜是第一次的Meeting然後經過了這些Process之後你的memory系統裡面假設我們現在就是有L3它會長什麼樣子如果只有一個L1它就是只有L3，L3最高假設我們就只有L3我們就寫L3然後假設它就是只有L3然後它有三個L2好了三個L2 OK\n[SPEAKER_04]: 我先問一下一次的Meeting的內容就可以產生三個階層的東西 可是這是一次好了這是可能是0307好了那這個0307裡面其實就會有很多很多個Object這樣然後每個Object都有各自的importance等一下你就畫它的結構長什麼樣子它的結構譬如說它就會所以它L2接下來的會是不同的日期嗎嗯就是那一場Meeting那一場Meeting然後裡面那一場Meeting裡面會有很多個Object這樣是我們剛剛更新的那個一場Meeting裡面的那些那種\n[SPEAKER_02]: 應該是說他的L2內容會是像什麼樣 我們舉個例L2會是類似 假設我們來說我們現在在講party Planning好了我們在說我們在討論我們上一次的Meeting在討論今年的暑假工營我們要辦的活動晚會要是做什麼事情然後是這個Meeting好了對好那現在譬如說那L1 L2 L3他可能是一個什麼樣的內容 L2，L2可能就會是我們先以L1來說它最底層的一個node它的內容會是長什麼樣子一個node裡面會是很多很多個我們就舉例我們剛剛在討論譬如說我們在討論是暑假資工營可能晚會暑假資工營然後晚會什麼時候小隊員有幾個這樣\n[SPEAKER_01]: 就是它是很細的資訊那L2就會說好L2會說我們這次03、07是在討論討論晚會的部分這樣然後可能什麼03、14在討論什麼然後可能這一個月都在討論什麼東西\n[SPEAKER_03]: 就這一個月討論的晚會那這個節點會是什麼這個節點還不存在如果他還沒進來的話他不存在他現在可能是這個可能就是14然後他應該他們是有四個嘛所以可能就是2128那這邊就會是零點四零點四然後就像這樣子所以這個就是剛剛那邊的一次的Meeting就這邊是一個日期的一次的Meeting一次的Meeting一次的Meeting一次的Meeting\n[SPEAKER_02]: 我現在有點疑惑欸所以現在這個是所以這就是每一次所以其實只是在\n[SPEAKER_04]: summarize不一樣每一次meeting他這個節點跟這個節點之間中間會有關係嗎現在是沒有關係你要說的話就在這邊你現在如果只有這個那這些東西都不存在然後再加這個然後再加這個然後再加這個然後等到醫師進來的時候這個L2才會出現就是他是這樣隨著增生他的L2才會慢慢出現\n[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦在六月底 就是好像可能會有個在說就是六月底的時間點六月底的時間這件事情那可能有一些 trade-off off 等等那同時六月底的話剛學生有些學生沒有開學有些還沒放假等等的對那當然說六月底可是七月初很多人出國等等好那那譬如說有些六月底的 reason然後這個東西切成一個 idea unit然後反正它會成為一個 L1 的 unit它是講六月底如果出國對然後討論到一些比如 pros and cons 等等的對 那可能說在當下有人說還是要辦在八月底那開學前大家都回國了等等所以在這一次meeting裡面可能會有另外一個說那如果是八月底的話所以這是L1的第一個節點我講的這些都是最最底層的 好那這是另外一個L1的節點那當然這個是在講六月就是說在六月底辦八月底辦這樣對那當然可能在討論討論到最後再說那要辦晚會還是要辦hiking好了對那可能說喔那有一個idea 因為我們是切那個東西來有一個是在討論的是event type event type 反正一看所以它有一點像我切那個 idea unit 的時候我切一個是時間有關的然後有人在講八月時間有關的那接下來 event 是跟譬如說是是去 hiking或者是我去辦什麼我不知道游泳啊那這些都是跟 event 的 type 有關係那接下來說要找大一的同學來幫忙的話那就是譬如說人好 people 好了 要不要找大一的同學,就是比較閒的那我拆完之後,我有一個idea unit,最低是time，它有一個最底層的更小的level 在這個地方,但最後我的結構會說這兩個都是屬於一個比較high level的,他們在討論time這件事情 所以這裡可能這些就是以主題為單位嗎對就以我們的memory架構來說有一些很像是說我現在記得我們總共有討論就是這個這個Meeting結束之後我現在知道也許因為還沒有很多Meeting所以我現在只有一大堆的L1我切了好多的L1出來目前我可能或者是說在什麼樣的情況我會先propagate 上去說喔就是他們兩個是有一個L2的什麼樣的結構或者說 在討論時間的時候會要考量到開學與否同學的什麼相關力就是現在有點像是你們現在怎麼回事現在有點像話現在就是你們現在這個現場互動因為一開始你不是有跑一個專案然後它會有很多離散的圖對就應該長得像那個樣子對然後我可以我本來想像是像這樣子嘛對不對那接下來它會開始長出一個這樣 好然後我這一次 meeting 結束我到下一次 meeting 來的時候那我們說那我們來確定一下好了要是 6 月還是 8 月好那這時候呢就有人說好那剛一進去的時候譬如 recency 一定就是都是 1 嘛所以是最相信的 好那接下來那可能會討論某些事情也許被提到可是其他也許沒有那麼重要啦我不知道會有一大堆L1那到第二次meeting 的時候假設時間又講到說那我們去看了一下別的學校台大他們也是六月那我們就不要跟他撞期等等的所以我們要在什麼樣之前所以我們決定那我們就辦在六月好了 好然後這時候這個一樣我們是 plus 這個東西耶節點我就有找到說欸這是屬於時間 time然後而且我去觀察就譬如說喔它是嗯它是跟譬如說時間的也許說這個是時間是說開學考量那但是其實我們可能是另外一個現在考量跟其他學校的競爭之類的所以它因為不存在目前已經有的 L2所以我就開了一個新的新的 node 在這個地方然後它產生了一個 他把L1 這個東西把它加進去那因為這個禮拜我們討論的是這件事情所以上個禮拜討論的這兩個節點他的recency就decay Decay 的某一些程度因為現在這個節點在時間底下它是最 recent就是 recency 的那你可以想像一下開第三次會也許到第三次會的時候說就是還是要考量就是我們試了在七月但是後來發現就是同學在七月真的都會出國對所以七月真的很不行所以我們就還是要到六月然後那個理由那你在譬如說下一次會的時候發現說它的內容其實跟 L1 其實很像 對那這個地方其實我就不用create一個新的L1節點然後我去update這個L1這件事情然後它我的日期加了一個就本來有一個是3月28號create的節點那但是在幾月幾號的時候它又被提及了一次它又微微的update一下對那它的recency又突然又變高了對我本來想要是它是一個有點像 可以像是說它的node會慢慢的展開那如果我找不到相關類似的東西的話我會create一個新節點要不然就是我去update原本已經有的節點 那這個三個 level 的話是比較像是more fine-grained最下面L1 的話是很細緻的那個很細緻的description然後到這邊到L2 的話它是比較是一個下面細緻description上面的一個summary對然後在最上面的話是最大的一個像一個主題\n[SPEAKER_04]: 我還想說不用去update前幾個是因為你新的幾個進去你之後再要retrieve這個主題的時候它跟它都會被拉出來然後第一個是這裡因為recency比較近所以它的分數一定比較高然後再來是你再假設它最後兩邊都被拉出來然後被餵給LLM好了那它會有時間軸所以它可以看得到什麼0307說要6月還是8月然後\n[SPEAKER_02]: 可能看到0314說還是8月好了什麼因為什麼很多人出國之類就是它是可以看得到哪個時間軸對同樣一件事情的不同決定因為它有時間的對但這個地方它裡面也是會有時間的就譬如我create每個節點的時候它都有它create這個節點的日期那如果說我下一次找到一個其實我有講類似的事情的時候我有類似的我就不用create一個新的小節點我就是update這個L1的節點在下面",
+          "score": 0.6667,
+          "matched_terms": [
+            "agent",
+            "manager"
+          ]
+        }
+      ],
+      "metrics": {
+        "context_char_count": 12015,
+        "estimated_context_tokens": 7416,
+        "actual_input_tokens": 5994,
+        "actual_output_tokens": 781,
+        "actual_total_tokens": 8807,
+        "token_source": "actual_usage_metadata",
+        "retrieved_chunk_count": 6,
+        "retrieval_ms": 3.339,
+        "context_build_ms": 0.0,
+        "total_ms": 25723.445,
+        "truncated": true,
+        "truncated_from_chars": 22331,
+        "generation_ms": 25720.106
+      },
+      "answer": "根據提供的資料，manager-agent 架構的討論是從檢討現行方法的不足之處演變而來的，主要目的是為了解決流程控制、模組化與獨立測試的問題。\n\n演變的過程如下：\n\n1.  **檢討現行方法的限制**：\n    目前的作法像是一個巨大、包辦所有事情的 Manager，從頭到尾執行一個完整的腳本（skill）。這個 monolithic 的流程導致了幾個問題：\n    *   **缺乏流程控制與彈性**：一旦流程開始，就必須從頭跑到尾。如果想更換或調整中間某一個步驟，例如改變「斷行」的邏輯，就需要修改整個主流程並重新執行全部步驟 (rag-0429-L331-L350, lines 335-338)。\n    *   **難以獨立測試與調整**：無法針對單一功能（例如「切分 idea units」或「判斷跳行數量」）進行獨立的測試和優化。要測試任何一個小改動，都必須跑完整個流程，效率低且難以精確評估單一環節的效果 (rag-0429-L331-L350, lines 336-340)。\n\n2.  **提出 Manager-Agent 的解決方案**：\n    為了解決上述問題，SPEAKER_02 提議將現有的巨大流程拆分成一個真正的 **Manager** 和多個專職的 **Agent**。\n    *   **Manager 的角色**：Manager 的職責被簡化為「發派任務而已」。它負責調度，依序呼叫不同的 Agent 來處理特定任務，並將前一個 Agent 的產出交給下一個 Agent (rag-0429-L301-L320, line 308; rag-0429-L286-L305, lines 299-300)。\n    *   **Agent 的角色**：每一個 Agent 都是一個獨立的 skill，專門處理一件精細的任務。例如，可以有專門負責「切分 idea units」的 Agent、負責「判斷要跳幾行」的 Agent，或是負責「更新 memory」的 Agent (rag-0429-L301-L320, lines 305-307, 318-319)。\n\n3.  **新架構的優勢**：\n    *   **精緻化與專業化**：每個 Agent 可以專注於自己的任務，並保有執行該任務所需的特定知識或資源，從而能更精緻地處理工作 (rag-0429-L301-L320, lines 305-307)。\n    *   **可控性與可測試性**：開發者可以明確控制流程的每一步，並且能夠獨立地測試和調整每一個 Agent 的表現，而不需要每次都執行完整流程 (rag-0429-L316-L335, lines 324, 331-332)。\n\n總結來說，這個架構的演變是從一個難以控制和測試的單體式流程，走向一個由「任務分派者 (Manager)」和「任務執行者 (Agent)」組成的模組化、可控性更高的系統 (rag-0429-L331-L350, lines 333-334)。"
+    },
+    "layered_memory": {
+      "strategy": "layered_memory",
+      "query": "manager-agent 架構是怎麼演變出來的？",
+      "retrieval_mode": "lexical",
+      "use_llm_planner": false,
+      "plan": {
+        "complexity": "simple",
+        "reasoning": "Memory Observatory no-LLM heuristic plan.",
+        "search_targets": [
+          "long_term_l1",
+          "long_term_l2",
+          "long_term_l3"
+        ],
+        "keywords": [
+          "manager-agent",
+          "架構是怎麼演變出來的"
+        ],
+        "time_range_hint": ""
+      },
+      "global_topic_map": {
+        "source": "long_term_global_topic_map",
+        "note": "Navigation context only; do not use as standalone factual evidence.",
+        "l3_families": [
+          {
+            "l3_id": "L3-memory-evaluation-strategy",
+            "label": "memory evaluation strategy",
+            "child_l2": [
+              {
+                "l2_id": "L2-overall-memory-system-evaluation",
+                "label": "Overall Memory System Evaluation",
+                "event_count": 24
+              },
+              {
+                "l2_id": "L2-memory-mechanism-evaluation-metrics",
+                "label": "Memory Mechanism Evaluation & Metrics",
+                "event_count": 25
+              },
+              {
+                "l2_id": "L2-evaluation-datasets-ground-truth",
+                "label": "Evaluation Datasets & Ground Truth",
+                "event_count": 26
+              }
+            ]
+          }
+        ],
+        "l2_topics": [
+          {
+            "l2_id": "L2-agentic-pipeline-control",
+            "label": "agentic pipeline control",
+            "event_count": 60
+          }
+        ],
+        "char_count": 376
+      },
+      "l1_evidence_seeds": [
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0318",
+          "timestamp": "2026-05-09T04:59:10Z",
+          "meeting_date": "2026-03-18",
+          "phase_id": "",
+          "obj_id": "L1-0318-006",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
+          "importance": 0.54,
+          "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+          "related_topics": [
+            "reference papers",
+            "system_architecture",
+            "research_methodology"
+          ],
+          "score": 0.5291,
+          "s_sem": 0.5,
+          "s_recency": 0.7111,
+          "s_importance": 0.54,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0318",
+          "timestamp": "2026-05-09T04:59:10Z",
+          "meeting_date": "2026-03-18",
+          "phase_id": "",
+          "obj_id": "L1-0318-002",
+          "type": "open_issue",
+          "legacy_type": "open_question",
+          "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
+          "importance": 0.5,
+          "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+          "related_topics": [
+            "reference papers",
+            "research_methodology",
+            "system_architecture"
+          ],
+          "score": 0.5211,
+          "s_sem": 0.5,
+          "s_recency": 0.7111,
+          "s_importance": 0.5,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0325",
+          "timestamp": "2026-05-09T05:13:01Z",
+          "meeting_date": "2026-03-25",
+          "phase_id": "",
+          "obj_id": "L1-0325-065",
+          "type": "approach_change",
+          "legacy_type": "method_change",
+          "content": "The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.",
+          "importance": 0.82,
+          "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+          "related_topics": [
+            "memory retrieval",
+            "system architecture",
+            "memory architecture",
+            "short-term memory",
+            "long-term memory"
+          ],
+          "score": 0.5207,
+          "s_sem": 0.3846,
+          "s_recency": 0.875,
+          "s_importance": 0.82,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0307",
+          "timestamp": "2026-05-09T04:44:43Z",
+          "meeting_date": "2026-03-07",
+          "phase_id": "",
+          "obj_id": "L1-0307-020",
+          "type": "approach_change",
+          "legacy_type": "decision",
+          "content": "The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.",
+          "importance": 0.81,
+          "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+          "related_topics": [
+            "project goals",
+            "evaluation strategy",
+            "human perception"
+          ],
+          "score": 0.5137,
+          "s_sem": 0.3846,
+          "s_recency": 0.825,
+          "s_importance": 0.81,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0307",
+          "timestamp": "2026-05-09T04:44:43Z",
+          "meeting_date": "2026-03-07",
+          "phase_id": "",
+          "obj_id": "L1-0307-027",
+          "type": "argument",
+          "legacy_type": "argument",
+          "content": "The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.",
+          "importance": 0.78,
+          "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+          "related_topics": [
+            "project goals",
+            "evaluation",
+            "human-computer interaction"
+          ],
+          "score": 0.5077,
+          "s_sem": 0.3846,
+          "s_recency": 0.825,
+          "s_importance": 0.78,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0325",
+          "timestamp": "2026-05-09T05:13:01Z",
+          "meeting_date": "2026-03-25",
+          "phase_id": "",
+          "obj_id": "L1-0325-062",
+          "type": "open_issue",
+          "legacy_type": "open_question",
+          "content": "The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.",
+          "importance": 0.75,
+          "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+          "related_topics": [
+            "memory retrieval",
+            "system_architecture",
+            "memory architecture",
+            "system_design",
+            "system architecture",
+            "long-term memory",
+            "short-term memory",
+            "development priority",
+            "system design"
+          ],
+          "score": 0.4942,
+          "s_sem": 0.3846,
+          "s_recency": 0.75,
+          "s_importance": 0.75,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0506",
+          "timestamp": "2026-05-09T08:52:38Z",
+          "meeting_date": "2026-05-06",
+          "phase_id": "",
+          "obj_id": "L1-0506-015",
+          "type": "approach_change",
+          "legacy_type": "method_change",
+          "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+          "importance": 0.82,
+          "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+          "related_topics": [
+            "data pipeline",
+            "code_architecture",
+            "memory update mechanism",
+            "memory architecture",
+            "memory item structure"
+          ],
+          "score": 0.4786,
+          "s_sem": 0.3077,
+          "s_recency": 0.9917,
+          "s_importance": 0.82,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        },
+        {
+          "source": "long_term_l1",
+          "meeting_id": "0506",
+          "timestamp": "2026-05-09T08:52:38Z",
+          "meeting_date": "2026-05-06",
+          "phase_id": "",
+          "obj_id": "L1-0506-017",
+          "type": "approach_change",
+          "legacy_type": "method_change",
+          "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+          "importance": 0.76,
+          "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+          "related_topics": [
+            "data pipeline",
+            "memory item structure",
+            "data handling",
+            "memory architecture",
+            "data processing",
+            "memory update",
+            "memory object model"
+          ],
+          "score": 0.4666,
+          "s_sem": 0.3077,
+          "s_recency": 0.9917,
+          "s_importance": 0.76,
+          "s_activation": null,
+          "activity_state": "unknown",
+          "retrieval_mode": "lexical"
+        }
+      ],
+      "l2_evolution_context": [
+        {
+          "source": "long_term_l2",
+          "l2_id": "L2-agentic-pipeline-control",
+          "label": "agentic pipeline control",
+          "current_state": "This L2 topic has 60 linked L1 evidence objects across 6 meeting(s). Latest evidence: An agent-based architecture provides significant engineering benefits, such as easier debugging and problem isolation due to separation of concerns, and the ability to perform u...",
+          "matched_l1_ids": [
+            "L1-0318-006",
+            "L1-0318-002"
+          ],
+          "topic_size": 60,
+          "selected_event_count": 2,
+          "omitted_event_count": 58,
+          "timeline_digest": [
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-002",
+              "summary": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。"
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-006",
+              "summary": "A reviewed 2024 paper on long text processing describes an architecture with sequenti...(truncated)"
+            }
+          ],
+          "selection_score": 0.2556,
+          "retrieval_slice": "selected_slice"
+        }
+      ],
+      "l3_navigation": [],
+      "retrieval_debug": {
+        "selected_l1_count": 8,
+        "selected_l2_count": 1,
+        "selected_child_l2_count": 0,
+        "global_topic_map_chars": 376,
+        "expanded_context_chars": 0,
+        "omitted_event_count": 58,
+        "large_l2_expanded_without_child_split": false,
+        "retrieval_mode": "lexical"
+      },
+      "formatted_prompt_context": "=== Global Topic Map ===\nLow-resolution navigation context only; not standalone factual evidence.\n- L3 L3-memory-evaluation-strategy: memory evaluation strategy\n  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation\n  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics\n  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth\n- Unpromoted L2 topics:\n  - L2-agentic-pipeline-control: agentic pipeline control\n\n=== L1 Evidence Seeds ===\n- [0307 | 2026-03-07 | L1-0307-020] type=approach_change importance=0.81 score=0.5137\n  content: The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.\n  evidence: [SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。\n- [0307 | 2026-03-07 | L1-0307-027] type=argument importance=0.78 score=0.5077\n  content: The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.\n  evidence: [SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。\n- [0318 | 2026-03-18 | L1-0318-006] type=finding importance=0.54 score=0.5291\n  content: A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.\n  evidence: [SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...\n- [0318 | 2026-03-18 | L1-0318-002] type=open_issue importance=0.5 score=0.5211\n  content: 在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。\n  evidence: [SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...\n- [0325 | 2026-03-25 | L1-0325-065] type=approach_change importance=0.82 score=0.5207\n  content: The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.\n  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果\n- [0325 | 2026-03-25 | L1-0325-062] type=open_issue importance=0.75 score=0.4942\n  content: The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.\n  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果\n- [0506 | 2026-05-06 | L1-0506-015] type=approach_change importance=0.82 score=0.4786\n  content: The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.\n  evidence: [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...\n- [0506 | 2026-05-06 | L1-0506-017] type=approach_change importance=0.76 score=0.4666\n  content: A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.\n  evidence: [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...\n\n=== L2 / Child-L2 Evolution Context ===\n\n[L2-agentic-pipeline-control] agentic pipeline control\n  matched L1: L1-0318-006, L1-0318-002\n  topic_size=60 selected_event_count=2 omitted_event_count=58\n  current_state: This L2 topic has 60 linked L1 evidence objects across 6 meeting(s). Latest evidence: An agent-based architecture provides significant engineering benefits, such as easier debugging and problem isolation due to separation of concerns, and the ab...(truncated)\n  timeline_digest:\n    - [2026-03-18 L1-0318-002] 在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。\n    - [2026-03-18 L1-0318-006] A reviewed 2024 paper on long text processing describes an architecture with sequenti...(truncated)\n\n=== Retrieval Debug ===\n- expanded_context_chars: 0\n- global_topic_map_chars: 376\n- large_l2_expanded_without_child_split: False\n- omitted_event_count: 58\n- retrieval_mode: lexical\n- selected_child_l2_count: 0\n- selected_l1_count: 8\n- selected_l2_count: 1",
+      "context": "=== Global Topic Map ===\nLow-resolution navigation context only; not standalone factual evidence.\n- L3 L3-memory-evaluation-strategy: memory evaluation strategy\n  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation\n  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics\n  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth\n- Unpromoted L2 topics:\n  - L2-agentic-pipeline-control: agentic pipeline control\n\n=== L1 Evidence Seeds ===\n- [0307 | 2026-03-07 | L1-0307-020] type=approach_change importance=0.81 score=0.5137\n  content: The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.\n  evidence: [SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。\n- [0307 | 2026-03-07 | L1-0307-027] type=argument importance=0.78 score=0.5077\n  content: The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.\n  evidence: [SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。\n- [0318 | 2026-03-18 | L1-0318-006] type=finding importance=0.54 score=0.5291\n  content: A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.\n  evidence: [SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...\n- [0318 | 2026-03-18 | L1-0318-002] type=open_issue importance=0.5 score=0.5211\n  content: 在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。\n  evidence: [SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...\n- [0325 | 2026-03-25 | L1-0325-065] type=approach_change importance=0.82 score=0.5207\n  content: The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.\n  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果\n- [0325 | 2026-03-25 | L1-0325-062] type=open_issue importance=0.75 score=0.4942\n  content: The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.\n  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果\n- [0506 | 2026-05-06 | L1-0506-015] type=approach_change importance=0.82 score=0.4786\n  content: The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.\n  evidence: [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...\n- [0506 | 2026-05-06 | L1-0506-017] type=approach_change importance=0.76 score=0.4666\n  content: A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.\n  evidence: [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...\n\n=== L2 / Child-L2 Evolution Context ===\n\n[L2-agentic-pipeline-control] agentic pipeline control\n  matched L1: L1-0318-006, L1-0318-002\n  topic_size=60 selected_event_count=2 omitted_event_count=58\n  current_state: This L2 topic has 60 linked L1 evidence objects across 6 meeting(s). Latest evidence: An agent-based architecture provides significant engineering benefits, such as easier debugging and problem isolation due to separation of concerns, and the ab...(truncated)\n  timeline_digest:\n    - [2026-03-18 L1-0318-002] 在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。\n    - [2026-03-18 L1-0318-006] A reviewed 2024 paper on long text processing describes an architecture with sequenti...(truncated)\n\n=== Retrieval Debug ===\n- expanded_context_chars: 0\n- global_topic_map_chars: 376\n- large_l2_expanded_without_child_split: False\n- omitted_event_count: 58\n- retrieval_mode: lexical\n- selected_child_l2_count: 0\n- selected_l1_count: 8\n- selected_l2_count: 1",
+      "metrics": {
+        "context_char_count": 6566,
+        "estimated_context_tokens": 2462,
+        "actual_input_tokens": 2502,
+        "actual_output_tokens": 303,
+        "actual_total_tokens": 4600,
+        "token_source": "actual_usage_metadata",
+        "selected_l1_count": 8,
+        "selected_l2_count": 1,
+        "selected_child_l2_count": 0,
+        "selected_l3_count": 0,
+        "omitted_event_count": 58,
+        "whether_large_l2_was_expanded_without_child_split": false,
+        "prompt_budget_pass": true,
+        "retrieval_ms": 153.543,
+        "context_build_ms": 0.0,
+        "generation_ms": 17878.218,
+        "total_ms": 18031.761
+      },
+      "raw_recall_result": {
+        "complexity": "simple",
+        "short_term_results": [],
+        "long_term_results": [
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0318",
+            "timestamp": "2026-05-09T04:59:10Z",
+            "meeting_date": "2026-03-18",
+            "phase_id": "",
+            "obj_id": "L1-0318-006",
+            "type": "finding",
+            "legacy_type": "result",
+            "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
+            "importance": 0.54,
+            "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+            "related_topics": [
+              "reference papers",
+              "system_architecture",
+              "research_methodology"
+            ],
+            "score": 0.5291,
+            "s_sem": 0.5,
+            "s_recency": 0.7111,
+            "s_importance": 0.54,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0318",
+            "timestamp": "2026-05-09T04:59:10Z",
+            "meeting_date": "2026-03-18",
+            "phase_id": "",
+            "obj_id": "L1-0318-002",
+            "type": "open_issue",
+            "legacy_type": "open_question",
+            "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
+            "importance": 0.5,
+            "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+            "related_topics": [
+              "reference papers",
+              "research_methodology",
+              "system_architecture"
+            ],
+            "score": 0.5211,
+            "s_sem": 0.5,
+            "s_recency": 0.7111,
+            "s_importance": 0.5,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0325",
+            "timestamp": "2026-05-09T05:13:01Z",
+            "meeting_date": "2026-03-25",
+            "phase_id": "",
+            "obj_id": "L1-0325-065",
+            "type": "approach_change",
+            "legacy_type": "method_change",
+            "content": "The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.",
+            "importance": 0.82,
+            "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+            "related_topics": [
+              "memory retrieval",
+              "system architecture",
+              "memory architecture",
+              "short-term memory",
+              "long-term memory"
+            ],
+            "score": 0.5207,
+            "s_sem": 0.3846,
+            "s_recency": 0.875,
+            "s_importance": 0.82,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0307",
+            "timestamp": "2026-05-09T04:44:43Z",
+            "meeting_date": "2026-03-07",
+            "phase_id": "",
+            "obj_id": "L1-0307-020",
+            "type": "approach_change",
+            "legacy_type": "decision",
+            "content": "The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.",
+            "importance": 0.81,
+            "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+            "related_topics": [
+              "project goals",
+              "evaluation strategy",
+              "human perception"
+            ],
+            "score": 0.5137,
+            "s_sem": 0.3846,
+            "s_recency": 0.825,
+            "s_importance": 0.81,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0307",
+            "timestamp": "2026-05-09T04:44:43Z",
+            "meeting_date": "2026-03-07",
+            "phase_id": "",
+            "obj_id": "L1-0307-027",
+            "type": "argument",
+            "legacy_type": "argument",
+            "content": "The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.",
+            "importance": 0.78,
+            "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+            "related_topics": [
+              "project goals",
+              "evaluation",
+              "human-computer interaction"
+            ],
+            "score": 0.5077,
+            "s_sem": 0.3846,
+            "s_recency": 0.825,
+            "s_importance": 0.78,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0325",
+            "timestamp": "2026-05-09T05:13:01Z",
+            "meeting_date": "2026-03-25",
+            "phase_id": "",
+            "obj_id": "L1-0325-062",
+            "type": "open_issue",
+            "legacy_type": "open_question",
+            "content": "The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.",
+            "importance": 0.75,
+            "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+            "related_topics": [
+              "memory retrieval",
+              "system_architecture",
+              "memory architecture",
+              "system_design",
+              "system architecture",
+              "long-term memory",
+              "short-term memory",
+              "development priority",
+              "system design"
+            ],
+            "score": 0.4942,
+            "s_sem": 0.3846,
+            "s_recency": 0.75,
+            "s_importance": 0.75,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0506",
+            "timestamp": "2026-05-09T08:52:38Z",
+            "meeting_date": "2026-05-06",
+            "phase_id": "",
+            "obj_id": "L1-0506-015",
+            "type": "approach_change",
+            "legacy_type": "method_change",
+            "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+            "importance": 0.82,
+            "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+            "related_topics": [
+              "data pipeline",
+              "code_architecture",
+              "memory update mechanism",
+              "memory architecture",
+              "memory item structure"
+            ],
+            "score": 0.4786,
+            "s_sem": 0.3077,
+            "s_recency": 0.9917,
+            "s_importance": 0.82,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0506",
+            "timestamp": "2026-05-09T08:52:38Z",
+            "meeting_date": "2026-05-06",
+            "phase_id": "",
+            "obj_id": "L1-0506-017",
+            "type": "approach_change",
+            "legacy_type": "method_change",
+            "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+            "importance": 0.76,
+            "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+            "related_topics": [
+              "data pipeline",
+              "memory item structure",
+              "data handling",
+              "memory architecture",
+              "data processing",
+              "memory update",
+              "memory object model"
+            ],
+            "score": 0.4666,
+            "s_sem": 0.3077,
+            "s_recency": 0.9917,
+            "s_importance": 0.76,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          }
+        ],
+        "long_term_l1": [
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0318",
+            "timestamp": "2026-05-09T04:59:10Z",
+            "meeting_date": "2026-03-18",
+            "phase_id": "",
+            "obj_id": "L1-0318-006",
+            "type": "finding",
+            "legacy_type": "result",
+            "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
+            "importance": 0.54,
+            "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+            "related_topics": [
+              "reference papers",
+              "system_architecture",
+              "research_methodology"
+            ],
+            "score": 0.5291,
+            "s_sem": 0.5,
+            "s_recency": 0.7111,
+            "s_importance": 0.54,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0318",
+            "timestamp": "2026-05-09T04:59:10Z",
+            "meeting_date": "2026-03-18",
+            "phase_id": "",
+            "obj_id": "L1-0318-002",
+            "type": "open_issue",
+            "legacy_type": "open_question",
+            "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
+            "importance": 0.5,
+            "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+            "related_topics": [
+              "reference papers",
+              "research_methodology",
+              "system_architecture"
+            ],
+            "score": 0.5211,
+            "s_sem": 0.5,
+            "s_recency": 0.7111,
+            "s_importance": 0.5,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0325",
+            "timestamp": "2026-05-09T05:13:01Z",
+            "meeting_date": "2026-03-25",
+            "phase_id": "",
+            "obj_id": "L1-0325-065",
+            "type": "approach_change",
+            "legacy_type": "method_change",
+            "content": "The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.",
+            "importance": 0.82,
+            "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+            "related_topics": [
+              "memory retrieval",
+              "system architecture",
+              "memory architecture",
+              "short-term memory",
+              "long-term memory"
+            ],
+            "score": 0.5207,
+            "s_sem": 0.3846,
+            "s_recency": 0.875,
+            "s_importance": 0.82,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0307",
+            "timestamp": "2026-05-09T04:44:43Z",
+            "meeting_date": "2026-03-07",
+            "phase_id": "",
+            "obj_id": "L1-0307-020",
+            "type": "approach_change",
+            "legacy_type": "decision",
+            "content": "The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.",
+            "importance": 0.81,
+            "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+            "related_topics": [
+              "project goals",
+              "evaluation strategy",
+              "human perception"
+            ],
+            "score": 0.5137,
+            "s_sem": 0.3846,
+            "s_recency": 0.825,
+            "s_importance": 0.81,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0307",
+            "timestamp": "2026-05-09T04:44:43Z",
+            "meeting_date": "2026-03-07",
+            "phase_id": "",
+            "obj_id": "L1-0307-027",
+            "type": "argument",
+            "legacy_type": "argument",
+            "content": "The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.",
+            "importance": 0.78,
+            "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+            "related_topics": [
+              "project goals",
+              "evaluation",
+              "human-computer interaction"
+            ],
+            "score": 0.5077,
+            "s_sem": 0.3846,
+            "s_recency": 0.825,
+            "s_importance": 0.78,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0325",
+            "timestamp": "2026-05-09T05:13:01Z",
+            "meeting_date": "2026-03-25",
+            "phase_id": "",
+            "obj_id": "L1-0325-062",
+            "type": "open_issue",
+            "legacy_type": "open_question",
+            "content": "The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.",
+            "importance": 0.75,
+            "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+            "related_topics": [
+              "memory retrieval",
+              "system_architecture",
+              "memory architecture",
+              "system_design",
+              "system architecture",
+              "long-term memory",
+              "short-term memory",
+              "development priority",
+              "system design"
+            ],
+            "score": 0.4942,
+            "s_sem": 0.3846,
+            "s_recency": 0.75,
+            "s_importance": 0.75,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0506",
+            "timestamp": "2026-05-09T08:52:38Z",
+            "meeting_date": "2026-05-06",
+            "phase_id": "",
+            "obj_id": "L1-0506-015",
+            "type": "approach_change",
+            "legacy_type": "method_change",
+            "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+            "importance": 0.82,
+            "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+            "related_topics": [
+              "data pipeline",
+              "code_architecture",
+              "memory update mechanism",
+              "memory architecture",
+              "memory item structure"
+            ],
+            "score": 0.4786,
+            "s_sem": 0.3077,
+            "s_recency": 0.9917,
+            "s_importance": 0.82,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          },
+          {
+            "source": "long_term_l1",
+            "meeting_id": "0506",
+            "timestamp": "2026-05-09T08:52:38Z",
+            "meeting_date": "2026-05-06",
+            "phase_id": "",
+            "obj_id": "L1-0506-017",
+            "type": "approach_change",
+            "legacy_type": "method_change",
+            "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+            "importance": 0.76,
+            "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+            "related_topics": [
+              "data pipeline",
+              "memory item structure",
+              "data handling",
+              "memory architecture",
+              "data processing",
+              "memory update",
+              "memory object model"
+            ],
+            "score": 0.4666,
+            "s_sem": 0.3077,
+            "s_recency": 0.9917,
+            "s_importance": 0.76,
+            "s_activation": null,
+            "activity_state": "unknown",
+            "retrieval_mode": "lexical"
+          }
+        ],
+        "long_term_l2": [
+          {
+            "source": "long_term_l2",
+            "l2_id": "L2-agentic-pipeline-control",
+            "label": "agentic pipeline control",
+            "current_state": "This L2 topic has 60 linked L1 evidence objects across 6 meeting(s). Latest evidence: An agent-based architecture provides significant engineering benefits, such as easier debugging and problem isolation due to separation of concerns, and the ability to perform u...",
+            "matched_l1_ids": [
+              "L1-0318-006",
+              "L1-0318-002"
+            ],
+            "topic_size": 60,
+            "selected_event_count": 2,
+            "omitted_event_count": 58,
+            "timeline_digest": [
+              {
+                "meeting_id": "0318",
+                "meeting_date": "2026-03-18",
+                "obj_id": "L1-0318-002",
+                "summary": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。"
+              },
+              {
+                "meeting_id": "0318",
+                "meeting_date": "2026-03-18",
+                "obj_id": "L1-0318-006",
+                "summary": "A reviewed 2024 paper on long text processing describes an architecture with sequenti...(truncated)"
+              }
+            ],
+            "selection_score": 0.2556,
+            "retrieval_slice": "selected_slice"
+          }
+        ],
+        "long_term_l3": [],
+        "global_topic_map": {
+          "source": "long_term_global_topic_map",
+          "note": "Navigation context only; do not use as standalone factual evidence.",
+          "l3_families": [
+            {
+              "l3_id": "L3-memory-evaluation-strategy",
+              "label": "memory evaluation strategy",
+              "child_l2": [
+                {
+                  "l2_id": "L2-overall-memory-system-evaluation",
+                  "label": "Overall Memory System Evaluation",
+                  "event_count": 24
+                },
+                {
+                  "l2_id": "L2-memory-mechanism-evaluation-metrics",
+                  "label": "Memory Mechanism Evaluation & Metrics",
+                  "event_count": 25
+                },
+                {
+                  "l2_id": "L2-evaluation-datasets-ground-truth",
+                  "label": "Evaluation Datasets & Ground Truth",
+                  "event_count": 26
+                }
+              ]
+            }
+          ],
+          "l2_topics": [
+            {
+              "l2_id": "L2-agentic-pipeline-control",
+              "label": "agentic pipeline control",
+              "event_count": 60
+            }
+          ],
+          "char_count": 376
+        },
+        "retrieval_debug": {
+          "selected_l1_count": 8,
+          "selected_l2_count": 1,
+          "selected_child_l2_count": 0,
+          "global_topic_map_chars": 376,
+          "expanded_context_chars": 0,
+          "omitted_event_count": 58,
+          "large_l2_expanded_without_child_split": false,
+          "retrieval_mode": "lexical"
+        },
+        "project_profile": null
+      },
+      "scores": {
+        "expected_obj_recall_at_context": 1.0,
+        "strict_obj_recall_at_context": 0.0,
+        "acceptable_obj_recall_at_context": null,
+        "expected_l2_hit": true,
+        "expected_l3_hit": true,
+        "selected_obj_ids": [
+          "L1-0307-020",
+          "L1-0307-027",
+          "L1-0318-002",
+          "L1-0318-006",
+          "L1-0325-062",
+          "L1-0325-065",
+          "L1-0506-015",
+          "L1-0506-017"
+        ],
+        "selected_l2_ids": [
+          "L2-agentic-pipeline-control"
+        ],
+        "selected_l3_ids": []
+      },
+      "answer": "根據提供的資料，manager-agent 架構的概念是來自於團隊成員在分析一篇 2024 年關於長文本處理的論文時所提出的。\n\n其演變過程如下：\n\n1.  **概念源起**：在 2026 年 3 月 18 日的討論中，團隊成員分享了一篇 2024 年論文的作法。該論文描述了一種架構，其中包含：\n    *   多個「工作者代理人」（worker agent）循序地處理被切分的文本區塊（chunks）。\n    *   一個「管理者代理人」（manager agent）來整合所有工作者代理人的輸出。\n    *   一個「共享黑板」（shared blackboard）來提供全域的上下文。\n    (來源: L1-0318-006)\n\n2.  **初期問題**：在引進這個概念的同時，團隊也指出該論文對於「管理者代理人」究竟如何整合各個「工作者代理人」的輸出以回答問題的具體機制，描述得並不清楚，這是一個待解決的問題。\n    (來源: L1-0318-002)\n\n目前的資料僅顯示了 manager-agent 架構概念的來源和初期的疑問，關於它後續在專案中如何被進一步實作或改進的資訊，目前資料不足。"
+    }
+  }
+}

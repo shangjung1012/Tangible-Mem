@@ -1,0 +1,868 @@
+{
+  "strategy": "layered_memory",
+  "query": "manager-agent 架構是怎麼演變出來的？",
+  "retrieval_mode": "lexical",
+  "use_llm_planner": false,
+  "plan": {
+    "complexity": "simple",
+    "reasoning": "Memory Observatory no-LLM heuristic plan.",
+    "search_targets": [
+      "long_term_l1",
+      "long_term_l2",
+      "long_term_l3"
+    ],
+    "keywords": [
+      "manager-agent",
+      "架構是怎麼演變出來的"
+    ],
+    "time_range_hint": ""
+  },
+  "global_topic_map": {
+    "source": "long_term_global_topic_map",
+    "note": "Navigation context only; do not use as standalone factual evidence.",
+    "l3_families": [
+      {
+        "l3_id": "L3-memory-evaluation-strategy",
+        "label": "memory evaluation strategy",
+        "child_l2": [
+          {
+            "l2_id": "L2-overall-memory-system-evaluation",
+            "label": "Overall Memory System Evaluation",
+            "event_count": 24
+          },
+          {
+            "l2_id": "L2-memory-mechanism-evaluation-metrics",
+            "label": "Memory Mechanism Evaluation & Metrics",
+            "event_count": 25
+          },
+          {
+            "l2_id": "L2-evaluation-datasets-ground-truth",
+            "label": "Evaluation Datasets & Ground Truth",
+            "event_count": 26
+          }
+        ]
+      }
+    ],
+    "l2_topics": [
+      {
+        "l2_id": "L2-agentic-pipeline-control",
+        "label": "agentic pipeline control",
+        "event_count": 60
+      }
+    ],
+    "char_count": 376
+  },
+  "l1_evidence_seeds": [
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0318",
+      "timestamp": "2026-05-09T04:59:10Z",
+      "meeting_date": "2026-03-18",
+      "phase_id": "",
+      "obj_id": "L1-0318-006",
+      "type": "finding",
+      "legacy_type": "result",
+      "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
+      "importance": 0.54,
+      "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+      "related_topics": [
+        "reference papers",
+        "system_architecture",
+        "research_methodology"
+      ],
+      "score": 0.5291,
+      "s_sem": 0.5,
+      "s_recency": 0.7111,
+      "s_importance": 0.54,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0318",
+      "timestamp": "2026-05-09T04:59:10Z",
+      "meeting_date": "2026-03-18",
+      "phase_id": "",
+      "obj_id": "L1-0318-002",
+      "type": "open_issue",
+      "legacy_type": "open_question",
+      "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
+      "importance": 0.5,
+      "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+      "related_topics": [
+        "reference papers",
+        "research_methodology",
+        "system_architecture"
+      ],
+      "score": 0.5211,
+      "s_sem": 0.5,
+      "s_recency": 0.7111,
+      "s_importance": 0.5,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0325",
+      "timestamp": "2026-05-09T05:13:01Z",
+      "meeting_date": "2026-03-25",
+      "phase_id": "",
+      "obj_id": "L1-0325-065",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.",
+      "importance": 0.82,
+      "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+      "related_topics": [
+        "memory retrieval",
+        "system architecture",
+        "memory architecture",
+        "short-term memory",
+        "long-term memory"
+      ],
+      "score": 0.5207,
+      "s_sem": 0.3846,
+      "s_recency": 0.875,
+      "s_importance": 0.82,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0307",
+      "timestamp": "2026-05-09T04:44:43Z",
+      "meeting_date": "2026-03-07",
+      "phase_id": "",
+      "obj_id": "L1-0307-020",
+      "type": "approach_change",
+      "legacy_type": "decision",
+      "content": "The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.",
+      "importance": 0.81,
+      "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+      "related_topics": [
+        "project goals",
+        "evaluation strategy",
+        "human perception"
+      ],
+      "score": 0.5137,
+      "s_sem": 0.3846,
+      "s_recency": 0.825,
+      "s_importance": 0.81,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0307",
+      "timestamp": "2026-05-09T04:44:43Z",
+      "meeting_date": "2026-03-07",
+      "phase_id": "",
+      "obj_id": "L1-0307-027",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.",
+      "importance": 0.78,
+      "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+      "related_topics": [
+        "project goals",
+        "evaluation",
+        "human-computer interaction"
+      ],
+      "score": 0.5077,
+      "s_sem": 0.3846,
+      "s_recency": 0.825,
+      "s_importance": 0.78,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0325",
+      "timestamp": "2026-05-09T05:13:01Z",
+      "meeting_date": "2026-03-25",
+      "phase_id": "",
+      "obj_id": "L1-0325-062",
+      "type": "open_issue",
+      "legacy_type": "open_question",
+      "content": "The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.",
+      "importance": 0.75,
+      "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+      "related_topics": [
+        "memory retrieval",
+        "system_architecture",
+        "memory architecture",
+        "system_design",
+        "system architecture",
+        "long-term memory",
+        "short-term memory",
+        "development priority",
+        "system design"
+      ],
+      "score": 0.4942,
+      "s_sem": 0.3846,
+      "s_recency": 0.75,
+      "s_importance": 0.75,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-09T08:52:38Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-015",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+      "importance": 0.82,
+      "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+      "related_topics": [
+        "data pipeline",
+        "code_architecture",
+        "memory update mechanism",
+        "memory architecture",
+        "memory item structure"
+      ],
+      "score": 0.4786,
+      "s_sem": 0.3077,
+      "s_recency": 0.9917,
+      "s_importance": 0.82,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-09T08:52:38Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-017",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+      "importance": 0.76,
+      "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+      "related_topics": [
+        "data pipeline",
+        "memory item structure",
+        "data handling",
+        "memory architecture",
+        "data processing",
+        "memory update",
+        "memory object model"
+      ],
+      "score": 0.4666,
+      "s_sem": 0.3077,
+      "s_recency": 0.9917,
+      "s_importance": 0.76,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "lexical"
+    }
+  ],
+  "l2_evolution_context": [
+    {
+      "source": "long_term_l2",
+      "l2_id": "L2-agentic-pipeline-control",
+      "label": "agentic pipeline control",
+      "current_state": "This L2 topic has 60 linked L1 evidence objects across 6 meeting(s). Latest evidence: An agent-based architecture provides significant engineering benefits, such as easier debugging and problem isolation due to separation of concerns, and the ability to perform u...",
+      "matched_l1_ids": [
+        "L1-0318-006",
+        "L1-0318-002"
+      ],
+      "topic_size": 60,
+      "selected_event_count": 2,
+      "omitted_event_count": 58,
+      "timeline_digest": [
+        {
+          "meeting_id": "0318",
+          "meeting_date": "2026-03-18",
+          "obj_id": "L1-0318-002",
+          "summary": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。"
+        },
+        {
+          "meeting_id": "0318",
+          "meeting_date": "2026-03-18",
+          "obj_id": "L1-0318-006",
+          "summary": "A reviewed 2024 paper on long text processing describes an architecture with sequenti...(truncated)"
+        }
+      ],
+      "selection_score": 0.2556,
+      "retrieval_slice": "selected_slice"
+    }
+  ],
+  "l3_navigation": [],
+  "retrieval_debug": {
+    "selected_l1_count": 8,
+    "selected_l2_count": 1,
+    "selected_child_l2_count": 0,
+    "global_topic_map_chars": 376,
+    "expanded_context_chars": 0,
+    "omitted_event_count": 58,
+    "large_l2_expanded_without_child_split": false,
+    "retrieval_mode": "lexical"
+  },
+  "metrics": {
+    "context_char_count": 6566,
+    "estimated_context_tokens": 2462,
+    "actual_input_tokens": 2502,
+    "actual_output_tokens": 303,
+    "actual_total_tokens": 4600,
+    "token_source": "actual_usage_metadata",
+    "selected_l1_count": 8,
+    "selected_l2_count": 1,
+    "selected_child_l2_count": 0,
+    "selected_l3_count": 0,
+    "omitted_event_count": 58,
+    "whether_large_l2_was_expanded_without_child_split": false,
+    "prompt_budget_pass": true,
+    "retrieval_ms": 153.543,
+    "context_build_ms": 0.0,
+    "generation_ms": 17878.218,
+    "total_ms": 18031.761
+  },
+  "raw_recall_result": {
+    "complexity": "simple",
+    "short_term_results": [],
+    "long_term_results": [
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0318",
+        "timestamp": "2026-05-09T04:59:10Z",
+        "meeting_date": "2026-03-18",
+        "phase_id": "",
+        "obj_id": "L1-0318-006",
+        "type": "finding",
+        "legacy_type": "result",
+        "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
+        "importance": 0.54,
+        "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+        "related_topics": [
+          "reference papers",
+          "system_architecture",
+          "research_methodology"
+        ],
+        "score": 0.5291,
+        "s_sem": 0.5,
+        "s_recency": 0.7111,
+        "s_importance": 0.54,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0318",
+        "timestamp": "2026-05-09T04:59:10Z",
+        "meeting_date": "2026-03-18",
+        "phase_id": "",
+        "obj_id": "L1-0318-002",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
+        "importance": 0.5,
+        "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+        "related_topics": [
+          "reference papers",
+          "research_methodology",
+          "system_architecture"
+        ],
+        "score": 0.5211,
+        "s_sem": 0.5,
+        "s_recency": 0.7111,
+        "s_importance": 0.5,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0325",
+        "timestamp": "2026-05-09T05:13:01Z",
+        "meeting_date": "2026-03-25",
+        "phase_id": "",
+        "obj_id": "L1-0325-065",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.",
+        "importance": 0.82,
+        "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+        "related_topics": [
+          "memory retrieval",
+          "system architecture",
+          "memory architecture",
+          "short-term memory",
+          "long-term memory"
+        ],
+        "score": 0.5207,
+        "s_sem": 0.3846,
+        "s_recency": 0.875,
+        "s_importance": 0.82,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0307",
+        "timestamp": "2026-05-09T04:44:43Z",
+        "meeting_date": "2026-03-07",
+        "phase_id": "",
+        "obj_id": "L1-0307-020",
+        "type": "approach_change",
+        "legacy_type": "decision",
+        "content": "The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.",
+        "importance": 0.81,
+        "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+        "related_topics": [
+          "project goals",
+          "evaluation strategy",
+          "human perception"
+        ],
+        "score": 0.5137,
+        "s_sem": 0.3846,
+        "s_recency": 0.825,
+        "s_importance": 0.81,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0307",
+        "timestamp": "2026-05-09T04:44:43Z",
+        "meeting_date": "2026-03-07",
+        "phase_id": "",
+        "obj_id": "L1-0307-027",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.",
+        "importance": 0.78,
+        "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+        "related_topics": [
+          "project goals",
+          "evaluation",
+          "human-computer interaction"
+        ],
+        "score": 0.5077,
+        "s_sem": 0.3846,
+        "s_recency": 0.825,
+        "s_importance": 0.78,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0325",
+        "timestamp": "2026-05-09T05:13:01Z",
+        "meeting_date": "2026-03-25",
+        "phase_id": "",
+        "obj_id": "L1-0325-062",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.",
+        "importance": 0.75,
+        "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+        "related_topics": [
+          "memory retrieval",
+          "system_architecture",
+          "memory architecture",
+          "system_design",
+          "system architecture",
+          "long-term memory",
+          "short-term memory",
+          "development priority",
+          "system design"
+        ],
+        "score": 0.4942,
+        "s_sem": 0.3846,
+        "s_recency": 0.75,
+        "s_importance": 0.75,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-09T08:52:38Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-015",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+        "importance": 0.82,
+        "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+        "related_topics": [
+          "data pipeline",
+          "code_architecture",
+          "memory update mechanism",
+          "memory architecture",
+          "memory item structure"
+        ],
+        "score": 0.4786,
+        "s_sem": 0.3077,
+        "s_recency": 0.9917,
+        "s_importance": 0.82,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-09T08:52:38Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-017",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+        "importance": 0.76,
+        "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+        "related_topics": [
+          "data pipeline",
+          "memory item structure",
+          "data handling",
+          "memory architecture",
+          "data processing",
+          "memory update",
+          "memory object model"
+        ],
+        "score": 0.4666,
+        "s_sem": 0.3077,
+        "s_recency": 0.9917,
+        "s_importance": 0.76,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      }
+    ],
+    "long_term_l1": [
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0318",
+        "timestamp": "2026-05-09T04:59:10Z",
+        "meeting_date": "2026-03-18",
+        "phase_id": "",
+        "obj_id": "L1-0318-006",
+        "type": "finding",
+        "legacy_type": "result",
+        "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
+        "importance": 0.54,
+        "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+        "related_topics": [
+          "reference papers",
+          "system_architecture",
+          "research_methodology"
+        ],
+        "score": 0.5291,
+        "s_sem": 0.5,
+        "s_recency": 0.7111,
+        "s_importance": 0.54,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0318",
+        "timestamp": "2026-05-09T04:59:10Z",
+        "meeting_date": "2026-03-18",
+        "phase_id": "",
+        "obj_id": "L1-0318-002",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
+        "importance": 0.5,
+        "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+        "related_topics": [
+          "reference papers",
+          "research_methodology",
+          "system_architecture"
+        ],
+        "score": 0.5211,
+        "s_sem": 0.5,
+        "s_recency": 0.7111,
+        "s_importance": 0.5,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0325",
+        "timestamp": "2026-05-09T05:13:01Z",
+        "meeting_date": "2026-03-25",
+        "phase_id": "",
+        "obj_id": "L1-0325-065",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "The primary development challenge has shifted from memory updates to retrieval, specifically how to appropriately weight the results from the three memory tiers (working, short-term, long-term) when the agent generates a response.",
+        "importance": 0.82,
+        "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+        "related_topics": [
+          "memory retrieval",
+          "system architecture",
+          "memory architecture",
+          "short-term memory",
+          "long-term memory"
+        ],
+        "score": 0.5207,
+        "s_sem": 0.3846,
+        "s_recency": 0.875,
+        "s_importance": 0.82,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0307",
+        "timestamp": "2026-05-09T04:44:43Z",
+        "meeting_date": "2026-03-07",
+        "phase_id": "",
+        "obj_id": "L1-0307-020",
+        "type": "approach_change",
+        "legacy_type": "decision",
+        "content": "The project's primary goal and evaluation method is focused on understanding the memory-enhanced agent's effect on human perception, rather than on rigorous proof. The minimum viable approach is to implement the architecture, show behavior changes, and observe human interaction.",
+        "importance": 0.81,
+        "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+        "related_topics": [
+          "project goals",
+          "evaluation strategy",
+          "human perception"
+        ],
+        "score": 0.5137,
+        "s_sem": 0.3846,
+        "s_recency": 0.825,
+        "s_importance": 0.81,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0307",
+        "timestamp": "2026-05-09T04:44:43Z",
+        "meeting_date": "2026-03-07",
+        "phase_id": "",
+        "obj_id": "L1-0307-027",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "The project's primary goal is not a rigorous proof, but to understand how the memory-enhanced agent affects human perception. This justifies prioritizing the implementation of the paper's architecture to show behavioral changes and observe human interaction as the minimum viable step.",
+        "importance": 0.78,
+        "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+        "related_topics": [
+          "project goals",
+          "evaluation",
+          "human-computer interaction"
+        ],
+        "score": 0.5077,
+        "s_sem": 0.3846,
+        "s_recency": 0.825,
+        "s_importance": 0.78,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0325",
+        "timestamp": "2026-05-09T05:13:01Z",
+        "meeting_date": "2026-03-25",
+        "phase_id": "",
+        "obj_id": "L1-0325-062",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "The main challenge is retrieval from the three-tiered memory system (working, short-term, long-term), specifically how to appropriately weight the results from each tier when the agent generates a response.",
+        "importance": 0.75,
+        "evidence": "[SPEAKER_01]:\t其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]:\t這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]:\t因為我們最後出來會有三組結果",
+        "related_topics": [
+          "memory retrieval",
+          "system_architecture",
+          "memory architecture",
+          "system_design",
+          "system architecture",
+          "long-term memory",
+          "short-term memory",
+          "development priority",
+          "system design"
+        ],
+        "score": 0.4942,
+        "s_sem": 0.3846,
+        "s_recency": 0.75,
+        "s_importance": 0.75,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-09T08:52:38Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-015",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "The processing pipeline employs a parallel architecture where each idea unit is simultaneously sent to six different agents for classification. The outputs, termed 'candidates', are then reconciled, allowing a single idea unit to potentially generate multiple candidate types.",
+        "importance": 0.82,
+        "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+        "related_topics": [
+          "data pipeline",
+          "code_architecture",
+          "memory update mechanism",
+          "memory architecture",
+          "memory item structure"
+        ],
+        "score": 0.4786,
+        "s_sem": 0.3077,
+        "s_recency": 0.9917,
+        "s_importance": 0.82,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-09T08:52:38Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-017",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "A constraint has been implemented in the processing pipeline to refine the multiple labels an idea unit might receive from parallel agents down to one, or at most two, final types.",
+        "importance": 0.76,
+        "evidence": "[SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後 candidate 才去找所以 idea units 到 candidate 之間我們會先去看那些 idea units相關的沒有 idea units 會先去送六個 agent然後去分辨說他們各自是什麼但是因為我們繼續往後看好了所以也就是反正不管怎麼樣的話就是會有最後的 但是因為他是平行送所以他每一個agent產生出來的candidate有可能會是重複的就是我decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來然後開始去看說開始去比對說誰跟誰應該是誰應該是屬於可能to-do跟d...",
+        "related_topics": [
+          "data pipeline",
+          "memory item structure",
+          "data handling",
+          "memory architecture",
+          "data processing",
+          "memory update",
+          "memory object model"
+        ],
+        "score": 0.4666,
+        "s_sem": 0.3077,
+        "s_recency": 0.9917,
+        "s_importance": 0.76,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "lexical"
+      }
+    ],
+    "long_term_l2": [
+      {
+        "source": "long_term_l2",
+        "l2_id": "L2-agentic-pipeline-control",
+        "label": "agentic pipeline control",
+        "current_state": "This L2 topic has 60 linked L1 evidence objects across 6 meeting(s). Latest evidence: An agent-based architecture provides significant engineering benefits, such as easier debugging and problem isolation due to separation of concerns, and the ability to perform u...",
+        "matched_l1_ids": [
+          "L1-0318-006",
+          "L1-0318-002"
+        ],
+        "topic_size": 60,
+        "selected_event_count": 2,
+        "omitted_event_count": 58,
+        "timeline_digest": [
+          {
+            "meeting_id": "0318",
+            "meeting_date": "2026-03-18",
+            "obj_id": "L1-0318-002",
+            "summary": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。"
+          },
+          {
+            "meeting_id": "0318",
+            "meeting_date": "2026-03-18",
+            "obj_id": "L1-0318-006",
+            "summary": "A reviewed 2024 paper on long text processing describes an architecture with sequenti...(truncated)"
+          }
+        ],
+        "selection_score": 0.2556,
+        "retrieval_slice": "selected_slice"
+      }
+    ],
+    "long_term_l3": [],
+    "global_topic_map": {
+      "source": "long_term_global_topic_map",
+      "note": "Navigation context only; do not use as standalone factual evidence.",
+      "l3_families": [
+        {
+          "l3_id": "L3-memory-evaluation-strategy",
+          "label": "memory evaluation strategy",
+          "child_l2": [
+            {
+              "l2_id": "L2-overall-memory-system-evaluation",
+              "label": "Overall Memory System Evaluation",
+              "event_count": 24
+            },
+            {
+              "l2_id": "L2-memory-mechanism-evaluation-metrics",
+              "label": "Memory Mechanism Evaluation & Metrics",
+              "event_count": 25
+            },
+            {
+              "l2_id": "L2-evaluation-datasets-ground-truth",
+              "label": "Evaluation Datasets & Ground Truth",
+              "event_count": 26
+            }
+          ]
+        }
+      ],
+      "l2_topics": [
+        {
+          "l2_id": "L2-agentic-pipeline-control",
+          "label": "agentic pipeline control",
+          "event_count": 60
+        }
+      ],
+      "char_count": 376
+    },
+    "retrieval_debug": {
+      "selected_l1_count": 8,
+      "selected_l2_count": 1,
+      "selected_child_l2_count": 0,
+      "global_topic_map_chars": 376,
+      "expanded_context_chars": 0,
+      "omitted_event_count": 58,
+      "large_l2_expanded_without_child_split": false,
+      "retrieval_mode": "lexical"
+    },
+    "project_profile": null
+  },
+  "scores": {
+    "expected_obj_recall_at_context": 1.0,
+    "strict_obj_recall_at_context": 0.0,
+    "acceptable_obj_recall_at_context": null,
+    "expected_l2_hit": true,
+    "expected_l3_hit": true,
+    "selected_obj_ids": [
+      "L1-0307-020",
+      "L1-0307-027",
+      "L1-0318-002",
+      "L1-0318-006",
+      "L1-0325-062",
+      "L1-0325-065",
+      "L1-0506-015",
+      "L1-0506-017"
+    ],
+    "selected_l2_ids": [
+      "L2-agentic-pipeline-control"
+    ],
+    "selected_l3_ids": []
+  },
+  "answer": "根據提供的資料，manager-agent 架構的概念是來自於團隊成員在分析一篇 2024 年關於長文本處理的論文時所提出的。\n\n其演變過程如下：\n\n1.  **概念源起**：在 2026 年 3 月 18 日的討論中，團隊成員分享了一篇 2024 年論文的作法。該論文描述了一種架構，其中包含：\n    *   多個「工作者代理人」（worker agent）循序地處理被切分的文本區塊（chunks）。\n    *   一個「管理者代理人」（manager agent）來整合所有工作者代理人的輸出。\n    *   一個「共享黑板」（shared blackboard）來提供全域的上下文。\n    (來源: L1-0318-006)\n\n2.  **初期問題**：在引進這個概念的同時，團隊也指出該論文對於「管理者代理人」究竟如何整合各個「工作者代理人」的輸出以回答問題的具體機制，描述得並不清楚，這是一個待解決的問題。\n    (來源: L1-0318-002)\n\n目前的資料僅顯示了 manager-agent 架構概念的來源和初期的疑問，關於它後續在專案中如何被進一步實作或改進的資訊，目前資料不足。"
+}
