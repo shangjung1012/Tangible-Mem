@@ -37,7 +37,7 @@ meeting transcript
   -> long_term/l3/l3_promotions.json             # oversized L2 review sidecar
   -> long_term/l3/l3_view.json                   # materialized L3 + child L2 sidecar
   -> long_term/l3/l3_index.json                  # L1 obj_id -> child L2 assignment
-  -> long_term/l3/l2_merge_review.json           # review-only tiny child L2 merge candidates
+  -> long_term/l3/l2_merge_review.json           # review-only tiny/weak/oversized child L2 follow-up
 ```
 
 Build canonical L1:
@@ -173,7 +173,7 @@ Materialized L3 output is written separately:
 
 - `long_term/l3/l3_view.json`: L3 parent plus child L2 nodes.
 - `long_term/l3/l3_index.json`: `obj_id -> l3_id / child_l2_id` assignment.
-- `long_term/l3/l2_merge_review.json`: tiny/weak child L2 merge review queue.
+- `long_term/l3/l2_merge_review.json`: tiny/weak/oversized child L2 follow-up queue.
 - `long_term/l3/validation/`: split coverage, child size, prompt budget, and
   merge review reports.
 
@@ -204,9 +204,12 @@ LLM status for L3:
   missing assignments, and low-confidence suggestions fall back to local
   `assignment_criteria` and are marked for manual review.
 - Raw L1 evidence remains immutable in both modes.
-- Tiny child L2 nodes are never merged automatically. `l2_merge_review.json`
-  recommends sibling merge candidates for human review; accepted merges should
-  be represented as sidecar changes in a later step.
+- Tiny child L2 nodes are never merged automatically and are not automatically
+  wrong. They may represent emerging or niche topics. `l2_merge_review.json`
+  records `watch_until_more_evidence` when sibling similarity is low,
+  `merge_candidate` / `merge_review` when sibling similarity is high, and
+  `split_review` when a child L2 is still too large. Accepted merges should be
+  represented as sidecar changes in a later step.
 
 ## Short-Term Memory
 

@@ -70,7 +70,7 @@ uv run long_term/cli.py build-l2-view \
 - `long_term/l3/l3_promotions.json`: oversized L2 promotion candidates.
 - `long_term/l3/l3_view.json`: materialized L3 parents with child L2 nodes.
 - `long_term/l3/l3_index.json`: `obj_id -> L3 / child L2` lookup.
-- `long_term/l3/l2_merge_review.json`: review-only tiny/weak child L2 merge candidates.
+- `long_term/l3/l2_merge_review.json`: review-only tiny/weak/oversized child L2 follow-up queue.
 - `long_term/l3/validation/`: L3 split coverage, child-size, prompt-budget, and merge-review reports.
 - `long_term/eval/`: retrieval parameter evaluation queries and reports.
 
@@ -104,7 +104,7 @@ The current L3 implementation is materialized as sidecars only:
 - promotion review sidecar: `long_term/l3/l3_promotions.json`
 - materialized child L2 sidecars: `long_term/l3/l3_view.json` and
   `long_term/l3/l3_index.json`
-- merge-review sidecar: `long_term/l3/l2_merge_review.json`
+- child-L2 review sidecar: `long_term/l3/l2_merge_review.json`
 
 This does not rewrite raw L1 evidence, `l2_index.json`, or `l2_view.json`.
 
@@ -124,10 +124,12 @@ oversized L2 during review:
 Even in LLM-assisted mode, raw L1 evidence, `l2_index.json`, and `l2_view.json`
 are not rewritten.
 
-Tiny child L2 nodes are not merged automatically. The builder writes
-`l2_merge_review.json` so a reviewer can decide whether a child L2 with fewer
-than three L1 events should be merged into a sibling. The validator checks that
-tiny child L2 nodes appear in that review sidecar.
+Tiny child L2 nodes are not merged automatically and should not be treated as
+wrong only because they are small. A tiny child can be an emerging or niche
+topic. The builder writes `l2_merge_review.json` so a reviewer can distinguish
+`watch_until_more_evidence` from `merge_candidate`; a merge is recommended only
+when sibling similarity is high. The validator checks that tiny child L2 nodes
+appear in that review sidecar.
 
 ## Retrieval Evaluation
 

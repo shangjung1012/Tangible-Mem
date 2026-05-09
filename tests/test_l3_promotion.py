@@ -607,6 +607,54 @@ class L3PromotionTests(unittest.TestCase):
         self.assertEqual(item["action"], "merge_candidate")
         self.assertIn("too_few_l1_nodes", item["reason_codes"])
 
+    def test_tiny_child_l2_with_low_sibling_similarity_is_watched_not_merged(self) -> None:
+        l3_view = {
+            "l3_nodes": [
+                {
+                    "l3_id": "L3-memory-retrieval",
+                    "label": "memory retrieval",
+                    "child_l2_nodes": [
+                        {
+                            "l2_id": "L2-niche-privacy-risk",
+                            "label": "privacy risk",
+                            "assignment_criteria": ["privacy", "consent", "risk"],
+                            "timeline_digest": [
+                                {"obj_id": "L1-a", "summary": "A niche privacy consent risk was raised."},
+                                {"obj_id": "L1-b", "summary": "The privacy risk still needs follow-up."},
+                            ],
+                            "linked_obj_ids": ["L1-a", "L1-b"],
+                            "meeting_ids": ["0318"],
+                            "event_count": 2,
+                        },
+                        {
+                            "l2_id": "L2-benchmark-evaluation",
+                            "label": "benchmark evaluation",
+                            "assignment_criteria": ["benchmark", "locomo", "metric"],
+                            "timeline_digest": [
+                                {"obj_id": "L1-c", "summary": "Benchmark setup and scoring metrics."},
+                                {"obj_id": "L1-d", "summary": "LOCOMO benchmark comparison."},
+                                {"obj_id": "L1-e", "summary": "Evaluation metric notes."},
+                                {"obj_id": "L1-f", "summary": "Judge scoring setup."},
+                                {"obj_id": "L1-g", "summary": "Dataset benchmark coverage."},
+                            ],
+                            "linked_obj_ids": ["L1-c", "L1-d", "L1-e", "L1-f", "L1-g"],
+                            "meeting_ids": ["0318", "0429"],
+                            "event_count": 5,
+                        },
+                    ],
+                }
+            ]
+        }
+
+        review = build_l2_merge_review_sidecar(l3_view, generated_at_utc="2026-05-09T00:00:00Z")
+
+        self.assertEqual(review["merge_review_count"], 1)
+        item = review["merge_reviews"][0]
+        self.assertEqual(item["source_child_l2_id"], "L2-niche-privacy-risk")
+        self.assertEqual(item["recommended_target_child_l2_id"], "")
+        self.assertEqual(item["action"], "watch_until_more_evidence")
+        self.assertIn("low_sibling_similarity", item["reason_codes"])
+
 
 if __name__ == "__main__":
     unittest.main()

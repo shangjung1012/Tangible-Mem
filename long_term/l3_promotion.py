@@ -861,10 +861,10 @@ def build_l2_merge_review_sidecar(
             action = "manual_review"
             if bucket == "needs_merge_review":
                 reason_codes.append("too_few_l1_nodes")
-                action = "merge_candidate"
+                action = "watch_until_more_evidence"
             elif bucket == "weak_child_l2":
                 reason_codes.append("weak_child_l2")
-                action = "merge_review"
+                action = "watch_until_more_evidence"
             else:
                 reason_codes.append("too_many_l1_nodes")
                 action = "split_review"
@@ -884,9 +884,10 @@ def build_l2_merge_review_sidecar(
                         best_reasons = sibling_reasons
                 if best_target is not None and best_score >= 0.18:
                     reason_codes.extend(best_reasons or ["highest_sibling_similarity"])
+                    action = "merge_candidate" if bucket == "needs_merge_review" else "merge_review"
                 else:
                     best_target = None
-                    action = "manual_merge_review"
+                    reason_codes.append("low_sibling_similarity")
 
             merge_reviews.append(
                 {
