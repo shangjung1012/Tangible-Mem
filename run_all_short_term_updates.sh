@@ -33,6 +33,30 @@ meeting_is_before_start() {
   [[ "$meeting_id" < "$start_id" ]]
 }
 
+snapshot_filename_meeting_id() {
+  local snapshot_file
+  snapshot_file="$(basename "$1")"
+  local meeting_id="${snapshot_file##*_bridge_}"
+  printf '%s\n' "${meeting_id%.json}"
+}
+
+snapshot_latest_meeting_id() {
+  local snapshot="$1"
+  PYTHONPATH="$ROOT_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 - "$snapshot" <<'PY'
+import sys
+
+from short_term.io_utils import normalize_str
+from short_term.snapshot_loader import load_snapshot_tree, select_latest_meeting
+
+snapshot_path = sys.argv[1]
+meeting = select_latest_meeting(load_snapshot_tree(snapshot_path))
+meeting_id = normalize_str(meeting.get("meeting_id"))
+if not meeting_id:
+    raise SystemExit(f"latest meeting is missing meeting_id: {snapshot_path}")
+print(meeting_id)
+PY
+}
+
 snapshots=()
 while IFS= read -r snapshot; do
   snapshots+=("$snapshot")
@@ -46,14 +70,38 @@ if [[ ${#snapshots[@]} -eq 0 ]]; then
 fi
 
 selected_snapshots=()
+selected_meeting_ids=()
+declare -A selected_by_meeting=()
+declare -A selected_filename_match_by_meeting=()
+
 for snapshot in "${snapshots[@]}"; do
-  snapshot_file="$(basename "$snapshot")"
-  meeting_id="${snapshot_file##*_bridge_}"
-  meeting_id="${meeting_id%.json}"
+  meeting_id="$(snapshot_latest_meeting_id "$snapshot")"
   if meeting_is_before_start "$meeting_id" "$START_FROM_MEETING"; then
     continue
   fi
-  selected_snapshots+=("$snapshot")
+
+  filename_meeting_id="$(snapshot_filename_meeting_id "$snapshot")"
+  filename_matches=0
+  if [[ "$filename_meeting_id" == "$meeting_id" ]]; then
+    filename_matches=1
+  fi
+
+  if [[ -z "${selected_by_meeting[$meeting_id]+x}" ]]; then
+    selected_meeting_ids+=("$meeting_id")
+    selected_by_meeting[$meeting_id]="$snapshot"
+    selected_filename_match_by_meeting[$meeting_id]="$filename_matches"
+    continue
+  fi
+
+  existing_matches="${selected_filename_match_by_meeting[$meeting_id]}"
+  if [[ "$filename_matches" -gt "$existing_matches" || "$filename_matches" -eq "$existing_matches" ]]; then
+    selected_by_meeting[$meeting_id]="$snapshot"
+    selected_filename_match_by_meeting[$meeting_id]="$filename_matches"
+  fi
+done
+
+for meeting_id in "${selected_meeting_ids[@]}"; do
+  selected_snapshots+=("${selected_by_meeting[$meeting_id]}")
 done
 
 if [[ ${#selected_snapshots[@]} -eq 0 ]]; then
@@ -61,7 +109,8 @@ if [[ ${#selected_snapshots[@]} -eq 0 ]]; then
   exit 1
 fi
 
-echo "Found ${#selected_snapshots[@]} snapshot(s) in $SNAPSHOT_DIR"
+echo "Found ${#snapshots[@]} bridge snapshot file(s) in $SNAPSHOT_DIR"
+echo "Selected ${#selected_snapshots[@]} unique latest meeting snapshot(s)"
 if [[ -n "$START_FROM_MEETING" ]]; then
   echo "Starting from ${START_FROM_MEETING}"
 fi

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "memory_version": 9,
-  "last_updated_utc": "2026-05-08T19:32:42Z",
+  "memory_version": 7,
+  "last_updated_utc": "2026-05-09T08:56:56Z",
   "last_updated_meeting_id": "0506",
-  "processed_snapshot_path": "/home/tsj/virtual-mentor/share_mem/snapshots/20260508_194609_bridge_0408.json",
+  "processed_snapshot_path": "/home/tsj/virtual-mentor/share_mem/snapshots/20260508_190132_bridge_0506.json",
   "meeting_history_ids": [
     "0307",
     "0318",
@@ -16,8 +16,8 @@
   "units": [
     {
       "unit_id": "S001",
-      "title": "Memory System Architecture: Idea Unit Segmentation Repair and Dual-Labeling Strategy",
-      "summary": "The memory system's transcript processing involves idea unit extraction and segmentation, with ongoing discussions on granularity, quality, and a dual-labeling strategy. A repair mechanism has been adopted for idea unit segmentation to handle incomplete fragments by merging fragmented sentences with their most relevant context, ensuring information completeness and preventing omissions. To optimize retrieval, the system will adopt a dual-labeling strategy where memory items will have two types of labels: one for content/theme and another for its type (e.g., 'to-do'), allowing users to search by both. This strategy addresses the key open issue of the memory retrieval strategy, specifically how to prioritize searching by theme/segment tags or functional tags (like to-do), and if both types of tags should be retained and how the retrieval process should be designed. For idea unit labeling, the system aims for a single precise label, allowing multiple initial candidates but enforcing a final limit of two. Text segmentation performance evaluation requires a benchmark dataset with pre-labeled breakpoints.",
+      "title": "LLM Memory: Hierarchical Structure, Idea Unit Segmentation Repair, Labeling, and Retrieval",
+      "summary": "The memory system utilizes a hierarchical data structure, with 'idea units' forming 'segments' and 'topics'. A repair mechanism has been adopted in the idea unit segmentation process to handle incomplete fragments by merging fragmented sentences with their most relevant context, ensuring information completeness and preventing omissions. To optimize retrieval, the system also uses a dual-labeling strategy (functional and theme labels) for each memory unit, with the optimal search priority still under discussion.",
       "types": [
         "approach_change",
         "open_issue",
@@ -108,11 +108,7 @@
         "clarification method",
         "memory update process clarification",
         "Model execution parameters",
-        "labeling strategy",
-        "dataset selection",
-        "memory granularity",
-        "LLM-based segmentation",
-        "dynamic segmentation"
+        "forgetting_mechanism"
       ],
       "source_obj_ids": [
         "L1-0307-001",
@@ -323,31 +319,26 @@
         "L1-0506-001",
         "L1-0506-002",
         "L1-0506-003",
-        "L1-0506-004",
         "L1-0506-005",
-        "L1-0506-006",
         "L1-0506-007",
         "L1-0506-008",
         "L1-0506-009",
         "L1-0506-010",
         "L1-0506-011",
         "L1-0506-012",
-        "L1-0506-013",
         "L1-0506-014",
         "L1-0506-015",
         "L1-0506-016",
         "L1-0506-017",
-        "L1-0506-018",
         "L1-0506-019",
         "L1-0506-020",
-        "L1-0506-021",
-        "L1-0506-022",
         "L1-0506-023",
-        "L1-0506-024",
-        "L1-0506-025",
         "L1-0506-026",
         "L1-0506-027",
+        "L1-0506-028",
+        "L1-0506-029",
         "L1-0506-030",
+        "L1-0506-032",
         "L1-0506-033",
         "L1-0506-034"
       ],
@@ -1796,553 +1787,182 @@
           "source_obj_ids": [
             "L1-0506-001"
           ],
-          "change": "The new L1 object describes the system architecture for memory extraction, specifically how 'Idea Units' are fanned out to specialized agents to generate memory 'Candidates'. This directly elaborates on the existing topic S001, which discusses the processing of 'idea units' for memory updates and the underlying memory system architecture."
+          "change": "The new L1 object describes the pipeline for extracting 'idea units' from transcripts (context planner -> segment agent -> idea units), which directly elaborates on the 'Idea Units' aspect of the existing S001 unit. S001 discusses how these units are used for memory updates and the process of their generation. The related topics also align well."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-002"
           ],
-          "change": "The new L1 object describes a major architectural debate regarding the processing and identification of 'idea units' (top-down vs. bottom-up), which directly elaborates on the existing 'ongoing debate' and 'idea unit processing' aspects already present in unit S001."
+          "change": "The new L1 object details specific mechanisms for ensuring complete transcript coverage and handling missed lines during idea unit extraction, directly building upon the existing discussion in S001 about the memory system's architecture, 80-line window processing, and idea unit extraction. It provides concrete decisions related to the data integrity aspects of the process already covered in S001."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-003"
           ],
-          "change": "The new L1 object discusses the optimal granularity (Idea Unit, Segment, or Batch) for querying the memory store, which directly aligns with the ongoing debate in S001 regarding the system's architecture for idea unit processing and the use of segments and idea units."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-004"
-          ],
-          "change": "The new L1 object directly contributes to the ongoing discussion within S001 regarding the optimal granularity and necessity of complex segmentation methods for memory processing, citing experimental results and LLM capabilities. The content about 'adaptive segmentation method' and 'LLMs handling larger, less precise chunks' directly relates to the core topic of memory granularity and chunking strategies."
+          "change": "The new L1 object describes the abandonment of an experimental 'adaptive window' segmentation approach due to poor performance. This directly relates to unit S001, which focuses on the processing of text segments into 'idea units', transcript coverage, and various segmentation/chunking strategies for memory updates. The abandoned approach is an 'alternative approach' within the context of S001's core subject matter."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-005"
           ],
-          "change": "The new L1 object directly addresses the ongoing debate and confusion regarding the definition of 'batch' and 'segment' within the memory system, which is a central theme of unit S001, 'Memory Granularity (Idea Unit, Segment, Batch) and Processing Architecture.'"
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-006"
-          ],
-          "change": "The new L1 object proposes a 'bottom-up system architecture' for extracting 'Idea Units' and clustering them into 'Segments', which directly aligns with the existing discussions in unit S001 regarding 'Memory Granularity (Idea Unit, Segment, Batch) and Processing Architecture', including the debate on 'top-down vs. bottom-up' approaches. This L1 object provides a concrete proposal within the scope of S001."
+          "change": "The new L1 object directly addresses the handling of 'low-quality, raw-text fallback units' resulting from 'missed lines' and proposes a 'repair mechanism' for them. This is a direct continuation of the existing discussion in S001 about 'idea unit extraction,' 'transcript coverage,' and how 'missed lines' are currently handled as 'raw-text idea units with a lower quality tag.' The mention of 'prompt judgment' also aligns with S001's broader discussion of memory update mechanisms and segmentation."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-007"
           ],
-          "change": "The new L1 object proposes a specific data hierarchy (`Idea Unit` -> `Segment` -> `Batch`) to resolve architectural confusion, which directly aligns with the existing unit S001's discussion on memory granularity, idea units, segments, and processing architecture."
+          "change": "The new L1 object directly discusses the ongoing debate and lack of consensus regarding the distinction between 'segment' and 'idea unit' and the necessity of the current top-down processing approach (segment -> idea unit), including a proposed bottom-up alternative. This aligns perfectly with the existing unit S001, which details the memory system's processing of text segments into 'idea units' using a 'context planner' and 'segment agent'. The new information elaborates on the conceptual challenges and alternative considerations within this core process already covered by S001."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-008"
           ],
-          "change": "The new L1 object proposes a specific adaptive segmentation method, which directly relates to the ongoing discussion in S001 about memory granularity, segmentation strategies, and the challenges associated with adaptive segmentation, including issues with prediction accuracy and credibility of extracted information."
+          "change": "The new L1 object directly elaborates on the ongoing debate regarding transcript segmentation methods and the failure of an adaptive window experiment, which is a core component of the existing S001 unit's summary."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-009"
           ],
-          "change": "The new L1 object directly discusses the 'bottom-up' system architecture for extracting 'Idea Units' and clustering them into 'Segments', which is a core topic already present and elaborated upon in unit S001. The new information reinforces and adds details to the existing discussion on processing architecture and granularity."
+          "change": "The new L1 object provides specific details about an existing open issue within S001 regarding missed transcript lines, 'gaps' in idea unit extraction, and the planned but unimplemented repair mechanism, directly updating the current understanding of this ongoing problem."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-010"
           ],
-          "change": "The new L1 object directly supports and elaborates on existing arguments within S001 regarding the necessity and effectiveness of complex adaptive segmentation strategies, particularly in light of LLM capabilities and issues with prediction accuracy and credibility of extracted information."
+          "change": "The new L1 object proposes an alternative, bottom-up system architecture for extracting idea units and forming segments, which directly relates to the ongoing debate and discussions on alternative segmentation methods already present in unit S001."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-011"
           ],
-          "change": "The new L1 object describes the current data processing workflow, which directly elaborates on the 'Processing Architecture' and 'Idea Unit -> Segment -> Batch Hierarchy' discussed in unit S001. It provides concrete details about the current implementation of the system's data flow, making it a direct update to this topic."
+          "change": "The new L1 object proposes an alternative LLM-driven method for text segmentation, which directly aligns with the 'Segmentation Debate' and 'alternative approaches' already discussed within unit S001. S001's summary also mentions discussions on 'other methods' for transcript segmentation after the failure of 'adaptive window' approaches, making it a suitable unit for this new proposal."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-012"
           ],
-          "change": "The new L1 object provides an experimental finding that directly supports and elaborates on the existing discussion in S001 regarding the performance issues of adaptive text segmentation strategies and the associated 'verify' and 'rejected' counts."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-013"
-          ],
-          "change": "The new L1 object provides further details on the current top-down data processing workflow, specifically mentioning the fixed-size chunks (e.g., 80 lines) created by the Context Planner and the fallback mechanism for missed lines, which directly elaborates on the existing description in unit S001."
+          "change": "The new L1 object proposes hypothetical adaptive segmentation methods, which directly relates to the ongoing discussion and exploration of segmentation strategies within unit S001, particularly concerning LLM-driven and alternative approaches to text chunking."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-014"
           ],
-          "change": "The new L1 object describes a 'stitching' mechanism for handling split segments, which directly elaborates on a mechanism already mentioned and central to the data processing workflow described in unit S001."
+          "change": "The new L1 object presents a counterargument regarding the effectiveness and precision of adaptive segmentation, which directly relates to the ongoing discussion and exploration of 'Adaptive Segmentation Methods' in unit S001. The content elaborates on the challenges of these methods, aligning perfectly with the existing unit's focus."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-015"
           ],
-          "change": "The new L1 object describes a repair mechanism for the data processing pipeline that merges 'fallback' units into 'idea units'. This directly updates and elaborates on the existing description of the data processing workflow, including its fallback and stitching mechanisms, within unit S001."
+          "change": "The new L1 object provides a counterpoint to the necessity of precise pre-segmentation, arguing that LLMs are robust enough to handle less-defined chunks. This directly aligns with the existing debate on segmentation approaches and counterarguments already present in unit S001."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-016"
           ],
-          "change": "The new L1 object describes the system's data structure, specifically how 'idea units' are grouped into 'segments' and mapped by 'segment IDs'. This directly aligns with and reinforces the existing topic unit S001, which extensively covers memory granularity, data hierarchy (Idea Unit -> Segment -> Batch), and processing architecture."
+          "change": "The new L1 object discusses the rationale for using a fixed 80-line processing window for debugging and verification. This directly relates to the ongoing discussion in S001 about text segmentation, adaptive windowing, and implementation strategies within the LLM memory system."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-017"
           ],
-          "change": "The new L1 object describes a classification schema for 'idea units' for memory updates, which directly relates to the processing and handling of 'idea units' within the memory system's architecture. This aligns well with unit S001, which extensively covers 'Memory Granularity and Processing Architecture', 'idea units' as the smallest component, and the 'data processing workflow'. The classification schema represents a 'method change' or 'approach change' within this existing topic."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-018"
-          ],
-          "change": "The new L1 object describes a rule for merging 'idea units' into existing L1 memory nodes within a single meeting, which directly updates the existing unit S001 that details the memory system's processing architecture and handling of 'idea units' and L1 nodes."
+          "change": "The new L1 object directly addresses the ongoing debate about the conceptual distinction between 'segment' and 'idea unit' and the necessity of pre-segmentation, which is a core theme of unit S001."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-019"
           ],
-          "change": "The new L1 object describes a verification process for agent runs and checking the quality of `idea unit` segmentation. This directly relates to the existing unit S001, which extensively covers the processing, segmentation, and quality of `idea units` within the memory system's architecture and workflow. The verification process is a specific implementation detail within the broader topic of ensuring the quality and integrity of `idea unit` processing."
+          "change": "The new L1 object details a failed 'adaptive window' experiment for segmentation, which directly elaborates on the existing mention of 'previous adaptive window attempts failed' within unit S001, which focuses on text segmentation and idea unit extraction methods."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-020"
           ],
-          "change": "The new L1 object directly discusses the quality and reliability of `idea unit` segmentation, which is a core, ongoing issue detailed in S001, particularly regarding verification and boundary prediction problems. It elaborates on the instability and agent prompt influence on segmentation results."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-021"
-          ],
-          "change": "The new L1 object directly discusses the classification types for 'idea units' and their preliminary status, which is a specific detail that fits within the existing S001 topic concerning 'Idea Unit' segmentation and processing issues."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-022"
-          ],
-          "change": "The new L1 object directly discusses the labeling strategy for 'idea units', including the debate between single vs. dual labels (theme/to-do) and label constraints. This is a direct continuation of the existing unit S001, which already covers 'idea unit' classification, memory types, and their sufficiency."
+          "change": "The new L1 object describes a future prompt engineering update to include a repair mechanism for transcript coverage gaps by merging 'fallback' units. This directly aligns with the existing unit S001, which already mentions a 'future prompt version with a repair mechanism expected to address missing transcript lines during idea unit extraction'. The new L1 object provides more specific details about this repair mechanism."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-023"
           ],
-          "change": "The new L1 object proposes using two separate labels (theme and action type) for idea units to facilitate different search methods, which directly aligns with the existing discussion on 'labeling strategy for idea units' in unit S001. The summary of S001 already covers this specific point."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-024"
-          ],
-          "change": "The new L1 object provides the rationale for the initial selection of the six predefined types for classifying 'idea units', which directly updates and elaborates on an existing point within S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-025"
-          ],
-          "change": "The new L1 object specifies a rule for merging 'idea units' within the memory system, which directly aligns with the existing unit S001 that covers the processing, segmentation, and labeling of 'idea units' and their updates."
+          "change": "The new L1 object discusses the labeling of 'idea units' and the precision requirements (max two labels). This directly relates to the existing unit S001, which extensively covers 'idea unit extraction', segmentation, and repair mechanisms. The new information provides a specific detail about the post-extraction processing of these idea units."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-026"
           ],
-          "change": "The new L1 object provides specific details about the characteristics of Whisper-generated transcripts (multi-speaker segments, timestamps, line breaks indicating pauses). These details are highly relevant to the existing unit S001, which discusses 'Idea Unit Segmentation,' 'text chunking,' and 'unstable segmentation results.' Understanding the raw transcript's structure is crucial for effective segmentation, making S001 the most appropriate unit for merging."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-001"
-          ],
-          "change": "The new L1 object describes the top-down pipeline architecture for processing transcripts and extracting idea units, which directly elaborates on the existing topic of 'Memory Granularity, Idea Unit Segmentation' in unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-002"
-          ],
-          "change": "The new L1 object provides specific implementation details for ensuring data integrity and complete transcript coverage within the existing memory system architecture, particularly concerning the 80-line window processing and idea unit extraction, which directly aligns with the scope of unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-003"
-          ],
-          "change": "The L1 object details the abandonment of an experimental segmentation approach, which is a direct update to the ongoing development and refinement of the memory system's architecture, specifically its transcript processing and segmentation strategies, as covered in S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-004"
-          ],
-          "change": "The new L1 object describes the methodology for evaluating text segmentation performance, which directly relates to the existing unit S001 that discusses text segmentation approaches and their performance issues, including the abandonment of an adaptive window method. This L1 provides the formal evaluation strategy for this ongoing topic."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-005"
-          ],
-          "change": "The new L1 object proposes a future repair mechanism for merging low-quality, raw-text fallback units from missed lines into valid idea units. This directly relates to the existing discussion in S001 about handling missed transcript lines and ensuring complete transcript coverage within the memory system's segmentation architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-007"
-          ],
-          "change": "The new L1 object directly addresses an 'ongoing, unresolved debate' about the distinction between `segment` and `idea unit` and the necessity of the current 'top-down approach' versus a 'bottom-up alternative'. This aligns perfectly with the existing unit S001, which details the memory system's 'top-down pipeline architecture for idea unit extraction and segmentation' and mentions 'Ongoing discussions cover memory granularity, segmentation quality... and alternative architectures'. The new information elaborates on these existing discussions within S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-008"
-          ],
-          "change": "The new L1 object directly elaborates on the ongoing debate about transcript segmentation methods and the failure of the adaptive window approach, which is a core topic of unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-009"
-          ],
-          "change": "The new L1 object describes a specific problem (gaps, low-quality raw text due to missed transcript lines) within the existing topic of transcript segmentation and idea unit extraction, which is already covered by S001. It also mentions a planned solution (repair mechanism in a future prompt version), further indicating it's an ongoing aspect of the same development."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-010"
-          ],
-          "change": "The new L1 object proposes an alternative, bottom-up system architecture for transcript segmentation and idea unit extraction, which directly aligns with the ongoing debate and evaluation of segmentation methods discussed in unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-011"
-          ],
-          "change": "The new L1 object proposes an alternative method for transcript segmentation using LLMs to identify topic boundaries in larger text chunks. This directly aligns with the existing discussions in unit S001 regarding memory system architecture, transcript segmentation methods, and alternative proposals for idea unit extraction and segmentation."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-012"
-          ],
-          "change": "The new L1 object proposes specific adaptive segmentation methods, which directly expands on the 'alternative approaches' and 'transcript segmentation methods' already discussed in S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-014"
-          ],
-          "change": "The new L1 object provides a counterargument to adaptive segmentation, which is a specific method of transcript segmentation already discussed within unit S001. The content directly updates the ongoing discussion about segmentation approaches."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-015"
-          ],
-          "change": "The new L1 object directly discusses the necessity and effectiveness of pre-segmentation for LLMs, arguing that LLMs are robust enough to handle segmentation themselves. This aligns perfectly with the existing unit S001, which covers transcript segmentation methods, LLM-based boundary identification, and alternative segmentation approaches."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-016"
-          ],
-          "change": "The new L1 object discusses the rationale for a fixed 80-line processing window for debugging, which directly relates to the existing unit S001's focus on transcript segmentation methods and LLM-based boundary identification within the memory system architecture. The related topics also align well."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-017"
-          ],
-          "change": "The new L1 object directly addresses an ongoing and unresolved debate about the necessity of pre-segmentation before idea unit extraction, which is a core issue already discussed and summarized within unit S001 regarding transcript segmentation methods and idea unit identification."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-018"
-          ],
-          "change": "The new L1 object provides details on the evaluation methodology for text segmentation, specifically mentioning the use of ground truth datasets to calculate precision and recall for different segmentation methods. This directly elaborates on the 'Evaluation uses ground truth datasets' aspect already present in unit S001, which focuses on transcript segmentation methods and their evaluation."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-019"
-          ],
-          "change": "The new L1 object describes a finding from a preliminary experiment using 'adaptive window' for segmentation, which performed poorly due to boundary prediction issues. This directly updates the existing unit S001, which extensively covers 'Transcript Segmentation Methods' and 'Evaluation of Adaptive Segmentation,' including discussions on adaptive approaches and data handling for evaluation."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-020"
-          ],
-          "change": "The new L1 object describes a future improvement to prompt engineering to address gaps in transcript coverage by merging 'fallback' units into valid idea units. This directly aligns with the existing unit S001, which extensively covers transcript segmentation, idea unit extraction issues, and various methods for improving this process. The related topics also show strong overlap, making S001 the most relevant unit for this update."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-023"
-          ],
-          "change": "The new L1 object details the labeling strategy for idea units, specifically the goal of assigning a single precise label with a maximum of two, which directly updates the existing S001 unit that already covers memory system architecture, idea unit extraction, quality, and labeling discussions."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-024"
-          ],
-          "change": "The new L1 object describes a verification process for agent execution, tracking prompts and results to ensure rationality. This directly relates to the 'development workflow' and 'output quality' of the memory system's architecture, particularly concerning 'prompt engineering' and 'LLM processing' mentioned in S001. It enhances the existing topic of memory system architecture and its implementation details."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-025"
-          ],
-          "change": "The new L1 object is an action item to establish a verification mechanism for agent processing steps, which directly relates to and expands upon the 'Agent Verification Process' already discussed and included in unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-026"
-          ],
-          "change": "The new L1 object discusses the advantages and disadvantages of bottom-up idea unit segmentation and the need for a repair mechanism, which directly aligns with the existing unit S001's focus on transcript segmentation, idea unit extraction, bottom-up approaches, and repair mechanisms for fallback units."
+          "change": "The new L1 object discusses the advantages and disadvantages of a bottom-up strategy for segmenting idea units, which directly elaborates on the 'bottom-up' segmentation methods already mentioned and discussed in unit S001."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-027"
           ],
-          "change": "The new L1 object directly addresses a question about memory retrieval strategy, specifically concerning the prioritization and retention of different types of labels (theme/segment vs. functional like 'to-do') for searching. This topic is a direct continuation and elaboration of the existing discussion in S001 regarding 'Idea Unit Labeling,' 'memory granularity, quality, and labeling,' and the rule of allowing a maximum of two labels for precision. The new L1 object's content fits seamlessly into S001's focus on how idea units are defined, labeled, and subsequently used for retrieval."
+          "change": "The new L1 object discusses a question about memory retrieval strategy, specifically concerning the prioritization of theme vs. functional labels for searching. This directly relates to the 'Labeling' aspect of idea units already covered in unit S001, which discusses the system's approach to assigning labels to idea units. The new L1 object extends this by posing a question about how these labels should be utilized for retrieval."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-028"
+          ],
+          "change": "The new L1 object discusses the parallel processing of 'idea units' by multiple agents and the resulting issue of 'duplicate candidates'. This directly relates to the 'Idea Unit Processing' aspect of unit S001, which broadly covers how idea units are handled within the memory system, including segmentation, extraction, and repair mechanisms. The related topics of S001, such as 'memory system architecture', 'implementation strategy', and 'data handling', also align well with the content of the new L1 object. Merging into S001 provides a more comprehensive view of the idea unit processing workflow and its challenges."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-029"
+          ],
+          "change": "The new L1 object proposes a hierarchical data structure for organizing conversational content (idea units, segments, topics), which directly elaborates on and refines the existing discussion in S001 about how the memory system processes and organizes 'idea units' and 'segments'."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-030"
           ],
-          "change": "The new L1 object proposes a dual-labeling strategy (theme and type like 'to-do') for memory items to enhance retrieval. This directly aligns with the existing unit S001, which already discusses memory granularity, quality, and labeling, and specifically mentions the open question of prioritizing theme/segment labels versus functional labels (like 'to-do') for retrieval. The new proposal provides a potential solution to this ongoing discussion within S001."
+          "change": "The new L1 object proposes a specific labeling strategy (theme and type labels) and discusses retrieval priority, which directly aligns with the 'precise labeling strategy' and 'optimal retrieval strategy (theme/segment vs. functional labels)' mentioned in S001's summary."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-032"
+          ],
+          "change": "The new L1 object explicitly defines the hierarchical memory structure (idea units, segments, topics), which directly elaborates on the existing 'hierarchical data structure' mentioned in S001's summary. This is a direct continuation and clarification of the same topic."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-033"
           ],
-          "change": "The new L1 object proposes a dual-labeling strategy (functional and theme labels) for memory units to optimize retrieval. This directly aligns with and refines the existing discussion in S001 regarding 'Idea Unit Labeling,' 'memory granularity, quality, and labeling,' and the 'proposal suggests memory items should have two labels (content/theme and type like 'to-do') for effective retrieval.'"
+          "change": "The new L1 object confirms the adoption of a dual-labeling strategy for memory units, which directly updates the existing unit S001's discussion on 'Labeling Strategy (Theme/Type)' for LLM memory."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
             "L1-0506-034"
           ],
-          "change": "The new L1 object directly describes the function of a 'repair mechanism' within the 'idea unit cutting process' to handle incomplete fragments. Candidate unit S001 explicitly mentions 'prompt engineering updates for repair mechanisms' and discusses the 'idea unit extraction process' and 'segmentation,' making it the most semantically relevant unit for this update. The new information elaborates on an existing concept within S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-001"
-          ],
-          "change": "The new L1 object details the current top-down pipeline architecture for transcript processing, including the context planner and segment agent, which directly elaborates on the existing unit's discussion of memory system architecture, transcript segmentation, and fixed-window processing."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-002"
-          ],
-          "change": "The new L1 object details specific mechanisms for ensuring complete transcript coverage and handling missed lines within the memory system's processing pipeline. This directly aligns with the existing unit S001, which covers 'Memory System Architecture,' 'Transcript Segmentation,' 'Idea Unit Extraction,' '80-line windows,' 'gaps in coverage,' and 'repair mechanisms.' The new information elaborates on how data integrity is maintained within this established architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-003"
-          ],
-          "change": "The L1 object details the abandonment of an 'adaptive window' segmentation approach, which directly elaborates on the existing statement in S001's summary about 'adaptive segmentation experiments were unsuccessful'. The related topics also align, and the L1 object is already listed as a source for S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-004"
-          ],
-          "change": "The new L1 object describes the methodology for evaluating text segmentation performance, which directly elaborates on the 'Transcript Segmentation' aspect of unit S001. S001 already covers various segmentation approaches (fixed-size windows, adaptive approaches), making it the most relevant unit for this update. The related topics also align well."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-005"
-          ],
-          "change": "The new L1 object describes a future repair mechanism for low-quality fallback units, which directly relates to the existing unit S001's focus on transcript segmentation, idea unit extraction, and output quality issues. The high candidate score for S001 further supports this merge."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-007"
-          ],
-          "change": "The new L1 object details an ongoing debate about the definitions of 'segment' and 'idea unit' and the necessity of the current top-down approach for transcript processing, including a proposed bottom-up alternative. This directly updates and elaborates on the existing discussion within unit S001, which covers 'Transcript Segmentation, Idea Unit Extraction' as part of the memory system architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-008"
-          ],
-          "change": "The new L1 object directly discusses the ongoing debate about transcript segmentation methods, including the failure of an 'adaptive window' experiment and the consideration of fixed-window vs. LLM robustness. This aligns perfectly with the existing unit S001, which already covers transcript segmentation, idea unit extraction debates, and mentions both fixed-window and abandoned adaptive window approaches, as well as the use of ground truth for evaluation."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-009"
-          ],
-          "change": "The new L1 object describes a specific problem with the existing idea unit extraction process, including missing transcript lines and the need for a repair mechanism, which directly updates the ongoing discussion about transcript segmentation, idea unit extraction, and potential repair strategies within unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-010"
-          ],
-          "change": "The new L1 object proposes an alternative, bottom-up system architecture for extracting idea units and forming segments, which directly addresses the ongoing debate and challenges regarding transcript segmentation and idea unit extraction methods already discussed within unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-011"
-          ],
-          "change": "The new L1 object proposes an LLM-based approach to dynamic segmentation, which directly aligns with the existing unit's focus on transcript segmentation methods, idea unit extraction, and alternative LLM-based boundary identification."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-012"
-          ],
-          "change": "The new L1 object proposes specific adaptive segmentation methods and discusses their evaluation, directly expanding on the existing unit S001 which covers transcript segmentation, LLM-based dynamic segmentation, and related experimental setups."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-014"
-          ],
-          "change": "The new L1 object presents a counterargument against adaptive segmentation methods, directly contributing to the ongoing discussion within S001 about transcript segmentation and adaptive LLM segmentation, and comparing it to fixed-window approaches."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-015"
-          ],
-          "change": "The new L1 object presents a counterpoint regarding the necessity of complex pre-segmentation, arguing that LLMs are robust enough to handle less-defined text chunks. This directly contributes to the ongoing discussion within unit S001 about transcript segmentation methods and LLM-based approaches."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-016"
-          ],
-          "change": "The L1 object provides the rationale for using a fixed 80-line processing window, which is a specific detail related to transcript segmentation, a core topic of S001. The L1 object ID is also already present in S001's source_obj_ids, indicating it has been previously merged."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-017"
-          ],
-          "change": "The new L1 object directly addresses the ongoing debate about 'segment' vs. 'idea unit' and the necessity of pre-segmentation, which is a core topic already extensively covered in unit S001. The new information clarifies the 'unresolved' nature and the 'core question' of this debate, making it a direct update to S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-018"
-          ],
-          "change": "The new L1 object details the methodology for evaluating text segmentation performance using ground truth, precision, and recall, which directly expands on the existing discussion of segmentation methods and ground truth evaluation within unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-019"
-          ],
-          "change": "The new L1 object details a finding about the poor performance of an 'adaptive window' segmentation experiment, which directly relates to the ongoing discussion and evaluation of adaptive segmentation methods within unit S001. The content provides concrete experimental results that align with previous counterarguments regarding the effectiveness of such methods."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-020"
-          ],
-          "change": "The new L1 object details a planned repair mechanism for transcript coverage gaps and idea unit extraction, which directly elaborates on a 'repair mechanism planned' already mentioned in unit S001's summary. The related topics also align perfectly."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-023"
-          ],
-          "change": "The new L1 object discusses the labeling of idea units and the constraint of a maximum of two labels for precision. This directly aligns with the existing unit S001, which covers 'Idea Unit Extraction' and already mentions 'dual-labeling strategy' and 'output quality'. The new L1 provides a specific refinement to this existing discussion point."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-024"
-          ],
-          "change": "The new L1 object describes a verification process for agent execution, which aligns with the existing unit's focus on memory system architecture, implementation, evaluation, and quality control."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-025"
-          ],
-          "change": "The new L1 object describes the establishment of a verification mechanism for agent processing steps, which is directly addressed and already incorporated into the summary of unit S001. The `source_obj_ids` of S001 also explicitly include `L1-0506-025`."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-026"
-          ],
-          "change": "The new L1 object details a specific strategy for idea unit segmentation (bottom-up, sentence-level) and its trade-offs, which directly expands on the existing discussion of 'Idea Unit Extraction, Segmentation' within unit S001."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-027"
-          ],
-          "change": "The new L1 object discusses the strategy for memory retrieval based on different types of tags (theme/segment vs. functional/to-do) and the retention of dual-labeling. This directly aligns with the existing unit S001, which covers idea unit labeling precision, dual-labeling strategy, and segmentation, making it the most relevant unit for merging."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-030"
-          ],
-          "change": "The new L1 object proposes a dual-labeling strategy (theme and type like 'to-do') for effective retrieval, which directly aligns with the existing unit S001's discussion on 'Idea Unit Labeling and Retrieval Tag Strategy' and the open issue of prioritizing search by theme or functional tags. The new L1 object provides a concrete proposal for this aspect of the memory system architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-033"
-          ],
-          "change": "The new L1 object confirms the adoption of the dual-labeling strategy for retrieval optimization, which was previously discussed as a proposal within S001. The summary is updated to reflect this decision."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-034"
-          ],
-          "change": "The new L1 object introduces a repair mechanism for idea unit segmentation, which directly updates the existing unit S001's discussion on idea unit extraction, segmentation, granularity, and quality."
+          "change": "The new L1 object describes a repair mechanism for idea unit segmentation, which is a specific implementation detail of the hierarchical memory structure and idea unit identification already covered in unit S001. Merging this information into S001 provides a more comprehensive summary of the memory system's design and functionality."
         }
       ]
     },
     {
       "unit_id": "S004",
-      "title": "Memory System Architecture: Hierarchical Structure, Time-based vs. Topic-based Models, Parallel Processing, Duplicate Candidate Management, and Human-in-the-loop Importance Tuning",
-      "summary": "The long-term memory (LTM) system features a three-tier hierarchical structure: L1 nodes representing fine-grained idea units from a single meeting, L2 nodes summarizing a block of L1s (e.g., from four meetings), and L3 nodes providing the highest-level summary. This hierarchical data structure organizes conversation content. Architectural debates exist between time-based and topic-based LTM models, impacting how revisited topics are handled. The time-based model proposes creating new L1 nodes for each topic mention based on meeting chronology, and for retrieval in such a time-oriented structure, L1 units should be provided along with their L2/L3 parent nodes to give LLMs necessary temporal context. The topic-based model suggests organizing nodes by semantic themes and updating existing L1 nodes with new information and timestamps to maintain an evolutionary history. Key node attributes include 'Importance', 'Relevance', and 'Recency'/'Activation'. To preserve the historical significance of an idea, its static 'importance' score should be separated from the dynamic 'activation' parameter that handles decay, preventing important but old ideas from disappearing entirely due to time, as 'activation' decreases but high importance items can have a baseline. A human-in-the-loop system for tuning memory node 'importance' is planned, where the system will use similarity search to suggest related idea units for adjustment. The design of this human-in-the-loop system remains an open issue, specifically regarding how users will inspect and adjust scores and how the system can proactively suggest related units for tuning. Memory node updates and merges are limited to within a single meeting, and parallel processing of idea units by multiple agents requires duplicate candidate management.",
+      "title": "System Architecture: Prompt Modification vs. Agent-Based Refactoring for Desired Behavior",
+      "summary": "The system's current behavior deviates significantly from desired outcomes, leading to an open question on the best approach to resolve this: either by first modifying the prompt or by refactoring the system into an agent-based architecture. The overall plan involves refactoring the system from a monolithic 'manager' process to a multi-agent model for improved testability and task separation, with an initial step of prompt modification to align with desired behavior, followed by the agent-based refactoring. This multi-agent approach allows for independent, step-by-step testing, addressing limitations of the current monolithic architecture. A counter-argument suggests enhancing the monolithic system with detailed tool-calling logs for debugging instead of a full architectural overhaul.",
       "types": [
         "decision",
         "approach_change",
@@ -2427,10 +2047,7 @@
         "memory_system_architecture",
         "output_quality",
         "experimental_setup",
-        "model_configuration",
-        "long-term memory implementation",
-        "implementation_strategy",
-        "data_handling"
+        "model_configuration"
       ],
       "source_obj_ids": [
         "L1-0307-010",
@@ -2559,31 +2176,12 @@
         "L1-0429-155",
         "L1-0429-156",
         "L1-0429-157",
-        "L1-0429-161",
-        "L1-0506-027",
-        "L1-0506-028",
-        "L1-0506-029",
-        "L1-0506-031",
-        "L1-0506-032",
-        "L1-0506-033",
-        "L1-0506-034",
-        "L1-0506-035",
-        "L1-0506-036",
-        "L1-0506-037",
-        "L1-0506-038",
-        "L1-0506-021",
-        "L1-0506-022",
-        "L1-0506-039",
-        "L1-0506-040",
-        "L1-0506-041",
-        "L1-0506-042",
-        "L1-0506-043",
-        "L1-0506-044"
+        "L1-0429-161"
       ],
       "created_meeting_id": "0307",
-      "last_updated_meeting_id": "0506",
-      "last_seen_meeting_index": 6,
-      "missed_meeting_count": 0,
+      "last_updated_meeting_id": "0429",
+      "last_seen_meeting_index": 5,
+      "missed_meeting_count": 1,
       "update_history": [
         {
           "meeting_id": "0307",
@@ -3473,324 +3071,1437 @@
             "L1-0429-161"
           ],
           "change": "The new L1 object presents an open question regarding the priority between prompt modification and agent-based refactoring to resolve system behavior, which directly updates the ongoing discussion in S004 about system architecture changes and development plans."
+        }
+      ]
+    },
+    {
+      "unit_id": "S006",
+      "title": "Agent Evaluation Framework, Step Verification, and Benchmarking",
+      "summary": "The agent's evaluation plan includes assessing the model on various question types and an ablation study. A verification mechanism is being established to inspect and confirm the rationality and sufficiency of each agent's processing step by checking its input and output before proceeding. This mechanism involves recording each agent's prompt and result for tracking. The methodology compares structured memory against RAG using datasets like BMR. Text segmentation performance will be formally evaluated using a benchmark ground truth dataset. Data sufficiency and augmentation strategies are being addressed, and 'long context' will be defined by token count for benchmarking. A definitive evaluation plan is pending, with a two-part demo in May.",
+      "types": [
+        "approach_change",
+        "argument",
+        "open_issue",
+        "proposal",
+        "finding",
+        "decision",
+        "action_item"
+      ],
+      "related_topics": [
+        "memory architecture evaluation",
+        "evaluation methods",
+        "standardized tests",
+        "datasets",
+        "benchmarking",
+        "reference paper",
+        "model performance",
+        "agent performance evaluation",
+        "LLM comparison",
+        "proving superiority",
+        "demonstration strategy",
+        "vanilla agent",
+        "memory-augmented agent",
+        "short-term memory effectiveness",
+        "long-term memory effectiveness",
+        "added value",
+        "research methodology",
+        "dataset_acquisition",
+        "literature_review",
+        "dataset",
+        "output quality",
+        "data fragmentation",
+        "missing information",
+        "Memory system performance",
+        "Memory system",
+        "Data fragmentation",
+        "dataset acquisition",
+        "Dataset selection",
+        "Research methodology",
+        "input fragmentation",
+        "memory retrieval",
+        "text chunking",
+        "experimental setup",
+        "model configuration",
+        "dataset selection",
+        "memory system performance",
+        "retrieval phase",
+        "long-term memory architecture",
+        "memory model",
+        "long-term memory",
+        "alternative approaches",
+        "research_methodology",
+        "question types",
+        "dataset_selection",
+        "project goals",
+        "data management",
+        "folder structure",
+        "project narrative",
+        "memory_retrieval",
+        "memory_system_performance",
+        "memory system",
+        "data-quality finding",
+        "data_management",
+        "experimental_setup",
+        "system architecture",
+        "safety guardrails",
+        "inappropriate responses",
+        "dangerous questions",
+        "output_quality",
+        "model_configuration",
+        "long-term_memory",
+        "decision",
+        "retrieval-augmented generation (RAG)",
+        "abandoned topics",
+        "temporal sequence",
+        "decision verification",
+        "STM-LTM integration",
+        "memory_system",
+        "long-term_memory_architecture",
+        "development workflow",
+        "data handling",
+        "model execution parameters",
+        "Model execution parameters",
+        "Dataset acquisition",
+        "project_goals",
+        "forgetting mechanism",
+        "working memory",
+        "short-term memory",
+        "memory system architecture",
+        "system_architecture",
+        "STM-LTM_integration",
+        "WhisperX",
+        "model_execution_parameters",
+        "Experimental setup",
+        "Memory system architecture",
+        "memory system implementation",
+        "data_handling",
+        "long-term_memory_implementation",
+        "development_workflow"
+      ],
+      "source_obj_ids": [
+        "L1-0307-024",
+        "L1-0307-028",
+        "L1-0307-029",
+        "L1-0307-032",
+        "L1-0307-033",
+        "L1-0307-037",
+        "L1-0307-039",
+        "L1-0307-041",
+        "L1-0307-047",
+        "L1-0307-048",
+        "L1-0307-049",
+        "L1-0307-050",
+        "L1-0307-051",
+        "L1-0318-002",
+        "L1-0318-005",
+        "L1-0318-006",
+        "L1-0318-008",
+        "L1-0318-009",
+        "L1-0318-010",
+        "L1-0318-011",
+        "L1-0318-012",
+        "L1-0318-013",
+        "L1-0318-014",
+        "L1-0318-015",
+        "L1-0318-016",
+        "L1-0318-017",
+        "L1-0318-019",
+        "L1-0318-023",
+        "L1-0318-024",
+        "L1-0318-025",
+        "L1-0318-026",
+        "L1-0325-006",
+        "L1-0325-007",
+        "L1-0325-008",
+        "L1-0325-009",
+        "L1-0325-010",
+        "L1-0325-011",
+        "L1-0325-012",
+        "L1-0325-013",
+        "L1-0325-014",
+        "L1-0325-017",
+        "L1-0325-018",
+        "L1-0325-019",
+        "L1-0325-021",
+        "L1-0325-022",
+        "L1-0325-026",
+        "L1-0325-027",
+        "L1-0325-028",
+        "L1-0325-031",
+        "L1-0325-032",
+        "L1-0325-033",
+        "L1-0325-064",
+        "L1-0325-065",
+        "L1-0325-066",
+        "L1-0325-067",
+        "L1-0325-068",
+        "L1-0325-069",
+        "L1-0325-070",
+        "L1-0325-071",
+        "L1-0325-072",
+        "L1-0325-073",
+        "L1-0325-074",
+        "L1-0325-075",
+        "L1-0325-076",
+        "L1-0325-077",
+        "L1-0325-078",
+        "L1-0325-079",
+        "L1-0325-080",
+        "L1-0325-081",
+        "L1-0325-083",
+        "L1-0325-084",
+        "L1-0325-085",
+        "L1-0325-087",
+        "L1-0325-093",
+        "L1-0325-095",
+        "L1-0325-096",
+        "L1-0325-097",
+        "L1-0325-098",
+        "L1-0325-099",
+        "L1-0325-100",
+        "L1-0408-001",
+        "L1-0408-002",
+        "L1-0408-003",
+        "L1-0408-004",
+        "L1-0408-005",
+        "L1-0422-021",
+        "L1-0422-024",
+        "L1-0422-050",
+        "L1-0422-051",
+        "L1-0422-052",
+        "L1-0429-001",
+        "L1-0429-002",
+        "L1-0429-003",
+        "L1-0429-004",
+        "L1-0429-005",
+        "L1-0429-006",
+        "L1-0429-007",
+        "L1-0429-008",
+        "L1-0429-009",
+        "L1-0429-010",
+        "L1-0429-013",
+        "L1-0429-017",
+        "L1-0429-019",
+        "L1-0429-021",
+        "L1-0429-023",
+        "L1-0429-050",
+        "L1-0429-051",
+        "L1-0429-052",
+        "L1-0429-053",
+        "L1-0429-054",
+        "L1-0429-058",
+        "L1-0429-059",
+        "L1-0429-060",
+        "L1-0429-061",
+        "L1-0429-064",
+        "L1-0429-065",
+        "L1-0506-004",
+        "L1-0506-018",
+        "L1-0506-024",
+        "L1-0506-025"
+      ],
+      "created_meeting_id": "0307",
+      "last_updated_meeting_id": "0506",
+      "last_seen_meeting_index": 6,
+      "missed_meeting_count": 0,
+      "update_history": [
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-024"
+          ],
+          "change": "The new L1 object introduces the topic of evaluating the memory architecture's performance and superiority, including specific methods like standardized tests and datasets from a reference paper. This topic is not sufficiently covered by any existing short-term memory units, warranting the creation of a new unit."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-028"
+          ],
+          "change": "The new L1 object directly specifies the next action item related to demonstrating the memory architecture's superiority using reference papers, which is the core topic of unit S006."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-029"
+          ],
+          "change": "The new L1 object directly addresses the challenge of establishing evaluation methods for the memory-enhanced agent's performance and proving its superiority, which perfectly aligns with the existing unit S006's focus on 'Evaluation methods for memory architecture' and the plan to investigate how reference papers demonstrate model performance."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-032"
+          ],
+          "change": "The new L1 object proposes a specific demonstration strategy that directly addresses the need for evaluation methods and proving the memory-enhanced agent's superiority, which is the core topic of unit S006."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-033"
+          ],
+          "change": "The new L1 object proposes researching and adopting evaluation methods from reference papers to prove the memory architecture's superiority, which directly aligns with the existing unit S006 focused on establishing evaluation methods for memory architecture and demonstrating its value."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-037"
+          ],
+          "change": "The new L1 object provides further detail on the demonstration strategy for evaluating memory architecture, which is a core component of unit S006. It specifies how to design questions for comparing agents, directly expanding on the existing summary."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-039"
+          ],
+          "change": "The new L1 object describes the specific demonstration and evaluation strategy for the memory-enhanced agent, which directly aligns with the existing unit S006, whose title and summary already cover evaluation methods and demonstration strategy."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-041"
+          ],
+          "change": "The new L1 object, an open issue about the sufficiency and acquisition of datasets from research papers, directly relates to the existing unit's focus on establishing evaluation methods, including standardized tests and datasets from reference papers, to prove the memory architecture's performance."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-047"
+          ],
+          "change": "The new L1 object directly addresses the quality of the memory system's output (fragmented, simple, missing information) and reinforces the existing open issue within S006 regarding the sufficiency of the current dataset, making it a clear continuation of the same topic."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-048"
+          ],
+          "change": "The new L1 object directly reinforces and elaborates on the existing discussion within S006 regarding the insufficiency of the current dataset and the proposal to acquire more complete datasets from research papers, including methods like reviewing papers or contacting authors."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-049"
+          ],
+          "change": "The new L1 object directly addresses the sufficiency of the current dataset and proposes investigating more complete datasets from original research papers, aligning perfectly with the existing discussion in unit S006 about dataset acquisition and the need to re-evaluate the dataset."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-050"
+          ],
+          "change": "The new L1 object directly elaborates on the existing discussion within S006 regarding the fragmented and simplistic output of the 'Memory' system, providing specific reasons for this issue (fragmented input and failure to log without relationships)."
+        },
+        {
+          "meeting_id": "0307",
+          "source_obj_ids": [
+            "L1-0307-051"
+          ],
+          "change": "The new L1 object directly reinforces and elaborates on the existing discussion within S006 regarding the inadequacy of the current dataset and the need to acquire more comprehensive ones from research papers."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-002"
+          ],
+          "change": "The new L1 object describes a specific evaluation gap within the LOCOMO dataset for the MEM 0 model regarding 'unanswerable questions,' which directly aligns with the existing unit S006, focused on evaluation methods, dataset acquisition, and output quality for memory architecture."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-005"
+          ],
+          "change": "The new L1 object criticizes fixed-sentence text chunking as ineffective and leading to fragmented meaning. This directly relates to the existing unit S006, which discusses issues with dataset acquisition, data fragmentation, and the fragmented nature of input conversations affecting output quality. The new information provides a specific example and cause for the fragmentation issues already covered in S006."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-006"
+          ],
+          "change": "The new L1 object provides specific details about the MEM 0 paper's evaluation dataset (LOCOMO, ACL 2024, text-only, size, questions), which directly elaborates on existing information within unit S006 regarding the evaluation of the MEM 0 model and dataset characteristics. This is a direct continuation and enrichment of the topic."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-008"
+          ],
+          "change": "The new L1 object provides specific details about the categorization of questions within the LOCOMO dataset and reiterates that the 'unanswerable questions' category was not used in the MEM 0 evaluation, which directly expands upon the existing S006 unit's discussion of the MEM 0 evaluation and the LOCOMO dataset."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-009"
+          ],
+          "change": "The new L1 object describes a specific decision regarding the evaluation method for MEM 0 (using an LLM-as-a-judge), which directly updates and elaborates on the 'Evaluation Methods' aspect of the existing S006 unit, which is focused on MEM 0 evaluation, datasets, and quality issues."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-010"
+          ],
+          "change": "The new L1 object details the specific baselines for the MEM 0 evaluation, which directly expands upon the existing S006 unit's discussion of MEM 0 evaluation methods and benchmarking."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-011"
+          ],
+          "change": "The new L1 object provides specific details about the evaluation protocol for MEM 0, including the number of runs for reliability and additional performance metrics (latency, token cost). This directly expands upon the existing short-term unit S006, which already covers the MEM 0 evaluation, its methodology (LLM-as-a-judge), baselines, and dataset. Merging is appropriate as it's the same ongoing topic."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-012"
+          ],
+          "change": "The new L1 object provides specific findings and reiterates methodology details from the MEM 0 evaluation, directly updating the existing unit S006 which is focused on the MEM 0 evaluation protocol and baselines."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-013"
+          ],
+          "change": "The new L1 object describes a methodology for data collection to evaluate image memory, which directly aligns with the 'Methodology' aspect of unit S006, which focuses on MEM 0 evaluation, baselines, and existing concerns about dataset acquisition and quality. The related topics 'dataset_acquisition' and 'research_methodology' are already prominent in S006."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-014"
+          ],
+          "change": "The new L1 object provides a specific definition for 'multi-hop' questions within the LOCOMO dataset, which is directly relevant to the evaluation methodology and findings discussed in unit S006, particularly its performance on multi-hop questions."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-015"
+          ],
+          "change": "The new L1 object provides detailed definitions of question types (Single-hop, Multi-hop, Temporal Reasoning) within the LOCOMO dataset, which directly expands on the existing summary of S006 regarding the LOCOMO dataset and its evaluation methodology. The content is highly relevant to the existing unit."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-016"
+          ],
+          "change": "The new L1 object provides specific details about the baselines used for the MEM 0 evaluation, which directly expands upon the existing content in unit S006, whose title and summary already cover 'MEM 0 Evaluation' and 'Baselines'."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-017"
+          ],
+          "change": "The new L1 object provides additional details and rationale for the MEM 0 evaluation methodology, specifically regarding the use of LLM-as-a-judge and the metrics tracked, which directly updates the existing unit S006."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-019"
+          ],
+          "change": "The new L1 object directly discusses a methodological issue with the evaluation of the MIRIX paper, which is already a topic within unit S006, focusing on evaluation protocols, baselines, and research methodology."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-023"
+          ],
+          "change": "The new L1 object directly elaborates on the methodological concerns regarding the MIRIX paper's experimental setup, which is already a key point in unit S006's summary."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-024"
+          ],
+          "change": "The new L1 object provides specific details about the MIRIX paper's screenshot evaluation method, which is already a topic of discussion within unit S006 regarding image memory evaluation and methodological questions."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-025"
+          ],
+          "change": "The new L1 object provides details about the MIRIX paper's methodology for image memory evaluation, including the source (UCSD) and the number of students involved. This directly aligns with and elaborates on the existing discussion about the MIRIX paper's methodology for image memory evaluation already present in unit S006. The related topics also match."
+        },
+        {
+          "meeting_id": "0318",
+          "source_obj_ids": [
+            "L1-0318-026"
+          ],
+          "change": "The new L1 object discusses a Stanford team's screenshot analysis project and explicitly contrasts it with MIRIX, which is a topic already extensively covered in unit S006 regarding image memory evaluation and research methodology. This indicates a direct thematic continuation."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-006"
+          ],
+          "change": "The new L1 object details the selection of the primary dataset, which directly relates to the experimental setup and methodology discussed in unit S006, which already covers dataset considerations and evaluation protocols."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-007"
+          ],
+          "change": "The new L1 object raises an open question about the usage of the selected ICSI Meeting Corpus dataset and the need for a literature review, which directly relates to the 'Dataset Selection' and 'Research Methodology' aspects already covered in unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-008"
+          ],
+          "change": "The new L1 object proposes investigating how the ICSI Meeting Corpus has been used by other researchers, which directly aligns with an existing open question and discussion point within unit S006 regarding the dataset's usage and the necessity of a literature review."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-009"
+          ],
+          "change": "The new L1 object provides a justification for the selection of the ICSI dataset, clarifying why its format is acceptable despite not perfectly matching the project's 'mentor-student' scenario. This directly updates the existing discussion about dataset selection within unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-010"
+          ],
+          "change": "The new L1 object reinforces the suitability of the ICSI Meeting Corpus, which is already a central topic in unit S006, by highlighting its completeness and continuous, single-topic research meetings. This directly updates and elaborates on existing information within S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-011"
+          ],
+          "change": "The new L1 object provides a specific detail about the suitability of the ICSI corpus's meeting lengths, which directly expands on the existing discussion of dataset selection and research methodology within unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-012"
+          ],
+          "change": "The new L1 object provides specific details about the organization of the ICSI corpus (series, research topics, accompanying papers), which is the primary dataset selected for the project. This directly elaborates on the 'Dataset Selection' aspect of unit S006, making it a suitable candidate for merging as it enhances the understanding of the dataset's structure relevant to the experimental setup."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-013"
+          ],
+          "change": "The L1 object confirms and elaborates on the selection of the ICSI Meeting Corpus, which is already a central theme within unit S006, specifically under 'Dataset Selection'."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-014"
+          ],
+          "change": "The new L1 object explicitly states the decision to use the ICSI dataset despite the mentor-mentee scenario mismatch, deeming it acceptable. This information is already comprehensively covered and justified within the existing summary of unit S006, which focuses on 'Experimental Setup: Dataset Selection, Evaluation Methodology, and Baselines'. The new L1 object reinforces an existing point rather than introducing new, distinct information."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-017"
+          ],
+          "change": "The new L1 object details a decision to research the applications of the ICSI dataset, directly building upon the existing unit's discussion about the ICSI corpus and the need to investigate its usage by other researchers."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-018"
+          ],
+          "change": "The new L1 object describes a method for verifying AI memory recall by retrieving original meeting segments and manually assessing relevance. This directly falls under the 'Evaluation Methodology' aspect of unit S006, which already covers experimental setup, dataset selection, and evaluation protocols."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-019"
+          ],
+          "change": "The new L1 object discusses the challenge of verifying AI's recalled memories from real meeting data and proposes manual verification by retrieving original segments. This directly aligns with the existing summary and related topics of unit S006, which covers evaluation methodology and already mentions this specific verification method."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-021"
+          ],
+          "change": "The new L1 object discusses evaluation methods for agent personality drift, which directly aligns with the existing unit's focus on evaluation methodology and agent performance evaluation. The summary of S006 already covers evaluation aspects, and the new content is a specific instance of evaluation methodology."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-022"
+          ],
+          "change": "The L1 object proposes a method for verifying AI memory recall, which directly aligns with a challenge and mitigation strategy already discussed within unit S006 regarding the experimental setup and evaluation methodology."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-026"
+          ],
+          "change": "The new L1 object discusses research methodology, dataset selection (simulated vs. real data), and evaluation of memory system performance, which directly aligns with the existing unit S006's focus on experimental setup, dataset selection, and evaluation methodology."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-027"
+          ],
+          "change": "The new L1 object provides a specific finding about the usage of the ICSI dataset (primarily NLP, not memory research), which directly updates the 'Experimental Setup: Dataset Selection' unit (S006) that already discusses the ICSI Meeting Corpus and dataset suitability."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-028"
+          ],
+          "change": "The new L1 object describes the adoption of a manual verification method for AI-recalled memories, which directly aligns with the existing unit S006, whose summary already mentions this method as a proposed solution to the challenge of verifying AI-recalled memories. The L1 object confirms the adoption of this approach."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-031"
+          ],
+          "change": "The new L1 object proposes a specific evaluation method for comparing agent persona stability (long-term persona vector vs. recent interaction). This directly aligns with unit S006's focus on 'Experimental Setup', 'Evaluation Methodology', and 'preventing agent personality drift'. The related topics also show strong overlap."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-032"
+          ],
+          "change": "The new L1 object proposes specific methods for evaluating agent personality consistency, which directly aligns with the existing unit S006's focus on 'Evaluation Methodology for Persona Stability' and 'Experimental Setup'. The new information elaborates on the evaluation methods for a topic already covered in S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-033"
+          ],
+          "change": "The new L1 object discusses the value proposition of a specific dataset for speech-to-text tasks due to its features (transcripts and audio). This directly relates to and elaborates on the existing discussion within S006 about dataset selection, the ICSI dataset, and its use for NLP tasks."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-064"
+          ],
+          "change": "The L1 object details the decision to use the ICSI corpus for research due to its coherence and suitability for LTM analysis, which directly updates the existing unit S006 that already discusses dataset selection and the use of the ICSI corpus in the experimental setup."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-065"
+          ],
+          "change": "The new L1 object directly updates the status and utility of the ICSI corpus, which is a central component of the experimental setup and dataset selection discussed in unit S006. The L1 object indicates a change in the approach to dataset selection due to the limited utility of the ICSI corpus for long-term memory research, requiring a search for alternatives. This is a direct continuation and modification of the topic covered in S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-066"
+          ],
+          "change": "The new L1 object describes a new evaluation strategy for the long-term memory architecture, which directly updates the 'Evaluation Methodology' aspect of the existing S006 unit on experimental setup and evaluation."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-067"
+          ],
+          "change": "The new L1 object directly discusses the evaluation methodology for the three-layer long-term memory architecture and the N+1 meeting evaluation strategy, which is the core focus of unit S006. It refines the status of the evaluation plan, indicating it is proposed but not yet finalized, which is an update to the existing summary."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-068"
+          ],
+          "change": "The new L1 object discusses issues with the ICSI corpus for long-term memory research, which directly updates the 'Dataset Selection' aspect of unit S006, which already mentions re-evaluating the ICSI Corpus."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-069"
+          ],
+          "change": "The L1 object describes a finding from a literature review about a paper's applicability to the project's dataset, which directly aligns with the 'Dataset Selection' and 'Research Methodology' aspects of the 'Experimental Setup' unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-070"
+          ],
+          "change": "The new L1 object proposes a baseline for evaluating the three-layer memory architecture, which directly aligns with the 'Evaluation Methodology' and 'N+1 Meeting Evaluation Strategy' discussed in unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-071"
+          ],
+          "change": "The new L1 object proposes an alternative evaluation task, which directly aligns with the 'Evaluation Methodology' and 'Experimental Setup' aspects already covered in unit S006. The related topics of the L1 object are also well-represented in S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-072"
+          ],
+          "change": "The new L1 object provides the specific rationale for selecting the ICSI corpus, which directly elaborates on the 'dataset selection' aspect already covered in unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-073"
+          ],
+          "change": "The new L1 object directly elaborates on the feasibility of the proposed baseline evaluation approach for the three-layer memory architecture, which is already a key point in unit S006. It reinforces the argument that feeding the entire transcript to a model is infeasible for long texts, supporting the need for a complex memory architecture."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-074"
+          ],
+          "change": "The new L1 object discusses evaluation methods for digital avatars, specifically the unreliability of self-assessment and the preference for external evaluation, while noting the impracticality of a formal Turing test. This directly aligns with the existing unit S006, which extensively covers 'Evaluation Methodology' and 'Experimental Setup' for the three-layer memory architecture, including discussions on agent evaluation and alternative evaluation tasks."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-075"
+          ],
+          "change": "The new L1 object defines a characteristic of the digital avatar model (pure text, no voice/emotion), which directly relates to the experimental setup and evaluation methodology for digital avatars, as covered in unit S006. The L1 object's related topics (system architecture, project goals, model configuration) align well with S006's existing topics."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-076"
+          ],
+          "change": "The new L1 object describes the specific method (RAG) for creating Professor Lee Lin-shan's digital avatar using scraped public data. This directly elaborates on the 'Digital Avatars' and 'Dataset Selection' aspects already covered in unit S006, which also mentions Professor Lee Lin-shan's digital avatar."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-077"
+          ],
+          "change": "The new L1 object proposes a specific experiment for quantitatively evaluating avatar style using LLMs and human ratings, which directly elaborates on the 'evaluation methods for digital avatars' discussed in unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-078"
+          ],
+          "change": "The new L1 object discusses the challenges of evaluating an avatar's conversational style, which directly relates to the existing unit S006, which covers the evaluation methodology for digital avatars, including their style."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-079"
+          ],
+          "change": "The new L1 object describes an open issue regarding implementing safety guardrails for the avatar project to prevent inappropriate responses. This directly aligns with the existing unit S006, which covers digital avatar evaluation methodology, including conversational style challenges and output quality, and mentions Professor Lee Lin-shan's digital avatar. The new information is a specific challenge within the broader context of avatar behavior and evaluation already discussed in S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-080"
+          ],
+          "change": "The L1 object discusses an 'unresolved challenge' related to 'modeling conversational interruptions for the avatar,' which aligns with the existing unit S006 that covers 'Digital Avatar Evaluation,' 'conversational style,' and other 'unresolved challenges' like 'safety guardrails' for the avatar. The L1 object's related topics are also well-covered by S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-081"
+          ],
+          "change": "The new L1 object discusses an open question about the optimal data source for training the avatar model, which directly relates to dataset selection and research methodology, topics already covered in unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-083"
+          ],
+          "change": "The new L1 object proposes a specific method for quantitatively evaluating style using LLMs and human ratings, which directly aligns with and elaborates on the 'proposed experiment for quantitatively evaluating avatar style' already discussed in unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-084"
+          ],
+          "change": "The new L1 object discusses the difficulty in defining and prompting LLMs for a specific style due to the lack of standardized definitions. This directly aligns with unit S006, which already covers challenges in assessing, modeling, and evaluating conversational style for digital avatars."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-085"
+          ],
+          "change": "The new L1 object discusses the reliability and practicality of different evaluation methods for avatar style, which directly expands on the existing unit S006's discussion of avatar evaluation methods, including the role of third-party ratings and the challenges of assessing conversational style."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-087"
+          ],
+          "change": "The new L1 object directly discusses the evaluation criteria and methods for personalized avatars, which is the core topic of unit S006. It reinforces and adds specific details to the existing summary regarding evaluation standards and the preference for third-party assessment over self-evaluation or impractical Turing tests."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-093"
+          ],
+          "change": "The new L1 object directly addresses the 'evaluation methodology for the memory system,' which is a core theme of S006, particularly its discussion of 'evaluation methods for digital avatars and the memory architecture.' The L1 object provides specific approaches to address the lack of a defined methodology, making it a direct update to this unit."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-095"
+          ],
+          "change": "The new L1 object proposes 'tracking \"dead topics\"' as an evaluation task, which directly aligns with and elaborates on a 'potential approach' already mentioned in unit S006, which focuses on memory system evaluation methodology."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-096"
+          ],
+          "change": "The new L1 object proposes an alternative evaluation method for verifying decisions, which directly aligns with the existing unit S006's focus on 'Memory System and Digital Avatar Evaluation Methodology' and its mention of 'verifying final decisions'. The related topics also show strong overlap."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-097"
+          ],
+          "change": "The new L1 object proposes a specific evaluation method using synthetic data to track abandoned topics, which directly aligns with the existing unit S006's focus on evaluation methodology, including tracking 'dead topics' and using synthetic data for discontinued tasks."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-098"
+          ],
+          "change": "The new L1 object proposes an evaluation approach for non-linear meetings by checking summaries against predefined agendas, requiring expert-generated ground truth. This directly aligns with unit S006, which already covers various evaluation methodologies for the memory system, including checking summaries against predefined agendas."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-099"
+          ],
+          "change": "The new L1 object directly discusses the insufficiency of a simple RAG approach for tracking abandoned project topics and understanding temporal sequences/decisions, which is a specific challenge within the evaluation methodology for the memory system, a topic already covered by unit S006."
+        },
+        {
+          "meeting_id": "0325",
+          "source_obj_ids": [
+            "L1-0325-100"
+          ],
+          "change": "The new L1 object directly discusses the project's evaluation methodology, specifically mentioning the shift to temporal understanding, tracking abandoned topics, and the insufficiency of RAG, all of which are core themes of unit S006. The L1 object's content reinforces and elaborates on the existing summary of S006."
+        },
+        {
+          "meeting_id": "0408",
+          "source_obj_ids": [
+            "L1-0408-001"
+          ],
+          "change": "The new L1 object details a specific decision regarding dataset selection (BMR series), which is a direct component of the experimental setup and research methodology for the memory system evaluation, aligning well with the existing unit S006."
+        },
+        {
+          "meeting_id": "0408",
+          "source_obj_ids": [
+            "L1-0408-002"
+          ],
+          "change": "The new L1 object raises an open question about the nature of the BMR dataset (topic continuity), which was previously selected for the experimental setup and evaluation methodology discussed in S006. This directly extends the existing topic."
+        },
+        {
+          "meeting_id": "0408",
+          "source_obj_ids": [
+            "L1-0408-003"
+          ],
+          "change": "The new L1 object provides further details and justification for the selection and characteristics of the dataset, specifically the BMR series, which is a core component of the existing unit S006 that discusses evaluation methodology and experimental setup, including dataset selection and topic continuity."
+        },
+        {
+          "meeting_id": "0408",
+          "source_obj_ids": [
+            "L1-0408-004"
+          ],
+          "change": "The L1 object provides a specific reason for the suitability of the selected dataset for NLP tasks, which directly updates and enriches the existing discussion on dataset selection and experimental setup in unit S006."
+        },
+        {
+          "meeting_id": "0408",
+          "source_obj_ids": [
+            "L1-0408-005"
+          ],
+          "change": "The new L1 object provides specific details about the BMR series dataset, including its content focus and file format, which directly elaborates on the existing discussion of this dataset within unit S006's experimental setup and dataset selection."
+        },
+        {
+          "meeting_id": "0422",
+          "source_obj_ids": [
+            "L1-0422-021"
+          ],
+          "change": "The new L1 object describes a system-level evaluation strategy to demonstrate the value of the structured memory system by comparing it against a standard RAG system. This directly aligns with the existing unit S006, which focuses on 'Evaluation Methodology and Experimental Setup' and already discusses RAG limitations and demonstration strategies."
+        },
+        {
+          "meeting_id": "0422",
+          "source_obj_ids": [
+            "L1-0422-024"
+          ],
+          "change": "The new L1 object describes an action item to evaluate the structured memory system against a standard RAG system, which is a core component of the existing unit S006's summary and related topics."
+        },
+        {
+          "meeting_id": "0422",
+          "source_obj_ids": [
+            "L1-0422-050"
+          ],
+          "change": "The new L1 object proposes a two-part demo for the May exhibition, including a comparison with a standard RAG model and a demonstration of idea unit packing. This aligns directly with the existing unit S006, which covers evaluation methodology, experimental setup, and system-level comparison with RAG. The demo is a specific instance of the experimental setup and evaluation strategy discussed in S006."
+        },
+        {
+          "meeting_id": "0422",
+          "source_obj_ids": [
+            "L1-0422-051"
+          ],
+          "change": "The new L1 object discusses the need to decide on a dataset for evaluating the memory system's long-term capabilities, which directly aligns with the existing unit S006's focus on evaluation methodology, experimental setup, and dataset selection for long-term memory."
+        },
+        {
+          "meeting_id": "0422",
+          "source_obj_ids": [
+            "L1-0422-052"
+          ],
+          "change": "The new L1 object proposes using the team's own meeting dataset for evaluation, which directly addresses an open issue within the existing S006 unit regarding dataset selection for long-term memory capabilities. The content and related topics align perfectly with S006's focus on evaluation methodology, experimental setup, and dataset selection."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-001"
+          ],
+          "change": "The L1 object describes a refinement in how dataset size is measured for LLM experiments, specifically moving to 'long context' in tokens. This directly relates to the 'Experimental Setup' and 'Dataset Selection' aspects already covered in unit S006."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-002"
+          ],
+          "change": "The L1 object proposes an alternative data augmentation strategy for creating a long-term dataset, which directly relates to the existing unit's focus on dataset selection, acquisition, and experimental setup for long-term memory capabilities."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-003"
+          ],
+          "change": "The new L1 object describes a data quality issue with the transcribed meeting data (dataset) and the need for manual correction. This directly relates to the 'Dataset Selection' and 'data-quality finding' aspects already covered in unit S006, which discusses the project's dataset and experimental setup."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-004"
+          ],
+          "change": "The new L1 object directly addresses the sufficiency of the 180-minute meeting dataset for LLM experiments, which is a topic already extensively covered within S006, particularly concerning dataset quality and experimental setup."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-005"
+          ],
+          "change": "The new L1 object proposes a data augmentation method using an LLM to address the potential insufficiency of the 180-minute dataset, which directly relates to the existing discussion in S006 about dataset quality, sufficiency, and alternative data augmentation strategies for LLM experiments."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-006"
+          ],
+          "change": "The new L1 object provides the rationale for a statement already present in unit S006 regarding benchmarking dataset size for LLM experiments using tokens instead of minutes. It directly elaborates on an existing point within the unit's summary and related topics."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-007"
+          ],
+          "change": "The L1 object provides an argument for a data augmentation strategy (incorporating other students' meeting recordings) that is already mentioned as an alternative within unit S006, which covers dataset quality and experimental setup. The new information elaborates on why this strategy is superior."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-008"
+          ],
+          "change": "The new L1 object directly reinforces and elaborates on the existing concern within S006 regarding the sufficiency of the 180 minutes of meeting data for LLM experiments, citing the high capability of modern models as a reason for potential insufficiency. This aligns perfectly with the 'Dataset Quality' aspect of S006."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-009"
+          ],
+          "change": "The new L1 object identifies a specific source (Zhen Ying) for historical meeting recordings, which directly contributes to the ongoing discussion within S006 about acquiring a larger, long-term dataset to address potential data insufficiency for LLM experiments. This aligns with the existing summary's mention of incorporating other students' past recordings and the unit's focus on dataset quality and acquisition."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-010"
+          ],
+          "change": "The new L1 object details the specific criteria for the agent's evaluation framework (short-term correctness, long-term evolution, decision reasoning), which directly elaborates on the 'Evaluation Methodology' and 'Evaluation aspects' already discussed in unit S006. The related topics also align perfectly."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-013"
+          ],
+          "change": "The new L1 object specifies a concrete method for evaluating correctness (comparing agent answers to ground-truth data), which directly elaborates on the 'short-term correctness' assessment mentioned in S006's summary and aligns with its overall focus on agent evaluation framework and methodology. The related topics also match."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-017"
+          ],
+          "change": "The new L1 object provides a justification for the sophisticated long-term memory system based on evaluation criteria, specifically the need to track a topic's complete history ('long-term evolution') without omissions or hallucinations. This directly aligns with and elaborates on the 'Agent Evaluation Framework and Methodology' discussed in unit S006, which already covers these evaluation areas."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-019"
+          ],
+          "change": "The new L1 object explicitly defines the agent's evaluation framework, including its three categories and introducing 'fade out' as a novel criterion. This directly updates and expands upon the existing 'Agent Evaluation Framework and Methodology' topic (S006), which already covers these evaluation aspects."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-021"
+          ],
+          "change": "The new L1 object describes a decision regarding the experimental setup for an ablation study, specifically how the working memory component will be handled. This directly aligns with the existing unit S006, which focuses on the agent's evaluation framework and methodology, including its experimental setup."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-023"
+          ],
+          "change": "The new L1 object details an ablation study, which is a core part of the experimental setup and evaluation methodology already discussed in unit S006. The existing summary of S006 explicitly mentions a 'planned ablation study' and the role of 'working memory' in it, directly aligning with the new information."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-050"
+          ],
+          "change": "The L1 object specifies the criteria for the evaluation plan, including short-term correctness, long-term evolution, decision reasoning, and a novel 'forgetting/fade out' criterion. This directly elaborates on the existing 'Agent Evaluation Framework and Methodology' (S006), which already covers these aspects."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-051"
+          ],
+          "change": "The new L1 object explicitly details the planned ablation study, including its purpose to justify combining short-term and long-term memory and the specific components to be compared (RAG only, short-term only, long-term only, full system). This directly aligns with and provides further detail to the existing summary of unit S006, which already mentions this ablation study as part of the agent's evaluation framework and methodology."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-052"
+          ],
+          "change": "The L1 object identifies an open issue regarding the sufficiency and quality of the dataset for LLM experiments, which directly relates to the ongoing discussion about the agent's evaluation framework and methodology, including dataset acquisition and usage, as covered in unit S006."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-053"
+          ],
+          "change": "The new L1 object describes the specific components of the evaluation plan, which directly aligns with the existing unit S006, 'Agent Evaluation Framework and Methodology,' which already details the evaluation criteria including short-term correctness, long-term evolution, decision reasoning, and the forgetting mechanism. The new object confirms and emphasizes the execution of this plan."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-054"
+          ],
+          "change": "The new L1 object provides further details about the current dataset's quality issues and insufficiency, which is already a topic within S006's summary and related topics concerning evaluation methodology and dataset considerations."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-058"
+          ],
+          "change": "The new L1 object details an evaluation plan, including specific question types (short-term correctness, long-term evolution, decision reasoning) and measurement methods. This directly elaborates on the 'Agent Evaluation Framework and Methodology' discussed in unit S006, which already covers an 'agent's evaluation plan' and 'various question types'."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-059"
+          ],
+          "change": "The new L1 object proposes specific data augmentation strategies (LLM expansion, integrating other meeting records) to address data insufficiency, which is a direct continuation of the discussion on dataset limitations and the need for augmentation strategies already present in unit S006. The related topics also align perfectly."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-060"
+          ],
+          "change": "The new L1 object proposes using standard metrics (like token count) to define 'long context' for evaluating dataset sufficiency and benchmarking in agent research. This directly aligns with the existing unit's discussion on dataset sufficiency for LLM experiments and evaluation methodology."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-061"
+          ],
+          "change": "The new L1 object details the purpose and components of the ablation study (comparing full system against baselines to justify STM-LTM integration), which is a direct elaboration on the 'ablation study is planned' and the 'Agent Evaluation Framework' already discussed in unit S006."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-064"
+          ],
+          "change": "The L1 object provides a specific detail for defining 'long context' using tokens, which directly updates the existing discussion on 'Long Context Definition for Benchmarking' and 'Data Sufficiency' within unit S006."
+        },
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-065"
+          ],
+          "change": "The new L1 object directly reinforces and elaborates on the existing discussion within S006 regarding the appropriate metrics for defining 'long context' in LLMs for benchmarking purposes, specifically advocating for token count over minutes."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-027"
+            "L1-0506-004"
           ],
-          "change": "The new L1 object provides a detailed description of the hierarchical layers (L1, L2, L3) of the long-term memory system. This directly elaborates on the 'hierarchical memory structure' and 'L1 nodes, L2 nodes, L3 skeleton' already present in unit S004, which focuses on system architecture and memory design. Merging updates the existing topic with specific architectural details."
+          "change": "The new L1 object describes a methodology for formally evaluating text segmentation performance using ground truth datasets and metrics (precision/recall). This directly aligns with the existing unit S006, which focuses on the overall agent evaluation framework, research methodology, and dataset selection for benchmarking."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-028"
+            "L1-0506-018"
           ],
-          "change": "The new L1 object describes a refinement to the memory decay model, introducing 'importance' and 'activation' scores. This directly relates to the 'forgetting mechanism' and 'memory model' which are already central themes within unit S004, which covers the broader memory system architecture and its components. Merging updates the existing topic with this specific model refinement."
+          "change": "The new L1 object provides details on the necessity of using a benchmark ground truth dataset with pre-labeled breakpoints for evaluating text segmentation performance, which directly aligns with and elaborates on the existing content in unit S006 regarding the agent's evaluation framework and benchmarking."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-029"
+            "L1-0506-024"
           ],
-          "change": "The new L1 object clarifies how the 'importance' score, a component of the memory decay model, is assigned (by an LLM based on frequency within a meeting, not a default value), directly elaborating on the 'Decay Model Refinement' aspect already present in S004."
+          "change": "The new L1 object describes a verification process for agent execution, which directly supports the agent evaluation framework and output quality assurance discussed in unit S006."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-031"
+            "L1-0506-025"
           ],
-          "change": "The new L1 object proposes that the system learn from user-adjusted importance, which directly refines and extends the existing discussion in S004 about the memory decay model and the assignment/adjustment of 'importance' scores."
+          "change": "The new L1 object describes an action item to establish a verification mechanism for agent processing steps, which directly aligns with the existing description in S006 about a verification process introduced to ensure the rationality of each system step."
+        }
+      ]
+    },
+    {
+      "unit_id": "S017",
+      "title": "Potential Meeting Disruption",
+      "summary": "A scheduled power outage is expected around 12:00 at Speaker 02's location, but the exact timing is uncertain, posing a potential disruption to the meeting.",
+      "types": [
+        "open_issue"
+      ],
+      "related_topics": [
+        "meeting logistics",
+        "technical issues",
+        "disruption"
+      ],
+      "source_obj_ids": [
+        "L1-0429-048"
+      ],
+      "created_meeting_id": "0429",
+      "last_updated_meeting_id": "0429",
+      "last_seen_meeting_index": 5,
+      "missed_meeting_count": 1,
+      "update_history": [
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-048"
+          ],
+          "change": "The L1 object describes an immediate, logistical issue concerning a potential power outage and meeting disruption, which is not related to any of the existing technical or project-focused short-term units."
+        }
+      ]
+    },
+    {
+      "unit_id": "S018",
+      "title": "API Budget & Poster Printing Logistics",
+      "summary": "The team estimates API calls at 1,000/day during peak usage, with an estimated total cost of NTD 10,000-20,000, which is considered sufficient. The team has an API budget and free API usage, requiring consumption tracking. API costs are expected to be lower for this text-processing project compared to image-heavy projects. It's feasible to directly allocate a lump sum for API fees as research and Gemini API funds share the same source, simplifying payment. For the May 5th poster presentation, the department will handle primary printing, with 'Hong Fu' print shop as a backup for large posters and reimbursement available for self-printing.",
+      "types": [
+        "approach_change",
+        "finding",
+        "open_issue",
+        "proposal",
+        "argument",
+        "decision",
+        "action_item"
+      ],
+      "related_topics": [
+        "expense_reimbursement",
+        "model execution parameters",
+        "development workflow",
+        "lab_administration",
+        "API usage costs",
+        "payment methods",
+        "model_execution_parameters",
+        "model_configuration",
+        "development_workflow",
+        "experimental_setup",
+        "alternative_approaches"
+      ],
+      "source_obj_ids": [
+        "L1-0429-093",
+        "L1-0429-094",
+        "L1-0429-095",
+        "L1-0429-096",
+        "L1-0429-097",
+        "L1-0429-098",
+        "L1-0429-099",
+        "L1-0429-100",
+        "L1-0429-193",
+        "L1-0429-194",
+        "L1-0429-195",
+        "L1-0429-196",
+        "L1-0429-197",
+        "L1-0429-198",
+        "L1-0429-199",
+        "L1-0429-200"
+      ],
+      "created_meeting_id": "0429",
+      "last_updated_meeting_id": "0429",
+      "last_seen_meeting_index": 5,
+      "missed_meeting_count": 1,
+      "update_history": [
+        {
+          "meeting_id": "0429",
+          "source_obj_ids": [
+            "L1-0429-093"
+          ],
+          "change": "The new L1 object discusses a change in the payment method for API usage due to issues with existing credits and workarounds. This topic is not covered by any of the existing short-term units, which focus on LLM chunking, agent evaluation, memory architecture, application scenarios, or language impact. Therefore, a new unit is created to capture this administrative and financial decision."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-032"
+            "L1-0429-094"
           ],
-          "change": "The new L1 object discusses a key unresolved architectural decision for the long-term memory system (chronological vs. thematic structuring), which directly aligns with the existing unit S004 that covers 'Memory System Architecture' and 'Hierarchical LTM'."
+          "change": "The new L1 object directly relates to the NT$20,000 budget for Gemini API usage and the need for cost estimation, which is a direct continuation of the topic in unit S018 regarding API usage payment method changes and budget allocation."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-033"
+            "L1-0429-095"
           ],
-          "change": "The new L1 object directly discusses the uncertainty in the implementation and usage of the 'importance' score assigned by an LLM, which is a core component of the memory system and decay model already detailed in unit S004."
+          "change": "The new L1 object directly discusses an unexpected charge for API usage and the need for reimbursement, which is a continuation of the existing topic S018 regarding API usage costs, payment methods, and expense management. The specific amount mentioned (NT$715) aligns closely with the existing summary's mention of NT$717 daily costs."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-034"
+            "L1-0429-096"
           ],
-          "change": "The new L1 object proposes a specific chronological memory architecture, which directly addresses an unresolved architectural decision (chronological vs. thematic) already discussed within unit S004. The L1's content and related topics align perfectly with S004's focus on memory system architecture."
+          "change": "The new L1 object details issues with Gemini API access, including the inapplicability of a credit, unexpected personal credit card charges, and an unreliable Vertex AI workaround. This directly extends the existing unit S018, which discusses Gemini API usage costs, payment methods, unexpected charges, and reimbursement, making it a clear continuation of the same topic."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-035"
+            "L1-0429-097"
           ],
-          "change": "The new L1 object proposes a topic-based memory architecture, which is a direct alternative to the chronological/thematic structuring discussed in candidate unit S004. Merging into S004 consolidates the ongoing discussion about memory system architecture."
+          "change": "The new L1 object provides a hypothesis explaining why the Vertex AI workaround for API credits is unreliable, which directly elaborates on a point already present in S018 regarding Gemini API access issues and the unreliability of the Vertex AI workaround."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-036"
+            "L1-0429-098"
           ],
-          "change": "The new L1 object describes a human-in-the-loop mechanism for tuning the 'importance' of idea units and personalizing predictions. This directly updates the 'Importance Score & Decay Model' aspect of unit S004, which already discusses the assignment of importance based on user adjustments. The related topics also align well."
+          "change": "The new L1 object directly discusses the unreliability of the Vertex AI workaround for using free credit, attributing it to potential lower service priority for free tiers. This perfectly aligns with and reinforces the existing topic unit S018, which already covers Gemini API access issues, the unreliability of the Vertex AI workaround, and the hypothesis regarding service priority for free accounts."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-037"
+            "L1-0429-099"
           ],
-          "change": "The new L1 object directly discusses a critical trade-off in memory architecture between chronological and topic-based models, and references L1 nodes, importance, activation, relevance, and recency. This aligns perfectly with unit S004, which already covers 'chronological vs. topic-based organization' and the 'memory decay model separating static importance from dynamic activation/recency scores' within the context of the memory system's L1-L3 architecture."
+          "change": "The new L1 object directly explains the policy change regarding API key calls and the NT$9000 credit, which is a core component of the existing unit S018's summary about Gemini API access issues, costs, and reimbursement. The related topics also align perfectly."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-038"
+            "L1-0429-100"
           ],
-          "change": "The new L1 object criticizes chronological models for inefficient topic tracking, which directly relates to the ongoing discussion in S004 about the trade-offs between chronological and topic-based memory organization."
+          "change": "The new L1 object provides specific details and confirmation of the daily cost estimations for Gemini API usage, which directly updates and elaborates on the existing information within unit S018 regarding API costs and reimbursement issues."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-021"
+            "L1-0429-193"
           ],
-          "change": "The new L1 object defines a fundamental architectural rule for memory node merging, specifically limiting it to within a single meeting and treating each meeting as an independent processing unit. This directly impacts the design and implementation of the long-term memory system, particularly the trade-offs between chronological and topic-based organization, which is the core focus of unit S004."
+          "change": "The new L1 object describes a change in the method for handling Gemini API expenses, moving from receipt-based reimbursement to pre-allocated funds. This directly updates the existing short-term unit S018, which discusses Gemini API costs, reimbursement issues, and budget allocation."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-022"
+            "L1-0429-194"
           ],
-          "change": "The new L1 object defines specific attributes for the long-term memory model ('Importance', 'Relevance', 'Recency'/'Activation'), which directly elaborates on the existing discussion in S004 about the memory decay model and the separation of static 'importance' from dynamic 'activation/recency' scores. This is a refinement and expansion of an existing topic within S004."
+          "change": "The new L1 object directly confirms the resolution of API budget concerns and authorizes free usage, which is a direct continuation and update to the existing short-term unit S018 that details API costs, reimbursement, and budget allocation discussions."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-028"
+            "L1-0429-195"
           ],
-          "change": "The new L1 object discusses the challenge of duplicate candidates arising from parallel processing by multiple agents within the memory system architecture, and the need for a merging strategy. This directly elaborates on the existing 'multi-agent model' and 'merging strategy' topics covered in unit S004."
+          "change": "The new L1 object details a decision regarding poster printing and reimbursement, which directly relates to the existing unit S018 covering expense reimbursement and lab administration, previously focused on API costs."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-029"
+            "L1-0429-196"
           ],
-          "change": "The L1 object proposes a specific hierarchical data structure for conversation content (idea units, segments, topics) which directly relates to the existing 'Memory System Architecture' topic, particularly its 'hierarchical L1-L3 architecture' aspect and 'data handling'. The L1 object is already listed as a source for S004, indicating it's part of this ongoing discussion."
+          "change": "The new L1 object provides specific details about the API budget amount and the need for usage tracking, directly updating the existing short-term unit S018 which covers API budget and related expenses."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-031"
+            "L1-0429-197"
           ],
-          "change": "The L1 object provides the rationale for the existing policy of limiting memory node updates and merges to within a single meeting, which is already a key point in S004's summary."
+          "change": "The new L1 object provides a specific action item regarding the backup plan for poster printing for the May 5th presentation, which is already a key part of unit S018. It directly elaborates on the existing plan to find an alternative print shop and mentions reimbursement, aligning perfectly with S018's current summary and topics."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-032"
+            "L1-0429-198"
           ],
-          "change": "The new L1 object explicitly defines the hierarchical data structure (idea units -> segments -> topics), which directly aligns with and reinforces the 'Hierarchical Content Structure' already detailed in unit S004's summary. The related topics also match perfectly."
+          "change": "The new L1 object provides an argument regarding the payment method for API fees, specifically that direct allocation is feasible due to shared funding sources. This directly relates to the 'API Budget' and 'payment methods' already discussed in unit S018."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-036"
+            "L1-0429-199"
           ],
-          "change": "The new L1 object describes a specific implementation detail for the human-in-the-loop importance tuning mechanism, which is a core component of the memory system architecture already discussed in unit S004. The related topics also align perfectly."
+          "change": "The new L1 object provides a specific finding about the project's API cost efficiency, directly relating to the existing API budget discussions and cost considerations in unit S018."
         },
         {
-          "meeting_id": "0506",
+          "meeting_id": "0429",
           "source_obj_ids": [
-            "L1-0506-037"
+            "L1-0429-200"
           ],
-          "change": "The new L1 object discusses a fundamental architectural debate regarding time-based vs. topic-based structures for the long-term memory system and how revisited topics are handled. This directly aligns with the existing unit S004, which covers 'Memory System Architecture,' 'Hierarchical Content,' 'Node Attributes,' and 'Merging,' including discussions on how memory node updates and merges are currently handled and impact topic history tracking."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-038"
-          ],
-          "change": "The new L1 object details open issues regarding the design of a human-in-the-loop system for tuning memory node importance, which directly expands on the existing discussion of 'Human-in-the-Loop Importance Tuning' within unit S004."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-039"
-          ],
-          "change": "The new L1 object introduces the concept of separating static 'importance' from dynamic 'activation' for decay, which directly refines the discussion on node attributes and forgetting mechanisms within the memory system architecture, a core topic of unit S004."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-040"
-          ],
-          "change": "The new L1 object defines the three-tier hierarchical structure (L1, L2, L3 nodes) for the long-term memory system, which directly elaborates on the 'Memory System Architecture' topic already covered by S004, particularly its existing mentions of 'L1 nodes', 'L2 nodes', 'L3 skeleton', and 'hierarchical memory structure' in its related topics. Merging updates the existing discussion on the memory system's design."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-041"
-          ],
-          "change": "The new L1 object discusses competing architectural models for the memory hierarchy, specifically regarding the management of L1 nodes (time-based vs. topic-based). This directly refines and expands upon the existing discussion in S004 about the overall memory system architecture and its hierarchical structure."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-042"
-          ],
-          "change": "The new L1 object discusses the fundamental trade-off between time-based and topic-based structures for long-term memory architecture, which is a core aspect already being discussed and detailed in S004's summary regarding competing architectural models for L1 node management."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-043"
-          ],
-          "change": "The new L1 object directly discusses the key differences between time-oriented and topic-oriented memory architectures for L1 nodes, which is a central theme already present in unit S004. Merging it updates and enriches the existing discussion on this architectural decision."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-044"
-          ],
-          "change": "The new L1 object elaborates on the retrieval mechanism within a time-oriented, hierarchical memory structure, specifically mentioning the need for L2/L3 parent nodes for temporal context for LLMs. This directly refines and adds detail to the existing discussion in S004 about the hierarchical structure and time-based L1 node management."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-021"
-          ],
-          "change": "The new L1 object describes a fundamental rule for memory node updates and merges, specifically limiting these operations to within a single meeting. This is a key architectural and implementation detail for the memory system, which directly aligns with the existing unit S004, titled 'Memory System Architecture'. The content fits well within the broader discussion of memory system design and data handling."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-022"
-          ],
-          "change": "The new L1 object provides a more detailed definition of the three key node attributes ('Importance', 'Relevance', 'Recency'/'Activation') for the long-term memory model, which directly elaborates on existing content within unit S004. The summary of S004 already discusses these attributes, making it the most relevant unit for this update."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-028"
-          ],
-          "change": "The new L1 object describes a specific aspect of the memory system's architecture and implementation strategy concerning how idea units are processed in parallel by multiple agents, leading to duplicate candidates that require merging. This directly relates to the existing S004 unit, which broadly covers memory system architecture, implementation, and update/merge rules. The high candidate score for S004 further supports this merge."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-029"
-          ],
-          "change": "The new L1 object proposes a hierarchical data structure for conversation content (idea units, segments, topics), which directly refines and elaborates on the existing discussion of the memory system's hierarchical architecture in unit S004."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-031"
-          ],
-          "change": "The new L1 object discusses that memory node updates and merges are limited to within a single meeting, treating each meeting as an independent unit. This information, including the specific rule, is already present in the summary of unit S004, and the L1 object ID 'L1-0506-031' is already listed as a source for S004. The summary is updated to explicitly include the rationale for this design choice."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-032"
-          ],
-          "change": "The new L1 object explicitly defines the hierarchical data structure (idea units -> segments -> topics), which directly confirms and elaborates on a point already present in S004's summary and title. The related topics also align perfectly."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-036"
-          ],
-          "change": "The new L1 object describes a feature for human-in-the-loop tuning of importance using similarity search, which is a specific aspect of managing memory node attributes. This aligns with the existing topic S004, which covers the overall memory system architecture and mentions 'Importance' as a key node attribute. Furthermore, the L1 object 'L1-0506-036' is already listed in the `source_obj_ids` of unit S004, indicating it has already been incorporated. Therefore, the L1 object should be merged into S004, updating its summary to explicitly include this detail."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-037"
-          ],
-          "change": "The new L1 object discusses the architectural debate between time-based and topic-based long-term memory structures, which is a core component of the existing S004 unit's summary and title ('Time/Topic Trade-off'). The related topics also align perfectly. Furthermore, the L1 object ID 'L1-0506-037' is already present in the source_obj_ids of S004, indicating it has previously been associated with this unit."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-038"
-          ],
-          "change": "The new L1 object directly discusses the design and open issues of the human-in-the-loop system for tuning memory node 'importance', which is a key component already detailed in S004's summary and title. It elaborates on how users would interact with this system, aligning perfectly with the existing unit's scope."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-039"
-          ],
-          "change": "The new L1 object discusses separating static 'importance' from dynamic 'activation' to prevent the loss of historical significance, which directly aligns with the existing discussion in S004 about 'Importance', 'Recency'/'Activation' as key node attributes and the 'forgetting mechanism' within the memory system architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-040"
-          ],
-          "change": "The new L1 object elaborates on the three-tier hierarchical structure (L1, L2, L3 nodes) of the long-term memory system, which is a central theme already established and summarized in unit S004. The new content provides specific definitions for each tier, refining the existing description of the LTM architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-041"
-          ],
-          "change": "The new L1 object discusses competing architectural models (time-based vs. topic-based) for the memory hierarchy, which directly elaborates on the 'Time/Topic Trade-off' already present in unit S004's title and summary. The content aligns perfectly with the existing discussion in S004 about how revisited topics are handled within the LTM architecture."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-042"
-          ],
-          "change": "The new L1 object discusses the fundamental trade-off in long-term memory architecture between time-based and topic-based structures, along with hierarchical nodes (L1, L2, L3) and node attributes (importance, activation, relevance, recency). This content is already comprehensively covered in the existing short-term unit S004, which specifically mentions 'Time-based vs. Topic-based Models' in its title and elaborates on these architectural debates and node attributes in its summary. The L1 object ID is also already present in S004's source_obj_ids, indicating it has previously been associated with this unit."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-043"
-          ],
-          "change": "The new L1 object discusses the differences between time-oriented and topic-oriented memory architectures, which is a core theme already extensively covered and summarized in unit S004. The L1 object 'L1-0506-043' is already listed as a source for S004, indicating it has been incorporated."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-044"
-          ],
-          "change": "The new L1 object discusses memory retrieval in a time-oriented hierarchical memory structure, specifically the need to provide L2/L3 parent nodes for temporal context to LLMs. This directly aligns with the existing S004 unit which covers the hierarchical structure and time-based vs. topic-based memory models. The L1 object is already listed as a source for S004."
+          "change": "The new L1 object provides a specific estimate for API usage and cost (1,000 calls/day, NTD 10,000-20,000), which directly updates and refines the existing discussion about the API budget within unit S018. The related topics also align perfectly."
         }
       ]
     },
     {
       "unit_id": "S019",
-      "title": "System Demonstration Strategy: Dynamic Visualization",
-      "summary": "The strategy for demonstrating the memory system involves a dynamic visualization of the evolving memory graph as it processes meetings, showcasing human-in-the-loop inspection and tuning capabilities. A dynamic visualization tool will be created to animate the construction and updating of the memory graph over time, making abstract concepts like node creation, updates, and decay tangible for development and presentation purposes. A new guideline for prompt engineering was also adopted, requiring prompts and presentation materials (like a slide deck of important prompts) to be made more generic and avoid internal project jargon (e.g., 'L1 agent') to improve language model comprehension and system generalizability.",
+      "title": "Guideline for Generic Prompt Engineering & Presentation Preparation",
+      "summary": "A new guideline for prompt engineering was adopted, emphasizing that prompts should be made more generic and avoid internal project jargon (e.g., \"L1 agent\") to improve the language model's comprehension and system generalizability. This guideline also applies to the task of preparing a slide deck of important prompts for presentations, where prompts need to be refined for external communication.",
       "types": [
-        "decision",
         "finding",
         "approach_change"
       ],
       "related_topics": [
         "development workflow",
-        "project goals",
-        "memory system architecture",
-        "long-term memory architecture",
-        "memory system",
         "project narrative",
-        "demonstration strategy",
-        "visualization",
         "model configuration",
         "implementation strategy",
-        "output quality",
+        "output quality"
+      ],
+      "source_obj_ids": [
+        "L1-0506-006",
+        "L1-0506-013"
+      ],
+      "created_meeting_id": "0506",
+      "last_updated_meeting_id": "0506",
+      "last_seen_meeting_index": 6,
+      "missed_meeting_count": 0,
+      "update_history": [
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-006"
+          ],
+          "change": "The new L1 object describes a specific task related to preparing and refining prompts for external presentations, focusing on making them generic and avoiding jargon. This topic is distinct from existing short-term units which cover API budget/logistics, system architecture/prompt modification for internal behavior, agent evaluation, or LLM memory updates. Therefore, a new unit is created to capture this specific action item for presentation preparation."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-013"
+          ],
+          "change": "The new L1 object introduces a guideline for prompt engineering that directly aligns with the existing unit S019's focus on refining prompts to be more generic and avoid jargon. The L1 object provides the rationale for this refinement (improving language model comprehension and generalizability), which complements and expands upon the existing unit's content regarding external communication."
+        }
+      ]
+    },
+    {
+      "unit_id": "S020",
+      "title": "Memory Merging Policy: Meeting-Specific Scope",
+      "summary": "Memory node updates and merges are strictly limited to within a single meeting. The system is designed not to merge memories across different meetings, treating each meeting as an independent, self-contained processing unit for memory management.",
+      "types": [
+        "approach_change",
+        "argument"
+      ],
+      "related_topics": [
+        "memory system architecture",
         "long-term memory implementation",
+        "data handling",
+        "long-term memory",
+        "STM-LTM integration"
+      ],
+      "source_obj_ids": [
+        "L1-0506-021",
+        "L1-0506-031"
+      ],
+      "created_meeting_id": "0506",
+      "last_updated_meeting_id": "0506",
+      "last_seen_meeting_index": 6,
+      "missed_meeting_count": 0,
+      "update_history": [
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-021"
+          ],
+          "change": "The L1 object defines a new, fundamental policy regarding the scope of memory merging, specifically that merges are restricted to within a single meeting and do not occur across meetings. This is a distinct operational constraint for the memory system that is not adequately covered by the specific focuses of existing short-term units, such as segmentation or system refactoring, even though general related topics overlap."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-031"
+          ],
+          "change": "The new L1 object reiterates the policy that memory node updates and merges are confined to a single meeting, which is already the core topic of S020."
+        }
+      ]
+    },
+    {
+      "unit_id": "S021",
+      "title": "LTM Node Attributes: Static Importance vs. Dynamic Activation/Decay, and Tunable Importance Design",
+      "summary": "The long-term memory model defines key node attributes: 'Importance' (a static score assigned at creation, now also tunable by users with system suggestions based on similarity search), 'Relevance' (dynamic, based on semantic similarity), and 'Recency' or 'Activation' (dynamic, decays over time). To preserve the historical significance of ideas, the static 'importance' score should be explicitly separated from the dynamic 'activation' parameter that handles decay. This separation ensures important but older ideas don't completely disappear by maintaining a 'baseline' value for high-importance items even as activation decays. The design of the human-in-the-loop system for tuning 'importance' remains an open issue, specifically regarding how users inspect/adjust scores and how the system proactively suggests related units for tuning.",
+      "types": [
+        "decision",
+        "open_issue",
+        "argument"
+      ],
+      "related_topics": [
+        "long-term memory architecture",
+        "memory model",
+        "forgetting mechanism",
+        "memory system architecture",
+        "long-term memory implementation",
+        "development workflow",
+        "implementation strategy",
+        "long-term memory",
+        "memory system",
+        "implementation_strategy",
+        "forgetting_mechanism",
+        "memory_retrieval",
+        "long-term_memory",
+        "long-term_memory_architecture",
+        "memory_system_architecture",
+        "memory retrieval"
+      ],
+      "source_obj_ids": [
+        "L1-0506-022",
+        "L1-0506-036",
+        "L1-0506-038",
+        "L1-0506-039"
+      ],
+      "created_meeting_id": "0506",
+      "last_updated_meeting_id": "0506",
+      "last_seen_meeting_index": 6,
+      "missed_meeting_count": 0,
+      "update_history": [
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-022"
+          ],
+          "change": "The new L1 object defines specific attributes for long-term memory nodes, which is a distinct design decision for the memory model and does not perfectly align with the specific ongoing topics of existing short-term units. Creating a new unit ensures this specific decision is captured clearly."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-036"
+          ],
+          "change": "The new L1 object describes a feature for human-in-the-loop tuning of 'importance' for idea units, which directly relates to the 'Importance' attribute defined in S021. The new feature enhances the management of this attribute."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-038"
+          ],
+          "change": "The new L1 object describes an open issue concerning the design of the human-in-the-loop system for tuning memory node importance, which directly elaborates on the 'tunable importance by users with system suggestions' already established in unit S021."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-039"
+          ],
+          "change": "The new L1 object directly discusses the separation of static 'importance' from dynamic 'activation' (decay) in long-term memory, which is a core aspect of the 'LTM Node Attributes' topic covered by unit S021. It provides a rationale for this separation, fitting perfectly into the existing unit's summary and related topics."
+        }
+      ]
+    },
+    {
+      "unit_id": "S022",
+      "title": "Dynamic Visualization Tool for Memory System",
+      "summary": "A dynamic visualization tool will be created to demonstrate the memory system's behavior. This tool will animate the construction and updating of the memory graph over time, making abstract concepts like node creation, updates, and decay tangible for development and presentation purposes.",
+      "types": [
+        "approach_change"
+      ],
+      "related_topics": [
+        "development workflow",
+        "long-term memory implementation",
+        "memory system",
+        "long-term memory architecture",
         "development_workflow"
       ],
       "source_obj_ids": [
-        "L1-0506-030",
-        "L1-0506-006",
-        "L1-0506-013",
         "L1-0506-035"
       ],
       "created_meeting_id": "0506",
@@ -3801,51 +4512,97 @@
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-030"
-          ],
-          "change": "The new L1 object describes a specific decision regarding the strategy for demonstrating the memory system, focusing on dynamic visualization and human-in-the-loop inspection. This is a distinct topic from the existing units, which cover memory system architecture, evaluation, or granular processing. While the demonstration will showcase the architecture, the core subject is the presentation method itself, warranting a new unit."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-006"
-          ],
-          "change": "The new L1 object details an action item for preparing and refining presentation prompts, which directly contributes to the existing 'System Demonstration Strategy' unit (S019) that focuses on how the memory system will be demonstrated."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
-            "L1-0506-013"
-          ],
-          "change": "The new L1 object describes the adoption of a guideline for prompt engineering to make prompts more generic and avoid jargon. This directly aligns with the existing discussion in unit S019 about refining prompts for presentations to be more generic, as explicitly mentioned in S019's summary and supported by the L1 object's evidence."
-        },
-        {
-          "meeting_id": "0506",
-          "source_obj_ids": [
             "L1-0506-035"
           ],
-          "change": "The new L1 object directly describes the creation of a dynamic visualization tool to demonstrate the memory system's behavior, which perfectly aligns with the existing unit S019, 'System Demonstration Strategy: Dynamic Visualization'. The summary of S019 already discusses dynamic visualization of the memory graph for demonstration."
+          "change": "The new L1 object describes a distinct initiative to create a dynamic visualization tool for the memory system, which is not specifically covered by any existing short-term units. Creating a new unit maintains focus and clarity for this new development."
+        }
+      ]
+    },
+    {
+      "unit_id": "S023",
+      "title": "LTM Architecture: Time-Based vs. Topic-Based Hierarchical Models, Three-Tier Structure, and L2/L3 for Temporal Context",
+      "summary": "The long-term memory (LTM) system's architecture presents a key difference in handling recurring topics between time-based and topic-based models. The time-based model creates new L1 nodes for each mention to preserve chronological order, whereas the topic-based model updates existing L1 nodes to build an evolutionary history within a single node. This architectural debate is further contextualized by a proposed three-tier hierarchical structure (L1, L2, L3), designed to manage fine-grained ideas from single meetings (L1), summarize L1s from blocks of meetings (L2), and provide high-level summaries (L3), influencing how revisited topics are managed. For time-oriented memory structures, retrieval should provide matching L1 units along with their L2/L3 parent nodes to furnish large language models with essential temporal context, an approach influenced by the TiM paper to facilitate the extraction of chronological context.",
+      "types": [
+        "open_issue",
+        "approach_change",
+        "proposal",
+        "argument"
+      ],
+      "related_topics": [
+        "long-term memory architecture",
+        "memory system architecture",
+        "time-based memory",
+        "topic-based memory",
+        "hierarchical memory structure",
+        "revisited topics handling",
+        "memory model",
+        "memory_architecture",
+        "long-term_memory_architecture",
+        "L1 nodes",
+        "L2 nodes",
+        "L3 nodes",
+        "memory_model",
+        "alternative approaches",
+        "memory_retrieval",
+        "research methodology",
+        "memory_system_architecture",
+        "data_handling",
+        "data handling"
+      ],
+      "source_obj_ids": [
+        "L1-0506-037",
+        "L1-0506-040",
+        "L1-0506-041",
+        "L1-0506-042",
+        "L1-0506-043",
+        "L1-0506-044"
+      ],
+      "created_meeting_id": "0506",
+      "last_updated_meeting_id": "0506",
+      "last_seen_meeting_index": 6,
+      "missed_meeting_count": 0,
+      "update_history": [
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-037"
+          ],
+          "change": "The L1 object describes a specific, fundamental architectural debate for the long-term memory system (time-based vs. topic-based hierarchy) that is distinct enough from existing units to warrant a new topic. While related to general memory architecture, no existing unit focuses on this specific design choice and its implications for handling revisited topics."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-006"
+            "L1-0506-040"
           ],
-          "change": "The new L1 object directly describes the requirement to prepare a slide deck of generic prompts, which is already explicitly mentioned and integrated into the summary of unit S019. The content of L1-0506-006 is fully captured within S019's current summary."
+          "change": "The new L1 object defines a specific three-tier hierarchical structure for the LTM system (L1, L2, L3 nodes), which directly addresses and provides a concrete design for the 'hierarchical memory structure' and 'time-based vs. topic-based hierarchy debate' discussed in unit S023."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-013"
+            "L1-0506-041"
           ],
-          "change": "The new L1 object's content, which describes a new guideline for prompt engineering, is already explicitly and fully integrated into the summary of unit S019. This indicates that S019 is the correct ongoing short-term topic for this information."
+          "change": "The new L1 object directly elaborates on the 'architectural debate between time-based and topic-based hierarchical structures' already mentioned in unit S023, providing definitions for these two competing models. Merging updates the existing discussion on LTM architecture."
         },
         {
           "meeting_id": "0506",
           "source_obj_ids": [
-            "L1-0506-035"
+            "L1-0506-042"
           ],
-          "change": "The new L1 object describes the creation of a dynamic visualization tool for the memory system, which is already the central theme and explicitly mentioned in the summary of unit S019. The L1 object 'L1-0506-035' is already listed in the source_obj_ids of S019, indicating it has been previously merged."
+          "change": "The new L1 object explicitly discusses the fundamental trade-off between time-based and topic-based architectural models for the long-term memory system, which is the central theme of unit S023."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-043"
+          ],
+          "change": "The new L1 object elaborates on the fundamental differences between time-oriented and topic-oriented memory architectures, specifically how they handle L1 nodes for recurring topics. This directly aligns with and reinforces the existing content of unit S023, which discusses this exact architectural trade-off and its implications for LTM."
+        },
+        {
+          "meeting_id": "0506",
+          "source_obj_ids": [
+            "L1-0506-044"
+          ],
+          "change": "The new L1 object discusses the necessity of retrieving L1 units with their L2/L3 parent nodes in a time-oriented memory structure to provide temporal context for LLMs. This directly elaborates on the existing unit S023, which covers time-based vs. topic-based hierarchical models and the three-tier L1/L2/L3 structure."
         }
       ]
     }

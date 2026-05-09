@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import signal
+import stat
+import subprocess
 import tempfile
 import time
 import unittest
@@ -378,6 +380,80 @@ class ShortTermMergeSafetyTests(unittest.TestCase):
         self.assertEqual(created["unit_id"], "S010")
         self.assertEqual(created["source_obj_ids"], ["L1-0307-001"])
         self.assertEqual(created["update_history"][0]["source_obj_ids"], ["L1-0307-001"])
+
+
+class ShortTermBatchScriptTests(unittest.TestCase):
+    def test_run_all_dedupes_by_actual_latest_meeting(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        script_path = repo_root / "run_all_short_term_updates.sh"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            snapshot_dir = base / "share_snapshots"
+            bin_dir = base / "bin"
+            calls_file = base / "calls.txt"
+            snapshot_dir.mkdir()
+            bin_dir.mkdir()
+
+            _write_snapshot(
+                snapshot_dir / "20260508_001_bridge_0307.json",
+                [_meeting("0307", meeting_date="2026-03-07")],
+            )
+            _write_snapshot(
+                snapshot_dir / "20260508_002_bridge_0318.json",
+                [
+                    _meeting("0307", meeting_date="2026-03-07"),
+                    _meeting("0318", meeting_date="2026-03-18"),
+                ],
+            )
+            _write_snapshot(
+                snapshot_dir / "20260508_003_bridge_0506.json",
+                [
+                    _meeting("0307", meeting_date="2026-03-07"),
+                    _meeting("0318", meeting_date="2026-03-18"),
+                    _meeting("0506", meeting_date="2026-05-06"),
+                ],
+            )
+            _write_snapshot(
+                snapshot_dir / "20260508_004_bridge_0408.json",
+                [
+                    _meeting("0307", meeting_date="2026-03-07"),
+                    _meeting("0318", meeting_date="2026-03-18"),
+                    _meeting("0506", meeting_date="2026-05-06"),
+                ],
+            )
+
+            fake_uv = bin_dir / "uv"
+            fake_uv.write_text(
+                "#!/usr/bin/env bash\n"
+                "printf '%s\\n' \"$*\" >> \"$CALLS_FILE\"\n",
+                encoding="utf-8",
+            )
+            fake_uv.chmod(fake_uv.stat().st_mode | stat.S_IXUSR)
+
+            env = {
+                **os.environ,
+                "PATH": f"{bin_dir}:{os.environ['PATH']}",
+                "CALLS_FILE": str(calls_file),
+            }
+            subprocess.run(
+                [str(script_path), str(snapshot_dir)],
+                cwd=repo_root,
+                env=env,
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+
+            calls = calls_file.read_text(encoding="utf-8").splitlines()
+            processed = [line.rsplit(" ", 1)[-1] for line in calls]
+            self.assertEqual(
+                [Path(path).name for path in processed],
+                [
+                    "20260508_001_bridge_0307.json",
+                    "20260508_002_bridge_0318.json",
+                    "20260508_003_bridge_0506.json",
+                ],
+            )
 
 
 if __name__ == "__main__":
