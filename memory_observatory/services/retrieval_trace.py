@@ -103,7 +103,12 @@ class RetrievalTraceService:
             retrieval_mode=retrieval_mode,
             **params,
         )
-        formatted = format_recall_for_prompt(result, include_debug=include_debug)
+        formatted = format_recall_for_prompt(
+            result,
+            include_debug=include_debug,
+            l1_content_chars=320,
+            l1_evidence_chars=420,
+        )
         truncated = len(formatted) > max_context_chars
         if truncated:
             formatted = formatted[:max_context_chars] + "\n...(truncated)"

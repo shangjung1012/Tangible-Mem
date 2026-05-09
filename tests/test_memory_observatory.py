@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+LONG_TERM_DIR = REPO_ROOT / "long_term"
+if str(LONG_TERM_DIR) not in sys.path:
+    sys.path.insert(0, str(LONG_TERM_DIR))
 
 from memory_observatory.main import create_app
 from memory_observatory.services.baselines import build_full_context, retrieve_lexical_rag
@@ -13,6 +19,7 @@ from memory_observatory.services.experiment_runner import run_experiment
 from memory_observatory.services.feedback_store import FeedbackStore
 from memory_observatory.services.report_store import ReportStore
 from memory_observatory.services.token_utils import estimate_tokens
+from long_term.recall import format_recall_for_prompt
 
 
 def _write_json(path: Path, data: object) -> None:
@@ -289,6 +296,33 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertTrue((run_dir / "contexts" / "q001" / "layered_memory.txt").exists())
             self.assertIn("avg_context_tokens", result["summary"])
             self.assertIn("layered_memory", result["queries"][0]["strategies"])
+
+    def test_formatter_can_expand_l1_evidence_for_observatory_answers(self) -> None:
+        long_content = "A standard RAG approach is insufficient because it cannot track rejected versus adopted topic lifecycle state."
+        formatted = format_recall_for_prompt(
+            {
+                "long_term_l1": [
+                    {
+                        "meeting_id": "0325",
+                        "meeting_date": "2026-03-25",
+                        "obj_id": "L1-0325-090",
+                        "type": "argument",
+                        "importance": 0.77,
+                        "score": 0.59,
+                        "content": long_content,
+                        "evidence": long_content,
+                    }
+                ],
+                "long_term_l2": [],
+                "long_term_l3": [],
+                "global_topic_map": {},
+            },
+            l1_content_chars=220,
+            l1_evidence_chars=220,
+        )
+
+        self.assertIn("rejected versus adopted topic lifecycle state", formatted)
+        self.assertNotIn("(truncated)", formatted)
 
 
 if __name__ == "__main__":

@@ -1613,6 +1613,8 @@ def format_recall_for_prompt(
     recall_result: dict[str, Any],
     *,
     include_debug: bool = False,
+    l1_content_chars: int = 100,
+    l1_evidence_chars: int = 100,
 ) -> str:
     """Format evidence-first layered long-term context for prompt injection."""
     parts: list[str] = []
@@ -1656,9 +1658,9 @@ def format_recall_for_prompt(
                 f"score={item.get('score', '?')}"
             )
             if item.get("content"):
-                parts.append(f"  content: {_truncate_text(item.get('content', ''), 100)}")
+                parts.append(f"  content: {_truncate_text(item.get('content', ''), l1_content_chars)}")
             if item.get("evidence"):
-                parts.append(f"  evidence: {_truncate_text(item.get('evidence', ''), 100)}")
+                parts.append(f"  evidence: {_truncate_text(item.get('evidence', ''), l1_evidence_chars)}")
 
     l2_results = recall_result.get("long_term_l2", [])
     topic_l2_results = [item for item in l2_results if item.get("l2_id")]
