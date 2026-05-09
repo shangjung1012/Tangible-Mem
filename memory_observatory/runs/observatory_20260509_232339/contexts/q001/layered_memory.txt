@@ -1,0 +1,49 @@
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0408 | 2026-04-08 | L1-0408-017] type=approach_change importance=0.72 score=0.7604
+  content: The memory extraction process will shift from analyzing the entire transcript at once to a two-stage approach: first, segmenting the text into smaller 'idea units', and then applying labels to these units. This change is motivated by concerns that processing large documents in one go leads to poor labeli...(truncated)
+  evidence: [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？ [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。 [SPEAKER_00]: 我 care 這幾類，想 track 這些東西。所以第一件事情是先從 meeting recording 裡只找這些東西。Outside of 這些 topic 的內容，目前沒有 track。這就是目前的 assumption 和限制。其實全部交給 LLM 也...
+- [0429 | 2026-04-29 | L1-0429-125] type=argument importance=0.68 score=0.7582
+  content: A structured approach that first segments a transcript into idea units and then processes each one is beneficial because it forces the system to check every unit for relevance to memory, removing any discretion to skip potential updates.
+  evidence: [SPEAKER_02]: 嗯，我覺得應該不是這個意思。聽得到我說話嗎？我覺得應該是說，我現在在想，也許可以試著說把每一個步驟它的 input 跟你 expect 的 output 先把它釐清。或是中間的一些，譬如說像我覺得像剛剛一個關鍵是說，我今天讀了這個 80 行之後，其實我預計它要做的事情是先分成 idea unit。 [SPEAKER_02]: 對不對？然後 loop through 每一個 idea unit，去 update 我應該要 update 的 memory，對嗎？這是我們預期它應該要做的事情。所以它在 call 這個 function 的時候，它其實會有某一個步驟，它會先產生現在有幾個 idea unit。就是它會有譬如說三個 idea unit，然後每一個 idea unit 從哪一行...
+- [0429 | 2026-04-29 | L1-0429-066] type=approach_change importance=0.84 score=0.6152
+  content: The system's data processing approach differs from a standard RAG baseline. Instead of direct semantic search on text chunks, the system first extracts structured 'idea units' from the text and then synthesizes higher-level conclusions and context from these units.
+  evidence: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。 [SPEAKER_02]: 拆成那個，轉換成像那樣的資料。我們是做，我們會先抓它裡面的 idea unit。對對，idea unit。嗯，OK，我現在，所以 RAG 跟 full system 的差別是在於，RAG 有什麼，呃，RAG、full system。 [SPEAKER_01]: RAG 感覺就只是它是最簡單的處理方式啦，它就只是切塊，然後用語意去找相似度的那一塊是什麼。然後我們是除了有...
+- [0429 | 2026-04-29 | L1-0429-158] type=approach_change importance=0.8 score=0.6072
+  content: The initial approach of processing the entire transcript at once for memory updates was abandoned due to the context window becoming too large, particularly when requiring JSON output.
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情
+- [0429 | 2026-04-29 | L1-0429-069] type=approach_change importance=0.77 score=0.6012
+  content: The project is adopting a 'bottom-up' transcript processing strategy over a 'top-down' one. This change was driven by the finding that the 'top-down' approach, which relies on an LLM to segment large text blocks, produces a variable and unreliable number of topics.
+  evidence: [SPEAKER_02]: 就是我給它 40 句也可以，我給它 100 句也可以，我給它 30 句也可以。然後但是我完全是讓 Large Language Model 它自己去決定說，它現在看到這裡面有幾個 object，是嗎？這裡面有幾個 object，應該是感覺上模型自己判斷它整體能力有多少吧。因為對，那我在講的是，我們現在像那個什麼，上次應該是講到是那個誰，季敏她在處理那個。 [SPEAKER_02]: 她之前在處理她的 transcription 的方式，她一開始也是讓 Large Language Model 自己去分。對，然後後來我們變的方式是，她後來是一句一句，就她不要一次先丟進去給 Large Language Model 一串，然後讓它自己去說裡面現在有幾個主題。對，那她後來變成是有點像比較...
+- [0506 | 2026-05-06 | L1-0506-001] type=decision importance=0.82 score=0.7882
+  content: The current data processing architecture is a top-down, three-stage pipeline: 1) a `Context Planner` reads a fixed 80-line window; 2) a `Segment Agent` identifies broad topics (`Segments`); 3) an `Idea Unit Agent` extracts granular points (`Idea Units`) from the segments.
+  evidence: [SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-idea-unit-generation] idea-unit generation
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0408-017, L1-0429-125, L1-0429-066
+  topic_size=31 selected_event_count=2 omitted_event_count=29
+  current_state: This child L2 has 31 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.
+  timeline_digest:
+    - [2026-04-08 L1-0408-017] The memory extraction process will shift from analyzing the entire transcript at once...(truncated)
+    - [2026-04-29 L1-0429-066] The system's data processing approach differs from a standard RAG baseline. Instead o...(truncated)
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 376
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 29
+- retrieval_mode: lexical
+- selected_child_l2_count: 1
+- selected_l1_count: 6
+- selected_l2_count: 0

@@ -62,7 +62,8 @@ uv run python memory_observatory/run_experiment.py \
 
 No-LLM mode does not call the Gemini planner, embedding API, or final answer
 LLM. It uses lexical RAG, heuristic layered recall planning, deterministic token
-estimates, and retrieval/context-build timing.
+estimates, and retrieval/context-build timing. The experiment CLI now defaults
+to the heuristic layered planner; `--no-llm` is kept in examples for clarity.
 
 ## Run With Flash Planner And Pro Answers
 
@@ -76,14 +77,16 @@ uv run python memory_observatory/run_experiment.py \
   --strategies full_context,rag_baseline,layered_memory \
   --retrieval-mode lexical \
   --generate-answers \
+  --use-llm-planner \
   --model gemini-2.5-pro \
   --planner-model gemini-2.5-flash
 ```
 
-`--planner-model` is used only for the Gemini recall planner. Layered recall
-and answer generation still use `--model`. The same split is available through
-the `/api/retrieval/trace` `planner_model` query parameter and the
-`GEMINI_PLANNER_MODEL` environment variable.
+`--use-llm-planner` opts into Gemini recall planning. `--planner-model` is used
+only for that planner call. Layered recall and answer generation still use
+`--model`. The same split is available through the `/api/retrieval/trace`
+`planner_model` query parameter and the `GEMINI_PLANNER_MODEL` environment
+variable.
 
 Each run writes:
 

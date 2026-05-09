@@ -1,0 +1,35 @@
+{
+  "strategy": "full_context",
+  "included_meetings": [
+    "0307",
+    "0318",
+    "0325",
+    "0408",
+    "0422",
+    "0429",
+    "0506"
+  ],
+  "included_meeting_count": 7,
+  "included_file_count": 7,
+  "full_context_source": "transcripts",
+  "truncated": true,
+  "truncated_from_chars": 145790,
+  "metrics": {
+    "context_char_count": 12015,
+    "estimated_context_tokens": 7217,
+    "actual_input_tokens": 6445,
+    "actual_output_tokens": 567,
+    "actual_total_tokens": 8249,
+    "token_source": "actual_usage_metadata",
+    "included_meeting_count": 7,
+    "included_file_count": 7,
+    "full_context_source": "transcripts",
+    "truncated": true,
+    "truncated_from_chars": 145790,
+    "retrieval_ms": 0.0,
+    "context_build_ms": 1.42,
+    "total_ms": 18371.163,
+    "generation_ms": 18369.743
+  },
+  "answer": "根據提供的會議內容，一般的 RAG (Retrieval-Augmented Generation) 之所以不足以追蹤 topic lifecycle，主要原因在於它缺乏一個能夠跨時間、跨會議持續更新和維護狀態的動態記憶機制。具體來說：\n\n1.  **RAG 缺乏狀態更新能力**：一般的 RAG 主要是針對單次查詢，從資料庫中檢索相關資訊，但它不會主動更新或追蹤一個議題（topic）在不同時間點的演變。而會議中討論的記憶系統，能夠在一次會議（如 meeting 16）結束後建立記憶，並在下一次會議（meeting 17）中，如果再次提到相同議題，就會去**更新**該議題的狀態，例如從「TODO」變成有「進展狀態」。(meeting 0307, SPEAKER_01, SPEAKER_00)\n\n2.  **需要處理時間軸變化**：一個議題的生命週期與時間密切相關。會議中提到，一個在「本次會議」中被創建的項目，到了下週的會議中，其時間標記需要被更新為「一週前的東西」。這種動態更新時間狀態的能力，不是一般 RAG 的設計重點。(meeting 0307, SPEAKER_00)\n\n3.  **需要區分不同層次的記憶**：會議討論了 short-term memory（近期三次會議的重要事項）和 long-term memory（橫跨一整年的研究脈絡）的區別。這種分層的記憶架構，能夠根據議題被討論的頻率和時間遠近來決定其重要性，甚至會將超過三次會議未被討論的議題從 short-term memory 中移除。這是一個比 RAG 更複雜的記憶管理機制，RAG 通常不會這樣動態地管理其知識庫的時效性。(meeting 0307, SPEAKER_01, SPEAKER_02, SPEAKER_00)\n\n4.  **缺乏全域和連貫的理解**：會議中提到，若只是將長篇內容切成小塊（chunks）分開處理，會缺乏一個「global 的理解」或「shared blackboard」。這與 RAG 的運作方式相似，它檢索的是獨立的資訊片段，難以形成對一個議題從頭到尾發展脈絡的連貫性理解。(meeting 0318, SPEAKER_01)\n\n總結來說，追蹤 topic lifecycle 需要一個能夠**持續更新、具備時間觀念、並且有結構化（如分層）的記憶系統**，而這正是傳統 RAG 所缺乏的。"
+}

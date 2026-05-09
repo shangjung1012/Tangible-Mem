@@ -91,8 +91,10 @@ Run a no-LLM comparison lab experiment:
 uv run python memory_observatory/run_experiment.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out memory_observatory/runs --strategies full_context,rag_baseline,layered_memory --retrieval-mode lexical --no-llm
 ```
 
-For live answer experiments, keep `--model gemini-2.5-pro` for answers and use
-`--planner-model gemini-2.5-flash` only for the recall planner.
+Experiment runs default to the heuristic no-LLM recall planner. For live answer
+experiments, keep `--model gemini-2.5-pro` for answers. Add
+`--use-llm-planner --planner-model gemini-2.5-flash` only when you intentionally
+want Gemini to plan retrieval.
 
 Update short-term memory from a share_mem snapshot:
 

@@ -354,7 +354,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--topic-size-penalty", default="0.05,0.10")
     parser.add_argument("--prefer-materialized-l3", default="true")
     parser.add_argument("--retrieval-mode", choices=["lexical", "semantic"], default="lexical")
-    parser.add_argument("--no-llm", action="store_true", help="Use heuristic planning; with --retrieval-mode lexical this does not call planner or embedding APIs.")
+    parser.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Use heuristic planning. This is the default; retained for compatibility.",
+    )
+    parser.add_argument(
+        "--use-llm-planner",
+        action="store_true",
+        help="Opt in to Gemini recall planning. With --retrieval-mode lexical, only the planner calls Gemini.",
+    )
     return parser.parse_args(argv)
 
 
@@ -378,7 +387,7 @@ def main(argv: list[str] | None = None) -> None:
         model_name=args.model,
         planner_model_name=args.planner_model,
         grid=grid,
-        use_llm_planner=not bool(args.no_llm),
+        use_llm_planner=bool(args.use_llm_planner and not args.no_llm),
         retrieval_mode=args.retrieval_mode,
     )
     print(

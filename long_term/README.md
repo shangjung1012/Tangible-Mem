@@ -145,22 +145,24 @@ uv run python long_term/evaluate_retrieval.py \
 
 With `--no-llm --retrieval-mode lexical`, the eval path is deterministic and
 offline: it uses a heuristic recall plan and lexical L1 retrieval, so it does
-not call the Gemini planner, embedding API, or a final answer LLM. Use
+not call the Gemini planner, embedding API, or a final answer LLM. This is now
+the default eval behavior; `--no-llm` remains in examples for clarity. Use
 `--retrieval-mode semantic` only when you intentionally want embedding-backed
 retrieval. The default grid covers the current smoke surface for `top_k_raw`,
 seed count, child-L2 events, expanded topic count, and topic-size penalty. The
 report compares expected L1/L2/L3 hits, prompt character budget, omitted events,
 and whether a large L2 was expanded without child split context.
 
-For API-backed planner experiments, `--model` remains the recall/answer model
-and `--planner-model` controls only the Gemini recall planner. The intended fast
-live setting is:
+For API-backed planner experiments, `--model` remains the recall/answer model,
+`--use-llm-planner` opts into Gemini recall planning, and `--planner-model`
+controls only that planner call. The intended fast live setting is:
 
 ```bash
 uv run python long_term/evaluate_retrieval.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out long_term/eval \
   --retrieval-mode lexical \
+  --use-llm-planner \
   --model gemini-2.5-pro \
   --planner-model gemini-2.5-flash
 ```

@@ -15,6 +15,7 @@ if str(LONG_TERM_DIR) not in sys.path:
     sys.path.insert(0, str(LONG_TERM_DIR))
 
 from memory_observatory.main import create_app
+from memory_observatory.services import experiment_cli
 from memory_observatory.services.baselines import build_full_context, retrieve_lexical_rag
 from memory_observatory.services.experiment_runner import run_experiment
 from memory_observatory.services.feedback_store import FeedbackStore
@@ -375,6 +376,26 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(result["config"]["planner_model"], "gemini-2.5-flash")
         self.assertEqual(trace_call.call_args.kwargs["model_name"], "gemini-2.5-pro")
         self.assertEqual(trace_call.call_args.kwargs["planner_model_name"], "gemini-2.5-flash")
+
+    def test_experiment_cli_defaults_to_no_llm_planner_with_answers(self) -> None:
+        with patch(
+            "memory_observatory.services.experiment_cli.run_experiment",
+            return_value={"run_id": "run-test"},
+        ) as runner:
+            experiment_cli.main(["--generate-answers"])
+
+        self.assertTrue(runner.call_args.kwargs["generate_answers"])
+        self.assertTrue(runner.call_args.kwargs["no_llm"])
+
+    def test_experiment_cli_can_opt_into_llm_planner(self) -> None:
+        with patch(
+            "memory_observatory.services.experiment_cli.run_experiment",
+            return_value={"run_id": "run-test"},
+        ) as runner:
+            experiment_cli.main(["--generate-answers", "--use-llm-planner"])
+
+        self.assertTrue(runner.call_args.kwargs["generate_answers"])
+        self.assertFalse(runner.call_args.kwargs["no_llm"])
 
     def test_formatter_can_expand_l1_evidence_for_observatory_answers(self) -> None:
         long_content = "A standard RAG approach is insufficient because it cannot track rejected versus adopted topic lifecycle state."

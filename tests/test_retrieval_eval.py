@@ -145,6 +145,26 @@ class RetrievalEvalTests(unittest.TestCase):
             self.assertTrue((out / "retrieval_eval_report.json").exists())
             self.assertTrue((out / "retrieval_eval_report.md").exists())
 
+    def test_eval_cli_defaults_to_no_llm_planner(self) -> None:
+        with patch.object(
+            evaluate_retrieval,
+            "evaluate_retrieval_grid",
+            return_value={"query_count": 0, "run_count": 0},
+        ) as runner:
+            evaluate_retrieval.main([])
+
+        self.assertFalse(runner.call_args.kwargs["use_llm_planner"])
+
+    def test_eval_cli_can_opt_into_llm_planner(self) -> None:
+        with patch.object(
+            evaluate_retrieval,
+            "evaluate_retrieval_grid",
+            return_value={"query_count": 0, "run_count": 0},
+        ) as runner:
+            evaluate_retrieval.main(["--use-llm-planner"])
+
+        self.assertTrue(runner.call_args.kwargs["use_llm_planner"])
+
 
 if __name__ == "__main__":
     unittest.main()
