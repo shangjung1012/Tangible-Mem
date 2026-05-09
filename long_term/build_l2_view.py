@@ -25,7 +25,7 @@ L2_INDEX_FILE_NAME = "l2_index.json"
 L2_MANIFEST_FILE_NAME = "manifest.json"
 L2_UPDATES_DIR_NAME = "l2_updates"
 L2_UNLINKED_FILE_NAME = "unlinked_l1_report.json"
-L2_RESEARCH_LOGS_DIR_NAME = "research_logs"
+L2_RESEARCH_LOGS_DIR_NAME = "l2_research_logs"
 SUPPORTED_L2_MODES = {"deterministic", "hybrid"}
 
 TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+", re.IGNORECASE)

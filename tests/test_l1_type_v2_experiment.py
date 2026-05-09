@@ -164,6 +164,40 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertIn("importance score is used", prompt)
         self.assertIn("open_issue", prompt)
 
+    def test_v2_type_agent_prompt_preserves_evaluation_baselines_and_model_capability_judgments(self) -> None:
+        runner = _PromptCaptureRunner()
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=20,
+                line_end=24,
+                text=(
+                    "MEMO evaluation should compare full raw context, RAG, and the "
+                    "original LOCOMO paper. Gemini is also strong at judging good "
+                    "idea units."
+                ),
+                completeness="complete",
+            )
+        ]
+
+        l1_type_agent(
+            runner,
+            obj_type="finding",
+            idea_units=units,
+            existing_topics=[],
+            extraction_scope="B-001",
+            segment_ids=["S-1"],
+            taxonomy="v2-memory-roles",
+            include_legacy_type=True,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("benchmark baselines", prompt)
+        self.assertIn("full-context, RAG, prior-paper", prompt)
+        self.assertIn("model capability judgments", prompt)
+        self.assertIn("Gemini can identify or judge good idea units", prompt)
+
     def test_reduce_v2_patch_preserves_type_and_legacy_type(self) -> None:
         _, memory_objects, quality_index = reduce_l1_patch(
             [
@@ -800,6 +834,226 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
 
         self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
         self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-dynamic-eval")
+
+    def test_compare_l1_runs_matches_code_driven_llm_control_rewording(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-code-control",
+                            "type": "action_item",
+                            "content": (
+                                "The agreed model is that the system's code remains "
+                                "the primary controller. The LLM is used as a component "
+                                "for specific judgment tasks, and code determines the "
+                                "next action from the LLM output."
+                            ),
+                            "importance": 0.71,
+                            "evidence": (
+                                "Code controls the system; Gemini returns a value and "
+                                "the program decides the next step."
+                            ),
+                            "related_topics": ["system architecture", "development workflow"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-code-control",
+                            "type": "action_item",
+                            "legacy_type": "decision",
+                            "content": (
+                                "The overall control flow will be explicitly defined in "
+                                "code rather than fully LLM-controlled. Gemini is called "
+                                "for delegated judgment tasks and the main code-driven "
+                                "system uses the returned value to determine the "
+                                "subsequent action."
+                            ),
+                            "importance": 0.68,
+                            "evidence": (
+                                "The host code calls Gemini for a specific judgment, gets "
+                                "the returned value, and then decides what to do next."
+                            ),
+                            "related_topics": ["LLM usage modes", "human-computer interaction"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-code-control")
+
+    def test_compare_l1_runs_matches_live_quality_false_positive_rewordings(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0318",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-unanswerable-gap",
+                            "type": "open_issue",
+                            "content": (
+                                "MEM 0 did not test the LOCOMO unanswerable question "
+                                "category, leaving a gap in evaluating whether models "
+                                "can handle queries that cannot be answered from context."
+                            ),
+                            "importance": 0.6,
+                            "evidence": (
+                                "LOCOMO includes unanswerable questions, but MEM 0 "
+                                "deliberately excluded that category from evaluation."
+                            ),
+                            "related_topics": ["LOCOMO", "evaluation methodology"],
+                        }
+                    ],
+                },
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-api-payment",
+                            "type": "approach_change",
+                            "content": (
+                                "The team changed payment method after discovering that "
+                                "NT$9000 credits could not be used for Gemini API calls "
+                                "and Vertex AI was unreliable; the new approach allocates "
+                                "a NT$20,000 budget for direct API usage fees."
+                            ),
+                            "importance": 0.72,
+                            "evidence": (
+                                "Gemini API credits failed, Vertex AI was unreliable, "
+                                "so use a direct budget and pay API usage fees."
+                            ),
+                            "related_topics": ["Gemini API", "payment method"],
+                        },
+                        {
+                            "obj_id": "old-programmatic-control",
+                            "type": "argument",
+                            "content": (
+                                "A multi-step process should be handled by external "
+                                "programmatic control that tracks which sentences have "
+                                "been processed, instead of relying on the model to "
+                                "manage the sequence internally."
+                            ),
+                            "importance": 0.72,
+                            "evidence": (
+                                "Use external code with a boolean flag to track processed "
+                                "sentences and call the model for each next step."
+                            ),
+                            "related_topics": ["agent orchestration"],
+                        },
+                        {
+                            "obj_id": "old-manager-overloaded",
+                            "type": "argument",
+                            "content": (
+                                "The manager component is overloaded because it performs "
+                                "detailed tasks itself; a proper manager should only be "
+                                "a dispatcher that delegates tasks to specialized worker agents."
+                            ),
+                            "importance": 0.7,
+                            "evidence": (
+                                "The manager is doing fine-grained tasks instead of "
+                                "delegating to worker agents as a dispatcher."
+                            ),
+                            "related_topics": ["agent modularity"],
+                        },
+                    ],
+                },
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0318",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-unanswerable-gap",
+                            "type": "finding",
+                            "legacy_type": "result",
+                            "content": (
+                                "In the evaluation of MEM 0 on LOCOMO, the unanswerable "
+                                "question category was deliberately excluded from the test set."
+                            ),
+                            "importance": 0.62,
+                            "evidence": (
+                                "MEM 0 deliberately excluded LOCOMO unanswerable questions "
+                                "from evaluation."
+                            ),
+                            "related_topics": ["LOCOMO dataset"],
+                        }
+                    ],
+                },
+                {
+                    "meeting_id": "0429",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-api-payment",
+                            "type": "open_issue",
+                            "legacy_type": "open_question",
+                            "content": (
+                                "The team faces a blocker accessing the Gemini API: "
+                                "provided credits cannot be used due to a policy change, "
+                                "Vertex AI is unreliable, and a direct budget for API "
+                                "expenses is proposed."
+                            ),
+                            "importance": 0.68,
+                            "evidence": (
+                                "Gemini API credits cannot be used; Vertex AI is unreliable; "
+                                "allocate direct payment for API usage fees."
+                            ),
+                            "related_topics": ["API access"],
+                        },
+                        {
+                            "obj_id": "new-programmatic-control",
+                            "type": "action_item",
+                            "legacy_type": "todo",
+                            "content": (
+                                "As part of the modular architecture, implement a system "
+                                "that tracks which lines have been processed using a boolean "
+                                "flag and tells the AI the next starting line to prevent overlaps."
+                            ),
+                            "importance": 0.69,
+                            "evidence": (
+                                "Track processed lines with a boolean flag, call the AI for "
+                                "the next starting line, and prevent overlaps."
+                            ),
+                            "related_topics": ["modular architecture"],
+                        },
+                        {
+                            "obj_id": "new-manager-overloaded",
+                            "type": "open_issue",
+                            "legacy_type": "open_question",
+                            "content": (
+                                "The role of the manager component needs clarification: "
+                                "there is disagreement over whether it is overloaded with "
+                                "fine-grained tasks instead of delegating to specialized agents."
+                            ),
+                            "importance": 0.68,
+                            "evidence": (
+                                "The manager may be overloaded with detailed tasks rather "
+                                "than acting as a dispatcher for specialized agents."
+                            ),
+                            "related_topics": ["manager component"],
+                        },
+                    ],
+                },
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["summary"]["watchlist_unmatched_count"], 0)
 
     def test_compare_l1_runs_matches_candidate_object_merge_mechanism(self) -> None:
         baseline = {

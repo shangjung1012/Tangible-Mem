@@ -220,6 +220,33 @@ EXPECTED_L2_LABEL_ANCHORS = {
 }
 
 EXPECTED_L2_OBJECT_ANCHORS = {
+    "L1-0318-003": (
+        "shared blackboard",
+        "blackboard architecture",
+        "error propagation",
+        "global context",
+    ),
+    "L1-0429-032": (
+        "objects",
+        "issues",
+        "item tracking",
+        "importance increases",
+        "two-layer",
+    ),
+    "L1-0429-057": (
+        "forgetting",
+        "inactive",
+        "fade",
+        "long-term information",
+        "retrievable state",
+    ),
+    "L1-0429-059": (
+        "data augmentation",
+        "dataset acquisition",
+        "data shortage",
+        "other students",
+        "longitudinal dataset",
+    ),
     "L1-0429-025": (
         "fixed chunk size",
         "approximately 20 lines",

@@ -168,6 +168,27 @@ class L2ViewTests(unittest.TestCase):
             unlinked = json.loads((out_root / "unlinked_l1_report.json").read_text(encoding="utf-8"))
             self.assertIn("L1-0318-002", {item["obj_id"] for item in unlinked["unlinked_objects"]})
 
+    def test_clean_l2_view_does_not_delete_l1_research_logs_when_roots_share_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            share_root = Path(tmp) / "share_mem"
+            refresh_share_mem_outputs(root=share_root, tree=_tree(), source_transcript_dir=Path(tmp))
+            l1_log = share_root / "research_logs" / "run" / "api_calls" / "api_calls.jsonl"
+            l2_log = share_root / "l2_research_logs" / "old" / "debug.json"
+            l1_log.parent.mkdir(parents=True)
+            l2_log.parent.mkdir(parents=True)
+            l1_log.write_text('{"stage":"l1"}\n', encoding="utf-8")
+            l2_log.write_text("{}", encoding="utf-8")
+
+            build_l2_view_outputs(
+                share_mem_root=share_root,
+                output_root=share_root,
+                mode="deterministic",
+                clean=True,
+            )
+
+            self.assertTrue(l1_log.exists())
+            self.assertFalse(l2_log.exists())
+
     def test_l2_view_keeps_l2_as_topic_layer_not_l1_types(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             share_root = Path(tmp) / "share_mem"
@@ -417,6 +438,57 @@ class L2ViewTests(unittest.TestCase):
                             "A fade in/out mechanism for memory activation will move old or unimportant ideas to inactive state and reactivate them later.",
                             importance=0.8,
                             topics=["memory lifecycle", "activation decay"],
+                        )
+                    ],
+                }
+            ],
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            share_root = Path(tmp) / "share_mem"
+            out_root = Path(tmp) / "long_term" / "l2"
+            validation_out = out_root / "validation"
+            refresh_share_mem_outputs(root=share_root, tree=tree, source_transcript_dir=Path(tmp))
+            build_l2_view_outputs(
+                share_mem_root=share_root,
+                output_root=out_root,
+                mode="deterministic",
+                clean=True,
+            )
+
+            report = validate_l2_view_outputs(
+                share_mem_root=share_root,
+                root=out_root,
+                out=validation_out,
+            )
+
+            issue_codes = {issue["code"] for issue in report["issues"]}
+            self.assertNotIn("expected_l2_assignment_mismatch", issue_codes)
+
+    def test_validate_l2_view_skips_expected_assignment_when_object_specific_anchor_does_not_match(self) -> None:
+        tree = {
+            "tree_version": 3,
+            "last_updated_utc": "2026-05-09T00:00:00Z",
+            "project_profile": {},
+            "phases": [],
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "timestamp": "2026-04-29T00:00:00Z",
+                    "meeting_date": "2026-04-29",
+                    "source_file": "meeting_recording/transcript/grace/0429.txt",
+                    "phase_id": "",
+                    "memory_objects": [
+                        _obj(
+                            "L1-0429-059",
+                            "decision",
+                            (
+                                "The project will treat forgetting in current AI agents as "
+                                "deleting data from an external RAG database rather than "
+                                "changing the core LLM weights."
+                            ),
+                            importance=0.73,
+                            topics=["memory lifecycle", "RAG"],
                         )
                     ],
                 }

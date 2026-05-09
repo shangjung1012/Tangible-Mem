@@ -130,6 +130,17 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "unanswerable_question_evaluation",
+        (
+            "unanswerable",
+            "cannot answer",
+            "unable to answer",
+            "unanswerable question",
+            "unanswerable questions",
+            "無法回答",
+        ),
+    ),
+    (
         "llm_as_judge_evaluation",
         (
             "llm-as-judge",
@@ -266,6 +277,16 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         (
             "function calling",
             "function call",
+            "external code",
+            "external programmatic control",
+            "programmatic control",
+            "processing state",
+            "sentences have been processed",
+            "which sentences have been processed",
+            "which lines have been processed",
+            "boolean flag",
+            "next starting line",
+            "prevent overlaps",
             "internal program state",
             "incrementing a counter",
             "local function",
@@ -280,6 +301,46 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "函數呼叫",
             "函式呼叫",
             "管理者代理",
+        ),
+    ),
+    (
+        "code_driven_llm_control",
+        (
+            "code-driven",
+            "code driven",
+            "primary controller",
+            "code remains",
+            "host application maintains control",
+            "main code-driven",
+            "control flow",
+            "llm-controlled",
+            "llm controlled",
+            "specific judgment",
+            "specific judgement",
+            "delegated judgment",
+            "delegated judgement",
+            "returned value",
+            "determine the next action",
+            "next action",
+        ),
+    ),
+    (
+        "api_access_budget",
+        (
+            "gemini api",
+            "api usage fees",
+            "api access",
+            "direct payment",
+            "direct budget",
+            "credit",
+            "credits",
+            "nt$9000",
+            "nt$20,000",
+            "9000 credit",
+            "20,000 budget",
+            "vertex ai",
+            "policy change",
+            "payment method",
         ),
     ),
     (
@@ -303,6 +364,15 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "manager/agent",
             "manager agent",
             "manager lean",
+            "manager component",
+            "overloaded",
+            "dispatcher",
+            "delegating",
+            "delegates",
+            "worker agent",
+            "worker agents",
+            "fine-grained tasks",
+            "detailed tasks",
             "specialized agents",
             "different implementations",
             "模組",
@@ -396,6 +466,7 @@ SPECIFIC_SEMANTIC_ANCHORS = {
     "memory_retention_decay",
     "dataset_sourcing",
     "memo_rag_evaluation",
+    "unanswerable_question_evaluation",
     "llm_as_judge_evaluation",
     "precision_recall_chunking_evaluation",
     "forgetting_mechanism",
@@ -406,6 +477,8 @@ SPECIFIC_SEMANTIC_ANCHORS = {
     "single_pass_global_vector",
     "candidate_object_merge",
     "agent_orchestration_state",
+    "code_driven_llm_control",
+    "api_access_budget",
     "real_time_demo",
     "agent_modularity",
     "separation_of_concerns",
@@ -421,6 +494,7 @@ SPECIFIC_SEMANTIC_ANCHORS = {
 EVIDENCE_DOMINANT_SEMANTIC_ANCHORS = {
     "memory_retention_decay",
     "memo_rag_evaluation",
+    "unanswerable_question_evaluation",
     "precision_recall_chunking_evaluation",
     "forgetting_mechanism",
 }
@@ -741,6 +815,12 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                 and score.get("evidence_similarity", 0.0) >= 0.28
                 and score.get("topic_similarity", 0.0) >= 0.10
                 and score.get("semantic_score", 0.0) >= 0.45
+            )
+            or (
+                score.get("evidence_dominant_anchor_overlap", 0.0) >= 1.0
+                and score.get("semantic_anchor_similarity", 0.0) >= 0.55
+                and score.get("evidence_similarity", 0.0) >= 0.38
+                and score.get("semantic_score", 0.0) >= 0.55
             )
         )
     )

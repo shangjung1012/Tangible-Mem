@@ -790,6 +790,11 @@ Only output durable long-term memory:
 - preserve unresolved implementation questions about memory-object filtering,
   discard as L1, or how the importance score is used; use open_issue when the
   supplied scope does not resolve the question
+- preserve evaluation design details when they define benchmark baselines,
+  comparison conditions, or metrics, including full-context, RAG, prior-paper,
+  ablation, or precision/recall baselines
+- preserve model capability judgments that affect pipeline design or evaluation,
+  such as whether Gemini can identify or judge good idea units
 - for argument, preserve only reasoning that explains a meaningful tradeoff or choice
 - for open_question, preserve only questions that remain unresolved after the supplied scope
 - for proposal, preserve only suggested options or hypotheses that are not yet adopted
