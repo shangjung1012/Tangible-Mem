@@ -21,6 +21,7 @@ Canonical architecture docs:
 - Evaluation design: [`doc/evaluation_plan.md`](doc/evaluation_plan.md)
 - L1 store: [`share_mem/README.md`](share_mem/README.md)
 - Long-term L2/L3: [`long_term/README.md`](long_term/README.md)
+- Memory Observatory demo UI: [`memory_observatory/README.md`](memory_observatory/README.md)
 
 ## 安裝
 
@@ -74,6 +75,18 @@ uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root l
 uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
 uv run long_term/cli.py validate-l3-view --share-mem-root share_mem --l2-root long_term/l2 --l3-root long_term/l3 --out long_term/l3/validation
 uv run python long_term/evaluate_retrieval.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out long_term/eval --no-llm --retrieval-mode lexical
+```
+
+Run the Memory Observatory demo:
+
+```bash
+uv run uvicorn memory_observatory.main:app --reload
+```
+
+Run a no-LLM comparison lab experiment:
+
+```bash
+uv run python memory_observatory/run_experiment.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out memory_observatory/runs --strategies full_context,rag_baseline,layered_memory --retrieval-mode lexical --no-llm
 ```
 
 Update short-term memory from a share_mem snapshot:

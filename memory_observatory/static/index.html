@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Memory Observatory</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">Memory Observatory</div>
+      <button class="nav active" data-tab="overview">Overview</button>
+      <button class="nav" data-tab="trace">Retrieval Trace</button>
+      <button class="nav" data-tab="explorer">Memory Explorer</button>
+      <button class="nav" data-tab="topics">Topic Observatory</button>
+      <button class="nav" data-tab="feedback">Importance Review</button>
+      <button class="nav" data-tab="lab">Experiment Lab</button>
+    </aside>
+    <main class="main">
+      <section id="overview" class="tab active">
+        <h1>Evidence-first layered memory</h1>
+        <p class="lede">
+          This system does not directly RAG over transcripts. It first extracts
+          traceable L1 evidence objects, organizes them into L2 / child-L2 topic
+          context, and uses L3 topic families as navigation. Answers should be
+          grounded by L1 evidence, with L2/L3 providing cross-meeting evolution.
+        </p>
+        <div class="flow">
+          <span>Transcript</span><b>-></b><span>Segment / Window</span><b>-></b>
+          <span>Idea Unit</span><b>-></b><span>L1 Evidence</span><b>-></b>
+          <span>L2 Topic</span><b>-></b><span>L3 / Child L2</span><b>-></b>
+          <span>Layered Retrieval</span><b>-></b><span>Answer</span>
+        </div>
+        <div id="overviewCards" class="cards"></div>
+      </section>
+
+      <section id="trace" class="tab">
+        <h1>Retrieval Trace</h1>
+        <div class="toolbar">
+          <input id="traceQuery" value="我們之前為什麼要把 transcript 拆成 segment / idea units？" />
+          <select id="traceMode"><option value="lexical">lexical</option><option value="semantic">semantic</option></select>
+          <label><input id="traceDebug" type="checkbox" checked /> include debug</label>
+          <label><input id="traceNoLlm" type="checkbox" checked /> no LLM planner</label>
+          <button id="runTrace">Run Layered Retrieval Trace</button>
+        </div>
+        <div id="traceOutput" class="stack"></div>
+      </section>
+
+      <section id="explorer" class="tab">
+        <h1>Share Memory Explorer</h1>
+        <div class="three-col">
+          <div><h2>Meetings</h2><div id="meetingList" class="stack"></div></div>
+          <div>
+            <h2>L1 Objects</h2>
+            <div class="toolbar">
+              <select id="objectTypeFilter"><option value="">all types</option></select>
+              <select id="objectLinkFilter">
+                <option value="">linked/unlinked</option>
+                <option value="linked">linked</option>
+                <option value="unlinked">unlinked</option>
+                <option value="feedback">has feedback</option>
+              </select>
+              <input id="importanceFilter" type="number" min="0" max="1" step="0.05" placeholder="min importance" />
+            </div>
+            <div id="objectList" class="stack"></div>
+          </div>
+          <div><h2>Object Detail</h2><div id="objectDetail" class="panel"></div></div>
+        </div>
+      </section>
+
+      <section id="topics" class="tab">
+        <h1>Topic Observatory</h1>
+        <div class="two-col">
+          <div><h2>L3 -> Child L2</h2><div id="topicTree" class="stack"></div></div>
+          <div><h2>Topic Detail</h2><div id="topicDetail" class="panel"></div></div>
+        </div>
+      </section>
+
+      <section id="feedback" class="tab">
+        <h1>Importance Review</h1>
+        <div class="two-col">
+          <div><div id="feedbackObjects" class="stack"></div></div>
+          <div class="panel">
+            <h2>Save Feedback</h2>
+            <div id="feedbackTarget">Select an object.</div>
+            <input id="feedbackImportance" type="range" min="0" max="1" step="0.01" value="0.5" />
+            <select id="feedbackReason">
+              <option>important_design_decision</option>
+              <option>important_method_change</option>
+              <option>important_open_issue</option>
+              <option>important_evaluation_plan</option>
+              <option>important_evidence_anchor</option>
+              <option>minor_repetition</option>
+              <option>administrative_detail</option>
+              <option>outdated_or_abandoned</option>
+              <option>duplicate_or_redundant</option>
+              <option>wrongly_high</option>
+              <option>wrongly_low</option>
+              <option>other</option>
+            </select>
+            <textarea id="feedbackNote" placeholder="note"></textarea>
+            <button id="saveFeedback">Save feedback</button>
+            <pre id="feedbackSummary"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="lab" class="tab">
+        <h1>Experiment Lab</h1>
+        <div class="toolbar">
+          <select id="runSelect"></select>
+          <button id="refreshRuns">Refresh</button>
+          <button id="runExperiment">Run New No-LLM Experiment</button>
+        </div>
+        <div id="runSummary" class="cards"></div>
+        <div id="queryTable" class="stack"></div>
+        <div id="queryDetail" class="three-col"></div>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
