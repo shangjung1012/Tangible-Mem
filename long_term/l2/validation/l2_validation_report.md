@@ -1,36 +1,11 @@
 # L2 Validation Report
 
-- L2 count: 16
-- Linked L1 count: 394
-- Issue count: 27
+- L2 count: 15
+- Linked L1 count: 477
+- Issue count: 0
 - Severe count: 0
-- Warning count: 27
+- Warning count: 0
 
 ## Issues
-- [warning] large_l2_topic: L2 node has many linked L1 objects and should be manually reviewed.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
-- [warning] high_importance_unlinked: High-importance or review-required L1 is not linked to any L2.
+
+No issues.

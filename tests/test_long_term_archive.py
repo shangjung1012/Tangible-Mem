@@ -32,11 +32,35 @@ class LongTermArchiveTests(unittest.TestCase):
     def test_app_memory_context_still_imports_active_recall_stack(self) -> None:
         from app import memory_context
 
+        self.assertTrue(callable(memory_context.retrieve_memory_context))
         self.assertTrue(callable(memory_context.retrieve_long_term_context))
         self.assertEqual(
             memory_context.LONG_TERM_TREE_PATH,
             REPO_ROOT / "share_mem" / "tree.json",
         )
+        self.assertEqual(
+            memory_context.LONG_TERM_L2_INDEX_PATH,
+            LONG_TERM_DIR / "l2" / "l2_index.json",
+        )
+        self.assertEqual(
+            memory_context.LONG_TERM_L2_VIEW_PATH,
+            LONG_TERM_DIR / "l2" / "l2_view.json",
+        )
+        self.assertEqual(
+            memory_context.LONG_TERM_L3_PROMOTIONS_PATH,
+            LONG_TERM_DIR / "l3" / "l3_promotions.json",
+        )
+        self.assertEqual(
+            memory_context.LONG_TERM_L3_VIEW_PATH,
+            LONG_TERM_DIR / "l3" / "l3_view.json",
+        )
+
+    def test_memory_tools_import_without_short_term_retrieval_package(self) -> None:
+        from app.tools import memory_tools
+
+        self.assertTrue(callable(memory_tools.get_memory_context))
+        self.assertTrue(callable(memory_tools.get_short_term_memory_context))
+        self.assertTrue(callable(memory_tools.get_long_term_memory_context))
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ from build_l2_view import (  # noqa: E402
     choose_l2_assignment,
     load_l2_index,
     load_l2_view,
+    normalized_l2_candidates_from_related_topics,
 )
 from share_mem.store import refresh_share_mem_outputs  # noqa: E402
 from validate_l2_view import validate_l2_view_outputs  # noqa: E402
@@ -148,6 +149,7 @@ class L2ViewTests(unittest.TestCase):
             self.assertTrue((out_root / "l2_index.json").exists())
             self.assertTrue((out_root / "manifest.json").exists())
             self.assertTrue((out_root / "unlinked_l1_report.json").exists())
+            self.assertTrue((out_root / "l2_assignment_review_report.json").exists())
             self.assertTrue((out_root / "l2_updates" / "0506.json").exists())
             self.assertEqual(manifest["source_l1_count"], 8)
             self.assertLess(manifest["linked_l1_count"], manifest["source_l1_count"])
@@ -167,6 +169,13 @@ class L2ViewTests(unittest.TestCase):
 
             unlinked = json.loads((out_root / "unlinked_l1_report.json").read_text(encoding="utf-8"))
             self.assertIn("L1-0318-002", {item["obj_id"] for item in unlinked["unlinked_objects"]})
+            review = json.loads(
+                (out_root / "l2_assignment_review_report.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(review["source_l1_count"], 8)
+            self.assertEqual(review["linked_l1_count"], manifest["linked_l1_count"])
+            self.assertIn("review_items", review)
+            self.assertIn("topic_summaries", review)
 
     def test_clean_l2_view_does_not_delete_l1_research_logs_when_roots_share_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -209,6 +218,95 @@ class L2ViewTests(unittest.TestCase):
             self.assertIn("transcript segmentation and idea-unit coverage", labels)
             self.assertNotIn("decision", labels)
             self.assertNotIn("design decision", labels)
+
+    def test_related_topics_are_normalized_into_l2_candidates(self) -> None:
+        obj = _obj(
+            "L1-topic-001",
+            "finding",
+            "The object only carries topic hints here.",
+            topics=[
+                "Memory_Retrieval",
+                "long-term memory architecture",
+                "decision",
+                "data",
+                "  Evaluation Methodology  ",
+            ],
+        )
+
+        candidates = normalized_l2_candidates_from_related_topics(obj)
+
+        self.assertEqual(
+            [
+                (row["label"], row["normalized_topic"], row["specificity"])
+                for row in candidates
+            ],
+            [
+                ("memory retrieval", "memory retrieval", "specific"),
+                (
+                    "memory processing architecture",
+                    "long term memory architecture",
+                    "broad",
+                ),
+                ("memory evaluation strategy", "evaluation methodology", "specific"),
+            ],
+        )
+
+    def test_reviewed_related_topic_aliases_cover_l1_taxonomy_and_workflow(self) -> None:
+        cases = [
+            (
+                ["memory object model", "definitions", "memory item structure"],
+                "l1 taxonomy and type agents",
+            ),
+            (["code_architecture", "development_strategy"], "agentic pipeline control"),
+            (["memory update mechanism", "memory management"], "memory update semantics"),
+            (["importance", "human-computer interaction"], "memory lifecycle"),
+            (["speaker diarization", "experimental design"], "dataset selection"),
+        ]
+
+        for topics, expected_label in cases:
+            with self.subTest(topics=topics):
+                obj = _obj(
+                    "L1-reviewed-alias",
+                    "decision",
+                    "The object only carries reviewed related topic aliases.",
+                    importance=0.74,
+                    topics=topics,
+                )
+
+                assignment = choose_l2_assignment(obj)
+
+                self.assertEqual("assign_l2", assignment["action"])
+                self.assertEqual(expected_label, assignment["l2_label"])
+
+    def test_related_topic_seed_takes_priority_over_content_rule_when_specific(self) -> None:
+        obj = _obj(
+            "L1-topic-002",
+            "open_issue",
+            "The architecture discussion mentions L2 and L3, but the extracted topic says this is mainly retrieval.",
+            importance=0.74,
+            topics=["memory_retrieval"],
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual(assignment["action"], "assign_l2")
+        self.assertEqual(assignment["l2_label"], "memory retrieval")
+        self.assertEqual(assignment["reason"], "related_topic_seed")
+
+    def test_content_rule_refines_broad_related_topic_seed(self) -> None:
+        obj = _obj(
+            "L1-topic-003",
+            "finding",
+            "Prompts should be self-contained and avoid project jargon so the agent understands them.",
+            importance=0.72,
+            topics=["system architecture", "development workflow"],
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual(assignment["action"], "assign_l2")
+        self.assertEqual(assignment["l2_label"], "prompt design and instruction quality")
+        self.assertEqual(assignment["reason"], "related_topic_seed_content_refined")
 
     def test_validate_l2_view_flags_generic_label_and_high_importance_unlinked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -309,6 +407,67 @@ class L2ViewTests(unittest.TestCase):
                 and issue.get("obj_id") == "L1-admin-budget"
             ]
             self.assertEqual([], high_unlinked)
+
+    def test_validate_l2_view_suppresses_large_warning_for_materialized_l3(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            share_root = Path(tmp) / "share_mem"
+            out_root = Path(tmp) / "long_term" / "l2"
+            validation_out = out_root / "validation"
+            refresh_share_mem_outputs(root=share_root, tree=_tree(), source_transcript_dir=Path(tmp))
+            build_l2_view_outputs(
+                share_mem_root=share_root,
+                output_root=out_root,
+                mode="deterministic",
+                clean=True,
+            )
+
+            l2_view = load_l2_view(out_root)
+            l2_index = load_l2_index(out_root)
+            source_obj_id = next(iter(l2_index))
+            source_l2_id = l2_index[source_obj_id]["l2_id"]
+            for node in l2_view["l2_nodes"]:
+                if node["l2_id"] == source_l2_id:
+                    node["linked_obj_ids"] = [source_obj_id] * 61
+                    break
+            (out_root / "l2_view.json").write_text(
+                json.dumps(l2_view, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            l3_root = out_root.parent / "l3"
+            l3_root.mkdir(parents=True, exist_ok=True)
+            (l3_root / "l3_view.json").write_text(
+                json.dumps(
+                    {
+                        "l3_nodes": [
+                            {
+                                "l3_id": "L3-promoted",
+                                "promoted_from_l2_id": source_l2_id,
+                                "child_l2_nodes": [
+                                    {"l2_id": "L2-child-a"},
+                                    {"l2_id": "L2-child-b"},
+                                ],
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            report = validate_l2_view_outputs(
+                share_mem_root=share_root,
+                root=out_root,
+                out=validation_out,
+            )
+
+            large_warnings = [
+                issue
+                for issue in report["issues"]
+                if issue["code"] == "large_l2_topic" and issue.get("l2_id") == source_l2_id
+            ]
+            self.assertEqual([], large_warnings)
+            self.assertEqual(report["resolved_large_l2_promotion_count"], 1)
 
     def test_validate_l2_view_flags_index_view_and_unlinked_corruption(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1378,6 +1537,13 @@ class L2ViewTests(unittest.TestCase):
                 "importance": 0.56,
                 "content": "在收到指導老師提供的 API 預算後，團隊需要追蹤 API 的使用情況。",
                 "related_topics": ["lab_administration", "expense_reimbursement"],
+            },
+            {
+                "obj_id": "L1-admin-004",
+                "type": "finding",
+                "importance": 0.71,
+                "content": "To receive project funds, a student with a school work-study account must provide fund transfer details.",
+                "related_topics": ["project_administration", "billing", "lab_administration"],
             },
         ]
 

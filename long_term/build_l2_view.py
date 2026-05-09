@@ -18,6 +18,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from share_mem.store import iter_l1_objects, iter_meetings, load_share_tree, normalize_share_tree
+from l3_promotion import (
+    build_l3_materialization_sidecar,
+    build_l3_promotion_sidecar,
+    create_gemini_child_assignment_proposer,
+    create_gemini_child_taxonomy_proposer,
+)
 
 L2_VIEW_SCHEMA_VERSION = 1
 L2_VIEW_FILE_NAME = "l2_view.json"
@@ -25,8 +31,10 @@ L2_INDEX_FILE_NAME = "l2_index.json"
 L2_MANIFEST_FILE_NAME = "manifest.json"
 L2_UPDATES_DIR_NAME = "l2_updates"
 L2_UNLINKED_FILE_NAME = "unlinked_l1_report.json"
+L2_ASSIGNMENT_REVIEW_FILE_NAME = "l2_assignment_review_report.json"
 L2_RESEARCH_LOGS_DIR_NAME = "l2_research_logs"
 SUPPORTED_L2_MODES = {"deterministic", "hybrid"}
+SUPPORTED_L3_MODES = {"deterministic", "llm-assisted"}
 
 TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+", re.IGNORECASE)
 SLUG_RE = re.compile(r"[^a-z0-9\u4e00-\u9fff]+", re.IGNORECASE)
@@ -65,26 +73,87 @@ TYPE_LIKE_LABELS = {
 
 RELATED_TOPIC_CANONICAL_LABELS = {
     "alternative approaches": "alternative approaches",
+    "agent based systems": "agentic pipeline control",
+    "agent orchestration": "agentic pipeline control",
+    "code architecture": "agentic pipeline control",
+    "data pipeline": "transcript segmentation and idea-unit coverage",
+    "data processing": "transcript segmentation and idea-unit coverage",
+    "data quality": "transcript segmentation and idea-unit coverage",
     "data handling": "transcript segmentation and idea-unit coverage",
     "data management": "transcript segmentation and idea-unit coverage",
+    "data fragmentation": "data fragmentation",
+    "dataset": "dataset selection",
     "dataset acquisition": "dataset selection",
     "dataset selection": "dataset selection",
+    "development strategy": "agentic pipeline control",
     "development workflow": "development workflow",
+    "evaluation methodology": "memory evaluation strategy",
+    "evaluation metrics": "memory evaluation strategy",
+    "experimental design": "memory evaluation strategy",
     "experimental setup": "research methodology",
+    "importance": "memory lifecycle",
+    "memory item structure": "l1 taxonomy and type agents",
+    "memory object model": "l1 taxonomy and type agents",
+    "memory update mechanism": "memory update semantics",
+    "forgetting mechanism": "memory lifecycle",
     "literature review": "research methodology",
+    "llm as judge": "memory evaluation strategy",
+    "locomo": "memory evaluation strategy",
+    "locomo dataset": "dataset selection",
     "long term memory": "stm ltm integration",
     "long term memory architecture": "memory processing architecture",
     "long term memory implementation": "memory system implementation",
+    "memory architecture": "memory processing architecture",
+    "memory evaluation": "memory evaluation strategy",
     "memory model": "memory processing architecture",
     "memory retrieval": "memory retrieval",
+    "memory system": "memory processing architecture",
     "memory system architecture": "memory processing architecture",
+    "memory system design": "memory processing architecture",
     "memory system implementation": "memory system implementation",
     "memory system performance": "memory evaluation strategy",
+    "model performance evaluation": "memory evaluation strategy",
+    "model evaluation": "memory evaluation strategy",
     "output quality": "transcript segmentation and idea-unit coverage",
+    "rag": "memory retrieval",
     "research methodology": "research methodology",
+    "short term memory": "stm ltm integration",
+    "speaker diarization": "dataset selection",
+    "source linkage": "memory evidence anchoring",
+    "stm ltm integration": "stm ltm integration",
     "system architecture": "agentic pipeline control",
+    "temporal references": "memory update semantics",
 }
 RELATED_TOPIC_FALLBACK_MIN_IMPORTANCE = 0.68
+
+BROAD_RELATED_TOPIC_LABELS = {
+    "alternative approaches",
+    "agent based systems",
+    "data handling",
+    "data management",
+    "development workflow",
+    "experimental setup",
+    "llm features",
+    "llm usage modes",
+    "forgetting mechanism",
+    "long term memory",
+    "long term memory architecture",
+    "ltm",
+    "memory architecture",
+    "memory hierarchy",
+    "memory model",
+    "memory system",
+    "memory system architecture",
+    "model configuration",
+    "rag",
+    "research methodology",
+    "system architecture",
+}
+
+CONTENT_REFINEMENT_OVERRIDE_LABELS = {
+    "l2 topic grouping",
+    "memory evidence anchoring",
+}
 
 ADMINISTRATIVE_HINTS = (
     "meeting room",
@@ -103,6 +172,12 @@ ADMINISTRATIVE_HINTS = (
     "api 預算",
     "api 的使用情況",
     "api 使用情況",
+    "fund transfer",
+    "project funds",
+    "school work-study account",
+    "work-study account",
+    "公讀帳號",
+    "經費",
 )
 
 PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -350,6 +425,9 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "filtering step",
             "initial filtering",
             "data retrieval process",
+            "pull relevant history",
+            "pulling relevant history",
+            "relevant history from long-term memory",
             "retrieve phase",
             "retrieval phase",
             "retrieval strategy",
@@ -943,52 +1021,76 @@ def _concept_label(obj: dict[str, Any]) -> tuple[str | None, str]:
 
 
 def _topic_label_fallback(obj: dict[str, Any]) -> tuple[str | None, str]:
+    candidates = normalized_l2_candidates_from_related_topics(obj)
+    for candidate in candidates:
+        return str(candidate["label"]), "related_topic_seed"
+    return None, "no_topic_fallback"
+
+
+def _normalize_related_topic_label(raw: Any) -> str:
+    """Normalize one L1 related_topic string into a stable comparison key."""
+    text = str(raw or "").strip().lower()
+    text = text.replace("_", " ").replace("-", " ")
+    text = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", " ", text)
+    return " ".join(text.split())
+
+
+def _label_from_topic_text(normalized_topic: str) -> str | None:
+    if not normalized_topic:
+        return None
+    if normalized_topic in GENERIC_LABELS or normalized_topic in TYPE_LIKE_LABELS:
+        return None
+    canonical = RELATED_TOPIC_CANONICAL_LABELS.get(normalized_topic)
+    if canonical:
+        return canonical
+    for label, hints in (*PRIORITY_CONCEPT_RULES, *CONCEPT_RULES):
+        if normalized_topic == label or any(normalized_topic == _normalize_related_topic_label(hint) for hint in hints):
+            return label
+    return None
+
+
+def normalized_l2_candidates_from_related_topics(obj: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return ordered L2 candidates derived from L1 related_topics.
+
+    Normalization rules:
+    - lowercase;
+    - replace underscores / hyphens with spaces;
+    - remove punctuation;
+    - collapse whitespace;
+    - drop generic labels and L1 type-like labels;
+    - map aliases into canonical L2 labels;
+    - deduplicate by canonical label while preserving first occurrence.
+    """
     topics = obj.get("related_topics", [])
     if not isinstance(topics, list):
-        return None, "no_topic_fallback"
+        return []
+    candidates: list[dict[str, Any]] = []
+    seen_labels: set[str] = set()
     for raw in topics:
-        label = str(raw or "").replace("_", " ").replace("-", " ").strip().lower()
-        if not label or label in GENERIC_LABELS or label in TYPE_LIKE_LABELS:
+        normalized = _normalize_related_topic_label(raw)
+        label = _label_from_topic_text(normalized)
+        if not label or label in seen_labels:
             continue
-        canonical = RELATED_TOPIC_CANONICAL_LABELS.get(label)
-        if not canonical:
-            continue
-        return canonical, "related_topic_fallback"
-    return None, "no_topic_fallback"
+        seen_labels.add(label)
+        candidates.append(
+            {
+                "label": label,
+                "raw_topic": str(raw or ""),
+                "normalized_topic": normalized,
+                "specificity": (
+                    "broad"
+                    if normalized in BROAD_RELATED_TOPIC_LABELS or label in GENERIC_LABELS
+                    else "specific"
+                ),
+            }
+        )
+    return candidates
 
 
 def choose_l2_assignment(obj: dict[str, Any]) -> dict[str, Any]:
     """Return a deterministic L2 assignment or skip decision for one L1 object."""
     importance = _importance(obj)
     obj_type = str(obj.get("type", "") or "")
-    if _is_administrative(obj):
-        return {
-            "action": "skip_l1",
-            "reason": "administrative_or_local_context",
-            "review_required": False,
-            "confidence": 0.78,
-        }
-
-    label, reason = _concept_label(obj)
-    if label is None:
-        label, reason = _topic_label_fallback(obj)
-
-    if label is None:
-        return {
-            "action": "skip_l1",
-            "reason": "no_durable_l2_concept",
-            "review_required": importance >= 0.7,
-            "confidence": 0.64,
-        }
-
-    if reason == "related_topic_fallback" and importance < RELATED_TOPIC_FALLBACK_MIN_IMPORTANCE:
-        return {
-            "action": "skip_l1",
-            "reason": "related_topic_below_l2_threshold",
-            "review_required": False,
-            "confidence": 0.68,
-        }
-
     durable_type = obj_type in {
         "decision",
         "action_item",
@@ -1002,6 +1104,62 @@ def choose_l2_assignment(obj: dict[str, Any]) -> dict[str, Any]:
         "result",
         "argument",
     }
+    if _is_administrative(obj):
+        return {
+            "action": "skip_l1",
+            "reason": "administrative_or_local_context",
+            "review_required": False,
+            "confidence": 0.78,
+        }
+
+    topic_candidates = normalized_l2_candidates_from_related_topics(obj)
+    concept_label, concept_reason = _concept_label(obj)
+
+    label = None
+    reason = "no_topic_fallback"
+    if topic_candidates:
+        primary = topic_candidates[0]
+        label = str(primary["label"])
+        reason = "related_topic_seed"
+        if (
+            (
+                primary.get("specificity") == "broad"
+                or concept_label in CONTENT_REFINEMENT_OVERRIDE_LABELS
+            )
+            and concept_label is not None
+            and concept_label != label
+        ):
+            label = concept_label
+            reason = "related_topic_seed_content_refined"
+        elif concept_label is not None and any(
+            candidate["label"] == concept_label for candidate in topic_candidates
+        ):
+            label = concept_label
+            reason = "related_topic_seed_content_confirmed"
+    else:
+        label, reason = concept_label, concept_reason
+
+    if label is None:
+        return {
+            "action": "skip_l1",
+            "reason": "no_durable_l2_concept",
+            "review_required": importance >= 0.7,
+            "confidence": 0.64,
+        }
+
+    if (
+        reason == "related_topic_seed"
+        and concept_label is None
+        and not durable_type
+        and importance < RELATED_TOPIC_FALLBACK_MIN_IMPORTANCE
+    ):
+        return {
+            "action": "skip_l1",
+            "reason": "related_topic_below_l2_threshold",
+            "review_required": False,
+            "confidence": 0.68,
+        }
+
     if importance < 0.55 and not durable_type:
         return {
             "action": "skip_l1",
@@ -1075,7 +1233,13 @@ def load_share_mem_l1_tree(share_mem_root: Path | str) -> dict[str, Any]:
 
 def clean_l2_outputs(output_root: Path | str) -> None:
     root = Path(output_root)
-    for file_name in (L2_VIEW_FILE_NAME, L2_INDEX_FILE_NAME, L2_MANIFEST_FILE_NAME, L2_UNLINKED_FILE_NAME):
+    for file_name in (
+        L2_VIEW_FILE_NAME,
+        L2_INDEX_FILE_NAME,
+        L2_MANIFEST_FILE_NAME,
+        L2_UNLINKED_FILE_NAME,
+        L2_ASSIGNMENT_REVIEW_FILE_NAME,
+    ):
         path = root / file_name
         if path.exists():
             path.unlink()
@@ -1123,12 +1287,91 @@ def _build_l2_node(label: str, linked: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _build_assignment_review_report(
+    *,
+    l2_view: dict[str, Any],
+    l2_index: dict[str, Any],
+    unlinked_report: dict[str, Any],
+    source_l1_count: int,
+) -> dict[str, Any]:
+    topic_summaries: list[dict[str, Any]] = []
+    review_items: list[dict[str, Any]] = []
+
+    for node in l2_view.get("l2_nodes", []):
+        if not isinstance(node, dict):
+            continue
+        linked_ids = [
+            str(obj_id)
+            for obj_id in node.get("linked_obj_ids", [])
+            if str(obj_id).strip()
+        ] if isinstance(node.get("linked_obj_ids"), list) else []
+        meeting_ids = [
+            str(meeting_id)
+            for meeting_id in node.get("meeting_ids", [])
+            if str(meeting_id).strip()
+        ] if isinstance(node.get("meeting_ids"), list) else []
+        flags: list[str] = []
+        if len(linked_ids) > 60:
+            flags.append("large_l2_topic")
+        topic_summary = {
+            "l2_id": str(node.get("l2_id", "") or ""),
+            "label": str(node.get("label", "") or ""),
+            "linked_l1_count": len(linked_ids),
+            "meeting_count": len(meeting_ids),
+            "confidence": node.get("confidence", 0.0),
+            "review_flags": flags,
+        }
+        topic_summaries.append(topic_summary)
+        if flags:
+            review_items.append(
+                {
+                    "kind": "l2_topic",
+                    "review_reason": "large_l2_topic",
+                    **topic_summary,
+                }
+            )
+
+    for item in unlinked_report.get("review_queue", []):
+        if not isinstance(item, dict):
+            continue
+        review_items.append(
+            {
+                "kind": "unlinked_l1",
+                "review_reason": item.get("reason", ""),
+                "obj_id": str(item.get("obj_id", "") or ""),
+                "meeting_id": str(item.get("meeting_id", "") or ""),
+                "importance": item.get("importance", 0.0),
+                "content": str(item.get("content", "") or ""),
+            }
+        )
+
+    topic_summaries.sort(key=lambda row: (-int(row["linked_l1_count"]), row["l2_id"]))
+    return {
+        "schema_version": L2_VIEW_SCHEMA_VERSION,
+        "generated_at_utc": utc_now_iso(),
+        "source": "long_term_l2_assignment",
+        "source_l1_count": source_l1_count,
+        "linked_l1_count": len(l2_index),
+        "unlinked_l1_count": int(unlinked_report.get("unlinked_count", 0) or 0),
+        "review_item_count": len(review_items),
+        "topic_summaries": topic_summaries,
+        "review_items": review_items,
+        "notes": [
+            "Review large L2 topics for L3 promotion.",
+            "Review high-importance unlinked L1 objects before demoing broad questions.",
+        ],
+    }
+
+
 def _build_outputs(
     *,
     tree: dict[str, Any],
     share_mem_root: Path,
     output_root: Path,
     mode: str,
+    l3_mode: str = "deterministic",
+    model: str | None = None,
+    l3_source_l2_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     source_tree_hash = stable_hash(tree)
     linked_by_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1236,6 +1479,8 @@ def _build_outputs(
         "share_mem_root": str(share_mem_root.resolve()),
         "output_root": str(output_root.resolve()),
         "mode": mode,
+        "l3_mode": l3_mode,
+        "l3_model": model or "",
         "source_tree_hash": source_tree_hash,
         "meeting_count": len(list(iter_meetings(tree))),
         "source_l1_count": source_l1_count,
@@ -1246,12 +1491,51 @@ def _build_outputs(
         "l2_view_path": str((output_root / L2_VIEW_FILE_NAME).resolve()),
         "l2_index_path": str((output_root / L2_INDEX_FILE_NAME).resolve()),
         "unlinked_l1_report_path": str((output_root / L2_UNLINKED_FILE_NAME).resolve()),
+        "assignment_review_report_path": str(
+            (output_root / L2_ASSIGNMENT_REVIEW_FILE_NAME).resolve()
+        ),
     }
+    assignment_review_report = _build_assignment_review_report(
+        l2_view=l2_view,
+        l2_index=l2_index,
+        unlinked_report=unlinked_report,
+        source_l1_count=source_l1_count,
+    )
+    child_taxonomy_proposer = None
+    child_assignment_proposer = None
+    if l3_mode == "llm-assisted":
+        from share_mem.l1.io_utils import load_api_keys
+
+        api_keys = load_api_keys()
+        model_name = model or "gemini-2.5-flash"
+        child_taxonomy_proposer = create_gemini_child_taxonomy_proposer(
+            api_key=api_keys,
+            model_name=model_name,
+        )
+        child_assignment_proposer = create_gemini_child_assignment_proposer(
+            api_key=api_keys,
+            model_name=model_name,
+        )
+
+    l3_promotion_sidecar = build_l3_promotion_sidecar(
+        l2_view,
+        total_l1_count=source_l1_count,
+        child_taxonomy_proposer=child_taxonomy_proposer,
+        llm_source_l2_ids=l3_source_l2_ids,
+    )
+    l3_materialization_sidecar = build_l3_materialization_sidecar(
+        l2_view,
+        l3_promotion_sidecar,
+        assignment_proposer=child_assignment_proposer,
+    )
     return {
         "l2_view": l2_view,
         "l2_index": dict(sorted(l2_index.items())),
         "updates_by_meeting": updates_by_meeting,
         "unlinked_report": unlinked_report,
+        "assignment_review_report": assignment_review_report,
+        "l3_promotion_sidecar": l3_promotion_sidecar,
+        "l3_materialization_sidecar": l3_materialization_sidecar,
         "manifest": manifest,
     }
 
@@ -1262,12 +1546,15 @@ def build_l2_view_outputs(
     output_root: Path | str = REPO_ROOT / "long_term" / "l2",
     mode: str = "hybrid",
     model: str | None = None,
+    l3_mode: str = "deterministic",
+    l3_source_l2_ids: set[str] | None = None,
     clean: bool = False,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    del model  # Hybrid API assignment is intentionally not used in the first L2 builder.
     if mode not in SUPPORTED_L2_MODES:
         raise ValueError(f"Unsupported L2 mode: {mode}")
+    if l3_mode not in SUPPORTED_L3_MODES:
+        raise ValueError(f"Unsupported L3 mode: {l3_mode}")
     share_root = Path(share_mem_root)
     out_root = Path(output_root)
     tree = load_share_mem_l1_tree(share_root)
@@ -1279,6 +1566,9 @@ def build_l2_view_outputs(
         share_mem_root=share_root,
         output_root=out_root,
         mode=mode,
+        l3_mode=l3_mode,
+        model=model,
+        l3_source_l2_ids=l3_source_l2_ids,
     )
     if dry_run:
         return outputs["manifest"]
@@ -1286,9 +1576,16 @@ def build_l2_view_outputs(
     _write_json(out_root / L2_VIEW_FILE_NAME, outputs["l2_view"])
     _write_json(out_root / L2_INDEX_FILE_NAME, outputs["l2_index"])
     _write_json(out_root / L2_UNLINKED_FILE_NAME, outputs["unlinked_report"])
+    _write_json(out_root / L2_ASSIGNMENT_REVIEW_FILE_NAME, outputs["assignment_review_report"])
     for meeting_id, update in sorted(outputs["updates_by_meeting"].items()):
         _write_json(out_root / L2_UPDATES_DIR_NAME / f"{meeting_id}.json", update)
     _write_json(out_root / L2_MANIFEST_FILE_NAME, outputs["manifest"])
+    _write_json(out_root.parent / "l3" / "l3_promotions.json", outputs["l3_promotion_sidecar"])
+    _write_json(out_root.parent / "l3" / "l3_view.json", outputs["l3_materialization_sidecar"])
+    _write_json(
+        out_root.parent / "l3" / "l3_index.json",
+        outputs["l3_materialization_sidecar"].get("l3_index", {}),
+    )
     return outputs["manifest"]
 
 
@@ -1312,7 +1609,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="hybrid",
         help="Assignment mode. The first implementation uses deterministic assignment for both modes.",
     )
-    parser.add_argument("--model", default=None, help="Reserved for future Gemini-assisted assignment.")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Gemini model for --l3-mode llm-assisted. Defaults to gemini-2.5-flash.",
+    )
+    parser.add_argument(
+        "--l3-mode",
+        choices=sorted(SUPPORTED_L3_MODES),
+        default="deterministic",
+        help=(
+            "L3 promotion mode. deterministic uses checked-in or human-reviewed split rules; "
+            "llm-assisted calls Gemini to propose child L2 taxonomy and L1 assignments."
+        ),
+    )
+    parser.add_argument(
+        "--l3-source-l2-id",
+        action="append",
+        default=[],
+        help=(
+            "Limit llm-assisted child taxonomy proposal to one source L2 id. "
+            "May be passed multiple times. Deterministic L3 splits are still preserved."
+        ),
+    )
     parser.add_argument("--clean", action="store_true", help="Clean generated L2 outputs.")
     parser.add_argument("--dry-run", action="store_true", help="Validate inputs without writing.")
     return parser.parse_args(argv)
@@ -1325,6 +1644,8 @@ def main(argv: list[str] | None = None) -> None:
         output_root=args.output_root,
         mode=args.mode,
         model=args.model,
+        l3_mode=args.l3_mode,
+        l3_source_l2_ids=set(args.l3_source_l2_id) if args.l3_source_l2_id else None,
         clean=bool(args.clean),
         dry_run=bool(args.dry_run),
     )

@@ -1,44 +1,26 @@
 # Virtual Mentor
 
-## Share Memory L1 Store
+Virtual Mentor is a meeting-memory QA agent. The current memory architecture is:
 
-`share_mem/` is the canonical L1 memory store for new work. The multi-agent L1
-implementation now lives under `share_mem/l1/`; `long_term/` now keeps the
-active recall surface and generated L2 view entrypoints. Rebuild the Grace L1
-store with:
-
-```bash
-uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --output-root share_mem --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --taxonomy v2-memory-roles --include-legacy-type --clean
+```text
+short_term current context
+share_mem canonical L1 evidence
+long_term generated L2/L3 topic context
+app memory router
 ```
 
-The old temporal `long_term/tree.json`, snapshots, and summarize/build-tree
-pipeline are archived under `long_term/archive/legacy_temporal_l2_l3/`; new
-short-term and long-term views should use `share_mem/tree.json` as their L1
-source.
+`share_mem/` is the canonical L1 memory store. The multi-agent L1
+implementation lives under `share_mem/l1/`; `long_term/` owns generated L2/L3
+topic sidecars and recall. The old temporal `long_term/tree.json`, snapshots,
+and summarize/build-tree pipeline are archived under
+`long_term/archive/legacy_temporal_l2_l3/`.
 
-Build the active long-term L2 view from the canonical L1 store:
+Canonical architecture docs:
 
-```bash
-uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
-uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
-```
-
-`long_term/l2/` is the active generated L2 topic view over clean L1 evidence,
-not a replacement for `share_mem/tree.json`. It links durable long-term topics
-and may leave low-value or isolated L1 objects unlinked. The older
-`share_mem/build_topic_view.py` topic-tree sidecar remains available for
-experiments, but root-level `share_mem/topic_tree.json`, `topic_updates/`, and
-`topic_index.json` are not part of the current canonical generated contract.
-
-L1 type v2 is canonical for the current Grace output. For side-by-side prompt
-or taxonomy experiments, keep canonical `share_mem/` untouched and write to a
-separate root:
-
-```bash
-uv run share_mem/build_tree.py --output-root share_mem_experiments/type_v2_legacy_<timestamp> --taxonomy v2-memory-roles --include-legacy-type --transcript-dir meeting_recording/transcript/grace --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --clean
-uv run share_mem/compare_l1_runs.py --baseline share_mem/tree.json --candidate share_mem_experiments/type_v2_legacy_<timestamp>/tree.json --out share_mem_experiments/type_v2_legacy_<timestamp>/comparison
-```
-
+- Memory flow: [`doc/l1_l2_update_retrieve_flow.md`](doc/l1_l2_update_retrieve_flow.md)
+- Evaluation design: [`doc/evaluation_plan.md`](doc/evaluation_plan.md)
+- L1 store: [`share_mem/README.md`](share_mem/README.md)
+- Long-term L2/L3: [`long_term/README.md`](long_term/README.md)
 
 ## 安裝
 
@@ -63,7 +45,7 @@ GEMINI_API_KEYS=key_1,key_2,key_3
 # optional: 預設生成模型（bridge / summarize / planner / gate）
 GEMINI_MODEL=gemini-2.5-pro
 # optional: 長期記憶 semantic retrieval 使用的 embedding 模型
-GEMINI_EMBED_MODEL=models/gemini-embedding-001
+GEMINI_EMBED_MODEL=text-embedding-004
 ```
 
 ## 使用方式
@@ -77,10 +59,32 @@ uv run app/main.py
 
 對話記錄會自動儲存在 `record/` 資料夾。
 
+## Memory Commands
+
+Build canonical L1:
+
+```bash
+uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --output-root share_mem --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --taxonomy v2-memory-roles --include-legacy-type --clean
+```
+
+Build and validate L2:
+
+```bash
+uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
+uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation
+```
+
+Update short-term memory from a share_mem snapshot:
+
+```bash
+uv run short_term/update_memory.py --snapshot <share_mem snapshot path>
+```
+
 ## 子模組說明
 
-- 短期記憶：[`short_term/README.md`](short_term/README.md)
-- 長期記憶（時間記憶樹）：[`long_term/README.md`](long_term/README.md)，常用入口：`uv run long_term/cli.py --help`；目前 active surface 是 recall / L2 view，舊 full / incremental pipeline 已移到 `long_term/archive/legacy_temporal_l2_l3/`
+- L1 store: `share_mem/`
+- Long-term L2/L3 recall: `long_term/`
+- Short-term current context: `short_term/`
 - 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
 
 ## Meeting Recording（摘要）

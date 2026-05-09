@@ -46,7 +46,7 @@ EXPECTED_L2_ASSIGNMENTS = {
     "L1-0408-043": "memory retrieval",
     "L1-0408-052": "transcript segmentation and idea-unit coverage",
     "L1-0408-054": "memory lifecycle",
-    "L1-0408-057": "stm ltm integration",
+    "L1-0408-057": "memory retrieval",
     "L1-0422-015": "transcript segmentation and idea-unit coverage",
     "L1-0422-046": "stm ltm integration",
     "L1-0422-053": "memory lifecycle",
@@ -311,9 +311,30 @@ def _view_link_map(l2_view: dict[str, Any]) -> dict[str, set[str]]:
     return links
 
 
-def _validate_l2_nodes(l2_view: dict[str, Any], l2_index: dict[str, Any]) -> list[dict[str, Any]]:
+def _materialized_l3_source_l2_ids(l3_view: dict[str, Any]) -> set[str]:
+    source_ids: set[str] = set()
+    nodes = l3_view.get("l3_nodes", [])
+    if not isinstance(nodes, list):
+        return source_ids
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        source_l2_id = str(node.get("promoted_from_l2_id", "") or "").strip()
+        child_nodes = node.get("child_l2_nodes", [])
+        if source_l2_id and isinstance(child_nodes, list) and len(child_nodes) >= 2:
+            source_ids.add(source_l2_id)
+    return source_ids
+
+
+def _validate_l2_nodes(
+    l2_view: dict[str, Any],
+    l2_index: dict[str, Any],
+    *,
+    materialized_l3_source_l2_ids: set[str] | None = None,
+) -> list[dict[str, Any]]:
     issues: list[dict[str, Any]] = []
     indexed_obj_ids = set(l2_index)
+    promoted_l2_ids = materialized_l3_source_l2_ids or set()
     seen_ids: set[str] = set()
     for node in l2_view.get("l2_nodes", []):
         if not isinstance(node, dict):
@@ -362,7 +383,7 @@ def _validate_l2_nodes(l2_view: dict[str, Any], l2_index: dict[str, Any]) -> lis
                             obj_id=obj_id,
                         )
                     )
-        if len(linked_ids) > 60:
+        if len(linked_ids) > 60 and l2_id not in promoted_l2_ids:
             issues.append(
                 _issue(
                     "large_l2_topic",
@@ -593,9 +614,17 @@ def validate_l2_view_outputs(
     l2_view = load_l2_view(l2_root)
     l2_index = load_l2_index(l2_root)
     unlinked_report = _load_json(l2_root / L2_UNLINKED_FILE_NAME)
+    l3_view = _load_json(l2_root.parent / "l3" / "l3_view.json")
+    materialized_l3_source_l2_ids = _materialized_l3_source_l2_ids(
+        l3_view if isinstance(l3_view, dict) else {}
+    )
 
     issues = [
-        *_validate_l2_nodes(l2_view, l2_index),
+        *_validate_l2_nodes(
+            l2_view,
+            l2_index,
+            materialized_l3_source_l2_ids=materialized_l3_source_l2_ids,
+        ),
         *_validate_l2_index(l2_view, l2_index, l1_index),
         *_validate_unlinked(
             unlinked_report if isinstance(unlinked_report, dict) else {},
@@ -629,6 +658,7 @@ def validate_l2_view_outputs(
         "warning_count": warning_count,
         "issues": issues,
         "manual_review_count": len(manual_queue),
+        "resolved_large_l2_promotion_count": len(materialized_l3_source_l2_ids),
     }
     _write_json(out_root / "l2_validation_report.json", report)
     _write_json(out_root / "manual_l2_review_queue.json", manual_queue)

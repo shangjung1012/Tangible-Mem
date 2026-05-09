@@ -31,25 +31,29 @@ TODO_KEYWORDS = {
 def _build_planner_prompt(query: str, context_hint: str = "") -> str:
     return f"""
 你是「記憶檢索規劃器」(Recall Planner)。
-任務：判斷使用者的問題屬於「簡單/執行型」還是「複雜/演進型」，並決定應搜尋哪些記憶層。
+任務：判斷使用者的問題屬於「簡單/近期型」還是「複雜/長期型」，並決定應搜尋哪些記憶層。
 
 判斷標準：
-- simple（簡單/執行型）：詢問最近的待辦、最近的決策、具體的單一事實。
+- simple（簡單/近期型）：詢問最近的待辦、目前狀態、最近的決策、具體的單一事實。
   範例：「上次會議決定怎麼處理缺失值？」、「我目前的待辦事項是什麼？」
   路由：主要搜尋 short_term
 
-- complex（複雜/演進型）：詢問時間跨度較長的演進、因果關係、方法變更歷史。
-  範例：「我們這半年來模型架構的演進史為何？」、「為什麼後來不繼續用圖神經網路？」
-  路由：搜尋 long_term_l1（會議層）、long_term_l2（階段層）、long_term_l3（計畫層）
+- complex（複雜/長期型）：詢問跨會議演進、因果關係、設計理由、方法變更歷史、topic lifecycle。
+  範例：「我們的 memory 架構是怎麼演進的？」、「為什麼後來不採用 adaptive segmentation？」
+  路由：搜尋 long_term_l1、long_term_l2、long_term_l3
 
 search_targets 可多選：
-  short_term        — 短期記憶（最近 3 次會議的滑動窗）
-  long_term_l1      — 長期記憶的會議層（所有會議的記憶物件）
-  long_term_l2      — 長期記憶的階段層（月度 / 衝刺期摘要）
-  long_term_l3      — 長期記憶的計畫層（研究計畫輪廓）
+  short_term        — 短期記憶：近期狀態、待辦、owner、最新進度。
+  long_term_l1      — 長期 L1 evidence：share_mem/tree.json 內的 immutable memory objects。
+  long_term_l2      — 長期 L2 topic：由 L1 related_topics 正規化後產生的 topic sidecar。
+  long_term_l3      — 長期 L3 promotion：過大的 L2 被提升後的 L3 parent 與 child L2 sidecar。
 
 keywords：提取問題中的搜尋關鍵字。
 time_range_hint：若問題暗示了時間範圍請描述，否則留空字串。
+
+輸出限制：
+- 僅輸出符合 schema 的 JSON。
+- 不要在 JSON 外加入解釋文字。
 
 {f"額外情境：{context_hint}" if context_hint else ""}
 

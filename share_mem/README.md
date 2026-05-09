@@ -1,46 +1,66 @@
 # Share Memory
 
-`share_mem/` is the canonical L1 memory store for new work. It is built from
-meeting transcripts with the canonical multi-agent L1 pipeline in
-`share_mem/l1/`.
+`share_mem/` is the canonical L1 evidence store. It is shared by short-term
+memory, long-term L2/L3 retrieval, and evaluation code.
 
-For collaborator handoff, see `share_mem/STATUS.md`. It records the stable
-integration surfaces and the parts still under the ultimate quality loop.
+## Active Contract
+
+- Canonical aggregate: `share_mem/tree.json`.
+- Per-meeting payloads: `share_mem/meetings/<meeting_id>.json`.
+- Direct lookup index: `share_mem/l1_index.json`.
+- Build entrypoint: `share_mem/build_tree.py`.
+- L1 extraction code: `share_mem/l1/`.
+- Reader API: `share_mem.store`.
+
+Raw L1 evidence is immutable. Do not directly edit existing evidence objects in
+`tree.json` or `meetings/`; use generated sidecars or replayable correction
+artifacts for review decisions.
 
 ## Rebuild
 
 ```bash
-uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --output-root share_mem --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --taxonomy v2-memory-roles --include-legacy-type --clean
+uv run share_mem/build_tree.py \
+  --transcript-dir meeting_recording/transcript/grace \
+  --output-root share_mem \
+  --mode multi-agent \
+  --dataset-profile grace \
+  --model gemini-2.5-pro \
+  --taxonomy v2-memory-roles \
+  --include-legacy-type \
+  --clean
 ```
 
-The command processes every `.txt` file under the transcript directory in
-filename order. For the Grace set, `0307.txt` maps to meeting date
-`2026-03-07`, `0429.txt` maps to `2026-04-29`, and so on.
+The builder processes `.txt` transcripts in filename order. For the Grace set,
+`0307.txt` maps to `2026-03-07`, `0429.txt` maps to `2026-04-29`, and so on.
 
-Build flow:
+## L1 Pipeline
 
 ```text
 share_mem/build_tree.py
   -> share_mem.l1.bridge
   -> share_mem.l1.multi_agent_pipeline
-  -> segmentation / boundary refinement / idea units / extraction packets
-     / typed agents / grounding / verifier / reducer
-  -> outputs under share_mem/
+  -> context windows
+  -> segmentation / boundary refinement
+  -> idea units
+  -> extraction packets
+  -> typed agents
+  -> grounding / verifier / reducer
+  -> share_mem/tree.json
 ```
 
-An extraction packet is a bounded working unit, not a memory layer: the pipeline
-groups related idea units into a small packet so each typed L1 agent sees a
-controlled scope before producing L1 candidates. The packet is intentionally
-between idea units and candidates:
+Use "extraction packet" in collaborator-facing explanations. It means the
+bounded group of idea units passed to typed L1 agents before they emit
+candidates.
 
-```text
-segment -> idea unit -> extraction packet -> candidate -> L1 object
-```
+Current canonical Grace L1 types:
 
-`long_term/` keeps the active recall surface and reserved L2 view entrypoints.
-The old temporal pipeline and older import paths are archived under
-`long_term/archive/legacy_temporal_l2_l3/`; the multi-agent L1 source of truth
-is now under `share_mem/l1/`.
+- `decision`
+- `action_item`
+- `open_issue`
+- `proposal`
+- `argument`
+- `finding`
+- `approach_change`
 
 ## L1 Type v2
 
@@ -120,7 +140,7 @@ step. Later meeting updates are rebuilt against the corrected running state.
 
 ## Generated Outputs
 
-These files are generated and can be rebuilt:
+Generated and rebuildable files include:
 
 - `tree.json`: aggregate L1 meeting store.
 - `meetings/<meeting_id>.json`: one L1 meeting node per meeting.
@@ -130,24 +150,33 @@ These files are generated and can be rebuilt:
 - `l1_quality_index.json`, `memory_relations_index.json`, `memory_activity_index.json`: multi-agent sidecars next to `tree.json`.
 - `legacy_type`: compatibility label for v2 runs, not canonical memory content.
 - optional experiment-only `topic_updates/<meeting_id>.json`, `topic_tree.json`, and `topic_index.json` when `build_topic_view.py` is run.
+- `research_logs/`: multi-agent prompts, responses, and structured API-call logs.
 
-`research_logs/` contains multi-agent stage artifacts and can be large. New
-runs write `extraction_packets.json` for the bounded idea-unit packets consumed
-by typed L1 agents; `extraction_batches.json` may also be present as a legacy
-compatibility alias. Each run includes `prompts/`, `responses/`, and structured
-`api_calls/` debug artifacts for LLM input/output inspection. Do not commit raw
-prompts, responses, credential paths, API keys, or raw Codex JSONL.
+`research_logs/` can be large and may contain raw prompts/responses or local
+paths. Do not commit sensitive logs, API keys, credentials, or raw Codex
+histories.
 
 ## Reader API
 
-Use `share_mem.store` for shared L1 reads:
+Use `share_mem.store` instead of reading the archived long-term tree:
 
 - `load_share_tree()`
 - `iter_meetings(tree)`
 - `iter_l1_objects(tree)`
+- `build_l1_index(tree)`
 - `get_l1_object(obj_id)`
 - `load_recent_meetings(limit=3)`
 
 Short-term and long-term consumers should read through this API instead of
 depending on the archived `long_term/archive/legacy_temporal_l2_l3/tree.json`
 temporal artifact.
+
+Long-term L2 uses this store as its L1 source. Short-term memory can use this
+store or share_mem snapshots to build compact recent working memory.
+
+## Current Generated State
+
+- Grace meetings: 7 (`0307`, `0318`, `0325`, `0408`, `0422`, `0429`, `0506`).
+- L1 objects: 509 in the current pulled mainline state.
+- Active long-term L2 view: `long_term/l2/`.
+- Active short-term JSON state: `short_term/short_term_memory.json`.

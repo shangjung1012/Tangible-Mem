@@ -14,16 +14,15 @@ from gemini_clients import create_gemini_client
 from schema import EMBED_MODEL_NAME
 
 DEFAULT_CACHE_PATH = Path(__file__).parent / ".embedding_cache.json"
-FALLBACK_EMBED_MODELS = ("models/gemini-embedding-001",)
+FALLBACK_EMBED_MODELS = (
+    "text-embedding-004",
+    "gemini-embedding-001",
+    "publishers/google/models/gemini-embedding-2",
+)
 
 
 def _normalize_model_name(model: str) -> str:
-    model = model.strip()
-    if not model:
-        return model
-    if model.startswith("models/"):
-        return model
-    return f"models/{model}"
+    return model.strip()
 
 
 def _text_key(text: str, model: str = "") -> str:
@@ -54,7 +53,8 @@ def _is_not_found_error(exc: Exception) -> bool:
     status_code = getattr(exc, "status_code", None)
     if status_code == 404:
         return True
-    return "NOT_FOUND" in str(exc).upper()
+    msg = str(exc).upper()
+    return "NOT_FOUND" in msg or "NOT FOUND" in msg or "404" in msg
 
 
 class EmbedCache:
@@ -81,6 +81,7 @@ class EmbedCache:
         """Flush cache to disk only when new values were added."""
         if not self._dirty:
             return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
             json.dumps(self._data, ensure_ascii=False),
             encoding="utf-8",
@@ -143,7 +144,7 @@ def embed_text(
     if last_exc:
         raise RuntimeError(
             "Embedding model unavailable. Try setting GEMINI_EMBED_MODEL, "
-            "for example 'models/gemini-embedding-001'."
+            "for example 'text-embedding-004' or 'gemini-embedding-001'."
         ) from last_exc
     raise RuntimeError("Embedding failed unexpectedly without an exception.")
 

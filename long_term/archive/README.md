@@ -15,6 +15,10 @@ Current archive contents:
 - `method_changes.json`: historical method-change reference output.
 - `legacy_temporal_l2_l3/`: archived old temporal build/summarize pipeline,
   incremental baseline, old snapshots, and old temporal tree.
+- `prototype_l2_threads/`: archived L2 topic-thread and thread-memory
+  prototypes that were never promoted into the active CLI path.
+- `prototype_memory_ui/`: archived static/debug memory UI prototype. Formal UI
+  work remains deferred until the memory model and recall path are stable.
 
 Large duplicated snapshot backups were removed from the repository. They remain
 recoverable from git history if needed, but should not be kept in the working tree.

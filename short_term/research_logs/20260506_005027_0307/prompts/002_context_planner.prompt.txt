@@ -1,0 +1,92 @@
+你是 Virtual Mentor short-term memory pipeline 的受限子代理。
+你不能直接更新 official memory，不能輸出完整 memory。
+若可使用工具，需要讀 current memory 時只能呼叫 read_short_term_memory。
+若要提出記憶候選，必須依照指定 JSON schema 輸出候選；後續 pipeline 會驗證、合併並寫入 DB。
+evidence_lines/evidence_quote 用於 research log/debug，盡量填寫，但不是所有候選的硬性判斷條件。
+你必須逐一處理輸入中的所有 idea units；不能因為資訊不完整就忽略，應使用 no_op 或 uncertainty 說明。
+不得臆測 owner、status、priority、決策結果；不確定時填 unknown 或輸出 uncertainty。
+不得改寫未被要求負責的 section。
+輸出必須是 JSON only。
+
+你只負責規劃下一次讀取範圍，不抽取記憶。
+若上一段開頭像延續前文，要求 lookback。
+若上一段結尾句意未完、討論正在轉折、有人提出問題但尚未回答，要求 lookahead。
+不要為了抽取方便要求過大範圍。
+
+限制：
+- forward window 建議 80 行。
+- lookback_lines 不得超過 20。
+- lookahead_lines 不得超過 40。
+- start_line 必須從 processed_until_line + 1 開始，除非正在補上下文。
+
+Meeting:
+- meeting_id: 0307
+- total_lines: 65
+- processed_until_line: 0
+
+Transcript overview:
+{
+  "ok": true,
+  "meeting_id": "0307",
+  "source_file": "/home/kellychen/virtual-mentor/meeting_recording/transcript/grace/0307.txt",
+  "imported_at_utc": "2026-05-05T16:50:27Z",
+  "line_count": 65,
+  "first_lines": [
+    {
+      "line_number": 1,
+      "speaker": "SPEAKER_03",
+      "text": "像我現在是收麥克風但其實現在的Speak可能只有123而已反正他會自己去判斷這部分如果到時候我們自己要做的話其實你可以簡化成我們如果是Online像Zoom或是Google MeetZoom的話他會直接假設大家是Online Meeting的話他誰講的話那個就是直接attach好是哪一個框來的",
+      "raw_line": "[SPEAKER_03]: 像我現在是收麥克風但其實現在的Speak可能只有123而已反正他會自己去判斷這部分如果到時候我們自己要做的話其實你可以簡化成我們如果是Online像Zoom或是Google MeetZoom的話他會直接假設大家是Online Meeting的話他誰講的話那個就是直接attach好是哪一個框來的"
+    },
+    {
+      "line_number": 2,
+      "speaker": "SPEAKER_03",
+      "text": "哦 那看起來但是我們應該比較常都是在實體面對 就是你這個話是有點像你要處於更困難的時候如果實體上你這個model要正確的分辨這句話是誰講的對 那我意思如果你們實驗上的話如果簡化一點就你省略這個步驟的話就當然如果WhisperX它超準超強的就OK對 那但是你可以假設某些時候你可以假設一次我現在的譬如說Assuming",
+      "raw_line": "[SPEAKER_03]: 哦 那看起來但是我們應該比較常都是在實體面對 就是你這個話是有點像你要處於更困難的時候如果實體上你這個model要正確的分辨這句話是誰講的對 那我意思如果你們實驗上的話如果簡化一點就你省略這個步驟的話就當然如果WhisperX它超準超強的就OK對 那但是你可以假設某些時候你可以假設一次我現在的譬如說Assuming"
+    },
+    {
+      "line_number": 3,
+      "speaker": "SPEAKER_03",
+      "text": "我的data我的meeting的來源是來長的嗎像我們現在的話如果有一個如果是Zoom的話它直接你拿到transcript它會直接就是說現在是我這邊聲音進來的就是我講的然後微信講它就會是微信它是直接標靠的對好但是因為我們現在的就是的來源都是嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯",
+      "raw_line": "[SPEAKER_03]: 我的data我的meeting的來源是來長的嗎像我們現在的話如果有一個如果是Zoom的話它直接你拿到transcript它會直接就是說現在是我這邊聲音進來的就是我講的然後微信講它就會是微信它是直接標靠的對好但是因為我們現在的就是的來源都是嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯"
+    }
+  ],
+  "last_lines": [
+    {
+      "line_number": 63,
+      "speaker": "SPEAKER_00",
+      "text": "我只有一些小warning而已我也是warning的 希望是可以跑啊好像沒有什麼差是嗎 我不知道有什麼差我問GPT 我跟你講 你是跑什麼我的好像還好欸我把他就是 他現在是跑就是這樣了 我是Large 3跟我差不多 然後你Badge沒有設定我沒有特別設欸",
+      "raw_line": "[SPEAKER_00]: 我只有一些小warning而已我也是warning的 希望是可以跑啊好像沒有什麼差是嗎 我不知道有什麼差我問GPT 我跟你講 你是跑什麼我的好像還好欸我把他就是 他現在是跑就是這樣了 我是Large 3跟我差不多 然後你Badge沒有設定我沒有特別設欸"
+    },
+    {
+      "line_number": 64,
+      "speaker": "SPEAKER_00",
+      "text": "那個應該沒什麼所謂 本來沒有明智障碍Badge只是影響你的生存而已 它不會影響結果喔 我想到了喔沒事 你先講你先講先講我覺得只要很短的結果時間應該就還好嘛所以我一開始也是抱一堆粥阿所以我們前面有錄音嗎?我從中間開始錄這樣有點尷尬",
+      "raw_line": "[SPEAKER_00]: 那個應該沒什麼所謂 本來沒有明智障碍Badge只是影響你的生存而已 它不會影響結果喔 我想到了喔沒事 你先講你先講先講我覺得只要很短的結果時間應該就還好嘛所以我一開始也是抱一堆粥阿所以我們前面有錄音嗎?我從中間開始錄這樣有點尷尬"
+    },
+    {
+      "line_number": 65,
+      "speaker": "SPEAKER_01",
+      "text": "太好了 中間有蠻多東西的我是從菜市場開始講那個的你剛剛今天會議有錄嗎對我剛剛有一部錄影喔喔喔 那可以可以可以 謝謝但從你們中演變之後開始喔喔喔 OKOKOK沒有啦 時間不太久了",
+      "raw_line": "[SPEAKER_01]: 太好了 中間有蠻多東西的我是從菜市場開始講那個的你剛剛今天會議有錄嗎對我剛剛有一部錄影喔喔喔 那可以可以可以 謝謝但從你們中演變之後開始喔喔喔 OKOKOK沒有啦 時間不太久了"
+    }
+  ],
+  "recommended_start_line": 1,
+  "recommended_page_size": 30,
+  "max_page_size": 80
+}
+
+Current memory summary:
+{
+  "memory_version": 0,
+  "last_updated_meeting_id": "",
+  "meeting_history_count": 0,
+  "meeting_window_count": 0,
+  "action_items_count": 0,
+  "method_changes_count": 0,
+  "experiment_todos_count": 0,
+  "next_meeting_focus_count": 0
+}
+
+Planner history:
+[]

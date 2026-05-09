@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 DEFAULT_MODEL_NAME = "gemini-2.5-flash"
-EMBED_MODEL_NAME = "models/text-embedding-004"
+EMBED_MODEL_NAME = "text-embedding-004"
 
 MEMORY_OBJ_TYPES = {
     "decision",       # 會議中做出的決策或結論

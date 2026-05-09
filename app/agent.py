@@ -12,6 +12,7 @@ from google.genai import types
 
 from config import MODEL_NAME, SYSTEM_PROMPT
 from tools.memory_tools import (
+    get_memory_context,
     get_long_term_memory_context,
     get_short_term_memory_context,
 )
@@ -34,6 +35,7 @@ class MeetingQAAgent:
         self.max_retries = max(1, max_retries)
         self.client = client
         self._tools: dict[str, Callable[..., Any]] = {
+            "get_memory_context": get_memory_context,
             "get_short_term_memory_context": get_short_term_memory_context,
             "get_long_term_memory_context": get_long_term_memory_context,
         }

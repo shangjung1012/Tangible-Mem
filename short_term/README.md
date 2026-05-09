@@ -23,6 +23,7 @@
 - `snapshot_loader.py`：載入 bridge snapshot、檢查 `meetings[]`，依 `meeting_date`、`timestamp`、`meeting_id` 排序並選出最新會議。
 - `merge.py`：負責候選 unit 選取、Gemini merge prompt、merge decision 解析與驗證、timeout/retry，以及把 `create_new` 或 `merge_existing` 套用到記憶狀態。
 - `update_memory.py`：CLI 與主要更新流程。它載入 snapshot 和目前記憶、逐一處理最新會議的 L1 物件、更新 retention 狀態，最後寫出 canonical JSON 與 per-meeting snapshot。
+- `retrieval/short_term_context.py`：正式短期記憶查詢介面。它讀取 `short_term_memory.json`，根據 query 與 unit 的 `title`、`summary`、`types`、`related_topics` 做 deterministic ranking，並輸出 app 可直接注入 prompt 的 compact context。
 - `io_utils.py`：JSON 讀寫、字串正規化、去重與 UTC timestamp。
 - `reset_short_term_memory.sh`：清除短期記憶的 runtime/generated artifacts，例如 `short_term_memory.json`、舊 DB 殘留檔與 snapshots；不會刪除 `meeting_recording/` 底下的來源 transcripts。
 - `run_all_short_term_updates.sh`：依版本排序批次處理 `share_mem/snapshots/*_bridge_*.json`，並依 snapshot 內實際選出的 latest meeting 去重，避免同一場會議被重複更新。
@@ -119,10 +120,27 @@ START_FROM=0318 ./run_all_short_term_updates.sh
 - `START_FROM`：批次腳本從指定 meeting id 開始處理。
 - `SNAPSHOT_DIR`：批次腳本的預設 snapshot 來源目錄，可被第一個位置參數覆蓋。
 
+## Retrieval
+
+正式 retrieval 入口：
+
+```python
+short_term.retrieval.short_term_context.retrieve_short_term_context(
+    query,
+    api_key,
+    retrieval_mode="hybrid",
+    top_k=6,
+    max_context_chars=4000,
+)
+```
+
+目前版本是 deterministic lexical ranking，`api_key` 與 `retrieval_mode` 先保留在介面中，方便之後替換成 semantic/hybrid retrieval 而不改 app 呼叫端。
+
+`app/memory_context.py::retrieve_short_term_context_adapter` 已經接到這個 module；router 判定問題需要 short-term 時，會回傳 `S###` unit 的摘要、最近更新會議與 source L1 ids。
+
 ## 目前限制
 
-- 目前是 update-only 流程，只負責產生與更新短期記憶 JSON。
-- 尚未接到 app retrieval path；應用程式端還沒有查詢短期記憶的介面。
+- 目前 retrieval 是 lexical ranking，尚未使用 embedding 或 LLM reranker。
 - 目前 canonical 狀態是 JSON，不是 SQLite；reset script 仍會清掉一些舊 DB/runtime 殘留檔。
 - 每個 L1 object 的 merge decision 需要 LLM 呼叫，會帶來成本、latency、timeout 與 transient failure 風險。
 - `short_term/snapshots/<meeting_id>.json` 是人類可讀的 generated output，主要供檢視與除錯，不應手動當成來源資料維護。
