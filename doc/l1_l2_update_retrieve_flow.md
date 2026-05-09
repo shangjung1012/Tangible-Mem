@@ -1,6 +1,6 @@
 # L1/L2 And Short-Term Memory Flow
 
-Last updated: 2026-05-09
+Last updated: 2026-05-10
 
 This is the canonical architecture note for the current memory implementation.
 It covers the active L1/L2 long-term path, the current short-term path, and the
@@ -185,9 +185,14 @@ materialization is:
 
 ```text
 L3-transcript-segmentation-and-idea-unit-coverage
-  L2-transcript-segmentation: 37 L1
-  L2-idea-unit-extraction-and-coverage-repair: 39 L1
-  L2-evidence-grounding-and-line-coverage: 24 L1
+  L2-fixed-vs-dynamic-chunking: 18 L1
+  L2-window-and-boundary-selection: 14 L1
+  L2-tool-calling-transcript-reading: 9 L1
+  L2-idea-unit-generation: 31 L1
+  L2-missing-line-coverage: 10 L1
+  L2-repair-and-coarsening: 9 L1
+  L2-cross-window-continuity: 9 L1
+  L2-evidence-grounding-and-line-coverage: 9 L1
 ```
 
 LLM status for L3:
@@ -313,6 +318,23 @@ Prompt sections are ordered evidence-first:
 The global topic map is navigation context only. Concrete facts should be
 grounded in L1 evidence; L2/child L2 supplies cross-meeting evolution; L3 is a
 topic family layer.
+
+Retrieval evaluation has an offline deterministic mode for repeatable parameter
+checks:
+
+```bash
+uv run python long_term/evaluate_retrieval.py \
+  --queries long_term/eval/long_term_retrieval_queries.jsonl \
+  --out long_term/eval \
+  --no-llm \
+  --retrieval-mode lexical
+```
+
+In this mode `--no-llm` uses a heuristic recall plan and lexical L1 retrieval.
+It does not call the Gemini planner, embedding API, or final answer LLM.
+`strict_gold_obj_ids` can preserve older exact seed expectations while
+`expected_obj_ids` records the current acceptable L1 evidence set used for
+regression scoring.
 
 ## Demo-Safe Questions
 

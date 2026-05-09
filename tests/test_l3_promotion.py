@@ -156,8 +156,13 @@ class L3PromotionTests(unittest.TestCase):
         self.assertEqual(
             record["mapping"]["new_child_l2_ids"],
             [
-                "L2-transcript-segmentation",
-                "L2-idea-unit-extraction-and-coverage-repair",
+                "L2-fixed-vs-dynamic-chunking",
+                "L2-window-and-boundary-selection",
+                "L2-tool-calling-transcript-reading",
+                "L2-idea-unit-generation",
+                "L2-missing-line-coverage",
+                "L2-repair-and-coarsening",
+                "L2-cross-window-continuity",
                 "L2-evidence-grounding-and-line-coverage",
             ],
         )
@@ -464,11 +469,11 @@ class L3PromotionTests(unittest.TestCase):
         self.assertEqual(assigned_ids, {"L1-a", "L1-b", "L1-c", "L1-d"})
         self.assertEqual(
             materialized["l3_index"]["L1-a"]["child_l2_id"],
-            "L2-transcript-segmentation",
+            "L2-window-and-boundary-selection",
         )
         self.assertEqual(
             materialized["l3_index"]["L1-b"]["child_l2_id"],
-            "L2-idea-unit-extraction-and-coverage-repair",
+            "L2-missing-line-coverage",
         )
         self.assertEqual(
             materialized["l3_index"]["L1-c"]["child_l2_id"],
@@ -512,11 +517,11 @@ class L3PromotionTests(unittest.TestCase):
 
         def assignment_proposer(l2_node: dict, child_l2_candidates: list[dict]) -> list[dict]:
             self.assertEqual(l2_node["l2_id"], node["l2_id"])
-            self.assertEqual(len(child_l2_candidates), 3)
+            self.assertEqual(len(child_l2_candidates), 8)
             return [
                 {
                     "obj_id": "L1-a",
-                    "child_l2_id": "L2-transcript-segmentation",
+                    "child_l2_id": "L2-window-and-boundary-selection",
                     "confidence": 0.93,
                     "reason": "windowing and segmentation",
                 },

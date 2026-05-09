@@ -139,26 +139,32 @@ Run the lightweight retrieval-only parameter grid:
 uv run python long_term/evaluate_retrieval.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out long_term/eval \
-  --no-llm
+  --no-llm \
+  --retrieval-mode lexical
 ```
 
-The default CLI run is a quick single-parameter smoke pass. Pass comma-separated
-values such as `--top-k-raw 10,20,30` or `--topic-size-penalty 0,0.05,0.10`
-when you want a larger grid. The report compares expected L1/L2/L3 hits, prompt
-character budget, omitted events, and whether a large L2 was expanded without
-child split context. It does not call a final answer LLM; retrieval may still
-use embeddings.
+With `--no-llm --retrieval-mode lexical`, the eval path is deterministic and
+offline: it uses a heuristic recall plan and lexical L1 retrieval, so it does
+not call the Gemini planner, embedding API, or a final answer LLM. Use
+`--retrieval-mode semantic` only when you intentionally want embedding-backed
+retrieval. The default grid covers the current smoke surface for `top_k_raw`,
+seed count, child-L2 events, expanded topic count, and topic-size penalty. The
+report compares expected L1/L2/L3 hits, prompt character budget, omitted events,
+and whether a large L2 was expanded without child split context.
 
 ## Current Generated State
 
 - Source L1: 7 Grace meetings, 509 L1 objects.
 - L2 view: 15 L2 topics, 477 linked L1 objects, 32 unlinked L1 objects.
 - L2 validation: 0 severe issues; 0 warnings.
-- L3 validation: 0 severe issues; 8 warnings, all from oversized child L2 /
-  prompt-slice diagnostics rather than assignment coverage failures.
-- Materialized L3: 2 parents, 6 child L2 topics, 184 assigned L1 objects, 0 unassigned L1 objects.
-- Reviewed deterministic L3: `L3-transcript-segmentation-and-idea-unit-coverage`.
-- LLM-assisted L3: `L3-memory-evaluation-strategy`.
+- L3 validation: 0 severe issues; 11 warnings, all prompt-slice diagnostics
+  rather than assignment coverage or oversized-child failures.
+- Materialized L3: 2 parents, 11 child L2 topics, 184 assigned L1 objects, 0 unassigned L1 objects.
+- Reviewed deterministic L3: `L3-transcript-segmentation-and-idea-unit-coverage`
+  and `L3-memory-evaluation-strategy`.
+- Retrieval eval: 8 demo-safe queries, 32 offline lexical parameter runs, best
+  acceptable L1 recall 1.0, strict historical L1 recall 0.0833, L2 hit rate
+  1.0, L3 hit rate 1.0, and prompt-budget pass rate 1.0.
 
 ## Archive Boundary
 

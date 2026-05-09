@@ -378,6 +378,29 @@ class RecallL2ViewTests(unittest.TestCase):
         self.assertEqual(result["long_term_l2"][0]["source"], "long_term_l2")
         self.assertEqual(result["long_term_l2"][0]["l2_id"], "L2-memory-retrieval")
 
+    def test_lexical_recall_does_not_call_embedding_api(self) -> None:
+        with patch.object(recall, "embed_text", side_effect=AssertionError("embedding called")):
+            result = recall.recall(
+                query="semantic L1 evidence recall",
+                plan={
+                    "complexity": "simple",
+                    "search_targets": ["long_term_l1", "long_term_l2"],
+                    "keywords": ["semantic", "evidence"],
+                },
+                tree=_tree(),
+                api_key="",
+                l2_index=_l2_index(),
+                l2_view=_l2_view(),
+                l3_view={},
+                l3_index={},
+                relations_index={},
+                include_retrieval_debug=True,
+                retrieval_mode="lexical",
+            )
+
+        self.assertEqual(result["long_term_l1"][0]["obj_id"], "L1-0307-001")
+        self.assertEqual(result["retrieval_debug"]["retrieval_mode"], "lexical")
+
     def test_formatter_orders_l1_evidence_before_l2_context(self) -> None:
         formatted = recall.format_recall_for_prompt(
             {
@@ -468,6 +491,113 @@ class RecallL2ViewTests(unittest.TestCase):
 
         self.assertEqual(global_map["l3_families"][0]["child_l2"][0]["event_count"], 5)
         self.assertEqual(global_map["l2_topics"][0]["event_count"], 7)
+
+    def test_l2_ranking_prefers_query_label_match_over_generic_seed_majority(self) -> None:
+        l1_results = [
+            {"obj_id": f"L1-life-{index}", "score": 0.90, "importance": 0.8}
+            for index in range(5)
+        ] + [
+            {"obj_id": f"L1-retrieval-{index}", "score": 0.88, "importance": 0.8}
+            for index in range(2)
+        ]
+        l2_index = {
+            **{
+                row["obj_id"]: {"l2_id": "L2-memory-lifecycle"}
+                for row in l1_results[:5]
+            },
+            **{
+                row["obj_id"]: {"l2_id": "L2-memory-retrieval"}
+                for row in l1_results[5:]
+            },
+        }
+        l2_view = {
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-memory-lifecycle",
+                    "label": "memory lifecycle",
+                    "current_state": "Forgetting, importance decay, and lifecycle rules.",
+                    "event_count": 31,
+                    "timeline_digest": [{"obj_id": row["obj_id"]} for row in l1_results[:5]],
+                },
+                {
+                    "l2_id": "L2-memory-retrieval",
+                    "label": "memory retrieval",
+                    "current_state": "Retrieval starts from L1 evidence and expands topic context.",
+                    "event_count": 31,
+                    "timeline_digest": [{"obj_id": row["obj_id"]} for row in l1_results[5:]],
+                },
+            ]
+        }
+
+        selected, _, _ = recall.select_layered_l2_context(
+            "long-term memory retrieval current behavior",
+            l1_results,
+            l2_index,
+            l2_view,
+            max_relevant_l2_summaries=1,
+            max_expanded_l2_topics=1,
+        )
+
+        self.assertEqual(selected[0]["l2_id"], "L2-memory-retrieval")
+
+    def test_l2_ranking_does_not_let_tiny_off_topic_node_beat_query_match(self) -> None:
+        l1_results = [
+            {"obj_id": "L1-agent-1", "score": 0.53, "importance": 0.52},
+            {"obj_id": "L1-agent-2", "score": 0.52, "importance": 0.52},
+            {"obj_id": "L1-demo", "score": 0.51, "importance": 0.78},
+            {"obj_id": "L1-other-1", "score": 0.50, "importance": 0.7},
+            {"obj_id": "L1-other-2", "score": 0.49, "importance": 0.7},
+            {"obj_id": "L1-other-3", "score": 0.48, "importance": 0.7},
+            {"obj_id": "L1-other-4", "score": 0.47, "importance": 0.7},
+            {"obj_id": "L1-other-5", "score": 0.46, "importance": 0.7},
+        ]
+        l2_index = {
+            "L1-agent-1": {"l2_id": "L2-agentic-pipeline-control"},
+            "L1-agent-2": {"l2_id": "L2-agentic-pipeline-control"},
+            "L1-demo": {"l2_id": "L2-project-demo-strategy"},
+            "L1-other-1": {"l2_id": "L2-other-a"},
+            "L1-other-2": {"l2_id": "L2-other-b"},
+            "L1-other-3": {"l2_id": "L2-other-c"},
+            "L1-other-4": {"l2_id": "L2-other-d"},
+            "L1-other-5": {"l2_id": "L2-other-e"},
+        }
+        l2_nodes = [
+            {
+                "l2_id": "L2-agentic-pipeline-control",
+                "label": "agentic pipeline control",
+                "current_state": "The agent-based architecture separates manager dispatch from workers.",
+                "event_count": 60,
+                "timeline_digest": [{"obj_id": "L1-agent-1"}, {"obj_id": "L1-agent-2"}],
+            },
+            {
+                "l2_id": "L2-project-demo-strategy",
+                "label": "project demo strategy",
+                "current_state": "Demo planning and visualization strategy.",
+                "event_count": 6,
+                "timeline_digest": [{"obj_id": "L1-demo"}],
+            },
+        ]
+        for index in range(1, 6):
+            l2_nodes.append(
+                {
+                    "l2_id": f"L2-other-{chr(96 + index)}",
+                    "label": f"other topic {index}",
+                    "current_state": "Unrelated context.",
+                    "event_count": 25,
+                    "timeline_digest": [{"obj_id": f"L1-other-{index}"}],
+                }
+            )
+
+        selected, _, _ = recall.select_layered_l2_context(
+            "manager-agent 架構是怎麼演變出來的？",
+            l1_results,
+            l2_index,
+            {"l2_nodes": l2_nodes},
+            max_relevant_l2_summaries=1,
+            max_expanded_l2_topics=1,
+        )
+
+        self.assertEqual(selected[0]["l2_id"], "L2-agentic-pipeline-control")
 
 
 if __name__ == "__main__":

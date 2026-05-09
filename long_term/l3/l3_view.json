@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-05-09T16:52:16Z",
+  "generated_at_utc": "2026-05-09T17:34:43Z",
   "source": "long_term_l3_materialization",
   "materialized_l3_count": 2,
   "l3_nodes": [
@@ -658,63 +658,47 @@
       },
       "child_l2_nodes": [
         {
-          "l2_id": "L2-transcript-segmentation",
-          "label": "transcript segmentation",
+          "l2_id": "L2-fixed-vs-dynamic-chunking",
+          "label": "fixed vs dynamic chunking",
           "source": "long_term_l3_materialized_child_l2",
           "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-          "split_reason": "Separate transcript chunking, segment boundaries, and windowing decisions.",
+          "split_reason": "Separate fixed-size chunking, dynamic chunking, adaptive segmentation, and top-down/bottom-up chunk strategy decisions.",
           "assignment_criteria": [
-            "segment",
-            "segmentation",
-            "chunk",
-            "window",
-            "boundary"
+            "fixed chunk",
+            "fixed-size",
+            "fixed size",
+            "dynamic chunk",
+            "dynamic chunking",
+            "adaptive segmentation",
+            "adaptive window",
+            "top-down",
+            "bottom-up",
+            "per-turn",
+            "chunk size"
           ],
-          "current_state": "This child L2 has 38 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 18 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
-            "L1-0318-003",
             "L1-0318-004",
-            "L1-0325-008",
-            "L1-0408-005",
-            "L1-0408-013",
-            "L1-0408-019",
-            "L1-0422-010",
-            "L1-0422-016",
             "L1-0422-020",
             "L1-0422-024",
             "L1-0429-024",
+            "L1-0429-025",
             "L1-0429-026",
             "L1-0429-030",
-            "L1-0429-037",
-            "L1-0429-050",
+            "L1-0429-039",
             "L1-0429-057",
             "L1-0429-063",
             "L1-0429-069",
+            "L1-0429-070",
+            "L1-0429-071",
             "L1-0429-072",
             "L1-0429-074",
-            "L1-0429-075",
-            "L1-0429-094",
-            "L1-0429-105",
-            "L1-0429-158",
-            "L1-0429-162",
-            "L1-0429-164",
-            "L1-0429-167",
-            "L1-0506-001",
-            "L1-0506-002",
-            "L1-0506-004",
-            "L1-0506-005",
             "L1-0506-008",
             "L1-0506-011",
-            "L1-0506-012",
-            "L1-0506-013",
-            "L1-0506-014",
-            "L1-0506-022",
-            "L1-0506-030"
+            "L1-0506-013"
           ],
           "meeting_ids": [
             "0318",
-            "0325",
-            "0408",
             "0422",
             "0429",
             "0506"
@@ -723,50 +707,8 @@
             {
               "meeting_id": "0318",
               "meeting_date": "2026-03-18",
-              "obj_id": "L1-0318-003",
-              "summary": "A sequential agent-based text processing method, where each agent summarizes a chunk while incorporating the previous agent's output, is susceptible to two key weaknesses: the p..."
-            },
-            {
-              "meeting_id": "0318",
-              "meeting_date": "2026-03-18",
               "obj_id": "L1-0318-004",
               "summary": "Chunking long text based on a fixed sentence count is a flawed method because it can break sentences, impairing the meaning and context needed for processing."
-            },
-            {
-              "meeting_id": "0325",
-              "meeting_date": "2026-03-25",
-              "obj_id": "L1-0325-008",
-              "summary": "To enable audio playback for the user, the system will use timestamps from the transcript to locate and retrieve the corresponding audio segment. This requires adding a new fiel..."
-            },
-            {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-005",
-              "summary": "The selected meeting dataset is provided in an MRT file format. This is a complete transcript format containing segments with speaker labels, duration/timestamps, and text conte..."
-            },
-            {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-013",
-              "summary": "An unresolved issue is whether to pre-process transcripts into smaller chunks before LLM analysis for memory extraction, as processing the entire document at once may lead to po..."
-            },
-            {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-019",
-              "summary": "As a simpler alternative for pre-processing, segment the transcript by splitting on periods or by speaker turns."
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-010",
-              "summary": "It was proposed that the task of LLM-based transcript segmentation could be framed as a 'tool calling' problem, where the LLM dynamically determines when to package preceding co..."
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-016",
-              "summary": "The iterative transcript chunking method is considered superior to fixed, non-overlapping chunking because its ability to iterate \"up and down\" the transcript allows it to ident..."
             },
             {
               "meeting_id": "0422",
@@ -789,6 +731,12 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-025",
+              "summary": "The system processes transcripts using a fixed chunk size of 20 lines, a value that was set arbitrarily. An alternative, unimplemented approach of dynamic chunking—where the sys..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-026",
               "summary": "A 'dynamic' chunking method was adopted for processing transcripts, replacing a computationally prohibitive per-turn approach. This method involves predicting topic block length..."
             },
@@ -801,14 +749,8 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-037",
-              "summary": "The specific mechanism for the proposed 'dynamic' chunking method is not yet defined. It is unclear how the system will \"predict the length of a topic block\" or how the LLM will..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-050",
-              "summary": "To address poor transcript quality, it was proposed to use an LLM to correct the existing 180 minutes of meeting transcripts."
+              "obj_id": "L1-0429-039",
+              "summary": "逐輪處理(per-turn processing)的方法在計算上成本過高，因此提出一種「動態」分塊方法作為折衷方案，該方法會預測主題區塊的長度來決定處理單元的大小。"
             },
             {
               "meeting_id": "0429",
@@ -831,6 +773,18 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-070",
+              "summary": "A key finding regarding the top-down processing approach is that the number of topics or groups the LLM identifies within a given block of text is highly variable and depends on..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-071",
+              "summary": "A proposed dynamic, bottom-up processing method that forms processing blocks by predicting the number of conversational turns that constitute a single topic. These dynamically s..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-072",
               "summary": "A proposed 'top-down' processing strategy where a large chunk of text (e.g., 40-100 sentences) is fed to the LLM, which then determines how many distinct topics or objects are c..."
             },
@@ -841,10 +795,103 @@
               "summary": "A key argument against a top-down processing strategy (feeding large text chunks to an LLM) is that it grants the LLM full discretion over topic segmentation, which can lead to..."
             },
             {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-008",
+              "summary": "The optimal strategy for transcript segmentation remains an open question. A past experiment with adaptive segmentation performed poorly, and while the current system uses a fix..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-011",
+              "summary": "A hypothetical adaptive segmentation method was proposed where the model would first predict if a topic is 'long' or 'short', jump a corresponding number of lines, check for top..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-013",
+              "summary": "Adaptive segmentation is considered impractical. A past experiment showed it performed poorly, and the difficulty in predicting precise boundaries makes the process random. Furt..."
+            }
+          ],
+          "event_count": 18
+        },
+        {
+          "l2_id": "L2-window-and-boundary-selection",
+          "label": "window and boundary selection",
+          "source": "long_term_l3_materialized_child_l2",
+          "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+          "split_reason": "Separate processing-window size, boundary selection, topic block length, overlap, and line-range control.",
+          "assignment_criteria": [
+            "window",
+            "80-line",
+            "80 line",
+            "40 lines",
+            "20 lines",
+            "topic block",
+            "boundary",
+            "overlap",
+            "line immediately following",
+            "resume"
+          ],
+          "current_state": "This child L2 has 14 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "linked_obj_ids": [
+            "L1-0408-022",
+            "L1-0422-007",
+            "L1-0422-016",
+            "L1-0429-028",
+            "L1-0429-037",
+            "L1-0429-068",
+            "L1-0429-094",
+            "L1-0429-158",
+            "L1-0429-164",
+            "L1-0429-175",
+            "L1-0506-001",
+            "L1-0506-002",
+            "L1-0506-004",
+            "L1-0506-014"
+          ],
+          "meeting_ids": [
+            "0408",
+            "0422",
+            "0429",
+            "0506"
+          ],
+          "timeline_digest": [
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-022",
+              "summary": "作為一種簡化的預處理方法，可以考慮按句點或發言輪次來切分文本。此方法的理由是，一個發言輪次或一個句子通常只包含一個主要思想，因此這種切分方式可能已經足夠。"
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-007",
+              "summary": "The data pipeline for memory updates starts with a WhisperX transcript, which is then manually reviewed and corrected to align each 'turn' with a single speaker's complete utter..."
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-016",
+              "summary": "The iterative transcript chunking method is considered superior to fixed, non-overlapping chunking because its ability to iterate \"up and down\" the transcript allows it to ident..."
+            },
+            {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-075",
-              "summary": "The concern of information loss when processing transcripts in chunks is mitigated because processing can resume exactly where the previous chunk left off, ensuring any truncate..."
+              "obj_id": "L1-0429-028",
+              "summary": "Using a fixed, large chunk of text (e.g., 20-40 lines) as input is a valid approach because the LLM can identify and process multiple distinct topics ('objects') within that sin..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-037",
+              "summary": "The specific mechanism for the proposed 'dynamic' chunking method is not yet defined. It is unclear how the system will \"predict the length of a topic block\" or how the LLM will..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-068",
+              "summary": "The LLM will process transcript data in chunks (e.g., 40 lines at a time), with subsequent processing passes resuming from the line immediately following the previous block. Thi..."
             },
             {
               "meeting_id": "0429",
@@ -855,20 +902,8 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-105",
-              "summary": "The system's prompt design reliably ensures that the LLM's first step when processing a new meeting transcript is to call the function to get a memory overview."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-158",
               "summary": "The initial approach of processing the entire transcript at once for memory updates was abandoned due to the context window becoming too large, particularly when requiring JSON..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-162",
-              "summary": "A major drawback of the current memory update process is that using the same large text chunk to update multiple memory nodes will cause them to lose their distinctiveness and c..."
             },
             {
               "meeting_id": "0429",
@@ -879,8 +914,8 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-167",
-              "summary": "The memory update process has a critical unresolved issue where using a single large input chunk containing multiple topics to update different memory nodes can cause \"informati..."
+              "obj_id": "L1-0429-175",
+              "summary": "To address semantic duplication in memory updates, one proposed solution is to reduce the size of the input window (e.g., from 80 lines) provided to the update function."
             },
             {
               "meeting_id": "0506",
@@ -903,89 +938,133 @@
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-005",
-              "summary": "To evaluate segmentation performance, a proposed method is to create a ground truth by manually labeling topic cut points in a sample transcript. This would enable calculating p..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-008",
-              "summary": "The optimal strategy for transcript segmentation remains an open question. A past experiment with adaptive segmentation performed poorly, and while the current system uses a fix..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-011",
-              "summary": "A hypothetical adaptive segmentation method was proposed where the model would first predict if a topic is 'long' or 'short', jump a corresponding number of lines, check for top..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-012",
-              "summary": "Complex adaptive search methods for finding precise segment boundaries are likely unnecessary because the LLM is capable of processing a larger, less precise chunk of text and s..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-013",
-              "summary": "Adaptive segmentation is considered impractical. A past experiment showed it performed poorly, and the difficulty in predicting precise boundaries makes the process random. Furt..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-014",
               "summary": "A past experiment with adaptive window segmentation performed poorly, leading to an increase in rejections and a decrease in verifications. The failure was attributed to the dif..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-022",
-              "summary": "It is an open question whether the agent labeling process is still necessary if the input text is already pre-segmented into small, constrained scopes."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-030",
-              "summary": "Using small segments for processing is justified by the reasoning that a more constrained scope might reduce model hallucinations."
             }
           ],
-          "event_count": 38
+          "event_count": 14
         },
         {
-          "l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-          "label": "idea-unit extraction and coverage repair",
+          "l2_id": "L2-tool-calling-transcript-reading",
+          "label": "tool-calling transcript reading",
           "source": "long_term_l3_materialized_child_l2",
           "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-          "split_reason": "Separate idea-unit extraction, missed-line repair, and coverage validation.",
+          "split_reason": "Separate programmer-controlled transcript reading, tool-callable segmentation functions, and read_segment workflow design.",
+          "assignment_criteria": [
+            "tool calling",
+            "tool-callable",
+            "function",
+            "read_segment",
+            "read segment",
+            "programmer-controlled",
+            "code-driven",
+            "Gemini reads transcript lines"
+          ],
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "linked_obj_ids": [
+            "L1-0408-011",
+            "L1-0408-019",
+            "L1-0422-010",
+            "L1-0429-050",
+            "L1-0429-105",
+            "L1-0429-110",
+            "L1-0429-119",
+            "L1-0429-137",
+            "L1-0506-005"
+          ],
+          "meeting_ids": [
+            "0408",
+            "0422",
+            "0429",
+            "0506"
+          ],
+          "timeline_digest": [
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-011",
+              "summary": "The adopted method for long-term memory construction is to feed the entire transcript to an LLM in a single pass for key point extraction."
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-019",
+              "summary": "As a simpler alternative for pre-processing, segment the transcript by splitting on periods or by speaker turns."
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-010",
+              "summary": "It was proposed that the task of LLM-based transcript segmentation could be framed as a 'tool calling' problem, where the LLM dynamically determines when to package preceding co..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-050",
+              "summary": "To address poor transcript quality, it was proposed to use an LLM to correct the existing 180 minutes of meeting transcripts."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-105",
+              "summary": "The system's prompt design reliably ensures that the LLM's first step when processing a new meeting transcript is to call the function to get a memory overview."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-110",
+              "summary": "A workflow is proposed where Gemini reads transcript lines and decides when a complete topic has been formed to be written out, which would also involve Gemini controlling the f..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-119",
+              "summary": "It is recommended to adopt a programmer-controlled system architecture where Gemini is used for discrete, modular tasks rather than managing the entire end-to-end process, to en..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-137",
+              "summary": "A design principle was adopted to encapsulate sub-tasks into dedicated, tool-callable functions instead of a monolithic flow. For example, the process is split into a `read_segm..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-005",
+              "summary": "To evaluate segmentation performance, a proposed method is to create a ground truth by manually labeling topic cut points in a sample transcript. This would enable calculating p..."
+            }
+          ],
+          "event_count": 9
+        },
+        {
+          "l2_id": "L2-idea-unit-generation",
+          "label": "idea-unit generation",
+          "source": "long_term_l3_materialized_child_l2",
+          "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+          "split_reason": "Separate creation and definition of idea units as atomic transcript-processing units.",
           "assignment_criteria": [
             "idea unit",
             "idea-unit",
-            "coverage",
-            "repair",
-            "missed line"
+            "idea units",
+            "atomic unit",
+            "single utterance",
+            "granular viewpoint",
+            "candidate"
           ],
-          "current_state": "This child L2 has 43 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 31 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
-            "L1-0325-006",
-            "L1-0408-011",
+            "L1-0408-013",
             "L1-0408-017",
-            "L1-0422-003",
             "L1-0422-005",
+            "L1-0422-006",
             "L1-0422-009",
-            "L1-0429-001",
-            "L1-0429-029",
-            "L1-0429-039",
             "L1-0429-061",
             "L1-0429-062",
             "L1-0429-066",
-            "L1-0429-073",
-            "L1-0429-093",
-            "L1-0429-119",
             "L1-0429-125",
             "L1-0429-126",
             "L1-0429-127",
             "L1-0429-136",
-            "L1-0429-138",
             "L1-0429-159",
             "L1-0429-161",
             "L1-0429-168",
@@ -994,10 +1073,7 @@
             "L1-0429-176",
             "L1-0429-177",
             "L1-0429-178",
-            "L1-0506-003",
-            "L1-0506-006",
             "L1-0506-007",
-            "L1-0506-009",
             "L1-0506-010",
             "L1-0506-015",
             "L1-0506-016",
@@ -1006,12 +1082,10 @@
             "L1-0506-020",
             "L1-0506-023",
             "L1-0506-024",
-            "L1-0506-025",
             "L1-0506-027",
             "L1-0506-028"
           ],
           "meeting_ids": [
-            "0325",
             "0408",
             "0422",
             "0429",
@@ -1019,16 +1093,10 @@
           ],
           "timeline_digest": [
             {
-              "meeting_id": "0325",
-              "meeting_date": "2026-03-25",
-              "obj_id": "L1-0325-006",
-              "summary": "The system will persistently store raw conversation audio, and memory objects will be updated to include a pointer to the source data. This pointer will use transcript timestamp..."
-            },
-            {
               "meeting_id": "0408",
               "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-011",
-              "summary": "The adopted method for long-term memory construction is to feed the entire transcript to an LLM in a single pass for key point extraction."
+              "obj_id": "L1-0408-013",
+              "summary": "An unresolved issue is whether to pre-process transcripts into smaller chunks before LLM analysis for memory extraction, as processing the entire document at once may lead to po..."
             },
             {
               "meeting_id": "0408",
@@ -1039,38 +1107,20 @@
             {
               "meeting_id": "0422",
               "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-003",
-              "summary": "The input for the memory update process will be a transcript generated by WhisperX, which is then manually reviewed and corrected to ensure each 'turn' corresponds to a single s..."
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
               "obj_id": "L1-0422-005",
               "summary": "An alternative memory update process was proposed: pre-process the transcript by grouping consecutive turns on the same topic into a single 'idea node' before Gemini begins the..."
             },
             {
               "meeting_id": "0422",
               "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-006",
+              "summary": "The proposed iterative reading process, where the model can read an initial chunk and then decide to read more lines to enrich a candidate idea, is a valid method for constructi..."
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
               "obj_id": "L1-0422-009",
               "summary": "Propose using an LLM to pre-segment transcripts into cohesive idea units based on topic continuity before memory updates, as an alternative to using a fixed number of lines."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-001",
-              "summary": "To accurately assess the dataset's size relative to LLM capabilities, the team decided to measure the data volume in tokens rather than minutes."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-029",
-              "summary": "The incremental memory processing approach is hypothesized to be superior because it is more effective at filtering out irrelevant information, such as social chatter, compared..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-039",
-              "summary": "逐輪處理(per-turn processing)的方法在計算上成本過高，因此提出一種「動態」分塊方法作為折衷方案，該方法會預測主題區塊的長度來決定處理單元的大小。"
             },
             {
               "meeting_id": "0429",
@@ -1089,24 +1139,6 @@
               "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-066",
               "summary": "The system's data processing approach differs from a standard RAG baseline. Instead of direct semantic search on text chunks, the system first extracts structured 'idea units' f..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-073",
-              "summary": "A proposed 'bottom-up' processing strategy where text is processed in small, fundamental units (e.g., one sentence at a time) for a simple task like labeling, with merging of re..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-093",
-              "summary": "建議修改實作，讓讀取逐字稿的行數參數由開發者程式碼控制，而不是由模型動態生成，以確保可預測性並避免重複讀取等問題。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-119",
-              "summary": "It is recommended to adopt a programmer-controlled system architecture where Gemini is used for discrete, modular tasks rather than managing the entire end-to-end process, to en..."
             },
             {
               "meeting_id": "0429",
@@ -1131,12 +1163,6 @@
               "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-136",
               "summary": "The memory update process was changed to a structured workflow that mandates segmenting a transcript into 'idea units', creating a summary for each, and then using that summary..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-138",
-              "summary": "Refactor the current monolithic 'build' process into a manager-worker architecture, where a central 'manager' script coordinates specialized 'worker' agents for sub-tasks like i..."
             },
             {
               "meeting_id": "0429",
@@ -1189,26 +1215,8 @@
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-003",
-              "summary": "The system ensures 100% transcript coverage through a verification and gap-filling process. After the initial extraction, a check is performed to find any lines that were missed..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-006",
-              "summary": "Implement a 'repair' mechanism for gaps in transcript coverage that merges missed lines into adjacent idea units, rather than creating new, low-quality units."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-007",
               "summary": "The necessity of the `Segment` step before `Idea Unit` extraction is questionable. The distinction between a `Segment` (broad topic) and an `Idea Unit` (granular viewpoint) is u..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-009",
-              "summary": "The data extraction pipeline sometimes misses lines, creating 'gaps' in coverage. The current solution fills these gaps by creating new, low-quality idea units from the raw text..."
             },
             {
               "meeting_id": "0506",
@@ -1261,12 +1269,6 @@
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-025",
-              "summary": "There are conflicting definitions for the data structure term 'batch': one defines it as a repair mechanism combining two adjacent segments, while another defines it as a themat..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-027",
               "summary": "An alternative, hierarchical definition of the data structure was proposed: idea units (a single utterance) are grouped into a 'segment' (a single speaker's theme), and related..."
             },
@@ -1277,72 +1279,43 @@
               "summary": "A 'bottom-up' approach to creating idea units is justified because it prevents information from being missed, despite the trade-off of creating meaningless units that require la..."
             }
           ],
-          "event_count": 43
+          "event_count": 31
         },
         {
-          "l2_id": "L2-evidence-grounding-and-line-coverage",
-          "label": "evidence grounding and line coverage",
+          "l2_id": "L2-missing-line-coverage",
+          "label": "missing-line coverage",
           "source": "long_term_l3_materialized_child_l2",
           "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-          "split_reason": "Separate evidence anchoring, line ranges, and support verification.",
+          "split_reason": "Separate transcript coverage validation, missed-line detection, and gap filling.",
           "assignment_criteria": [
-            "evidence",
-            "grounding",
-            "line",
-            "range",
-            "support"
+            "missed line",
+            "missed lines",
+            "gap",
+            "gaps",
+            "coverage",
+            "100%",
+            "verification",
+            "check every"
           ],
-          "current_state": "This child L2 has 28 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 10 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
-            "L1-0307-037",
-            "L1-0408-016",
             "L1-0408-020",
-            "L1-0408-022",
-            "L1-0422-006",
-            "L1-0422-007",
-            "L1-0422-015",
-            "L1-0429-025",
-            "L1-0429-028",
-            "L1-0429-065",
-            "L1-0429-068",
-            "L1-0429-070",
-            "L1-0429-071",
+            "L1-0429-001",
             "L1-0429-092",
-            "L1-0429-098",
-            "L1-0429-103",
-            "L1-0429-110",
+            "L1-0429-093",
             "L1-0429-130",
-            "L1-0429-131",
-            "L1-0429-137",
-            "L1-0429-149",
-            "L1-0429-163",
             "L1-0429-165",
             "L1-0429-170",
-            "L1-0429-175",
-            "L1-0429-179",
-            "L1-0506-031",
-            "L1-0506-043"
+            "L1-0506-003",
+            "L1-0506-006",
+            "L1-0506-009"
           ],
           "meeting_ids": [
-            "0307",
             "0408",
-            "0422",
             "0429",
             "0506"
           ],
           "timeline_digest": [
-            {
-              "meeting_id": "0307",
-              "meeting_date": "2026-03-07",
-              "obj_id": "L1-0307-037",
-              "summary": "為了避免資料重複，團隊成員正在協調程式碼結構，讓一個成員的 `short_term` 模組直接使用 `meeting_recording` 的逐字稿資料。"
-            },
-            {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-016",
-              "summary": "Based on a past experiment, processing a whole document at once with an LLM led to poor labeling and hallucinations, indicating that pre-processing transcripts into smaller chun..."
-            },
             {
               "meeting_id": "0408",
               "meeting_date": "2026-04-08",
@@ -1350,64 +1323,10 @@
               "summary": "基於過去處理整份文件的經驗，直接將完整會議記錄送入LLM進行分析可能會導致標籤效果不佳和產生幻覺。因此，應在LLM分析前將文本預處理成較小的區塊，這被認為是一個必要的步驟，即使使用更強大的模型也可能如此。"
             },
             {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-022",
-              "summary": "作為一種簡化的預處理方法，可以考慮按句點或發言輪次來切分文本。此方法的理由是，一個發言輪次或一個句子通常只包含一個主要思想，因此這種切分方式可能已經足夠。"
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-006",
-              "summary": "The proposed iterative reading process, where the model can read an initial chunk and then decide to read more lines to enrich a candidate idea, is a valid method for constructi..."
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-007",
-              "summary": "The data pipeline for memory updates starts with a WhisperX transcript, which is then manually reviewed and corrected to align each 'turn' with a single speaker's complete utter..."
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-015",
-              "summary": "A counter-argument was raised against the iterative method, suggesting that a single-pass approach could also group non-adjacent ideas by maintaining a global vector to check fo..."
-            },
-            {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-025",
-              "summary": "The system processes transcripts using a fixed chunk size of 20 lines, a value that was set arbitrarily. An alternative, unimplemented approach of dynamic chunking—where the sys..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-028",
-              "summary": "Using a fixed, large chunk of text (e.g., 20-40 lines) as input is a valid approach because the LLM can identify and process multiple distinct topics ('objects') within that sin..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-065",
-              "summary": "A key hypothesized advantage of the proposed memory processing method is its superior ability to filter out and discard unnecessary conversational filler compared to alternative..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-068",
-              "summary": "The LLM will process transcript data in chunks (e.g., 40 lines at a time), with subsequent processing passes resuming from the line immediately following the previous block. Thi..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-070",
-              "summary": "A key finding regarding the top-down processing approach is that the number of topics or groups the LLM identifies within a given block of text is highly variable and depends on..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-071",
-              "summary": "A proposed dynamic, bottom-up processing method that forms processing blocks by predicting the number of conversational turns that constitute a single topic. These dynamically s..."
+              "obj_id": "L1-0429-001",
+              "summary": "To accurately assess the dataset's size relative to LLM capabilities, the team decided to measure the data volume in tokens rather than minutes."
             },
             {
               "meeting_id": "0429",
@@ -1418,50 +1337,14 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-098",
-              "summary": "The current LLM process, which uses a single large prompt for an entire task, has a critical failure mode. In a specific test, after processing lines 1-40, the model incorrectly..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-103",
-              "summary": "To gain more granular control and visibility into the system's operations, it was proposed to add intermediate checkpoints to the data processing pipeline. This would involve wr..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-110",
-              "summary": "A workflow is proposed where Gemini reads transcript lines and decides when a complete topic has been formed to be written out, which would also involve Gemini controlling the f..."
+              "obj_id": "L1-0429-093",
+              "summary": "建議修改實作，讓讀取逐字稿的行數參數由開發者程式碼控制，而不是由模型動態生成，以確保可預測性並避免重複讀取等問題。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-130",
               "summary": "建議採用「管理者/代理人」（manager/agent）架構，由一個輕量級的管理者將任務分派給專門化、模組化的代理人。每個代理人處理特定的子任務（例如動態分塊、想法單元驗證），可以維護自己的上下文，並且可以有可替換的實現方式（例如「靜態」與「動態」行為）。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-131",
-              "summary": "建議一個結構化的記憶體更新工作流程：1) 將逐字稿分割成帶有行號範圍的「想法單元」，2) 為每個單元創建一個小結，以及 3) 使用該小結來尋找並更新記憶體中的對應項目。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-137",
-              "summary": "A design principle was adopted to encapsulate sub-tasks into dedicated, tool-callable functions instead of a monolithic flow. For example, the process is split into a `read_segm..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-149",
-              "summary": "The monolithic system presents a major debugging challenge because errors in early steps compound and propagate, making it hard to find the root cause. A multi-agent system woul..."
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-163",
-              "summary": "The system's behavior of associating an entire block of text with multiple identified topics is justified by the observation that topics are often interwoven within conversation..."
             },
             {
               "meeting_id": "0429",
@@ -1476,10 +1359,289 @@
               "summary": "A key undesirable scenario in memory updates, termed \"crosstalk,\" is defined as when an unsplit block of text containing multiple distinct ideas (e.g., A+C) is used to update a..."
             },
             {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-003",
+              "summary": "The system ensures 100% transcript coverage through a verification and gap-filling process. After the initial extraction, a check is performed to find any lines that were missed..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-006",
+              "summary": "Implement a 'repair' mechanism for gaps in transcript coverage that merges missed lines into adjacent idea units, rather than creating new, low-quality units."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-009",
+              "summary": "The data extraction pipeline sometimes misses lines, creating 'gaps' in coverage. The current solution fills these gaps by creating new, low-quality idea units from the raw text..."
+            }
+          ],
+          "event_count": 10
+        },
+        {
+          "l2_id": "L2-repair-and-coarsening",
+          "label": "repair and coarsening",
+          "source": "long_term_l3_materialized_child_l2",
+          "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+          "split_reason": "Separate repair, coarsening, merging, and quality control of overly small or low-quality units.",
+          "assignment_criteria": [
+            "repair",
+            "coarsening",
+            "merge",
+            "merging",
+            "low-quality",
+            "low quality",
+            "batch",
+            "combining"
+          ],
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "linked_obj_ids": [
+            "L1-0408-016",
+            "L1-0422-003",
+            "L1-0429-065",
+            "L1-0429-073",
+            "L1-0429-131",
+            "L1-0429-162",
+            "L1-0506-012",
+            "L1-0506-025",
+            "L1-0506-043"
+          ],
+          "meeting_ids": [
+            "0408",
+            "0422",
+            "0429",
+            "0506"
+          ],
+          "timeline_digest": [
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-016",
+              "summary": "Based on a past experiment, processing a whole document at once with an LLM led to poor labeling and hallucinations, indicating that pre-processing transcripts into smaller chun..."
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-003",
+              "summary": "The input for the memory update process will be a transcript generated by WhisperX, which is then manually reviewed and corrected to ensure each 'turn' corresponds to a single s..."
+            },
+            {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-175",
-              "summary": "To address semantic duplication in memory updates, one proposed solution is to reduce the size of the input window (e.g., from 80 lines) provided to the update function."
+              "obj_id": "L1-0429-065",
+              "summary": "A key hypothesized advantage of the proposed memory processing method is its superior ability to filter out and discard unnecessary conversational filler compared to alternative..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-073",
+              "summary": "A proposed 'bottom-up' processing strategy where text is processed in small, fundamental units (e.g., one sentence at a time) for a simple task like labeling, with merging of re..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-131",
+              "summary": "建議一個結構化的記憶體更新工作流程：1) 將逐字稿分割成帶有行號範圍的「想法單元」，2) 為每個單元創建一個小結，以及 3) 使用該小結來尋找並更新記憶體中的對應項目。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-162",
+              "summary": "A major drawback of the current memory update process is that using the same large text chunk to update multiple memory nodes will cause them to lose their distinctiveness and c..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-012",
+              "summary": "Complex adaptive search methods for finding precise segment boundaries are likely unnecessary because the LLM is capable of processing a larger, less precise chunk of text and s..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-025",
+              "summary": "There are conflicting definitions for the data structure term 'batch': one defines it as a repair mechanism combining two adjacent segments, while another defines it as a themat..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-043",
+              "summary": "A hierarchical, theme-based memory structure is adopted, consisting of three levels: L3 for high-level themes (e.g., Time, Event Type, People), L2 for sub-topic summaries, and L..."
+            }
+          ],
+          "event_count": 9
+        },
+        {
+          "l2_id": "L2-cross-window-continuity",
+          "label": "cross-window continuity",
+          "source": "long_term_l3_materialized_child_l2",
+          "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+          "split_reason": "Separate continuity across processing windows, incomplete trailing segments, non-adjacent related ideas, and interwoven topics.",
+          "assignment_criteria": [
+            "incomplete",
+            "span",
+            "spans",
+            "previous chunk",
+            "non-adjacent",
+            "interwoven",
+            "continuity",
+            "truncated"
+          ],
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "linked_obj_ids": [
+            "L1-0307-037",
+            "L1-0422-015",
+            "L1-0429-029",
+            "L1-0429-075",
+            "L1-0429-098",
+            "L1-0429-138",
+            "L1-0429-163",
+            "L1-0506-022",
+            "L1-0506-030"
+          ],
+          "meeting_ids": [
+            "0307",
+            "0422",
+            "0429",
+            "0506"
+          ],
+          "timeline_digest": [
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-037",
+              "summary": "為了避免資料重複，團隊成員正在協調程式碼結構，讓一個成員的 `short_term` 模組直接使用 `meeting_recording` 的逐字稿資料。"
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-015",
+              "summary": "A counter-argument was raised against the iterative method, suggesting that a single-pass approach could also group non-adjacent ideas by maintaining a global vector to check fo..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-029",
+              "summary": "The incremental memory processing approach is hypothesized to be superior because it is more effective at filtering out irrelevant information, such as social chatter, compared..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-075",
+              "summary": "The concern of information loss when processing transcripts in chunks is mitigated because processing can resume exactly where the previous chunk left off, ensuring any truncate..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-098",
+              "summary": "The current LLM process, which uses a single large prompt for an entire task, has a critical failure mode. In a specific test, after processing lines 1-40, the model incorrectly..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-138",
+              "summary": "Refactor the current monolithic 'build' process into a manager-worker architecture, where a central 'manager' script coordinates specialized 'worker' agents for sub-tasks like i..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-163",
+              "summary": "The system's behavior of associating an entire block of text with multiple identified topics is justified by the observation that topics are often interwoven within conversation..."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-022",
+              "summary": "It is an open question whether the agent labeling process is still necessary if the input text is already pre-segmented into small, constrained scopes."
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-030",
+              "summary": "Using small segments for processing is justified by the reasoning that a more constrained scope might reduce model hallucinations."
+            }
+          ],
+          "event_count": 9
+        },
+        {
+          "l2_id": "L2-evidence-grounding-and-line-coverage",
+          "label": "evidence grounding and line coverage",
+          "source": "long_term_l3_materialized_child_l2",
+          "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+          "split_reason": "Separate evidence anchoring, line ranges, and support verification.",
+          "assignment_criteria": [
+            "evidence",
+            "grounding",
+            "line range",
+            "line ranges",
+            "source data",
+            "source",
+            "timestamp",
+            "audio",
+            "range",
+            "support"
+          ],
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "linked_obj_ids": [
+            "L1-0318-003",
+            "L1-0325-006",
+            "L1-0325-008",
+            "L1-0408-005",
+            "L1-0429-103",
+            "L1-0429-149",
+            "L1-0429-167",
+            "L1-0429-179",
+            "L1-0506-031"
+          ],
+          "meeting_ids": [
+            "0318",
+            "0325",
+            "0408",
+            "0429",
+            "0506"
+          ],
+          "timeline_digest": [
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-003",
+              "summary": "A sequential agent-based text processing method, where each agent summarizes a chunk while incorporating the previous agent's output, is susceptible to two key weaknesses: the p..."
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-006",
+              "summary": "The system will persistently store raw conversation audio, and memory objects will be updated to include a pointer to the source data. This pointer will use transcript timestamp..."
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-008",
+              "summary": "To enable audio playback for the user, the system will use timestamps from the transcript to locate and retrieve the corresponding audio segment. This requires adding a new fiel..."
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-005",
+              "summary": "The selected meeting dataset is provided in an MRT file format. This is a complete transcript format containing segments with speaker labels, duration/timestamps, and text conte..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-103",
+              "summary": "To gain more granular control and visibility into the system's operations, it was proposed to add intermediate checkpoints to the data processing pipeline. This would involve wr..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-149",
+              "summary": "The monolithic system presents a major debugging challenge because errors in early steps compound and propagate, making it hard to find the root cause. A multi-agent system woul..."
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-167",
+              "summary": "The memory update process has a critical unresolved issue where using a single large input chunk containing multiple topics to update different memory nodes can cause \"informati..."
             },
             {
               "meeting_id": "0429",
@@ -1492,15 +1654,9 @@
               "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-031",
               "summary": "The source transcript data is generated by Whisper and has specific characteristics: it indicates speaker changes but lacks precise timestamps, providing only the order of speec..."
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-043",
-              "summary": "A hierarchical, theme-based memory structure is adopted, consisting of three levels: L3 for high-level themes (e.g., Time, Event Type, People), L2 for sub-topic summaries, and L..."
             }
           ],
-          "event_count": 28
+          "event_count": 9
         }
       ],
       "coverage": {
@@ -1526,8 +1682,8 @@
       "obj_id": "L1-0307-037",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -1536,20 +1692,20 @@
       "obj_id": "L1-0318-003",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
       "manual_review": false
     },
     "L1-0318-004": {
       "obj_id": "L1-0318-004",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0318-007": {
@@ -1656,20 +1812,20 @@
       "obj_id": "L1-0325-006",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 1,
+      "assignment_score": 13,
       "manual_review": false
     },
     "L1-0325-008": {
       "obj_id": "L1-0325-008",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0325-024": {
@@ -1846,8 +2002,8 @@
       "obj_id": "L1-0408-005",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -1866,8 +2022,8 @@
       "obj_id": "L1-0408-011",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -1876,18 +2032,18 @@
       "obj_id": "L1-0408-013",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
       "manual_review": false
     },
     "L1-0408-016": {
       "obj_id": "L1-0408-016",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -1896,28 +2052,28 @@
       "obj_id": "L1-0408-017",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 9,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0408-019": {
       "obj_id": "L1-0408-019",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0408-020": {
       "obj_id": "L1-0408-020",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -1926,8 +2082,8 @@
       "obj_id": "L1-0408-022",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -1946,8 +2102,8 @@
       "obj_id": "L1-0422-003",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -1956,8 +2112,8 @@
       "obj_id": "L1-0422-005",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -1966,8 +2122,8 @@
       "obj_id": "L1-0422-006",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -1976,48 +2132,48 @@
       "obj_id": "L1-0422-007",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0422-009": {
       "obj_id": "L1-0422-009",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0422-010": {
       "obj_id": "L1-0422-010",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 6,
       "manual_review": false
     },
     "L1-0422-015": {
       "obj_id": "L1-0422-015",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0422-016": {
       "obj_id": "L1-0422-016",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -2046,10 +2202,10 @@
       "obj_id": "L1-0422-020",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0422-021": {
@@ -2076,10 +2232,10 @@
       "obj_id": "L1-0422-024",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0422-025": {
@@ -2136,8 +2292,8 @@
       "obj_id": "L1-0429-001",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2216,8 +2372,8 @@
       "obj_id": "L1-0429-024",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -2226,28 +2382,28 @@
       "obj_id": "L1-0429-025",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 15,
       "manual_review": false
     },
     "L1-0429-026": {
       "obj_id": "L1-0429-026",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 5,
       "manual_review": false
     },
     "L1-0429-028": {
       "obj_id": "L1-0429-028",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -2256,8 +2412,8 @@
       "obj_id": "L1-0429-029",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2266,10 +2422,10 @@
       "obj_id": "L1-0429-030",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 8,
       "manual_review": false
     },
     "L1-0429-032": {
@@ -2306,8 +2462,8 @@
       "obj_id": "L1-0429-037",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
       "assignment_score": 3,
       "manual_review": false
@@ -2326,10 +2482,10 @@
       "obj_id": "L1-0429-039",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-040": {
@@ -2386,8 +2542,8 @@
       "obj_id": "L1-0429-050",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -2456,10 +2612,10 @@
       "obj_id": "L1-0429-057",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 9,
       "manual_review": false
     },
     "L1-0429-058": {
@@ -2476,38 +2632,38 @@
       "obj_id": "L1-0429-061",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-062": {
       "obj_id": "L1-0429-062",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-063": {
       "obj_id": "L1-0429-063",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 8,
       "manual_review": false
     },
     "L1-0429-065": {
       "obj_id": "L1-0429-065",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -2516,10 +2672,10 @@
       "obj_id": "L1-0429-066",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-067": {
@@ -2536,48 +2692,48 @@
       "obj_id": "L1-0429-068",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 6,
       "manual_review": false
     },
     "L1-0429-069": {
       "obj_id": "L1-0429-069",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 1,
+      "assignment_score": 6,
       "manual_review": false
     },
     "L1-0429-070": {
       "obj_id": "L1-0429-070",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 1,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-071": {
       "obj_id": "L1-0429-071",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0429-072": {
       "obj_id": "L1-0429-072",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
       "assignment_score": 3,
       "manual_review": false
@@ -2586,28 +2742,28 @@
       "obj_id": "L1-0429-073",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-074": {
       "obj_id": "L1-0429-074",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-075": {
       "obj_id": "L1-0429-075",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "criteria_match",
       "assignment_score": 3,
       "manual_review": false
@@ -2686,8 +2842,8 @@
       "obj_id": "L1-0429-092",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2696,8 +2852,8 @@
       "obj_id": "L1-0429-093",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2706,20 +2862,20 @@
       "obj_id": "L1-0429-094",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-098": {
       "obj_id": "L1-0429-098",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
       "manual_review": false
     },
     "L1-0429-103": {
@@ -2729,25 +2885,25 @@
       "child_l2_id": "L2-evidence-grounding-and-line-coverage",
       "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0429-105": {
       "obj_id": "L1-0429-105",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
-      "assignment_score": 1,
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0429-110": {
       "obj_id": "L1-0429-110",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -2786,10 +2942,10 @@
       "obj_id": "L1-0429-119",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-123": {
@@ -2806,38 +2962,38 @@
       "obj_id": "L1-0429-125",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 9,
+      "assignment_score": 11,
       "manual_review": false
     },
     "L1-0429-126": {
       "obj_id": "L1-0429-126",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-127": {
       "obj_id": "L1-0429-127",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 9,
+      "assignment_score": 11,
       "manual_review": false
     },
     "L1-0429-130": {
       "obj_id": "L1-0429-130",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2846,8 +3002,8 @@
       "obj_id": "L1-0429-131",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2856,28 +3012,28 @@
       "obj_id": "L1-0429-136",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-137": {
       "obj_id": "L1-0429-137",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0429-138": {
       "obj_id": "L1-0429-138",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2896,8 +3052,8 @@
       "obj_id": "L1-0429-158",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
       "assignment_score": 4,
       "manual_review": false
@@ -2906,58 +3062,58 @@
       "obj_id": "L1-0429-159",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-161": {
       "obj_id": "L1-0429-161",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-162": {
       "obj_id": "L1-0429-162",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0429-163": {
       "obj_id": "L1-0429-163",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-164": {
       "obj_id": "L1-0429-164",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 6,
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0429-165": {
       "obj_id": "L1-0429-165",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2966,38 +3122,38 @@
       "obj_id": "L1-0429-167",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
       "manual_review": false
     },
     "L1-0429-168": {
       "obj_id": "L1-0429-168",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-169": {
       "obj_id": "L1-0429-169",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-170": {
       "obj_id": "L1-0429-170",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -3006,10 +3162,10 @@
       "obj_id": "L1-0429-171",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-174": {
@@ -3026,40 +3182,40 @@
       "obj_id": "L1-0429-175",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-176": {
       "obj_id": "L1-0429-176",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-177": {
       "obj_id": "L1-0429-177",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-178": {
       "obj_id": "L1-0429-178",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0429-179": {
@@ -3076,168 +3232,168 @@
       "obj_id": "L1-0506-001",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 6,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-002": {
       "obj_id": "L1-0506-002",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 6,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-003": {
       "obj_id": "L1-0506-003",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 6,
+      "assignment_score": 13,
       "manual_review": false
     },
     "L1-0506-004": {
       "obj_id": "L1-0506-004",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 5,
       "manual_review": false
     },
     "L1-0506-005": {
       "obj_id": "L1-0506-005",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0506-006": {
       "obj_id": "L1-0506-006",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 18,
+      "assignment_score": 16,
       "manual_review": false
     },
     "L1-0506-007": {
       "obj_id": "L1-0506-007",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 11,
       "manual_review": false
     },
     "L1-0506-008": {
       "obj_id": "L1-0506-008",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0506-009": {
       "obj_id": "L1-0506-009",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 12,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-010": {
       "obj_id": "L1-0506-010",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-011": {
       "obj_id": "L1-0506-011",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0506-012": {
       "obj_id": "L1-0506-012",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
-      "assignment_score": 6,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0506-013": {
       "obj_id": "L1-0506-013",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
+      "child_l2_label": "fixed vs dynamic chunking",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0506-014": {
       "obj_id": "L1-0506-014",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 5,
       "manual_review": false
     },
     "L1-0506-015": {
       "obj_id": "L1-0506-015",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 11,
       "manual_review": false
     },
     "L1-0506-016": {
       "obj_id": "L1-0506-016",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 9,
+      "assignment_score": 14,
       "manual_review": false
     },
     "L1-0506-017": {
       "obj_id": "L1-0506-017",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
       "assignment_score": 8,
       "manual_review": false
@@ -3246,18 +3402,18 @@
       "obj_id": "L1-0506-018",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-020": {
       "obj_id": "L1-0506-020",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
       "assignment_score": 8,
       "manual_review": false
@@ -3266,18 +3422,18 @@
       "obj_id": "L1-0506-022",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
       "manual_review": false
     },
     "L1-0506-023": {
       "obj_id": "L1-0506-023",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
       "assignment_score": 8,
       "manual_review": false
@@ -3286,50 +3442,50 @@
       "obj_id": "L1-0506-024",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 11,
       "manual_review": false
     },
     "L1-0506-025": {
       "obj_id": "L1-0506-025",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-027": {
       "obj_id": "L1-0506-027",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 13,
       "manual_review": false
     },
     "L1-0506-028": {
       "obj_id": "L1-0506-028",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-extraction-and-coverage-repair",
-      "child_l2_label": "idea-unit extraction and coverage repair",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit generation",
       "assignment_reason": "criteria_match",
-      "assignment_score": 7,
+      "assignment_score": 10,
       "manual_review": false
     },
     "L1-0506-030": {
       "obj_id": "L1-0506-030",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-transcript-segmentation",
-      "child_l2_label": "transcript segmentation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
       "manual_review": false
     },
     "L1-0506-031": {
@@ -3339,15 +3495,15 @@
       "child_l2_id": "L2-evidence-grounding-and-line-coverage",
       "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 1,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0506-043": {
       "obj_id": "L1-0506-043",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "criteria_match",
       "assignment_score": 2,
       "manual_review": false

@@ -105,6 +105,33 @@ def _combined_score(
     return w_s * s_sem + w_r * s_recency + w_i * s_importance
 
 
+def _lexical_units(text: str) -> set[str]:
+    lowered = str(text or "").lower()
+    units = {
+        token.lower()
+        for token in TOKEN_RE.findall(lowered)
+        if len(token.strip()) >= 2
+    }
+    cjk_chars = [char for char in lowered if "\u4e00" <= char <= "\u9fff"]
+    units.update("".join(cjk_chars[index : index + 2]) for index in range(max(0, len(cjk_chars) - 1)))
+    return {unit for unit in units if unit.strip()}
+
+
+def _lexical_score(query_units: set[str], text: str, keywords: list[str] | None = None) -> float:
+    if not query_units:
+        return 0.0
+    lowered = str(text or "").lower().replace("-", " ")
+    text_units = _lexical_units(lowered)
+    overlap = len(query_units & text_units) / max(1, len(query_units))
+    keyword_hits = 0
+    for keyword in keywords or []:
+        clean = str(keyword or "").strip().lower().replace("-", " ")
+        if clean and clean in lowered:
+            keyword_hits += 1
+    keyword_score = min(1.0, keyword_hits / max(1, len(keywords or [])))
+    return max(overlap, keyword_score)
+
+
 # ===================================================================
 # L1 semantic search
 # ===================================================================
@@ -196,6 +223,96 @@ def search_l1_semantic(
                         round(s_activation, 4) if s_activation is not None else None
                     ),
                     "activity_state": activity_state,
+                }
+            )
+
+    results.sort(key=lambda x: -x["score"])
+    return results[:top_k]
+
+
+def search_l1_lexical(
+    tree: dict[str, Any],
+    query: str,
+    *,
+    keywords: list[str] | None = None,
+    obj_types: list[str] | None = None,
+    min_importance: float = 0.0,
+    top_k: int = 30,
+    query_date: datetime | None = None,
+    activity_index: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Search L1 objects with deterministic lexical scoring, no API calls."""
+    if query_date is None:
+        query_date = datetime.now(timezone.utc)
+    query_text = " ".join([str(query or ""), " ".join(str(k) for k in keywords or [])])
+    query_units = _lexical_units(query_text)
+    results: list[dict[str, Any]] = []
+
+    for meeting in tree.get("meetings", []):
+        meeting_id = meeting.get("meeting_id", "")
+        timestamp = meeting.get("timestamp", "")
+        meeting_date = meeting.get("meeting_date", "")
+        phase_id = meeting.get("phase_id", "")
+
+        for obj in meeting.get("memory_objects", []):
+            obj_type = obj.get("type", "")
+            if obj_types and obj_type not in obj_types:
+                continue
+            try:
+                importance = float(obj.get("importance") or 0.0)
+            except (TypeError, ValueError):
+                importance = 0.0
+            if importance < min_importance:
+                continue
+            raw_topics = obj.get("related_topics", [])
+            topics = [str(t) for t in raw_topics] if isinstance(raw_topics, list) else []
+            text = " ".join(
+                [
+                    str(obj.get("content", "") or ""),
+                    str(obj.get("evidence", "") or ""),
+                    " ".join(topics),
+                ]
+            ).strip()
+            if not text:
+                continue
+            lexical = _lexical_score(query_units, text, keywords=keywords)
+            if lexical <= 0:
+                continue
+            s_recency = _recency_score(
+                meeting_date, timestamp, str(obj_type), query_date, importance
+            )
+            s_importance = _importance_score(importance)
+            base_score = _combined_score(lexical, s_recency, s_importance, w_s=0.7, w_r=0.1, w_i=0.2)
+            s_activation, activity_state = activity_score_for_obj(obj, activity_index)
+            score = adjust_recall_score_for_activity(
+                score=base_score,
+                semantic_score=lexical,
+                activation=s_activation,
+                state=activity_state,
+            )
+            results.append(
+                {
+                    "source": "long_term_l1",
+                    "meeting_id": meeting_id,
+                    "timestamp": timestamp,
+                    "meeting_date": meeting_date,
+                    "phase_id": phase_id,
+                    "obj_id": obj.get("obj_id", ""),
+                    "type": obj_type,
+                    "legacy_type": obj.get("legacy_type", ""),
+                    "content": obj.get("content", ""),
+                    "importance": importance,
+                    "evidence": obj.get("evidence", ""),
+                    "related_topics": topics,
+                    "score": round(score, 4),
+                    "s_sem": round(lexical, 4),
+                    "s_recency": round(s_recency, 4),
+                    "s_importance": round(s_importance, 4),
+                    "s_activation": (
+                        round(s_activation, 4) if s_activation is not None else None
+                    ),
+                    "activity_state": activity_state,
+                    "retrieval_mode": "lexical",
                 }
             )
 
@@ -568,11 +685,13 @@ def _select_timeline_slice(
 
 def _node_query_similarity(query: str, node: dict[str, Any]) -> float:
     query_tokens = _tokens(query)
-    if not query_tokens:
+    query_units = _lexical_units(query)
+    if not query_tokens and not query_units:
         return 0.0
+    label = str(node.get("label", "") or "")
     text = " ".join(
         [
-            str(node.get("label", "") or ""),
+            label,
             str(node.get("current_state", "") or ""),
             str(node.get("split_reason", "") or ""),
             " ".join(str(x) for x in node.get("assignment_criteria", []) if str(x).strip())
@@ -581,7 +700,30 @@ def _node_query_similarity(query: str, node: dict[str, Any]) -> float:
         ]
     )
     node_tokens = _tokens(text)
-    return len(query_tokens & node_tokens) / len(query_tokens) if node_tokens else 0.0
+    token_score = (
+        len(query_tokens & node_tokens) / len(query_tokens)
+        if query_tokens and node_tokens
+        else 0.0
+    )
+    node_units = _lexical_units(text)
+    unit_score = (
+        len(query_units & node_units) / len(query_units)
+        if query_units and node_units
+        else 0.0
+    )
+    score = max(token_score, unit_score)
+
+    query_phrase = " ".join(str(query or "").lower().replace("-", " ").split())
+    label_phrase = " ".join(label.lower().replace("-", " ").split())
+    label_units = _lexical_units(label_phrase)
+    if label_phrase and label_phrase in query_phrase:
+        score = max(score, 1.0)
+    elif label_units and label_units.issubset(query_units):
+        score = max(score, 0.9)
+    elif label_units:
+        label_overlap = len(label_units & query_units) / len(label_units)
+        score = max(score, 0.8 * label_overlap)
+    return min(1.0, score)
 
 
 def build_global_topic_map(
@@ -757,9 +899,9 @@ def select_layered_l2_context(
         if timeline:
             currentness = 1.0
         l2_score = (
-            0.45 * seed_score_aggregate
-            + 0.25 * seed_count_coverage
-            + 0.15 * query_similarity
+            0.35 * seed_score_aggregate
+            + 0.20 * seed_count_coverage
+            + 0.30 * query_similarity
             + 0.10 * currentness
             + 0.05 * importance
             - topic_size_penalty * math.log(topic_size + 1)
@@ -1139,6 +1281,7 @@ def recall(
     prefer_materialized_l3: bool = True,
     topic_size_penalty: float = 0.05,
     include_retrieval_debug: bool = False,
+    retrieval_mode: str = "semantic",
     use_legacy_parent_fallback: bool = True,
 ) -> dict[str, Any]:
     """Execute a recall plan and return retrieved memories."""
@@ -1190,6 +1333,7 @@ def recall(
         "expanded_context_chars": 0,
         "omitted_event_count": 0,
         "large_l2_expanded_without_child_split": False,
+        "retrieval_mode": retrieval_mode,
     }
     l3_profile = None
 
@@ -1226,19 +1370,30 @@ def recall(
 
     # --- long-term search (semantic L1 + active L2 view expansion) ---
     if any(t.startswith("long_term") for t in targets):
-        query_emb = embed_text(query, api_key, embed_cache, model=embed_model)
+        if retrieval_mode == "lexical":
+            l1_candidates = search_l1_lexical(
+                tree=tree,
+                query=query,
+                keywords=[str(k) for k in keywords if str(k).strip()] if isinstance(keywords, list) else [],
+                obj_types=type_filter or None,
+                top_k=top_k_raw,
+                query_date=query_date,
+                activity_index=activity_index,
+            )
+        else:
+            query_emb = embed_text(query, api_key, embed_cache, model=embed_model)
 
-        l1_candidates = search_l1_semantic(
-            tree=tree,
-            query_emb=query_emb,
-            api_key=api_key,
-            cache=embed_cache,
-            obj_types=type_filter or None,
-            top_k=top_k_raw,
-            query_date=query_date,
-            embed_model=embed_model,
-            activity_index=activity_index,
-        )
+            l1_candidates = search_l1_semantic(
+                tree=tree,
+                query_emb=query_emb,
+                api_key=api_key,
+                cache=embed_cache,
+                obj_types=type_filter or None,
+                top_k=top_k_raw,
+                query_date=query_date,
+                embed_model=embed_model,
+                activity_index=activity_index,
+            )
 
         if plan.get("complexity") == "complex" and len(l1_candidates) > 5:
             l1_results = recall_gate(query, l1_candidates, api_key, model_name)

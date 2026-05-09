@@ -76,6 +76,28 @@ def _default_api_key() -> str | list[str]:
         return os.getenv("GEMINI_API_KEY", "")
 
 
+def _heuristic_plan(query: str) -> dict[str, Any]:
+    tokens = [
+        token
+        for token in re_split_query(query)
+        if len(token) >= 2
+    ]
+    return {
+        "complexity": "simple",
+        "reasoning": "offline deterministic retrieval evaluation plan",
+        "search_targets": ["long_term_l1", "long_term_l2", "long_term_l3"],
+        "keywords": tokens[:12],
+        "time_range_hint": "",
+    }
+
+
+def re_split_query(query: str) -> list[str]:
+    import re
+
+    pieces = re.findall(r"[A-Za-z0-9][A-Za-z0-9_-]*|[\u4e00-\u9fff]{2,}", str(query or ""))
+    return [piece.lower().replace("_", "-") for piece in pieces if piece.strip()]
+
+
 def run_retrieval_once(
     *,
     query: str,
@@ -84,8 +106,14 @@ def run_retrieval_once(
     model_name: str,
     params: dict[str, Any],
     embed_cache: EmbedCache | None = None,
+    use_llm_planner: bool = True,
+    retrieval_mode: str = "semantic",
 ) -> dict[str, Any]:
-    plan = plan_recall(query=query, api_key=api_key, model_name=model_name)
+    plan = (
+        plan_recall(query=query, api_key=api_key, model_name=model_name)
+        if use_llm_planner
+        else _heuristic_plan(query)
+    )
     plan["search_targets"] = ["long_term_l1", "long_term_l2", "long_term_l3"]
     recall_params = dict(params)
     recall_params.setdefault(
@@ -100,12 +128,21 @@ def run_retrieval_once(
         model_name=model_name,
         include_retrieval_debug=True,
         embed_cache=embed_cache,
+        retrieval_mode=retrieval_mode,
         **recall_params,
     )
 
 
 def _score_query_result(query_row: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    strict_obj_ids = {
+        str(x)
+        for x in _as_list(query_row.get("strict_gold_obj_ids", query_row.get("expected_obj_ids")))
+    }
+    acceptable_obj_ids = {str(x) for x in _as_list(query_row.get("acceptable_obj_ids"))}
     expected_obj_ids = {str(x) for x in _as_list(query_row.get("expected_obj_ids"))}
+    scoring_obj_ids = expected_obj_ids | acceptable_obj_ids
+    if not scoring_obj_ids:
+        scoring_obj_ids = strict_obj_ids
     expected_l2_ids = {str(x) for x in _as_list(query_row.get("expected_l2_ids"))}
     expected_l3_ids = {str(x) for x in _as_list(query_row.get("expected_l3_ids"))}
     l1_ids = _ids(_as_list(result.get("long_term_l1")), "obj_id")
@@ -115,13 +152,25 @@ def _score_query_result(query_row: dict[str, Any], result: dict[str, Any]) -> di
     debug = result.get("retrieval_debug", {}) if isinstance(result.get("retrieval_debug"), dict) else {}
     prompt = format_recall_for_prompt(result, include_debug=False)
     obj_recall = (
-        len(expected_obj_ids & l1_ids) / len(expected_obj_ids)
-        if expected_obj_ids
+        len(scoring_obj_ids & l1_ids) / len(scoring_obj_ids)
+        if scoring_obj_ids
         else 1.0
+    )
+    strict_recall = (
+        len(strict_obj_ids & l1_ids) / len(strict_obj_ids)
+        if strict_obj_ids
+        else 1.0
+    )
+    acceptable_recall = (
+        len(acceptable_obj_ids & l1_ids) / len(acceptable_obj_ids)
+        if acceptable_obj_ids
+        else obj_recall
     )
     return {
         "query": query_row.get("query", ""),
         "expected_obj_recall_at_context": round(obj_recall, 4),
+        "strict_obj_recall_at_context": round(strict_recall, 4),
+        "acceptable_obj_recall_at_context": round(acceptable_recall, 4),
         "expected_l2_hit": not expected_l2_ids or bool(expected_l2_ids & l2_ids),
         "expected_l3_hit": not expected_l3_ids or bool(expected_l3_ids & l3_ids),
         "selected_obj_ids": sorted(l1_ids),
@@ -157,19 +206,21 @@ def evaluate_retrieval_grid(
     model_name: str = "gemini-2.5-pro",
     share_mem_root: Path | str = REPO_ROOT / "share_mem",
     grid: dict[str, list[Any]] | None = None,
+    use_llm_planner: bool = True,
+    retrieval_mode: str = "semantic",
 ) -> dict[str, Any]:
     query_rows = _load_queries(Path(queries_path))
     tree = load_share_tree(Path(share_mem_root))
     api_key = api_key if api_key is not None else _default_api_key()
     grid = grid or {
-        "top_k_raw": [30],
-        "max_l1_seeds_for_prompt": [5],
+        "top_k_raw": [20, 30],
+        "max_l1_seeds_for_prompt": [5, 8],
         "max_events_per_l2": [2],
-        "max_events_per_child_l2": [2],
-        "max_expanded_l2_topics": [2],
+        "max_events_per_child_l2": [2, 4],
+        "max_expanded_l2_topics": [1, 2],
         "max_global_topic_map_chars": [300],
         "max_event_chars": [100],
-        "topic_size_penalty": [0.05],
+        "topic_size_penalty": [0.05, 0.10],
         "prefer_materialized_l3": [True],
     }
     runs: list[dict[str, Any]] = []
@@ -184,6 +235,8 @@ def evaluate_retrieval_grid(
                 model_name=model_name,
                 params=params,
                 embed_cache=embed_cache,
+                use_llm_planner=use_llm_planner,
+                retrieval_mode=retrieval_mode,
             )
             per_query.append(_score_query_result(query_row, result))
         runs.append(
@@ -191,6 +244,16 @@ def evaluate_retrieval_grid(
                 "params": params,
                 "expected_obj_recall_at_context": round(
                     sum(row["expected_obj_recall_at_context"] for row in per_query)
+                    / max(1, len(per_query)),
+                    4,
+                ),
+                "strict_obj_recall_at_context": round(
+                    sum(row["strict_obj_recall_at_context"] for row in per_query)
+                    / max(1, len(per_query)),
+                    4,
+                ),
+                "acceptable_obj_recall_at_context": round(
+                    sum(row["acceptable_obj_recall_at_context"] for row in per_query)
                     / max(1, len(per_query)),
                     4,
                 ),
@@ -217,6 +280,7 @@ def evaluate_retrieval_grid(
     runs.sort(
         key=lambda row: (
             -float(row["expected_obj_recall_at_context"]),
+            -float(row["prompt_budget_pass_rate"]),
             -float(row["expected_l2_hit_rate"]),
             -float(row["expected_l3_hit_rate"]),
             float(row["avg_context_char_count"]),
@@ -226,6 +290,8 @@ def evaluate_retrieval_grid(
         "schema_version": 1,
         "query_count": len(query_rows),
         "run_count": len(runs),
+        "retrieval_mode": retrieval_mode,
+        "use_llm_planner": use_llm_planner,
         "runs": runs,
         "best_params": runs[0]["params"] if runs else {},
     }
@@ -249,6 +315,8 @@ def _markdown_report(report: dict[str, Any]) -> str:
         lines.append(
             "- "
             f"obj_recall={run['expected_obj_recall_at_context']} "
+            f"strict_obj={run.get('strict_obj_recall_at_context', 0)} "
+            f"acceptable_obj={run.get('acceptable_obj_recall_at_context', 0)} "
             f"l2_hit={run['expected_l2_hit_rate']} "
             f"l3_hit={run['expected_l3_hit_rate']} "
             f"avg_chars={run['avg_context_char_count']} "
@@ -265,16 +333,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--out", default=str(DEFAULT_OUT))
     parser.add_argument("--share-mem-root", default=str(REPO_ROOT / "share_mem"))
     parser.add_argument("--model", default=os.getenv("GEMINI_MODEL", "gemini-2.5-pro"))
-    parser.add_argument("--top-k-raw", default="30")
-    parser.add_argument("--max-l1-seeds-for-prompt", default="5")
+    parser.add_argument("--top-k-raw", default="20,30")
+    parser.add_argument("--max-l1-seeds-for-prompt", default="5,8")
     parser.add_argument("--max-events-per-l2", default="2")
-    parser.add_argument("--max-events-per-child-l2", default="2")
-    parser.add_argument("--max-expanded-l2-topics", default="2")
+    parser.add_argument("--max-events-per-child-l2", default="2,4")
+    parser.add_argument("--max-expanded-l2-topics", default="1,2")
     parser.add_argument("--max-global-topic-map-chars", default="300")
     parser.add_argument("--max-event-chars", default="100")
-    parser.add_argument("--topic-size-penalty", default="0.05")
+    parser.add_argument("--topic-size-penalty", default="0.05,0.10")
     parser.add_argument("--prefer-materialized-l3", default="true")
-    parser.add_argument("--no-llm", action="store_true", help="Do not call a final answer LLM; retrieval still may use embeddings.")
+    parser.add_argument("--retrieval-mode", choices=["lexical", "semantic"], default="lexical")
+    parser.add_argument("--no-llm", action="store_true", help="Use heuristic planning; with --retrieval-mode lexical this does not call planner or embedding APIs.")
     return parser.parse_args(argv)
 
 
@@ -297,6 +366,8 @@ def main(argv: list[str] | None = None) -> None:
         share_mem_root=args.share_mem_root,
         model_name=args.model,
         grid=grid,
+        use_llm_planner=not bool(args.no_llm),
+        retrieval_mode=args.retrieval_mode,
     )
     print(
         "[long_term] retrieval eval complete: "
