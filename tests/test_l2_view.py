@@ -1331,6 +1331,39 @@ class L2ViewTests(unittest.TestCase):
         cases = [
             (
                 {
+                    "obj_id": "L1-0325-086",
+                    "type": "argument",
+                    "importance": 0.7,
+                    "content": "簡單的 RAG 方法不足以追蹤主題的演變，例如一個主題何時被放棄以及原因。RAG 只能找到所有相關的提及，但無法捕捉到關鍵的時間順序和最終決定。",
+                    "related_topics": [
+                        "rag",
+                        "topic lifecycle",
+                        "memory retrieval",
+                        "temporal reasoning",
+                        "memory representation",
+                        "memory system",
+                        "evaluation",
+                    ],
+                },
+                "memory lifecycle",
+            ),
+            (
+                {
+                    "obj_id": "L1-0408-044",
+                    "type": "argument",
+                    "importance": 0.62,
+                    "content": "長期記憶的價值在於能夠追蹤專案主題隨時間的演變。例如，記錄一年中所有討論過的主題歷史，便能清晰地展示長期記憶的功用。",
+                    "related_topics": [
+                        "long-term memory",
+                        "topic lifecycle",
+                        "evaluation",
+                        "agent architecture",
+                    ],
+                },
+                "memory lifecycle",
+            ),
+            (
+                {
                     "obj_id": "L1-0429-004",
                     "type": "finding",
                     "importance": 0.62,
