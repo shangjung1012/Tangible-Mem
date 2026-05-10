@@ -308,6 +308,98 @@ class L2ViewTests(unittest.TestCase):
         self.assertEqual(assignment["l2_label"], "prompt design and instruction quality")
         self.assertEqual(assignment["reason"], "related_topic_seed_content_refined")
 
+    def test_assignment_rules_cover_current_chinese_l1_regressions(self) -> None:
+        cases = [
+            (
+                _obj(
+                    "L1-0307-006",
+                    "open_issue",
+                    "在 Demo 中如何清楚地識別被更新的記憶項目是一個問題，這點引起了與會者的疑問。",
+                    importance=0.54,
+                    topics=["memory update", "demo", "ui"],
+                ),
+                "memory update semantics",
+            ),
+            (
+                _obj(
+                    "L1-0408-030",
+                    "argument",
+                    (
+                        "應讓 LLM 透過 function calling 來決定要查詢短期記憶或長期記憶，"
+                        "而非使用固定的系統規則。理由是，選擇記憶體的決策邏輯本身很複雜，"
+                        "LLM 能夠處理更細微的查詢，甚至執行多步驟檢索（例如先查 LTM 再查 STM）。"
+                    ),
+                    importance=0.62,
+                    topics=[
+                        "agent architecture",
+                        "retrieval strategy",
+                        "function calling",
+                        "short-term memory",
+                        "long-term memory",
+                    ],
+                ),
+                "memory retrieval",
+            ),
+            (
+                _obj(
+                    "L1-0506-029",
+                    "finding",
+                    (
+                        "長期記憶系統採用三層級結構：L1 是基礎記憶單元，L2 是對 L1 節點的摘要，"
+                        "L3 是所有上下文的最高層級摘要。"
+                    ),
+                    importance=0.62,
+                    topics=[
+                        "long-term memory",
+                        "l1 memory",
+                        "l2 memory",
+                        "l3 memory",
+                        "memory architecture",
+                        "hierarchical memory",
+                    ],
+                ),
+                "memory processing architecture",
+            ),
+            (
+                _obj(
+                    "L1-0506-038",
+                    "finding",
+                    (
+                        "每個 L1 節點由一組參數描述，包括「importance」、「activation」、"
+                        "「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。"
+                    ),
+                    importance=0.65,
+                    topics=[
+                        "l1 memory",
+                        "data structure",
+                        "memory model",
+                        "importance score",
+                        "activation score",
+                    ],
+                ),
+                "memory lifecycle",
+            ),
+            (
+                _obj(
+                    "L1-0429-127",
+                    "proposal",
+                    (
+                        "提出一項設計原則：為避免記憶節點因內容過於相似而收斂，"
+                        "系統應避免使用單一、未分化的大塊文本來更新多個相關的記憶節點。"
+                    ),
+                    importance=0.61,
+                    topics=["memory update", "data quality", "chunking strategy", "idea units"],
+                ),
+                "transcript segmentation and idea-unit coverage",
+            ),
+        ]
+
+        for obj, expected_label in cases:
+            with self.subTest(obj_id=obj["obj_id"]):
+                assignment = choose_l2_assignment(obj)
+                self.assertEqual("assign_l2", assignment["action"])
+                self.assertEqual(expected_label, assignment["l2_label"])
+
     def test_validate_l2_view_flags_generic_label_and_high_importance_unlinked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             share_root = Path(tmp) / "share_mem"

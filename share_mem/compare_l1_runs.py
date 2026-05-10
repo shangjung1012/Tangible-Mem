@@ -52,8 +52,17 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "six type",
             "six types",
             "six predefined",
+            "six specific categories",
+            "six categories",
+            "six memory types",
+            "six predefined categories",
+            "decision todo method change result open question argument",
+            "decision、todo、method change、result、open question、argument",
             "六個",
             "六種",
+            "六個類別",
+            "六種類別",
+            "六種預定義類別",
         ),
     ),
     ("decision_role", ("decision", "決策")),
@@ -511,7 +520,124 @@ SEMANTIC_ANCHOR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     ("topic_tree", ("topic-tree", "topic tree", "topic node", "主題樹", "主題節點")),
-    ("retrieval", ("retrieval", "recall", "檢索", "召回")),
+    ("retrieval", ("retrieval", "recall", "retrieve", "檢索", "召回")),
+    (
+        "energy_saving_model_selection",
+        (
+            "energy-saving mode",
+            "energy saving mode",
+            "energy consumption",
+            "energy efficiency",
+            "sustainable ai",
+            "model selection",
+            "less powerful model",
+            "adequate model",
+            "節能",
+            "節能模式",
+            "耗能",
+            "能源",
+            "可持續 ai",
+            "較不耗能",
+        ),
+    ),
+    (
+        "personality_style_drift",
+        (
+            "personality drift",
+            "personality stability",
+            "meeting style",
+            "interrupt",
+            "interruption",
+            "style prompting",
+            "persona",
+            "人格",
+            "風格",
+            "打斷",
+            "口頭禪",
+            "真人感",
+        ),
+    ),
+    (
+        "programmatic_flow_control",
+        (
+            "programmer-controlled",
+            "external program",
+            "boolean variable",
+            "unprocessed sentence",
+            "step-by-step",
+            "function call",
+            "function calling",
+            "程式",
+            "外部程式",
+            "變數",
+            "未處理",
+            "流程控制",
+        ),
+    ),
+    (
+        "logging_observability",
+        (
+            "log",
+            "logs",
+            "logging",
+            "observability",
+            "tool calls",
+            "function calls",
+            "parameters",
+            "reconstruct",
+            "日誌",
+            "記錄",
+            "工具調用",
+            "函數呼叫",
+            "參數",
+            "重建",
+        ),
+    ),
+    (
+        "coverage_repair",
+        (
+            "coverage repair",
+            "repair mechanism",
+            "coverage gap",
+            "missed lines",
+            "merge missed",
+            "repair",
+            "修補",
+            "修復",
+            "漏掉",
+            "合併",
+        ),
+    ),
+    (
+        "bottom_up_retrieval",
+        (
+            "bottom-up retrieval",
+            "bottom up retrieval",
+            "parent l2",
+            "parent l3",
+            "upward retrieval",
+            "pull in l2",
+            "pull in l3",
+            "由下而上",
+            "父層 l2",
+            "父層 l3",
+            "往上",
+        ),
+    ),
+    (
+        "funding_admin",
+        (
+            "project funds",
+            "fund transfer",
+            "work-study account",
+            "school work-study",
+            "經費",
+            "公讀",
+            "帳號",
+            "匯款",
+            "轉帳",
+        ),
+    ),
 )
 
 SPECIFIC_SEMANTIC_ANCHORS = {
@@ -547,6 +673,13 @@ SPECIFIC_SEMANTIC_ANCHORS = {
     "meeting_scoped_merge",
     "topic_tree",
     "retrieval",
+    "energy_saving_model_selection",
+    "personality_style_drift",
+    "programmatic_flow_control",
+    "logging_observability",
+    "coverage_repair",
+    "bottom_up_retrieval",
+    "funding_admin",
 }
 
 EVIDENCE_DOMINANT_SEMANTIC_ANCHORS = {
@@ -562,6 +695,12 @@ TRANSLATION_EVIDENCE_SEMANTIC_ANCHORS = {
     "taxonomy_labeling",
     "six_role_set",
     "stm_ltm_reactivation",
+    "energy_saving_model_selection",
+    "personality_style_drift",
+    "programmatic_flow_control",
+    "logging_observability",
+    "coverage_repair",
+    "bottom_up_retrieval",
 }
 
 WATCHLIST_MARKERS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -621,6 +760,15 @@ def _anchor_similarity(baseline: set[str], candidate: set[str]) -> float:
     return max(jaccard, baseline_coverage)
 
 
+def _semantic_anchor_set_from_text(text: str) -> set[str]:
+    lowered = str(text or "").lower()
+    anchors: set[str] = set()
+    for name, markers in SEMANTIC_ANCHOR_GROUPS:
+        if any(_anchor_marker_matches(lowered, marker) for marker in markers):
+            anchors.add(name)
+    return anchors
+
+
 def _semantic_anchor_set(obj: dict[str, Any]) -> set[str]:
     raw_topics = obj.get("related_topics", [])
     topics = " ".join(str(topic) for topic in raw_topics) if isinstance(raw_topics, list) else ""
@@ -631,11 +779,7 @@ def _semantic_anchor_set(obj: dict[str, Any]) -> set[str]:
             topics,
         ]
     ).lower()
-    anchors: set[str] = set()
-    for name, markers in SEMANTIC_ANCHOR_GROUPS:
-        if any(_anchor_marker_matches(text, marker) for marker in markers):
-            anchors.add(name)
-    return anchors
+    return _semantic_anchor_set_from_text(text)
 
 
 def _watchlist_text(obj: dict[str, Any]) -> str:
@@ -678,6 +822,14 @@ def iter_l1_objects(tree: dict[str, Any]) -> list[dict[str, Any]]:
             row["_evidence_tokens"] = _tokens(row.get("evidence", ""))
             row["_topic_set"] = _topic_set(row)
             row["_semantic_anchors"] = _semantic_anchor_set(row)
+            row["_content_semantic_anchors"] = _semantic_anchor_set_from_text(
+                " ".join(
+                    [
+                        str(row.get("content", "") or ""),
+                        " ".join(str(topic) for topic in row.get("related_topics", [])),
+                    ]
+                )
+            )
             rows.append(row)
     return rows
 
@@ -685,6 +837,8 @@ def iter_l1_objects(tree: dict[str, Any]) -> list[dict[str, Any]]:
 def _match_score(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, float]:
     baseline_anchors = baseline.get("_semantic_anchors", set())
     candidate_anchors = candidate.get("_semantic_anchors", set())
+    baseline_content_anchors = baseline.get("_content_semantic_anchors", set())
+    candidate_content_anchors = candidate.get("_content_semantic_anchors", set())
     evidence_similarity = _jaccard(
         baseline.get("_evidence_tokens", set()),
         candidate.get("_evidence_tokens", set()),
@@ -701,7 +855,14 @@ def _match_score(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
         baseline_anchors,
         candidate_anchors,
     )
+    content_anchor_similarity = _anchor_similarity(
+        baseline_content_anchors,
+        candidate_content_anchors,
+    )
     specific_anchor_overlap = 1.0 if baseline_anchors & candidate_anchors & SPECIFIC_SEMANTIC_ANCHORS else 0.0
+    content_specific_anchor_overlap = (
+        1.0 if baseline_content_anchors & candidate_content_anchors & SPECIFIC_SEMANTIC_ANCHORS else 0.0
+    )
     evidence_dominant_anchor_overlap = (
         1.0 if baseline_anchors & candidate_anchors & EVIDENCE_DOMINANT_SEMANTIC_ANCHORS else 0.0
     )
@@ -723,7 +884,9 @@ def _match_score(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
         "content_similarity": round(content_similarity, 4),
         "topic_similarity": round(topic_similarity, 4),
         "semantic_anchor_similarity": round(semantic_anchor_similarity, 4),
+        "content_anchor_similarity": round(content_anchor_similarity, 4),
         "specific_anchor_overlap": specific_anchor_overlap,
+        "content_specific_anchor_overlap": content_specific_anchor_overlap,
         "evidence_dominant_anchor_overlap": evidence_dominant_anchor_overlap,
         "translation_evidence_anchor_overlap": translation_evidence_anchor_overlap,
         "same_meeting_bonus": same_meeting_bonus,
@@ -770,7 +933,46 @@ def _accepted_match(score: dict[str, float], *, threshold: float) -> bool:
     return (
         score.get("score", 0.0) >= threshold
         or score.get("evidence_similarity", 0.0) >= 0.65
+        or _same_meeting_translation_match(score)
         or _strong_semantic_coverage(score)
+    )
+
+
+def _same_meeting_translation_match(score: dict[str, float]) -> bool:
+    """Accept same-meeting English/Chinese rewrites with shared semantic anchors.
+
+    Language-policy experiments intentionally translate `content` into
+    Traditional Chinese while keeping related topic keys in English. In that
+    setting content-token overlap can fall to zero even when evidence spans and
+    semantic anchors still identify the same memory.
+    """
+
+    if score.get("same_meeting_bonus", 0.0) < 1.0:
+        return False
+    if score.get("semantic_score", 0.0) < 0.45:
+        return False
+    if score.get("evidence_similarity", 0.0) < 0.25:
+        return False
+    if (
+        score.get("content_specific_anchor_overlap", 0.0) < 1.0
+        and score.get("content_similarity", 0.0) < 0.10
+        and score.get("topic_similarity", 0.0) < 0.05
+    ):
+        return False
+    return (
+        score.get("specific_anchor_overlap", 0.0) >= 1.0
+        and score.get("semantic_anchor_similarity", 0.0) >= 0.50
+    ) or (
+        score.get("translation_evidence_anchor_overlap", 0.0) >= 1.0
+        and score.get("semantic_anchor_similarity", 0.0) >= 0.30
+    )
+
+
+def _has_content_or_topic_support(score: dict[str, float]) -> bool:
+    return (
+        score.get("content_specific_anchor_overlap", 0.0) >= 1.0
+        or score.get("content_similarity", 0.0) >= 0.10
+        or score.get("topic_similarity", 0.0) >= 0.05
     )
 
 
@@ -867,12 +1069,14 @@ def _strong_semantic_coverage(score: dict[str, float]) -> bool:
                 and score.get("semantic_anchor_similarity", 0.0) >= 0.30
                 and score.get("evidence_similarity", 0.0) >= 0.28
                 and score.get("semantic_score", 0.0) >= 0.45
+                and _has_content_or_topic_support(score)
             )
             or (
                 score.get("translation_evidence_anchor_overlap", 0.0) >= 1.0
                 and score.get("semantic_anchor_similarity", 0.0) >= 0.75
                 and score.get("evidence_similarity", 0.0) >= 0.20
                 and score.get("semantic_score", 0.0) >= 0.60
+                and _has_content_or_topic_support(score)
             )
             or (
                 score.get("evidence_dominant_anchor_overlap", 0.0) >= 1.0

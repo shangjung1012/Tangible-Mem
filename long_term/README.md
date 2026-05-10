@@ -169,17 +169,20 @@ uv run python long_term/evaluate_retrieval.py \
 
 ## Current Generated State
 
-- Source L1: 7 Grace meetings, 509 L1 objects.
-- L2 view: 15 L2 topics, 477 linked L1 objects, 32 unlinked L1 objects.
-- L2 validation: 0 severe issues; 0 warnings.
-- L3 validation: 0 severe issues; 11 warnings, all prompt-slice diagnostics
+- Source L1: 7 Grace meetings, 448 L1 objects. Canonical L1 `content` is
+  Traditional Chinese; `related_topics` remain English machine-facing keys.
+- L2 view: 15 L2 topics, 411 linked L1 objects, 37 unlinked L1 objects.
+- L2 validation: 0 severe issues; 3 warnings for high-importance unlinked
+  administrative / project-logistics objects.
+- L3 validation: 0 severe issues; 3 warnings, all prompt-slice diagnostics
   rather than assignment coverage or oversized-child failures.
-- Materialized L3: 2 parents, 11 child L2 topics, 184 assigned L1 objects, 0 unassigned L1 objects.
+- Materialized L3: 2 parents, 14 child L2 topics, 169 assigned L1 objects,
+  0 unassigned L1 objects.
 - Reviewed deterministic L3: `L3-transcript-segmentation-and-idea-unit-coverage`
   and `L3-memory-evaluation-strategy`.
 - Retrieval eval: 8 demo-safe queries, 32 offline lexical parameter runs, best
-  acceptable L1 recall 1.0, strict historical L1 recall 0.0833, L2 hit rate
-  1.0, L3 hit rate 1.0, and prompt-budget pass rate 1.0.
+  strict/acceptable L1 recall 1.0, L2 hit rate 1.0, L3 hit rate 1.0, and
+  prompt-budget pass rate 1.0.
 
 ## Archive Boundary
 

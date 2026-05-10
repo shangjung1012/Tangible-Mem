@@ -538,6 +538,172 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertTrue(queue_item["possible_semantic_coverage"])
         self.assertEqual(queue_item["best_candidate"]["obj_id"], "new-merge-rule")
 
+    def test_compare_l1_runs_matches_english_to_chinese_energy_saving_mode(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0318",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-energy-mode",
+                            "type": "decision",
+                            "content": (
+                                "Implement an energy-saving mode in the LLM interface "
+                                "that uses a less powerful but adequate model for simple questions."
+                            ),
+                            "importance": 0.75,
+                            "evidence": (
+                                "有些問題可以開節能的模式，它可能可以用比較爛的版本就可以回答，"
+                                "某些東西是不需要最高最高的 model。"
+                            ),
+                            "related_topics": ["model configuration", "sustainable ai"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0318",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-energy-mode",
+                            "type": "argument",
+                            "legacy_type": "argument",
+                            "content": (
+                                "由於最強大的模型並非總是處理所有查詢所必需的，因此在聊天機器人中"
+                                "提供「節能模式」讓使用者選擇功能足夠但較不耗能的模型，是一個合理的設計方向。"
+                            ),
+                            "importance": 0.61,
+                            "evidence": (
+                                "可持續 AI 專案將計算 GPT token 使用所關聯的能耗與運算負載。"
+                                "有些問題可以開節能的模式，它可能可以用比較爛的版本就可以回答，"
+                                "某些東西是不需要最高最高的 model。"
+                                "研究也會比較 Google Search 與 GPT 對簡單問題的能源消耗。"
+                            ),
+                            "related_topics": ["sustainable ai", "energy consumption", "model selection"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-energy-mode")
+
+    def test_compare_l1_runs_matches_english_to_chinese_retrieval_hierarchy(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0408",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-retrieval-hierarchy",
+                            "type": "argument",
+                            "content": (
+                                "The retrieval process first matches detailed L1 nodes, "
+                                "then brings connected L2 and L3 context into the prompt."
+                            ),
+                            "importance": 0.71,
+                            "evidence": (
+                                "先用 L1 去做 match，Match 完之後，把 L1 連到的 L2、L3 一起帶進來，"
+                                "這樣就同時有細節資訊和 high level 的整體架構。"
+                            ),
+                            "related_topics": ["memory retrieval", "memory architecture"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0408",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-retrieval-hierarchy",
+                            "type": "approach_change",
+                            "legacy_type": "method_change",
+                            "content": (
+                                "檢索流程的設計是先將查詢與 L1 節點進行比對，然後取回匹配的 L1 "
+                                "及其對應的父層 L2 和 L3 摘要，以便同時提供具體細節和高層次的上下文。"
+                            ),
+                            "importance": 0.73,
+                            "evidence": (
+                                "檢索流程也會受到 recency 和 importance 的影響。"
+                                "先用 L1 去做 match，Match 完之後，把 L1 連到的 L2、L3 一起帶進來，"
+                                "這樣就同時有細節資訊和 high level 的整體架構。"
+                                "後續仍需要評估權重與 query planner。"
+                            ),
+                            "related_topics": ["memory retrieval", "l123 hierarchy"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-retrieval-hierarchy")
+
+    def test_compare_l1_runs_matches_english_to_chinese_six_role_taxonomy(self) -> None:
+        baseline = {
+            "meetings": [
+                {
+                    "meeting_id": "0408",
+                    "memory_objects": [
+                        {
+                            "obj_id": "old-six-role-taxonomy",
+                            "type": "decision",
+                            "content": (
+                                "The memory extraction process is defined to identify six specific "
+                                "categories: decision, TODO, method change, result, open question, and argument."
+                            ),
+                            "importance": 0.78,
+                            "evidence": (
+                                "這是我們目前會取的。目前取的有 decision、TODO、method change、"
+                                "result、open question、argument。"
+                            ),
+                            "related_topics": ["memory object model", "definitions"],
+                        }
+                    ],
+                }
+            ]
+        }
+        candidate = {
+            "meetings": [
+                {
+                    "meeting_id": "0408",
+                    "memory_objects": [
+                        {
+                            "obj_id": "new-six-role-taxonomy",
+                            "type": "finding",
+                            "legacy_type": "result",
+                            "content": (
+                                "目前的資訊提取流程會提取符合六種預定義類別的資訊：decision、"
+                                "TODO、method change、result、open question 和 argument。"
+                            ),
+                            "importance": 0.59,
+                            "evidence": (
+                                "這是我們目前會取的。目前取的有 decision、TODO、method change、"
+                                "result、open question、argument。"
+                            ),
+                            "related_topics": ["data processing", "information screening"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        report = compare_l1_trees(baseline, candidate, high_importance_threshold=0.7)
+
+        self.assertEqual(report["summary"]["high_importance_unmatched_count"], 0)
+        self.assertEqual(report["matches"][0]["candidate_obj_id"], "new-six-role-taxonomy")
+
     def test_compare_l1_runs_matches_cross_lingual_taxonomy_coverage(self) -> None:
         baseline = {
             "meetings": [

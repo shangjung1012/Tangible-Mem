@@ -69,7 +69,7 @@ EXPECTED_L2_ASSIGNMENTS = {
     "L1-0506-009": "transcript segmentation and idea-unit coverage",
     "L1-0506-024": "pipeline observability and validation",
     "L1-0506-028": "agentic pipeline control",
-    "L1-0506-029": "l2 topic grouping",
+    "L1-0506-029": "memory processing architecture",
     "L1-0506-032": "l2 topic grouping",
     "L1-0506-036": "memory lifecycle",
     "L1-0506-038": "memory lifecycle",

@@ -1,359 +1,417 @@
 {
   "meeting_id": "0318",
-  "timestamp": "2026-05-09T04:59:10Z",
+  "timestamp": "2026-05-10T00:57:42Z",
   "meeting_date": "2026-03-18",
   "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0318.txt",
   "phase_id": "",
   "memory_objects": [
     {
       "obj_id": "L1-0318-001",
-      "type": "action_item",
-      "content": "The team reviewed and rejected the methodology from a 2024 paper on long-text processing, which involved sequential agent-based chunking and a manager agent. The approach was dismissed as \"old technology\" due to significant flaws.",
-      "importance": 0.55,
-      "evidence": "[SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要有一個 shared blackboard，因為每個 agent 現在都只有自己那個 chunk，然後還有前一個 agent summarize 過來的東西，但他們沒有一個 global 的理解。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 a...",
+      "type": "open_issue",
+      "content": "LOCOMO 數據集包含一項測試，用於識別 agent 知識範圍之外無法回答的問題，但 MEMO 論文並未執行此測試。這引出了一個問題：我們的評估是否應該包含這種類型的測試。",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。",
       "related_topics": [
-        "long-term memory",
-        "memory architecture",
-        "system design",
-        "reference papers",
-        "research_methodology"
+        "evaluation strategy",
+        "benchmarking",
+        "dataset",
+        "model performance",
+        "literature review",
+        "prior art",
+        "evaluation"
       ],
       "related_obj_ids": [],
-      "legacy_type": "decision"
+      "legacy_type": "open_question"
     },
     {
       "obj_id": "L1-0318-002",
       "type": "open_issue",
-      "content": "在分析一篇2024年關於長文本處理的論文時，對於其中「管理者代理人」(manager agent) 如何整合各個「工作者代理人」(worker agent) 的輸出以回答問題的具體機制尚不清楚。",
-      "importance": 0.5,
-      "evidence": "[SPEAKER_01]: 然後這是 2024 年。 [SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後...",
+      "content": "在一篇2024年的論文中，其 sequential agent 模型架構包含一個最終的 manager agent 來整合 worker agents 的輸出，但該 manager agent 的具體機制與輸入尚不清楚。",
+      "importance": 0.51,
+      "evidence": "[SPEAKER_02]: 它是產出一個摘要嗎？它最後是產生一個摘要？他們最後也是摘要？ [SPEAKER_01]: 我看一下，他們其實也不是摘要。它就是一個 agent，它要 build 一個 agent，然後它最後有一個 manager agent，到最後它會處理、它會接收所有的 agent 給他們的東西，對。 [SPEAKER_02]: 所以那個 manager 是把 1，然後 1 加 2，然後 1 加 2 加 3，這什麼東西？ [SPEAKER_01]: Manager 他只有接，依照他的這個圖畫上看起來的話，他應該是這個人是第一個 agent，他就讀這一串，丟下去給第二個 agent，丟下去給第三個 agent。 [SPEAKER_01]: 然後呢，這個比如 agent 這個人，他是一直會去有一個把...",
       "related_topics": [
-        "reference papers",
-        "research_methodology",
-        "system_architecture"
+        "literature review",
+        "prior art",
+        "manager-agent",
+        "architecture design"
       ],
       "related_obj_ids": [],
       "legacy_type": "open_question"
     },
     {
       "obj_id": "L1-0318-003",
-      "type": "finding",
-      "content": "A sequential agent-based text processing method, where each agent summarizes a chunk while incorporating the previous agent's output, is susceptible to two key weaknesses: the propagation of hallucinations down the chain and a lack of global understanding of the text by individual agents.",
-      "importance": 0.59,
-      "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要...",
+      "type": "proposal",
+      "content": "針對循序處理長文本的 agent 模型缺乏全域理解的問題，提議使用共享黑板（shared blackboard）架構來改善。",
+      "importance": 0.56,
+      "evidence": "[SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說一個問題。第一個就是如果今天有 hallucination，就會直接 propagate 下去嗎？那我們先不處理 hallucination 的問題。那另外一個就是他們覺得每一個 agent 應該要有一個 shared blackboard，因為每個 agent 現在都只有自己那個 chunk，然後還有前一個 agent summarize 過來的東西，但他們沒有一個 global 的理解。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 a...",
       "related_topics": [
-        "system_architecture",
-        "reference papers",
-        "research_methodology",
-        "long-term memory",
         "memory architecture",
-        "system design"
+        "prior art",
+        "literature review"
       ],
       "related_obj_ids": [],
-      "legacy_type": "argument"
+      "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0318-004",
       "type": "argument",
-      "content": "Chunking long text based on a fixed sentence count is a flawed method because it can break sentences, impairing the meaning and context needed for processing.",
-      "importance": 0.64,
-      "evidence": "[SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看到某一句話下面一半，那根本就抓不起來人們的意思。",
+      "content": "針對一篇2024年論文提出的序列式 agent 模型（每個 agent 處理一個文本區塊並將其摘要傳遞給下一個），存在幾項批評。主要論點包括：1) 幻覺可能沿著 agent 鏈傳播並放大；2) 模型缺乏全域理解，凸顯了共享黑板（shared blackboard）等機制的必要性；3) 僅基於大小的隨機分塊方法可能會破壞句子結構並丟失語意。",
+      "importance": 0.63,
+      "evidence": "[SPEAKER_01]: 他們畫了一個蠻可愛的動畫，就是他基本上他們也是在處理長文字 [SPEAKER_01]: 但我覺得他們的 Long Context 應該都弄不到像我們那麼 long 吧。 [SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 不過像這一個問的人，那個其實他們同學有說...",
       "related_topics": [
-        "data pipeline",
-        "system design",
+        "prior art",
+        "literature review",
+        "agent architecture",
         "long-term memory",
-        "reference papers",
-        "data_pipeline",
-        "data quality",
-        "research_methodology"
+        "memory architecture"
       ],
       "related_obj_ids": [],
       "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0318-005",
-      "type": "argument",
-      "content": "The multi-agent approach for long text processing described in the 2024 paper is considered outdated ('old technology') due to the rapid pace of model development.",
-      "importance": 0.55,
-      "evidence": "[SPEAKER_01]: 他這個反正他就是個 chatbot 嘛，然後我還沒有仔細看他的 manager 是要做什麼事情，對。但是 anyway，這一篇也是 2024 年了啦，所以以現在的這種 model 來說，2024 年是這個老技術，對。",
+      "type": "finding",
+      "content": "LOCOMO (ACL 2024) 是一個用於評估的共享資料集。其中一個 session 包含 10 次對話、約 600 個對話輪次、總計 26k token，並附有約 200 個預製問題。問題類型分為 single-hop、multi-hop、時間推理 (Temporal Reasoning) 和開放領域 (Open Domain)。",
+      "importance": 0.58,
+      "evidence": "[SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conversations，10 個對話，然後裡面大概有 600 個 dialogue turns，然後 total 是 26000 個 tokens，一個 session 這樣。然後 LOCOMO 它自己有產生大概 200 個問題。 [SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-h...",
       "related_topics": [
-        "reference papers",
-        "research_methodology",
-        "model performance evaluation"
+        "dataset",
+        "evaluation",
+        "benchmarking",
+        "dataset sourcing",
+        "prior art"
       ],
       "related_obj_ids": [],
-      "legacy_type": "argument"
+      "legacy_type": "result"
     },
     {
       "obj_id": "L1-0318-006",
       "type": "finding",
-      "content": "A reviewed 2024 paper on long text processing describes an architecture with sequential worker agents processing text chunks, a 'manager agent' to integrate their outputs, and a 'shared blackboard' to provide global context.",
-      "importance": 0.54,
-      "evidence": "[SPEAKER_01]: 他就是還是一個大長的文章，那他們做法是說，就是把一個長文直接把它切切切切切，切成一個 chunks，然後每一個 agent 他是負責一個 chunk 的 summary。然後但他們是 sequentially 的，就是第一個 agent 他 summarize 完那個東西之後，第二個 agent 他負責自己那個 chunk，但他要讀前一個 agent 丟下來的東西，所以他就是一直捲進去，就是他就是把他一直捲進去的東西。 [SPEAKER_01]: 所以他們就自己提出應該有一個 blackboard。然後還有他們講說，他們的切分方式很 random，就是直接說 size 幾句切下去、幾句切下去，所以有些可能是斷掉了。所以這個 agent 可能看到某一句話的一半，下一個 agent 看...",
+      "content": "MIRIX 論文發表於 MEMO 論文之後，其評估包含了與 MEMO 的比較。兩者皆使用相同的 LOCOMO 資料集進行評估。",
+      "importance": 0.61,
+      "evidence": "[SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。",
       "related_topics": [
-        "reference papers",
-        "system_architecture",
-        "research_methodology"
+        "literature review",
+        "prior art",
+        "evaluation",
+        "benchmarking",
+        "baseline comparison"
       ],
       "related_obj_ids": [],
       "legacy_type": "result"
     },
     {
       "obj_id": "L1-0318-007",
-      "type": "finding",
-      "content": "The team has resolved the definition of \"multi-hop\" reasoning for evaluation purposes. A \"hop\" is defined as an internal reasoning step or sub-problem required to answer a single query, and is explicitly distinguished from the number of conversational turns or linguistic complexity.",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？ [SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。 [SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。 [SPEAKER_01]: 像是什麼， [SPEAKER_02]: 我想要問哪一部電影的導演的出生地，就是這個。他去找就要跳兩次，他不是一個很直接的問題。他要先找到這部電影的導演是誰，然後再去找這部導演的出生地是哪裡，類似這種概念。然後 one-hop 就是他可以直接馬上，就是不用跳一跳，就可以直接問這個問題、直接得到這個問題的解答。 [SPEAKER_01]: 所以他是...",
+      "type": "open_issue",
+      "content": "評估資料集包含依類型（如 single/multi-hop、temporal reasoning、open-domain）分類的問題，但該評估的最終目標或比較基準尚不明確，這是一個待解決的問題。",
+      "importance": 0.57,
+      "evidence": "[SPEAKER_01]: Temporal Reasoning。然後 open domain 是就開放性問題。所以它的 scale，它是，所以它的這個 dataset 基本上就是有這一些對話的內容，然後它的 question types 就是說，這些內容裡面包含這一種類型的 questions。所以他們在比什麼？",
       "related_topics": [
-        "evaluation",
         "evaluation strategy",
+        "evaluation criteria",
+        "dataset",
+        "evaluation",
         "experimental design",
-        "research_methodology",
-        "model performance evaluation",
-        "benchmarking",
-        "definitions"
+        "experimental setup"
       ],
       "related_obj_ids": [],
-      "legacy_type": "decision"
+      "legacy_type": "open_question"
     },
     {
       "obj_id": "L1-0318-008",
-      "type": "finding",
-      "content": "The MIRIX paper and the MEM 0 paper use the same evaluation method and the LOCOMO dataset from ACL 2024. MIRIX, being published later, includes MEM 0 as a comparative baseline.",
-      "importance": 0.68,
-      "evidence": "[SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。 [SPEAKER_01]: NAACL嗎",
+      "type": "action_item",
+      "content": "在評估的脈絡下，「Temporal Reasoning」被定義為針對特定會議或對話片段生成摘要或大綱的任務。",
+      "importance": 0.6,
+      "evidence": "[SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？ [SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。 [SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？ [SPEAKER_02]: 對",
       "related_topics": [
         "evaluation",
         "evaluation strategy",
-        "reference papers",
-        "benchmarking",
-        "dataset",
-        "dataset selection",
-        "research_methodology"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "result"
-    },
-    {
-      "obj_id": "L1-0318-009",
-      "type": "argument",
-      "content": "The methodology of the MEM 0 paper provides a justification for excluding unanswerable or out-of-scope questions when evaluating on the LOCOMO dataset.",
-      "importance": 0.66,
-      "evidence": "[SPEAKER_02]: 所以這個 dataset 是有包含 conversation 的問題，所以你就可以用它的conversation 去存記憶，然後用它的問題去測。LOCOMO 本身含的有問題，有包含這個對話的問題。然後它的問題有 single-hop、multi-hop，然後Temporal Reasoning 跟 Open Domain。它還有一個是，它要讓 agent 去判斷這個問題不能回答，這個問題是超出知識範圍外、不能回答的。但是 MEM 0 沒有做這個測試。",
-      "related_topics": [
-        "evaluation",
-        "evaluation strategy",
-        "benchmarking",
-        "dataset",
         "experimental design",
-        "reference papers"
-      ],
-      "related_obj_ids": [],
-      "legacy_type": "argument"
-    },
-    {
-      "obj_id": "L1-0318-010",
-      "type": "approach_change",
-      "content": "The project will adopt an evaluation method based on the MEM 0 paper, utilizing the LOCOMO dataset. This approach uses the conversations for memory storage and the associated questions for testing retrieval. The test questions cover single-hop, multi-hop, temporal reasoning, and open domain categories, but specifically exclude questions that are unanswerable or outside the provided knowledge scope.",
-      "importance": 0.77,
-      "evidence": "[SPEAKER_02]: 好，然後上次老師有請我們去看他們怎麼 evaluate。因為我們上次講 MEM 0，然後我們後來看了另外一篇 MIRIX，就是這個。然後我們發現 MIRIX 在 MEM 0 之後，所以他的 evaluate 是有把 MEM 0 一起比進去的，對。所以他們兩個的比較方式其實evaluate 的方式也很像，他們都是用同一個 dataset。然後這個 dataset 是 2024 的 ACL 那個 conference 有發出去的。 [SPEAKER_01]: NAACL嗎 [SPEAKER_02]: 應該是 ACL，對，就是 NLP。然後先講 MEM 0，MEM 0 它只有比 text 的 dataset。然後它就是 LOCOMO 這個 dataset，它去傳輸了 10 個 conve...",
-      "related_topics": [
-        "evaluation strategy",
         "benchmarking",
-        "dataset",
-        "reference papers",
-        "model performance evaluation",
-        "dataset selection",
-        "evaluation"
+        "evaluation criteria",
+        "reasoning"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
-      "obj_id": "L1-0318-011",
-      "type": "proposal",
-      "content": "For evaluating answer quality, the project could use an LLM as a judge to provide a binary 'correct' or 'incorrect' rating, rather than relying on semantic similarity scores. To ensure reliability, each model could be run ten times to derive an average score, and latency should also be measured.",
-      "importance": 0.68,
-      "evidence": "[SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 model 都跑了十次去得到平均的分數，就是可能二十個問題，那她答對了幾個，它跑了十次這樣。 [SPEAKER_02]: 然後它後面還有比一些 latency 跟它花的 token 這樣。它跟其他花的 token，因為這一篇主要它要主打一個就是它 token 花比較少。對，就它的 h...",
+      "obj_id": "L1-0318-009",
+      "type": "decision",
+      "content": "團隊將「多跳推理 (multi-hop reasoning)」定義為需要解決中間子問題的任務，而非指涉多輪對話。例如，要找出某位導演的出生地，需要先確定導演是誰，再查找其出生地。",
+      "importance": 0.59,
+      "evidence": "[SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？ [SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。 [SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。 [SPEAKER_01]: 像是什麼， [SPEAKER_02]: 我想要問哪一部電影的導演的出生地，就是這個。他去找就要跳兩次，他不是一個很直接的問題。他要先找到這部電影的導演是誰，然後再去找這部導演的出生地是哪裡，類似這種概念。然後 one-hop 就是他可以直接馬上，就是不用跳一跳，就可以直接問這個問題、直接得到這個問題的解答。 [SPEAKER_01]: 所以他是...",
       "related_topics": [
+        "evaluation",
+        "evaluation criteria",
+        "reasoning",
+        "multi-hop reasoning",
+        "experimental design"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "decision"
+    },
+    {
+      "obj_id": "L1-0318-010",
+      "type": "finding",
+      "content": "在此評估中，「時間推理 (Temporal Reasoning)」被定義為針對特定會話或對話片段生成摘要或大綱的任務。",
+      "importance": 0.58,
+      "evidence": "[SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？ [SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。 [SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？ [SPEAKER_02]: 對",
+      "related_topics": [
+        "evaluation criteria",
+        "experimental design",
+        "reasoning",
+        "summarization"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "result"
+    },
+    {
+      "obj_id": "L1-0318-011",
+      "type": "action_item",
+      "content": "在評估中，定義了「single-hop」和「multi-hop」推理。「Single-hop」指直接的問答，而「multi-hop」則指一個複雜問題需要先解決中間的子問題。",
+      "importance": 0.54,
+      "evidence": "[SPEAKER_01]: Single-hop 跟 multi-hop 是什麼意思啊？ [SPEAKER_02]: Single-hop 就是可能今天這個事件它是一個，就是單一單輪的；然後 multi-hop 是，如果我今天有可能兩三次的修正。 [SPEAKER_03]: 你剛才說 multi-hop，應該是一個問題裡面會包含很多個資料。 [SPEAKER_01]: 像是什麼， [SPEAKER_02]: 我想要問哪一部電影的導演的出生地，就是這個。他去找就要跳兩次，他不是一個很直接的問題。他要先找到這部電影的導演是誰，然後再去找這部導演的出生地是哪裡，類似這種概念。然後 one-hop 就是他可以直接馬上，就是不用跳一跳，就可以直接問這個問題、直接得到這個問題的解答。 [SPEAKER_01]: 所以他是...",
+      "related_topics": [
+        "evaluation",
         "evaluation strategy",
-        "benchmarking",
-        "model performance evaluation"
+        "experimental design",
+        "benchmarking"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0318-012",
-      "type": "approach_change",
-      "content": "To establish a benchmark, the project could adopt the three-way comparison method used by LOCOMO, evaluating: 1) an LLM with the full raw transcript, 2) an LLM with RAG, and 3) the project's own memory system against pre-existing benchmarks.",
-      "importance": 0.75,
-      "evidence": "[SPEAKER_01]: Temporal Reasoning。然後 open domain 是就開放性問題。所以它的 scale，它是，所以它的這個 dataset 基本上就是有這一些對話的內容，然後它的 question types 就是說，這些內容裡面包含這一種類型的 questions。所以他們在比什麼？ [SPEAKER_02]: 然後就是它有從 full context，就是完全 raw 的逐字稿，餵進 LLM 回答；或是它有比有做 RAG 的，然後它還有比本來 LOCOMO 它自己就有去測市面上的 LLM 的 benchmark，就 LOCOMO 自己提供的測完的結果。",
+      "type": "argument",
+      "content": "LOCOMO 論文的結果顯示其方法在 token 消耗上具有優勢，但在處理多跳（multi-hop）問題時，其表現不如 RAG。這揭示了效率與複雜查詢能力之間的權衡。",
+      "importance": 0.63,
+      "evidence": "[SPEAKER_02]: 然後它後面還有比一些 latency 跟它花的 token 這樣。它跟其他花的 token，因為這一篇主要它要主打一個就是它 token 花比較少。對，就它的 highlight 比較是在它 token 比較少。因為它在 multi-hop 的問題上就沒有贏 RAG 跟其他的方式。OK，然後下一篇是 MIRIX，就是 MEM 0 之後的。",
       "related_topics": [
-        "evaluation strategy",
-        "benchmarking",
-        "experimental design",
-        "reference papers",
-        "evaluation",
-        "RAG"
+        "prior art",
+        "rag",
+        "model performance",
+        "token consumption"
       ],
       "related_obj_ids": [],
-      "legacy_type": "method_change"
+      "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0318-013",
       "type": "argument",
-      "content": "Using an LLM as a judge to provide a binary \"correct\" or \"incorrect\" rating for answers is a justified evaluation metric because it avoids the pitfalls of semantic similarity scores, which can incorrectly rate factually wrong answers as being good.",
-      "importance": 0.69,
+      "content": "在評估方面，採用 LLM 作為裁判來對答案進行二元（正確/不正確）的判斷，是一種避免語義相似度分數問題的方法，LOCOMO 論文即採用此策略。",
+      "importance": 0.62,
       "evidence": "[SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 model 都跑了十次去得到平均的分數，就是可能二十個問題，那她答對了幾個，它跑了十次這樣。",
       "related_topics": [
-        "evaluation",
         "evaluation strategy",
-        "model performance evaluation",
-        "benchmarking",
-        "research_methodology",
-        "reference papers"
+        "llm as judge",
+        "prior art",
+        "benchmarking"
       ],
       "related_obj_ids": [],
       "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0318-014",
-      "type": "finding",
-      "content": "The LOCOMO paper's main claim is lower token usage, but its method did not outperform a RAG-based approach on multi-hop questions. The evaluation also measured latency and averaged scores over ten runs.",
-      "importance": 0.67,
-      "evidence": "[SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 model 都跑了十次去得到平均的分數，就是可能二十個問題，那她答對了幾個，它跑了十次這樣。 [SPEAKER_02]: 然後它後面還有比一些 latency 跟它花的 token 這樣。它跟其他花的 token，因為這一篇主要它要主打一個就是它 token 花比較少。對，就它的 h...",
+      "type": "argument",
+      "content": "MIRIX 論文的評估方法存在不一致之處（基準模型運行一次，而其自身模型運行三次），這削弱了其結果的可信度。這種方法上的瑕疵可能與其作為 arXiv 論文的非正式性質有關。",
+      "importance": 0.56,
+      "evidence": "[SPEAKER_02]: 然後 task-based 的話，就是之前有看到的一些一樣的模型。然後他一樣是跟在裡面，他用 LLM 去當 judge。然後我不是很知道為什麼他其他的 baseline 跑一次，然後 MIRIX 跟 full-context 跑三次，然後選 average。 [SPEAKER_02]: 這個我沒有很，就是我不太知道為什麼，它也沒有什麼解釋。 [SPEAKER_01]: 其實它這裡是一個 arXiv paper，它可能就是它做完之後就放上去一下這樣。",
       "related_topics": [
-        "evaluation",
-        "benchmarking",
-        "RAG",
-        "model performance evaluation",
-        "reference papers",
-        "system performance"
+        "prior art",
+        "evaluation strategy",
+        "experimental design",
+        "methodology"
       ],
       "related_obj_ids": [],
-      "legacy_type": "result"
+      "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0318-015",
       "type": "finding",
-      "content": "In the context of the LOCOMO benchmark, \"Temporal Reasoning\" questions are defined as requests for a summary or outline of a conversation session.",
-      "importance": 0.65,
-      "evidence": "[SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？ [SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。 [SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？ [SPEAKER_02]: 對",
+      "content": "LOCOMO (2024) 論文的評估方法是將其方法與「完整原始逐字稿」及「RAG」進行比較。它使用 LLM 作為裁判來進行二元正確性判斷，並將每個模型運行 10 次以計算平均分數。評估指標還包括延遲和 token 數量，研究發現，儘管 LOCOMO 在多跳問題上未超越 RAG，但其 token 消耗量較低。",
+      "importance": 0.61,
+      "evidence": "[SPEAKER_02]: 然後就是它有從 full context，就是完全 raw 的逐字稿，餵進 LLM 回答；或是它有比有做 RAG 的，然後它還有比本來 LOCOMO 它自己就有去測市面上的 LLM 的 benchmark，就 LOCOMO 自己提供的測完的結果。 [SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 mode...",
       "related_topics": [
-        "evaluation",
-        "benchmarking",
-        "temporal representation",
-        "reference papers"
+        "literature review",
+        "evaluation strategy",
+        "baseline comparison",
+        "rag",
+        "llm as judge",
+        "model performance"
       ],
       "related_obj_ids": [],
       "legacy_type": "result"
     },
     {
       "obj_id": "L1-0318-016",
-      "type": "action_item",
-      "content": "Initiate a new research collaboration with Prof. Wu Chun-feng on \"Sustainable AI\" to measure the token consumption, computational load, and estimate the energy costs of LLMs.",
-      "importance": 0.77,
-      "evidence": "[SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。 [SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。 [SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實像這方面的時候也是在 comp...",
+      "type": "finding",
+      "content": "UCSD 的 MIRIX 論文評估基於圖像的記憶，其資料集包含從三名學生收集的 5,000 至 20,000 張螢幕截圖。評估使用 Gemini 和 visual RAG 等模型直接處理圖像，指標包含儲存大小，並使用 LLM 作為裁判。然而，其方法被發現存在不一致之處：基準模型僅運行一次，而 MIRIX 和 full-context 模型則運行三次。",
+      "importance": 0.58,
+      "evidence": "[SPEAKER_02]: 然後它有比一個比較特別，是它有比圖像的記憶，就是它截了，它請三個學生去截大概五千到兩萬張的螢幕截圖，大概使用週期有一週的，然後有十五天，然後有一個月的。 [SPEAKER_01]: 這是哪個學校的啊？是 Stanford 嗎？ [SPEAKER_02]: UCSD。 [SPEAKER_02]: 所以它比就比兩個，一個比 screenshot，一個比 task-based，然後它兩個用的模型不一樣。Screenshot 它一個是用 Gemini，因為 Gemini 可以直接吃圖片，然後還有用 visual 的 RAG，這個是圖片的 RAG。所以它並沒有把圖片轉文字，它是直接餵圖片。 [SPEAKER_02]: 然後 task-based 的話，就是之前有看到的一些一樣的模型。然後他一...",
       "related_topics": [
-        "research_methodology",
-        "project_goals",
-        "model_performance_evaluation",
-        "project_administration"
+        "literature review",
+        "evaluation strategy",
+        "dataset sourcing",
+        "llm as judge",
+        "experimental design"
       ],
       "related_obj_ids": [],
-      "legacy_type": "todo"
+      "legacy_type": "result"
     },
     {
       "obj_id": "L1-0318-017",
-      "type": "decision",
-      "content": "A specific proposal is to implement an \"energy-saving mode\" in LLM interfaces that would use a less powerful but adequate model for simpler questions.",
-      "importance": 0.75,
-      "evidence": "[SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實像這方面的時候也是在 compute 這個它需要的。那因為它是做晶體的，所以它就說好，我們要回去計算預估那個。你們記得錄影喔，你們有錄嗎？我這邊有錄到，因為我後面記得繼續錄。",
+      "type": "finding",
+      "content": "史丹佛大學的一個團隊也在進行與從螢幕截圖分析後續行為相關的研究，這被認為是相關的先前工作。",
+      "importance": 0.55,
+      "evidence": "[SPEAKER_01]: 因為講到 screenshots，我也想到說 Stanford 他們有一個 team，他們就專門在做 screenshot 的那個延續動作的分析，他們在做影片的分析。",
       "related_topics": [
-        "system_design",
-        "model_configuration",
-        "human-computer interaction",
-        "system design",
-        "research_methodology"
+        "literature review",
+        "prior art"
       ],
       "related_obj_ids": [],
-      "legacy_type": "method_change"
+      "legacy_type": "result"
     },
     {
       "obj_id": "L1-0318-018",
-      "type": "proposal",
-      "content": "A proposed research direction aims to improve AI sustainability from a human-centric perspective by guiding users to choose more energy-efficient tools (e.g., search vs. LLM) for their tasks.",
-      "importance": 0.7,
-      "evidence": "[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。",
+      "type": "action_item",
+      "content": "專案將展開一項關於可持續 AI 的新研究方向，與吳俊鋒教授合作，重點從「人的角度」出發，探索如何引導使用者做出更節能的選擇，以降低大型語言模型（LLM）的能源消耗。",
+      "importance": 0.65,
+      "evidence": "[SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。 [SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。 [SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 hum...",
       "related_topics": [
-        "research_methodology",
-        "human-computer interaction",
-        "system_design"
+        "sustainable ai",
+        "research collaboration",
+        "user behavior",
+        "energy consumption",
+        "llm",
+        "project goals",
+        "research direction",
+        "memory system",
+        "collaboration",
+        "cost management",
+        "project definition",
+        "compute load",
+        "gpt"
       ],
       "related_obj_ids": [],
       "legacy_type": "method_change"
     },
     {
       "obj_id": "L1-0318-019",
-      "type": "finding",
-      "content": "An LLM query consumes significantly more energy than a traditional Google search. The energy use of LLMs is highly variable, ranging from very low (~0.03W) for minimal requests to very high for maximum input, which is a concern for sustainability.",
-      "importance": 0.73,
-      "evidence": "[SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。 [SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。 [SPEAKER_01]: 然後同一件事情，你用 Google search 跟用 GPT 問它的耗電量會差非常多。但其實成果上，你現在我看 Google 會一直弄成是變 GPT，我就覺得很沒有必要。就有時候我就...",
+      "type": "decision",
+      "content": "新的「可持續 AI」研究專案將採用新穎的「人性化角度 (human angle)」，探索是否能引導使用者做出更節能的選擇，而非僅專注於硬體或軟體。具體構想包括在聊天機器人中實作「節能模式」。",
+      "importance": 0.72,
+      "evidence": "[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。 [SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實...",
       "related_topics": [
-        "system performance",
-        "project goals",
-        "research_methodology",
-        "API costs",
-        "system design",
-        "model performance evaluation"
+        "sustainable ai",
+        "research direction",
+        "user behavior",
+        "energy efficiency",
+        "experimental design",
+        "human-agent interaction",
+        "project definition",
+        "model configuration",
+        "architecture design",
+        "human-centric ai",
+        "project goal"
       ],
       "related_obj_ids": [],
-      "legacy_type": "result"
+      "legacy_type": "decision"
     },
     {
       "obj_id": "L1-0318-020",
-      "type": "argument",
-      "content": "A human-centric approach to AI sustainability, which involves guiding users to select more energy-efficient tools (e.g., search vs. LLM) based on their task, is a viable research direction.",
-      "importance": 0.7,
-      "evidence": "[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。",
+      "type": "proposal",
+      "content": "提議與吳俊豐教授就「可持續 AI (Sustainable AI)」展開研究合作，旨在計算 GPT token 使用所關聯的能耗與運算負載。",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。 [SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。 [SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實像這方面的時候也是在 comp...",
       "related_topics": [
-        "research_methodology",
-        "human-computer interaction",
-        "system design"
+        "collaboration",
+        "sustainable ai",
+        "cost management",
+        "project definition"
       ],
       "related_obj_ids": [],
-      "legacy_type": "argument"
+      "legacy_type": "todo"
     },
     {
       "obj_id": "L1-0318-021",
-      "type": "finding",
-      "content": "A methodological concern was identified in the MIRIX paper's evaluation: baselines were run only once, while the proposed MIRIX method and a full-context baseline were averaged over three runs. This discrepancy was not explained. The paper also used an LLM as a judge.",
-      "importance": 0.66,
-      "evidence": "[SPEAKER_02]: 然後 task-based 的話，就是之前有看到的一些一樣的模型。然後他一樣是跟在裡面，他用 LLM 去當 judge。然後我不是很知道為什麼他其他的 baseline 跑一次，然後 MIRIX 跟 full-context 跑三次，然後選 average。 [SPEAKER_02]: 這個我沒有很，就是我不太知道為什麼，它也沒有什麼解釋。 [SPEAKER_01]: 其實它這裡是一個 arXiv paper，它可能就是它做完之後就放上去一下這樣。",
+      "type": "argument",
+      "content": "將 GPT 等大型語言模型整合到 Google Search 等服務中以處理簡單查詢，被認為是一種不必要且浪費能源的做法，因為其耗能遠高於傳統搜尋。",
+      "importance": 0.63,
+      "evidence": "[SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。 [SPEAKER_01]: 然後同一件事情，你用 Google search 跟用 GPT 問它的耗電量會差非常多。但其實成果上，你現在我看 Google 會一直弄成是變 GPT，我就覺得很沒有必要。就有時候我就只問一個簡單到不行的問題，它就一直要把它變成 GPT。但其實有時候那個也有點好處，那個...",
       "related_topics": [
-        "research_methodology",
-        "reference papers",
-        "evaluation strategy",
-        "model performance evaluation"
+        "sustainable ai",
+        "energy consumption",
+        "llm usage",
+        "google search",
+        "gpt",
+        "llm application",
+        "product design"
       ],
       "related_obj_ids": [],
       "legacy_type": "argument"
     },
     {
       "obj_id": "L1-0318-022",
-      "type": "finding",
-      "content": "The MIRIX paper from UCSD collected image-based memory data by having students take thousands of screenshots. The paper's methodology compares a screenshot-based approach using Gemini and a visual RAG with a task-based approach.",
-      "importance": 0.69,
-      "evidence": "[SPEAKER_02]: 然後它有比一個比較特別，是它有比圖像的記憶，就是它截了，它請三個學生去截大概五千到兩萬張的螢幕截圖，大概使用週期有一週的，然後有十五天，然後有一個月的。 [SPEAKER_01]: 這是哪個學校的啊？是 Stanford 嗎？ [SPEAKER_02]: UCSD。 [SPEAKER_02]: 所以它比就比兩個，一個比 screenshot，一個比 task-based，然後它兩個用的模型不一樣。Screenshot 它一個是用 Gemini，因為 Gemini 可以直接吃圖片，然後還有用 visual 的 RAG，這個是圖片的 RAG。所以它並沒有把圖片轉文字，它是直接餵圖片。",
+      "type": "argument",
+      "content": "由於最強大的模型並非總是處理所有查詢所必需的，因此在聊天機器人中提供「節能模式」讓使用者選擇功能足夠但較不耗能的模型，是一個合理的設計方向。",
+      "importance": 0.61,
+      "evidence": "[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。 [SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實...",
       "related_topics": [
-        "dataset acquisition",
-        "research_methodology",
-        "reference papers",
-        "evaluation strategy"
+        "sustainable ai",
+        "energy consumption",
+        "model selection",
+        "user choice",
+        "chatbot design"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "argument"
+    },
+    {
+      "obj_id": "L1-0318-023",
+      "type": "finding",
+      "content": "LLM 的能源消耗差異很大：一個最小的 GPT 請求可能使用 0.03 瓦，但最大輸入的請求則非常耗電，且使用 GPT 查詢比傳統 Google 搜尋消耗更多能源。",
+      "importance": 0.62,
+      "evidence": "[SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。 [SPEAKER_01]: 然後同一件事情，你用 Google search 跟用 GPT 問它的耗電量會差非常多。但其實成果上，你現在我看 Google 會一直弄成是變 GPT，我就覺得很沒有必要。就有時候我就只問一個簡單到不行的問題，它就一直要把它變成 GPT。但其實有時候那個也有點好處，那個...",
+      "related_topics": [
+        "sustainable ai",
+        "energy consumption",
+        "model performance",
+        "cost management"
       ],
       "related_obj_ids": [],
       "legacy_type": "result"
+    },
+    {
+      "obj_id": "L1-0318-024",
+      "type": "action_item",
+      "content": "作為可持續 AI 研究的一部分，將探索在聊天機器人中實現「節能模式」的作法。此模式允許使用者手動選擇一個效能足夠但較不耗能的模型，因為最強大的模型並非總是必要。",
+      "importance": 0.59,
+      "evidence": "[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。 [SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實...",
+      "related_topics": [
+        "sustainable ai",
+        "energy consumption",
+        "chatbot design",
+        "model selection",
+        "user interface"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
+    },
+    {
+      "obj_id": "L1-0318-025",
+      "type": "proposal",
+      "content": "為了促進 AI 節能，將採取一種策略：鼓勵使用者在處理簡單任務時使用傳統的 Google Search，並提供在不需要時禁用 GPT 功能的選項。",
+      "importance": 0.58,
+      "evidence": "[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。",
+      "related_topics": [
+        "sustainable ai",
+        "energy consumption",
+        "user guidance",
+        "gpt",
+        "google search"
+      ],
+      "related_obj_ids": [],
+      "legacy_type": "method_change"
     }
   ]
 }

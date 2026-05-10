@@ -95,6 +95,7 @@ RELATED_TOPIC_CANONICAL_LABELS = {
     "importance": "memory lifecycle",
     "memory item structure": "l1 taxonomy and type agents",
     "memory object model": "l1 taxonomy and type agents",
+    "memory update": "memory update semantics",
     "memory update mechanism": "memory update semantics",
     "forgetting mechanism": "memory lifecycle",
     "literature review": "research methodology",
@@ -108,6 +109,7 @@ RELATED_TOPIC_CANONICAL_LABELS = {
     "memory evaluation": "memory evaluation strategy",
     "memory model": "memory processing architecture",
     "memory retrieval": "memory retrieval",
+    "retrieval strategy": "memory retrieval",
     "memory system": "memory processing architecture",
     "memory system architecture": "memory processing architecture",
     "memory system design": "memory processing architecture",
@@ -119,6 +121,7 @@ RELATED_TOPIC_CANONICAL_LABELS = {
     "rag": "memory retrieval",
     "research methodology": "research methodology",
     "short term memory": "stm ltm integration",
+    "activation score": "memory lifecycle",
     "speaker diarization": "dataset selection",
     "source linkage": "memory evidence anchoring",
     "stm ltm integration": "stm ltm integration",
@@ -154,6 +157,8 @@ BROAD_RELATED_TOPIC_LABELS = {
 CONTENT_REFINEMENT_OVERRIDE_LABELS = {
     "l2 topic grouping",
     "memory evidence anchoring",
+    "memory retrieval",
+    "transcript segmentation and idea-unit coverage",
 }
 
 ADMINISTRATIVE_HINTS = (
@@ -303,6 +308,29 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "相對時間",
             "會議id",
             "時間軸",
+            "memory update",
+            "updated memory item",
+            "被更新的記憶",
+            "更新的記憶項目",
+            "更新記憶項目",
+        ),
+    ),
+    (
+        "memory retrieval",
+        (
+            "decide whether to access short-term or long-term memory",
+            "decide whether to access short term or long term memory",
+            "choose short-term or long-term memory",
+            "choose short term or long term memory",
+            "short-term or long-term memory",
+            "short term or long term memory",
+            "first query ltm then stm",
+            "multi-step retrieval",
+            "multi step retrieval",
+            "查詢短期記憶或長期記憶",
+            "短期記憶或長期記憶",
+            "先查 ltm 再查 stm",
+            "多步驟檢索",
         ),
     ),
     (
@@ -358,6 +386,12 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "importance score",
             "importance level",
             "initial importance",
+            "activation",
+            "activation score",
+            "relevance",
+            "recency",
+            "semantic similarity",
+            "floor",
             "memory unit",
             "frequency of mention",
             "discussion density",
@@ -380,6 +414,9 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "淡化",
             "非活躍",
             "不相關長期資訊",
+            "語義相似度",
+            "隨時間衰減",
+            "衰減",
             "decay",
         ),
     ),
@@ -405,6 +442,14 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "relationships between memory stores",
             "update rules and the relationships",
             "define the long-term memory architecture",
+            "三層級結構",
+            "三層級",
+            "三個 layer",
+            "l1 是",
+            "l2 是",
+            "l3 是",
+            "基礎記憶單元",
+            "最高層級摘要",
             "時間導向",
             "主題導向",
             "時間模型",
@@ -545,6 +590,13 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "起訖行數",
             "讀取區塊重疊",
             "文本分塊處理",
+            "大塊文本",
+            "未分化",
+            "內容過於相似",
+            "過於相似而收斂",
+            "收斂",
+            "多個相關的記憶節點",
+            "精細度",
         ),
     ),
     (
@@ -1132,10 +1184,7 @@ def choose_l2_assignment(obj: dict[str, Any]) -> dict[str, Any]:
         ):
             label = concept_label
             reason = "related_topic_seed_content_refined"
-        elif concept_label is not None and any(
-            candidate["label"] == concept_label for candidate in topic_candidates
-        ):
-            label = concept_label
+        elif concept_label is not None and label == concept_label:
             reason = "related_topic_seed_content_confirmed"
     else:
         label, reason = concept_label, concept_reason

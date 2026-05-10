@@ -62,6 +62,16 @@ Current canonical Grace L1 types:
 - `finding`
 - `approach_change`
 
+Current canonical Grace L1 language policy:
+
+- `content`: Traditional Chinese human-facing memory summary, preserving stable
+  English technical anchors such as RAG, L1/L2/L3, API, topic lifecycle,
+  manager-agent, full context, and short-term / long-term memory.
+- `related_topics`: English machine-facing topic keys for deterministic L2/L3
+  grouping and retrieval.
+- `evidence`: source-faithful transcript excerpt; do not translate evidence just
+  to satisfy the `content` language policy.
+
 ## L1 Type v2
 
 The current canonical Grace `share_mem/` output uses the v2 memory-role
@@ -177,6 +187,8 @@ store or share_mem snapshots to build compact recent working memory.
 ## Current Generated State
 
 - Grace meetings: 7 (`0307`, `0318`, `0325`, `0408`, `0422`, `0429`, `0506`).
-- L1 objects: 509 in the current pulled mainline state.
+- L1 objects: 448 in the current canonical Grace state.
+- Language check: no pure-English `content` objects; `related_topics` remain
+  English topic keys.
 - Active long-term L2 view: `long_term/l2/`.
 - Active short-term JSON state: `short_term/short_term_memory.json`.

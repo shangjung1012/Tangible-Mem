@@ -15,6 +15,7 @@ Do not commit `.env`, API keys, credential paths, `~/.codex/auth.json`, or raw C
 - The current L1 research mainline is still multi-agent extraction. `full` / `monolithic` and `incremental` remain baselines or references, not the primary development path.
 - Multi-agent L1 is a staged prompt pipeline, not autonomous long-lived agents: `prior_context_pack -> context_planner -> segmentation -> repair/coarsening -> boundary refinement -> idea units -> extraction packets -> bounded type agents -> grounding -> conflict resolution -> verifier -> reducer -> persist L1 -> relation/activity sidecars`.
 - Canonical Grace L1 currently uses v2 memory roles in `type`: `decision`, `action_item`, `open_issue`, `proposal`, `argument`, `finding`, and `approach_change`.
+- Canonical Grace L1 `content` is Traditional Chinese for human-facing memory summaries while preserving stable English technical anchors. `related_topics` remain English machine-facing topic keys for L2/L3 grouping and retrieval.
 - `legacy_type` is retained on canonical Grace L1 objects for compatibility diffing and rollback checks only.
 - Additional L1 type experiments should still write to separate `share_mem_experiments/...` roots and be compared before promotion.
 - The first active L2 view is implemented under `long_term/l2/`: build with `uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean`, then validate with `uv run long_term/cli.py validate-l2-view --share-mem-root share_mem --root long_term/l2 --out long_term/l2/validation`.
@@ -71,8 +72,8 @@ uv run python -m unittest discover -s tests
 | active | P2 | Fix Windows full unittest short-term script launch. | `tests/test_short_term_snapshot_update.py` currently tries to execute a `.sh` script directly on Windows and raises `WinError 193`. This is short-term Windows test hygiene, not a blocker for long-term L2/L3 work. |
 | done | P0 | Materialize reviewed L3 promotions above the current L2 topic view. | Deterministic `build-l2-view` now writes `l3_promotions.json`, `l3_view.json`, `l3_index.json`, and `l2_merge_review.json` without mutating raw L1 evidence or active L2 artifacts. |
 | done | P0 | Merge the selected long-term Codex chats into one canonical handoff flow. | Use this `codex.md` as the single entrypoint for future chats. |
-| done | P0 | Rebuild canonical L1 under `share_mem/` from Grace transcripts. | Current canonical Grace `share_mem` has 7 meetings and 509 v2 L1 objects with `legacy_type` compatibility metadata. |
-| done | P0 | Add active share_mem-based L2 view under `long_term/l2`. | Current L2 topic view has 15 topics, 477 linked L1 objects, 32 intentionally unlinked or low-signal L1 objects, and 0 severe validation issues. |
+| done | P0 | Rebuild canonical L1 under `share_mem/` from Grace transcripts. | Current canonical Grace `share_mem` has 7 meetings and 448 v2 L1 objects with `legacy_type` compatibility metadata; L1 `content` is Traditional Chinese and `related_topics` stay English. |
+| done | P0 | Add active share_mem-based L2 view under `long_term/l2`. | Current L2 topic view has 15 topics, 411 linked L1 objects, 37 intentionally unlinked or low-signal L1 objects, and 0 severe validation issues. |
 | done | P0 | Wire active recall to the new `long_term/l2` upward context. | `long_term/recall.py` now starts from semantic L1 hits in `share_mem/tree.json`, includes a compact global topic map, prefers materialized child L2 context via `l3_index.json`, and falls back to sliced active L2 context when needed. Missing L2 assignments are non-fatal. |
 | done | P1 | Tighten recall behavior around L1 -> L2/L3 parent-chain context. | The prompt formatter is now evidence-first: Global Topic Map, L1 Evidence Seeds, L2 / Child-L2 Evolution Context, and optional Retrieval Debug. Large topics are sliced instead of injected whole. |
 | done | P1 | Adopt semantic L1 retrieval with parent-chain expansion. | Current code and `doc/l1_l2_update_retrieve_flow.md` are the source of truth; archived retrieve plans have been removed from active docs. |
@@ -337,26 +338,35 @@ Cross-device restore rule:
 
 ## Handoff Log
 
+### 2026-05-10 - Rerun Grace L1 With Chinese Content Policy
+
+- Rebuilt canonical Grace `share_mem/` from all 7 transcripts with v2 memory roles and `legacy_type`: 448 L1 objects. The current language contract is Traditional Chinese `content`, English `related_topics`, and source-faithful `evidence`.
+- L1 comparison against the checked-in pre-rerun baseline reports 492 matched baseline objects, 0 high-importance unmatched, and no global count gate failure. The matcher was tightened for English-to-Chinese rewrites without accepting broad anchor-only false positives.
+- Rebuilt active L2/L3 sidecars from the new `share_mem`: 15 L2 topics, 411 linked L1 objects, 37 unlinked L1 objects, 2 materialized L3 parents, 14 child L2 topics, and 169 L3-assigned L1 objects.
+- Validation state: L2 0 severe / 3 warnings, L3 0 severe / 3 warnings, L3 coverage 0 unassigned L1, 0 duplicate assignments, and 0 invalid `l3_index` references. Remaining warnings are review/slice diagnostics, not schema blockers.
+- The transcript segmentation L3 split now has 11 deterministic child L2 topics after adding idea-unit granularity, generation-method, and candidate-classification children. No child L2 is in `needs_split_review`.
+- Retrieval eval was regenerated from current Chinese L1 gold ids: 8 demo-safe queries, 32 offline lexical runs, best strict/acceptable L1 recall 1.0, L2 hit rate 1.0, L3 hit rate 1.0, and prompt-budget pass rate 1.0.
+
 ### 2026-05-10 - Converge Offline Retrieval Eval And L3 Child Split
 
 - Retrieval eval now supports true deterministic `--no-llm --retrieval-mode lexical`: it uses a heuristic recall plan and lexical L1 retrieval, without calling Gemini planner, embeddings, or a final answer LLM.
-- Demo eval gold now separates historical `strict_gold_obj_ids` from current acceptable `expected_obj_ids`. The current 8-query, 32-run offline grid reports acceptable L1 recall 1.0, strict historical L1 recall 0.0833, L2 hit rate 1.0, L3 hit rate 1.0, and prompt-budget pass rate 1.0.
-- The transcript segmentation L3 split now has 8 deterministic child L2 topics: fixed vs dynamic chunking, window and boundary selection, tool-calling transcript reading, idea-unit generation, missing-line coverage, repair/coarsening, cross-window continuity, and evidence grounding/line coverage.
-- Current generated L3 state: 2 L3 parents, 11 materialized child L2 topics, and 184 assigned L1 objects. L3 validation reports 0 severe issues, 0 unassigned L1, 0 duplicate assignments, and 11 warnings, all `needs_retrieval_slice` prompt-budget diagnostics rather than oversized child L2 failures.
+- Demo eval gold now separates strict and acceptable current L1 ids. The current 8-query, 32-run offline grid reports strict/acceptable L1 recall 1.0, L2 hit rate 1.0, L3 hit rate 1.0, and prompt-budget pass rate 1.0.
+- The transcript segmentation L3 split now has 11 deterministic child L2 topics: fixed vs dynamic chunking, window and boundary selection, tool-calling transcript reading, idea-unit generation, idea-unit granularity/semantics, idea-unit generation methods, idea-unit candidate classification, missing-line coverage, repair/coarsening, cross-window continuity, and evidence grounding/line coverage.
+- Current generated L3 state: 2 L3 parents, 14 materialized child L2 topics, and 169 assigned L1 objects. L3 validation reports 0 severe issues, 0 unassigned L1, 0 duplicate assignments, and 3 warnings, all `needs_retrieval_slice` prompt-budget diagnostics rather than oversized child L2 failures.
 - The L2 topic-selection miss on the long-term retrieval and manager-agent eval queries was fixed by increasing query-label similarity influence during L2 ranking while keeping topic-size penalty as a prompt-budget safety signal.
 
 ### 2026-05-09 - Add Layered L3 Retrieval And Validation
 
 - `build-l2-view` now defaults to deterministic L3 sidecar generation and writes `long_term/l3/l3_promotions.json`, `l3_view.json`, `l3_index.json`, and `l2_merge_review.json`.
-- Current generated L2 state: 7 Grace meetings, 509 L1 objects, 15 L2 topics, 477 linked L1 objects, and 32 unlinked low-signal/isolated L1 objects.
-- Current generated L3 state: 2 L3 parents, 6 materialized child L2 topics, and 184 assigned L1 objects. Promotion coverage validation reports 0 unassigned L1, 0 duplicate assignments, and 0 invalid `l3_index` references.
-- L3 validation reports 0 severe issues and 8 warnings. The warnings are child-size / retrieval-slice diagnostics: two child L2 nodes under transcript segmentation are still large enough to deserve future split review, but prompt formatting slices them instead of injecting the full timeline.
+- At that checkpoint, generated L2 state was 7 Grace meetings, 509 L1 objects, 15 L2 topics, 477 linked L1 objects, and 32 unlinked low-signal/isolated L1 objects. The current state is summarized above.
+- At that checkpoint, generated L3 state was 2 L3 parents, 6 materialized child L2 topics, and 184 assigned L1 objects. The current state is summarized above.
+- At that checkpoint, L3 validation reported 0 severe issues and 8 warnings. The current validation state is summarized above.
 - Retrieval is now always-on layered for meeting-memory queries: L1 evidence seeds first, compact Global Topic Map always present, materialized child L2 preferred through `l3_index`, active L2 fallback when needed, and optional debug metrics for tests/eval.
-- The first retrieval eval smoke report uses 8 demo-safe queries. It currently has L2 hit rate 0.875, L3 hit rate 1.0, prompt budget pass rate 1.0, and expected L1 recall 0.0 because the demo expected L1 ids are stale and need curation from selected seed ids.
+- The first retrieval eval smoke report used 8 demo-safe queries and exposed stale expected L1 ids. The current curated eval state is summarized above.
 
 ### 2026-05-09 - Harden L1/L2 Quality Gates After Full Grace Rerun
 
-- Full Grace live rerun produced 7 canonical meetings and 509 v2 L1 objects under `share_mem/`, with `legacy_type` retained for compatibility.
+- At that checkpoint, the full Grace live rerun produced 7 canonical meetings and 509 v2 L1 objects under `share_mem/`, with `legacy_type` retained for compatibility. The current canonical state is summarized above.
 - L1 comparison against the 545-object checkpoint reports 0 high-importance unmatched and 0 watchlist unmatched after matcher anchor fixes for evaluation, code-driven LLM control, style-prompting, API budget, mentor-dialogue source, and STM/LTM reactivation rewordings.
 - Rebuilt `long_term/l2/` from the new `share_mem` tree: 16 L2 topics, 449 linked L1 objects, 60 unlinked L1 objects, and 0 severe validation issues. Remaining 15 warnings are manual-review diagnostics, not schema blockers.
 - The old root-level `share_mem` topic-tree sidecar was not promoted after the full rerun. A full `build_topic_view.py --mode hybrid` rebuild is too slow for the current quality loop and timed out locally after one hour, so active topic context should come from `long_term/l2/`.

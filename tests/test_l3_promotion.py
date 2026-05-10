@@ -160,6 +160,9 @@ class L3PromotionTests(unittest.TestCase):
                 "L2-window-and-boundary-selection",
                 "L2-tool-calling-transcript-reading",
                 "L2-idea-unit-generation",
+                "L2-idea-unit-granularity-and-semantics",
+                "L2-idea-unit-generation-methods",
+                "L2-idea-unit-candidate-classification",
                 "L2-missing-line-coverage",
                 "L2-repair-and-coarsening",
                 "L2-cross-window-continuity",
@@ -517,7 +520,7 @@ class L3PromotionTests(unittest.TestCase):
 
         def assignment_proposer(l2_node: dict, child_l2_candidates: list[dict]) -> list[dict]:
             self.assertEqual(l2_node["l2_id"], node["l2_id"])
-            self.assertEqual(len(child_l2_candidates), 8)
+            self.assertEqual(len(child_l2_candidates), 11)
             return [
                 {
                     "obj_id": "L1-a",
