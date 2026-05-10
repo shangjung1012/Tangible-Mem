@@ -505,6 +505,181 @@ class MemoryInteractionTests(unittest.TestCase):
         self.assertEqual(linked["source"], "long_term_l1_linked")
         self.assertEqual(linked["linked_from_obj_id"], source["obj_id"])
 
+    def test_evolution_l2_slice_keeps_early_and_late_matched_events(self) -> None:
+        l1_results = [
+            {"obj_id": "L1-0318-006", "score": 0.8, "importance": 0.7},
+            {"obj_id": "L1-0429-135", "score": 0.76, "importance": 0.82},
+            {"obj_id": "L1-0506-015", "score": 0.74, "importance": 0.8},
+        ]
+        l2_index = {
+            obj["obj_id"]: {"l2_id": "L2-agentic-pipeline-control", "l2_label": "agentic pipeline control"}
+            for obj in l1_results
+        }
+        l2_view = {
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-agentic-pipeline-control",
+                    "label": "agentic pipeline control",
+                    "current_state": "Manager-agent design evolved into typed pipeline agents.",
+                    "event_count": 3,
+                    "timeline_digest": [
+                        {
+                            "meeting_id": "0318",
+                            "meeting_date": "2026-03-18",
+                            "obj_id": "L1-0318-006",
+                            "summary": "A paper introduced worker agents and a manager agent.",
+                        },
+                        {
+                            "meeting_id": "0429",
+                            "meeting_date": "2026-04-29",
+                            "obj_id": "L1-0429-135",
+                            "summary": "The project adopted a lightweight manager dispatching specialized agents.",
+                        },
+                        {
+                            "meeting_id": "0506",
+                            "meeting_date": "2026-05-06",
+                            "obj_id": "L1-0506-015",
+                            "summary": "The pipeline used parallel typed agents for candidate extraction.",
+                        },
+                    ],
+                }
+            ]
+        }
+
+        l2_context, _, _ = recall.select_layered_l2_context(
+            "manager-agent 架構是怎麼演變出來的？",
+            l1_results,
+            l2_index,
+            l2_view,
+            max_relevant_l2_summaries=1,
+            max_expanded_l2_topics=1,
+            max_events_per_l2=2,
+            max_events_per_child_l2=2,
+        )
+
+        selected_obj_ids = [row["obj_id"] for row in l2_context[0]["timeline_digest"]]
+        self.assertEqual(selected_obj_ids, ["L1-0318-006", "L1-0506-015"])
+
+    def test_evolution_l2_slice_adds_origin_event_even_when_seed_hits_are_late(self) -> None:
+        l1_results = [
+            {"obj_id": "L1-0429-135", "score": 0.9, "importance": 0.82},
+            {"obj_id": "L1-0429-148", "score": 0.8, "importance": 0.78},
+        ]
+        l2_index = {
+            obj["obj_id"]: {"l2_id": "L2-agentic-pipeline-control", "l2_label": "agentic pipeline control"}
+            for obj in l1_results
+        }
+        l2_view = {
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-agentic-pipeline-control",
+                    "label": "agentic pipeline control",
+                    "current_state": "Manager-agent design evolved into typed pipeline agents.",
+                    "event_count": 4,
+                    "timeline_digest": [
+                        {
+                            "meeting_id": "0307",
+                            "meeting_date": "2026-03-07",
+                            "obj_id": "L1-0307-030",
+                            "summary": "Unrelated code ownership logistics.",
+                        },
+                        {
+                            "meeting_id": "0318",
+                            "meeting_date": "2026-03-18",
+                            "obj_id": "L1-0318-006",
+                            "summary": "A paper introduced worker agents and a manager agent.",
+                        },
+                        {
+                            "meeting_id": "0429",
+                            "meeting_date": "2026-04-29",
+                            "obj_id": "L1-0429-135",
+                            "summary": "The project adopted a lightweight manager dispatching specialized agents.",
+                        },
+                        {
+                            "meeting_id": "0429",
+                            "meeting_date": "2026-04-29",
+                            "obj_id": "L1-0429-148",
+                            "summary": "Agent abstraction was justified by isolated component testing.",
+                        },
+                    ],
+                }
+            ]
+        }
+
+        l2_context, _, _ = recall.select_layered_l2_context(
+            "manager-agent 架構是怎麼演變出來的？",
+            l1_results,
+            l2_index,
+            l2_view,
+            max_relevant_l2_summaries=1,
+            max_expanded_l2_topics=1,
+            max_events_per_l2=2,
+            max_events_per_child_l2=2,
+        )
+
+        selected_obj_ids = [row["obj_id"] for row in l2_context[0]["timeline_digest"]]
+        self.assertEqual(selected_obj_ids, ["L1-0318-006", "L1-0429-135"])
+
+    def test_evolution_l2_slice_adds_later_event_when_seed_hits_are_origin_only(self) -> None:
+        l1_results = [
+            {"obj_id": "L1-0318-006", "score": 0.9, "importance": 0.7},
+            {"obj_id": "L1-0318-002", "score": 0.86, "importance": 0.68},
+        ]
+        l2_index = {
+            obj["obj_id"]: {"l2_id": "L2-agentic-pipeline-control", "l2_label": "agentic pipeline control"}
+            for obj in l1_results
+        }
+        l2_view = {
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-agentic-pipeline-control",
+                    "label": "agentic pipeline control",
+                    "current_state": "Manager-agent design evolved into typed pipeline agents.",
+                    "event_count": 3,
+                    "timeline_digest": [
+                        {
+                            "meeting_id": "0318",
+                            "meeting_date": "2026-03-18",
+                            "obj_id": "L1-0318-002",
+                            "summary": "The manager agent integration mechanism was still unclear.",
+                        },
+                        {
+                            "meeting_id": "0318",
+                            "meeting_date": "2026-03-18",
+                            "obj_id": "L1-0318-006",
+                            "summary": "A paper introduced worker agents and a manager agent.",
+                        },
+                        {
+                            "meeting_id": "0429",
+                            "meeting_date": "2026-04-29",
+                            "obj_id": "L1-0429-135",
+                            "summary": "The project adopted a lightweight manager dispatching specialized agents.",
+                        },
+                        {
+                            "meeting_id": "0429",
+                            "meeting_date": "2026-04-29",
+                            "obj_id": "L1-0429-157",
+                            "summary": "An agent-based architecture provides significant engineering benefits.",
+                        },
+                    ],
+                }
+            ]
+        }
+
+        l2_context, _, _ = recall.select_layered_l2_context(
+            "manager-agent 架構是怎麼演變出來的？",
+            l1_results,
+            l2_index,
+            l2_view,
+            max_relevant_l2_summaries=1,
+            max_expanded_l2_topics=1,
+            max_events_per_l2=2,
+            max_events_per_child_l2=2,
+        )
+
+        selected_obj_ids = [row["obj_id"] for row in l2_context[0]["timeline_digest"]]
+        self.assertEqual(selected_obj_ids, ["L1-0318-002", "L1-0429-135"])
+
 
 if __name__ == "__main__":
     unittest.main()

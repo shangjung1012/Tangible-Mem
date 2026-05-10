@@ -129,11 +129,28 @@ def candidate_schema_for_taxonomy(
     )
     properties: dict[str, Any] = {
         "source_unit_ids": {"type": "array", "items": {"type": "string"}},
-        "content": {"type": "string"},
+        "content": {
+            "type": "string",
+            "description": (
+                "Human-facing L1 memory summary. Write canonical share_mem L1 "
+                "content in Traditional Chinese, even when bounded idea units are "
+                "English intermediate summaries; keep technical anchors such as "
+                "RAG, L1/L2/L3, API, topic lifecycle, and manager-agent in English "
+                "when those terms are used."
+            ),
+        },
         "importance": {"type": "number"},
         "confidence": {"type": "number"},
         "rationale": {"type": "string"},
-        "related_topics": {"type": "array", "items": {"type": "string"}},
+        "related_topics": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Machine-facing topic keys. Use concise English normalized labels, "
+                "prefer lowercase words separated by spaces, and do not translate "
+                "these labels into Chinese."
+            ),
+        },
     }
     required = [
         "source_unit_ids",

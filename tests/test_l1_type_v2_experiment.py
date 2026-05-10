@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from share_mem.build_tree import _run_bridge_for_transcript, parse_args
 from share_mem.compare_l1_runs import compare_l1_trees, iter_l1_objects, write_comparison_outputs
-from share_mem.l1.multi_agent_agents import l1_type_agent
+from share_mem.l1.multi_agent_agents import l1_fallback_agent, l1_type_agent
 from share_mem.l1.multi_agent_logger import ResearchLogger
 from share_mem.l1.multi_agent_reducer import reduce_l1_patch
 from share_mem.l1.multi_agent_state import IdeaUnit
@@ -197,6 +197,73 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertIn("full-context, RAG, prior-paper", prompt)
         self.assertIn("model capability judgments", prompt)
         self.assertIn("Gemini can identify or judge good idea units", prompt)
+
+    def test_v2_type_agent_prompt_requires_chinese_content_and_english_topics(self) -> None:
+        runner = _PromptCaptureRunner()
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=10,
+                line_end=12,
+                text="我們決定 L1 content 要用中文，但 related topics 保持英文 topic key。",
+                completeness="complete",
+            )
+        ]
+
+        l1_type_agent(
+            runner,
+            obj_type="decision",
+            idea_units=units,
+            existing_topics=[],
+            extraction_scope="B-001",
+            segment_ids=["S-1"],
+            taxonomy="v2-memory-roles",
+            include_legacy_type=True,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("content MUST be written in Traditional Chinese", prompt)
+        self.assertIn("English intermediate summaries", prompt)
+        self.assertIn("related_topics MUST be English", prompt)
+        self.assertIn("keeping technical anchors in English", prompt)
+
+    def test_v2_fallback_agent_prompt_uses_same_language_policy(self) -> None:
+        runner = _PromptCaptureRunner()
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=10,
+                line_end=12,
+                text="如果 typed agents 漏掉，fallback 也應該用同一套語言規則。",
+                completeness="complete",
+            )
+        ]
+
+        l1_fallback_agent(
+            runner,
+            idea_units=units,
+            existing_topics=[],
+            extraction_scope="B-001",
+            segment_ids=["S-1"],
+            taxonomy="v2-memory-roles",
+            include_legacy_type=True,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("content MUST be written in Traditional Chinese", prompt)
+        self.assertIn("related_topics MUST be English", prompt)
+
+    def test_v2_candidate_schema_documents_language_contract(self) -> None:
+        schema = candidate_schema_for_taxonomy(
+            "v2-memory-roles",
+            include_legacy_type=True,
+        )
+        properties = schema["properties"]["candidates"]["items"]["properties"]
+
+        self.assertIn("Traditional Chinese", properties["content"]["description"])
+        self.assertIn("English", properties["related_topics"]["description"])
 
     def test_reduce_v2_patch_preserves_type_and_legacy_type(self) -> None:
         _, memory_objects, quality_index = reduce_l1_patch(

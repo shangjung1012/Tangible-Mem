@@ -107,6 +107,7 @@ Generated run directories are ignored by git; `.gitkeep` preserves the folder.
 - Overview: memory pipeline and artifact statistics.
 - Retrieval Trace: query -> L1 evidence -> L2 / child-L2 -> L3 -> prompt context.
 - Memory Explorer: meeting, L1 object, evidence, topic link, and feedback browsing.
-- Topic Observatory: L3 -> child L2 hierarchy plus topic detail.
+- Topic Observatory: drawn L3 -> child L2 tree, L2 state/timeline detail,
+  on-demand linked L1 evidence, and sidecar importance feedback.
 - Importance Review: sidecar-only importance feedback.
 - Experiment Lab: compare full context, traditional RAG, and layered memory.

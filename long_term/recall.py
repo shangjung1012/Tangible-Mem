@@ -630,6 +630,34 @@ def _timeline_event_date(entry: dict[str, Any]) -> str:
     return str(entry.get("meeting_date") or entry.get("meeting_id") or "")
 
 
+def _is_evolution_query(query: str) -> bool:
+    lowered = str(query or "").lower()
+    if any(
+        marker in lowered
+        for marker in (
+            "evolution",
+            "evolve",
+            "evolved",
+            "lifecycle",
+            "timeline",
+            "history",
+            "progression",
+            "current state",
+            "演變",
+            "演進",
+            "變化",
+            "歷程",
+            "脈絡",
+            "生命週期",
+            "怎麼變",
+            "怎麼發展",
+        )
+    ):
+        return True
+    units = _lexical_units(lowered)
+    return bool({"之前", "後來", "目前", "現在"} & units)
+
+
 def _node_event_count(node: dict[str, Any], timeline: list[Any] | None = None) -> int:
     try:
         count = int(node.get("event_count", 0) or 0)
@@ -651,8 +679,10 @@ def _select_timeline_slice(
     *,
     max_events: int,
     max_event_chars: int,
+    query: str = "",
 ) -> tuple[list[dict[str, Any]], int]:
     matched = set(matched_l1_ids)
+    matched_order = {obj_id: index for index, obj_id in enumerate(matched_l1_ids)}
     rows = [row for row in timeline if isinstance(row, dict)]
     rows.sort(key=_timeline_event_date)
     selected: list[dict[str, Any]] = []
@@ -675,11 +705,90 @@ def _select_timeline_slice(
             }
         )
 
-    for row in rows:
-        if str(row.get("obj_id", "") or "") in matched:
+    matched_rows = [row for row in rows if str(row.get("obj_id", "") or "") in matched]
+    if _is_evolution_query(query) and max_events > 1:
+        query_units = _lexical_units(query)
+
+        def evolution_relevance(row: dict[str, Any]) -> float:
+            text = str(row.get("summary", row.get("content", "")) or "")
+            lowered_text = text.lower()
+            base_score = _lexical_score(query_units, text)
+            if base_score <= 0:
+                return 0.0
+            transition_bonus = 0.0
+            for marker in (
+                "adopted",
+                "decided",
+                "changed",
+                "shifted",
+                "rejected",
+                "replaced",
+                "resolved",
+                "採用",
+                "決定",
+                "轉為",
+                "改成",
+            ):
+                if marker in lowered_text:
+                    transition_bonus += 0.08
+            return base_score + min(0.24, transition_bonus)
+
+        relevant_rows = [
+            row
+            for row in rows
+            if evolution_relevance(row) > 0
+        ]
+        span_rows = relevant_rows or matched_rows or rows
+        origin_date = _timeline_event_date(span_rows[0]) if span_rows else ""
+        if span_rows:
+            add(span_rows[0])
+        if matched_rows:
+            latest_matched_date = max(_timeline_event_date(row) for row in matched_rows)
+            if latest_matched_date > origin_date:
+                latest_matched_rows = [
+                    row for row in matched_rows if _timeline_event_date(row) == latest_matched_date
+                ]
+                latest_matched_rows.sort(
+                    key=lambda row: matched_order.get(str(row.get("obj_id", "") or ""), len(matched_order))
+                )
+                add(latest_matched_rows[0])
+            elif span_rows:
+                later_span_rows = [
+                    row for row in span_rows if _timeline_event_date(row) > origin_date
+                ] or span_rows
+                latest_span_date = max(_timeline_event_date(row) for row in later_span_rows)
+                latest_span_rows = [
+                    row for row in later_span_rows if _timeline_event_date(row) == latest_span_date
+                ]
+                latest_span_rows.sort(key=lambda row: -evolution_relevance(row))
+                add(latest_span_rows[0])
+        elif span_rows:
+            latest_span_date = max(_timeline_event_date(row) for row in span_rows)
+            latest_span_rows = [
+                row for row in span_rows if _timeline_event_date(row) == latest_span_date
+            ]
+            latest_span_rows.sort(key=lambda row: -evolution_relevance(row))
+            add(latest_span_rows[0])
+        remaining = [
+            row
+            for row in rows
+            if len(selected) < max_events
+        ]
+        remaining.sort(
+            key=lambda row: (
+                0 if str(row.get("obj_id", "") or "") in matched else 1,
+                -evolution_relevance(row),
+                _timeline_event_date(row),
+            )
+        )
+        for row in remaining:
+            add(row)
+    else:
+        for row in matched_rows:
             add(row)
     for row in rows:
         add(row)
+    selected.sort(key=_timeline_event_date)
     return selected, max(0, len(rows) - len(selected))
 
 
@@ -912,6 +1021,7 @@ def select_layered_l2_context(
             group["matched_l1_ids"],
             max_events=max_events,
             max_event_chars=max_event_chars,
+            query=query,
         )
         row = {
             **group,

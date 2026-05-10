@@ -20,7 +20,11 @@ if str(LONG_TERM_DIR) not in sys.path:
 
 from recall import format_recall_for_prompt, recall
 from recall_planner import plan_recall
-from memory_router import plan_memory_retrieval
+
+try:
+    from .memory_router import plan_memory_retrieval
+except ImportError:  # pragma: no cover - direct script execution fallback
+    from memory_router import plan_memory_retrieval
 
 
 def load_json_object(path: Path) -> dict[str, Any]:

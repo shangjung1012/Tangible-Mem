@@ -44,6 +44,23 @@ MAX_IDEA_UNITS_PER_AGENT = 12
 MAX_L1_CANDIDATES_PER_TYPE = 6
 MAX_FALLBACK_CANDIDATES = 3
 
+L1_LANGUAGE_POLICY = """
+Language contract:
+- content MUST be written in Traditional Chinese for canonical share_mem L1 output.
+  This still applies when the bounded idea units are English intermediate summaries
+  of a Chinese transcript. Translate the memory summary back into Traditional
+  Chinese, while keeping technical anchors in English when they are the normal
+  project terms, such as RAG, L1/L2/L3, API, topic lifecycle, manager-agent,
+  full context, and short-term/long-term memory.
+- content should be a concise human-facing memory summary, not a literal transcript
+  quote and not an English-only paraphrase of Chinese discussion.
+- related_topics MUST be English machine-facing topic keys. Use concise normalized
+  labels, preferably lowercase words separated by spaces. Do not translate
+  related_topics into Chinese.
+- evidence should stay faithful to the source wording and may preserve the original
+  transcript language or mixed-language technical phrasing.
+""".strip()
+
 SEGMENT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -162,11 +179,26 @@ CANDIDATE_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "properties": {
                     "source_unit_ids": {"type": "array", "items": {"type": "string"}},
-                    "content": {"type": "string"},
+                    "content": {
+                        "type": "string",
+                        "description": (
+                            "Human-facing L1 memory summary. Use Traditional Chinese "
+                            "for canonical share_mem L1 output, even when idea units "
+                            "are English intermediate summaries. Preserve technical "
+                            "English anchors."
+                        ),
+                    },
                     "importance": {"type": "number"},
                     "confidence": {"type": "number"},
                     "rationale": {"type": "string"},
-                    "related_topics": {"type": "array", "items": {"type": "string"}},
+                    "related_topics": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "Machine-facing topic keys in English normalized labels; "
+                            "do not translate topic keys into Chinese."
+                        ),
+                    },
                 },
                 "required": [
                     "source_unit_ids",
@@ -195,11 +227,26 @@ FALLBACK_CANDIDATE_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "type": {"type": "string"},
                     "source_unit_ids": {"type": "array", "items": {"type": "string"}},
-                    "content": {"type": "string"},
+                    "content": {
+                        "type": "string",
+                        "description": (
+                            "Human-facing L1 memory summary. Use Traditional Chinese "
+                            "for canonical share_mem L1 output, even when idea units "
+                            "are English intermediate summaries. Preserve technical "
+                            "English anchors."
+                        ),
+                    },
                     "importance": {"type": "number"},
                     "confidence": {"type": "number"},
                     "rationale": {"type": "string"},
-                    "related_topics": {"type": "array", "items": {"type": "string"}},
+                    "related_topics": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "Machine-facing topic keys in English normalized labels; "
+                            "do not translate topic keys into Chinese."
+                        ),
+                    },
                 },
                 "required": [
                     "type",
@@ -802,7 +849,9 @@ Only output durable long-term memory:
 - for open_issue, preserve only unresolved issues that matter after this scope
 - use importance >= 0.90 only for project-level or future-steering items
 - use 0.50-0.70 for useful but local meeting-level context
-Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+Return JSON only.
+
+{L1_LANGUAGE_POLICY}
 
 Extraction packet: {extraction_scope or "(single bounded extraction packet)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
@@ -907,7 +956,9 @@ Do not invent information outside the supplied unit IDs.
 Prior context may help disambiguate references, but it is never evidence.
 Return at most {MAX_FALLBACK_CANDIDATES} candidates.
 {"Every candidate must include legacy_type using one of: " + ", ".join(sorted(LEGACY_COMPATIBILITY_DESCRIPTIONS)) + "." if include_legacy_type else ""}
-Return JSON only. Text fields should prefer Traditional Chinese when the transcript is Chinese.
+Return JSON only.
+
+{L1_LANGUAGE_POLICY}
 
 Extraction packet: {extraction_scope or "(single bounded extraction packet)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}

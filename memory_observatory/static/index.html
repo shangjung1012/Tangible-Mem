@@ -26,10 +26,10 @@
           grounded by L1 evidence, with L2/L3 providing cross-meeting evolution.
         </p>
         <div class="flow">
-          <span>Transcript</span><b>-></b><span>Segment / Window</span><b>-></b>
-          <span>Idea Unit</span><b>-></b><span>L1 Evidence</span><b>-></b>
-          <span>L2 Topic</span><b>-></b><span>L3 / Child L2</span><b>-></b>
-          <span>Layered Retrieval</span><b>-></b><span>Answer</span>
+          <span>Transcript</span><b>-&gt;</b><span>Segment / Window</span><b>-&gt;</b>
+          <span>Idea Unit</span><b>-&gt;</b><span>L1 Evidence</span><b>-&gt;</b>
+          <span>L2 Topic</span><b>-&gt;</b><span>L3 / Child L2</span><b>-&gt;</b>
+          <span>Layered Retrieval</span><b>-&gt;</b><span>Answer</span>
         </div>
         <div id="overviewCards" class="cards"></div>
       </section>
@@ -37,8 +37,11 @@
       <section id="trace" class="tab">
         <h1>Retrieval Trace</h1>
         <div class="toolbar">
-          <input id="traceQuery" value="我們之前為什麼要把 transcript 拆成 segment / idea units？" />
-          <select id="traceMode"><option value="lexical">lexical</option><option value="semantic">semantic</option></select>
+          <input id="traceQuery" value="Why did we split transcripts into segments and idea units?" />
+          <select id="traceMode">
+            <option value="lexical">lexical</option>
+            <option value="semantic">semantic</option>
+          </select>
           <input id="tracePlannerModel" value="gemini-2.5-flash" title="Planner model used only when no LLM planner is off" />
           <label><input id="traceDebug" type="checkbox" checked /> include debug</label>
           <label><input id="traceNoLlm" type="checkbox" checked /> no LLM planner</label>
@@ -71,9 +74,24 @@
 
       <section id="topics" class="tab">
         <h1>Topic Observatory</h1>
-        <div class="two-col">
-          <div><h2>L3 -> Child L2</h2><div id="topicTree" class="stack"></div></div>
-          <div><h2>Topic Detail</h2><div id="topicDetail" class="panel"></div></div>
+        <p class="lede">
+          The tree shows L3 topic families and their child L2 topics. Click an
+          L2 node to inspect its state, timeline, linked L1 evidence, and
+          importance feedback controls.
+        </p>
+        <div class="topic-layout">
+          <div class="panel topic-tree-panel">
+            <div class="panel-header">
+              <h2>L2/L3 Topic Tree</h2>
+              <input id="topicSearch" placeholder="filter topics" />
+            </div>
+            <div id="topicTree" class="topic-map"></div>
+          </div>
+          <div>
+            <div id="topicDetail" class="panel topic-detail">
+              <p class="muted">Select an L2 or child L2 node to inspect linked L1 evidence.</p>
+            </div>
+          </div>
         </div>
       </section>
 

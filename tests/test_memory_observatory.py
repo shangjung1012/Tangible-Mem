@@ -278,6 +278,22 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertGreaterEqual(payload["metrics"]["selected_l1_count"], 1)
             self.assertIn("formatted_prompt_context", payload)
 
+    def test_topic_detail_api_includes_linked_l1_objects_for_tree_drilldown(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            client = TestClient(create_app(repo_root=root))
+
+            response = client.get("/api/topics/l2/L2-memory-retrieval-child")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["parent_l3_id"], "L3-memory-family")
+        self.assertEqual(payload["event_count"], 1)
+        self.assertEqual(payload["size_bucket"], "tiny")
+        self.assertEqual(payload["linked_l1_objects"][0]["obj_id"], "L1-0307-001")
+        self.assertEqual(payload["linked_l1_objects"][0]["topic_link"]["child_l2_id"], "L2-memory-retrieval-child")
+
     def test_llm_trace_uses_planner_model_separately_from_answer_model(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
