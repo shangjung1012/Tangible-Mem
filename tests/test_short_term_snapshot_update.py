@@ -237,8 +237,92 @@ class ShortTermSnapshotUpdateTests(unittest.TestCase):
                 {"S001": 1, "S002": 0},
             )
             self.assertEqual([unit["unit_id"] for unit in after_0408["units"]], ["S002", "S003"])
+            for unit in after_0408["units"]:
+                self.assertIn("active_source_obj_ids", unit)
+                self.assertIn("historical_source_obj_ids", unit)
+                self.assertIn("current_state", unit)
+                self.assertIn("role", unit)
+                self.assertIn("status", unit)
             self.assertTrue(memory_path.exists())
             self.assertTrue((snapshot_dir / "0408.json").exists())
+
+    def test_update_keeps_active_sources_recent_and_moves_old_sources_to_history(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            memory_path = base / "short_term_memory.json"
+            snapshot_dir = base / "snapshots"
+            memory_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "memory_version": 3,
+                        "meeting_history_ids": ["0307", "0318", "0325"],
+                        "units": [
+                            {
+                                "unit_id": "S001",
+                                "title": "Active memory state",
+                                "summary": "Older shared-memory state.",
+                                "types": ["decision"],
+                                "related_topics": ["shared memory"],
+                                "source_obj_ids": [
+                                    "L1-0307-001",
+                                    "L1-0318-001",
+                                    "L1-0325-001",
+                                ],
+                                "active_source_obj_ids": [
+                                    "L1-0307-001",
+                                    "L1-0318-001",
+                                    "L1-0325-001",
+                                ],
+                                "historical_source_obj_ids": [],
+                                "last_updated_meeting_id": "0325",
+                                "missed_meeting_count": 0,
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            snapshot = _write_snapshot(
+                base / "s4.json",
+                [
+                    _meeting("0307", meeting_date="2026-03-07"),
+                    _meeting("0318", meeting_date="2026-03-18"),
+                    _meeting("0325", meeting_date="2026-03-25"),
+                    _meeting(
+                        "0408",
+                        meeting_date="2026-04-08",
+                        objects=[
+                            _obj(
+                                "L1-0408-001",
+                                "Shared memory has a new active-state update.",
+                                topics=["shared memory"],
+                            )
+                        ],
+                    ),
+                ],
+            )
+
+            updated = update_memory_from_snapshot(
+                snapshot_path=snapshot,
+                memory_json_path=memory_path,
+                snapshot_dir=snapshot_dir,
+                merge_decider=_topic_decider,
+            )
+
+            unit = updated["units"][0]
+            self.assertEqual(
+                unit["source_obj_ids"],
+                ["L1-0307-001", "L1-0318-001", "L1-0325-001", "L1-0408-001"],
+            )
+            self.assertEqual(
+                unit["active_source_obj_ids"],
+                ["L1-0318-001", "L1-0325-001", "L1-0408-001"],
+            )
+            self.assertIn("L1-0307-001", unit["historical_source_obj_ids"])
+            self.assertEqual(unit["status"], "active")
+            self.assertIn(unit["role"], {"active_decision", "current_status"})
 
     def test_dry_run_does_not_write_memory_or_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

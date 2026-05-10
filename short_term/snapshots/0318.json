@@ -48,7 +48,15 @@
           ],
           "change": "The new L1 object describes an open issue directly related to the consequences of the existing forgetting mechanism for short-term memory items, specifically regarding recalling information deleted after three sessions."
         }
-      ]
+      ],
+      "current_state": "A forgetting mechanism is proposed where short-term memory items are automatically deleted if they haven't been discussed within a specified window, such as three meetings. An unresolved question exists regarding how to define 'distance' for recalling information that has been deleted from STM due to this mechanism.",
+      "role": "recent_change",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-001",
+        "L1-0307-016"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S002",
@@ -100,7 +108,16 @@
           ],
           "change": "The new L1 object confirms that not setting the batch size for WhisperX `large-v3` model is acceptable, which is information already present in unit S002."
         }
-      ]
+      ],
+      "current_state": "For experiments, the speaker diarization problem is simplified by assuming it is already solved, either by using data from platforms like Zoom/Google Meet or by employing a high-accuracy model like WhisperX. It has been concluded that when running WhisperX with the `large-v3` model, not setting the batch size is acceptable, as this only affects processing speed and not the final results.",
+      "role": "recent_change",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-002",
+        "L1-0307-043",
+        "L1-0307-054"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S003",
@@ -190,7 +207,20 @@
           ],
           "change": "The new L1 object describes the sequential operation of the memory model, including generating summaries and action items and updating memory entries when topics are revisited, which directly aligns with the existing unit S003 that details the memory update mechanism and meeting ID tracking."
         }
-      ]
+      ],
+      "current_state": "The memory model operates sequentially, processing meeting transcripts to generate summaries and action items and creating an initial memory. When a subsequent meeting discusses a previously covered topic, the system updates the corresponding memory entry. Memory items are tracked using their `meeting ID` as a reference, not relative time, and their associated `meeting ID` is updated to the current meeting's ID upon update. This `meeting ID`-based tracking makes dynamic time tracking, which proposes automatic updates of temporal references, infeasible due to conflicts with stable relative time references.",
+      "role": "active_decision",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-003",
+        "L1-0307-004",
+        "L1-0307-005",
+        "L1-0307-006",
+        "L1-0307-007",
+        "L1-0307-008",
+        "L1-0307-009"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S004",
@@ -416,7 +446,35 @@
           ],
           "change": "The new L1 object directly elaborates on the flaws of a sequential agent summarization method, which is already a core topic within unit S004. It adds a specific criticism about the text chunking method used by such approaches, which complements the existing discussion on why this method is unsuitable."
         }
-      ]
+      ],
+      "current_state": "The memory system's architecture includes Working Memory, Short-Term Memory (STM), and Long-Term Memory (LTM). The development plan prioritizes building the update methods for these three memory types first. The design of the retrieval mechanism for this memory architecture is considered a significant challenge. STM is a valid form of cross-session memory with a three-meeting span, analogous to human brain activity. LTM is envisioned as a separate, coarser-grained architecture for long project durations, capturing the overall research narrative and structural changes, and will integrate with STM. An external paper's 'long-term memory' approach was deemed unsuitable. A reviewed paper on long-text processing uses a sequential agent summarization method, where each agent processes a chunk and incorporates the previous summary. This approach is flawed due to potential for hallucination propagation and a lack of global understanding, and its method of splitting text by sentence count is considered arbitrary and may break sentence meaning. A shared blackboard architecture is suggested as a superior alternative to address these issues. The architecture for memory integration involves periodically processing STM into LTM, with LTM influencing real-time conversations. Modifying open-source code is permitted if the team can demonstrate the added value of their LTM capabilities.",
+      "role": "active_decision",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-010",
+        "L1-0307-011",
+        "L1-0307-012",
+        "L1-0307-013",
+        "L1-0307-014",
+        "L1-0307-015",
+        "L1-0307-017",
+        "L1-0307-018",
+        "L1-0307-019",
+        "L1-0307-020",
+        "L1-0307-021",
+        "L1-0307-022",
+        "L1-0307-025",
+        "L1-0307-026",
+        "L1-0307-030",
+        "L1-0307-034",
+        "L1-0307-036",
+        "L1-0307-038",
+        "L1-0318-001",
+        "L1-0318-003",
+        "L1-0318-004",
+        "L1-0318-007"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S005",
@@ -467,7 +525,16 @@
           ],
           "change": "The new L1 object reiterates and clarifies the project's primary goal and the scope of the minimum viable product, which is already the focus of unit S005."
         }
-      ]
+      ],
+      "current_state": "The project's primary goal is to understand how memory-enhanced agents affect human interaction and perception, rather than fully replicating a reference paper. To achieve this, the focus is on implementing a minimum viable architecture that can demonstrate a noticeable difference in agent behavior.",
+      "role": "recent_change",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-023",
+        "L1-0307-031",
+        "L1-0307-035"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S006",
@@ -782,6 +849,44 @@
           ],
           "change": "The new L1 object discusses a Stanford team's screenshot analysis project and explicitly contrasts it with MIRIX, which is a topic already extensively covered in unit S006 regarding image memory evaluation and research methodology. This indicates a direct thematic continuation."
         }
+      ],
+      "current_state": "The MEM 0 evaluation protocol specifies running models 10 times for an average reliability score, measuring latency and token cost. It utilizes the LOCOMO dataset and an LLM-as-a-judge for binary 'correct'/'incorrect' assessment, specifically to avoid issues with semantic similarity metrics. It was benchmarked against three baselines: an LLM with full raw context, a Retrieval-Augmented Generation (RAG) approach, and the results from the original LOCOMO paper. In the LOCOMO dataset, question types are defined as: Single-hop (direct answer), Multi-hop (requires solving multiple sub-problems and reasoning steps, not sequential conversational questions), and Temporal Reasoning (requires generating conversation summaries). The evaluation revealed that while the system achieved lower token consumption, it did not outperform the RAG baseline on multi-hop questions. Concerns remain regarding dataset completeness, coherence, and output quality, particularly with fixed sentence count text chunking. For image memory evaluation data collection, the project could adopt the MIRIX paper from UCSD's methodology, involving three students collecting 5,000-20,000 screenshots over periods of one week, 15 days, or one month. The MIRIX paper's screenshot evaluation method uses Gemini and visual RAG to directly process images without converting them to text. A methodological question was raised about the MIRIX paper's evaluation, with its rigor being questioned due to an inconsistency in its experimental setup: baselines were run only once, while MIRIX and full-context methods were run three times and averaged. This discrepancy was potentially explained by its preliminary arXiv status. A Stanford team's related project also analyzes screenshots, but its focus differs from MIRIX, concentrating on subsequent behavior and video analysis.",
+      "role": "recent_change",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-028",
+        "L1-0307-029",
+        "L1-0307-032",
+        "L1-0307-033",
+        "L1-0307-037",
+        "L1-0307-039",
+        "L1-0307-041",
+        "L1-0307-047",
+        "L1-0307-048",
+        "L1-0307-049",
+        "L1-0307-050",
+        "L1-0307-051",
+        "L1-0318-002",
+        "L1-0318-005",
+        "L1-0318-006",
+        "L1-0318-008",
+        "L1-0318-009",
+        "L1-0318-010",
+        "L1-0318-011",
+        "L1-0318-012",
+        "L1-0318-013",
+        "L1-0318-014",
+        "L1-0318-015",
+        "L1-0318-016",
+        "L1-0318-017",
+        "L1-0318-019",
+        "L1-0318-023",
+        "L1-0318-024",
+        "L1-0318-025",
+        "L1-0318-026"
+      ],
+      "historical_source_obj_ids": [
+        "L1-0307-024"
       ]
     },
     {
@@ -813,7 +918,14 @@
           ],
           "change": "The new L1 object introduces a new topic regarding the establishment of a shared lab account and API key for project use, and the reimbursement of associated costs. This topic is not covered by any of the existing short-term units, which focus on memory architecture, update mechanisms, evaluation, project goals, and forgetting mechanisms."
         }
-      ]
+      ],
+      "current_state": "A shared lab account and API key will be established for project use, and associated API costs will be reimbursable to prevent personal expenses.",
+      "role": "active_decision",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-027"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S008",
@@ -845,7 +957,14 @@
           ],
           "change": "The L1 object describes a specific decision regarding the development approach for the 'Membrane' open-source project, which is distinct from the broader memory architecture discussions in existing units. Creating a new unit provides a focused topic for this specific project and workflow decision."
         }
-      ]
+      ],
+      "current_state": "The team decided to directly collaborate on GitHub to modify the open-source project 'Membrane', moving away from developing a separate Python version.",
+      "role": "recent_change",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-040"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S009",
@@ -884,7 +1003,15 @@
           ],
           "change": "The new L1 object confirms and adds detail about the lab having sufficient funds and the reimbursable nature of lab expenses paid with a personal credit card, which directly updates and reinforces the existing topic S009."
         }
-      ]
+      ],
+      "current_state": "The lab has sufficient funds, and lab-related expenses paid with a personal credit card are reimbursable. The lab may also use the existing lab Google account to apply for API keys.",
+      "role": "recent_change",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-042",
+        "L1-0307-045"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S010",
@@ -913,7 +1040,14 @@
           ],
           "change": "The new L1 object discusses an Academia Sinica internship application deadline, which is unrelated to the existing short-term units concerning memory system architecture and tracking mechanisms."
         }
-      ]
+      ],
+      "current_state": "Students must submit their Academia Sinica internship applications by March 15th.",
+      "role": "next_action",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-044"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S011",
@@ -943,7 +1077,14 @@
           ],
           "change": "The new L1 object discusses the practical issue of team data management and folder structure synchronization to prevent data duplication, which is a new topic not covered by any of the existing short-term memory units."
         }
-      ]
+      ],
+      "current_state": "An open issue has been raised regarding the need for students to synchronize their folder structures to avoid data duplication, specifically concerning the storage of meeting transcripts.",
+      "role": "open_issue",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-046"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S012",
@@ -984,7 +1125,15 @@
           ],
           "change": "The new L1 object provides specific details about the Academia Sinica internship application, which is a topic already mentioned in unit S012's summary and related topics. Merging this information into S012 provides a more comprehensive understanding of the internship discussion."
         }
-      ]
+      ],
+      "current_state": "The Academia Sinica internship application requires a name, email, resume, transcript, and statement of purpose, with a submission deadline of March 15th. It is also noted that it is unlikely for one professor to accept all three applying students. The recording of this meeting is incomplete, as it began partway through the discussion about this internship.",
+      "role": "current_status",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0307-052",
+        "L1-0307-053"
+      ],
+      "historical_source_obj_ids": []
     },
     {
       "unit_id": "S013",
@@ -1044,7 +1193,17 @@
           ],
           "change": "The new L1 object provides the explicit rationale for the 'Sustainable AI' research project, detailing the energy consumption issue of large models like GPT versus Google Search and reinforcing the proposed 'power-saving mode' solution, which directly aligns with and elaborates on the existing S013 unit."
         }
-      ]
+      ],
+      "current_state": "The 'Sustainable AI' research direction, initiated with Professor Wu Chun-Feng, is motivated by the significant energy consumption of large models like GPT compared to traditional tools such as Google Search. This unnecessary energy use is identified as a key research problem. The project aims to measure GPT's energy consumption and explore solutions, including a 'power-saving mode' feature that allows users to select smaller models for simpler tasks to reduce energy usage.",
+      "role": "next_action",
+      "status": "active",
+      "active_source_obj_ids": [
+        "L1-0318-018",
+        "L1-0318-020",
+        "L1-0318-021",
+        "L1-0318-022"
+      ],
+      "historical_source_obj_ids": []
     }
   ]
 }

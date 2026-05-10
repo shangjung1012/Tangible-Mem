@@ -32,6 +32,23 @@ TRANSIENT_MERGE_ERROR_MARKERS = (
     "RESOURCE_EXHAUSTED",
     "UNAVAILABLE",
 )
+ACTIVE_SOURCE_MEETING_WINDOW = 3
+ACTIVE_SOURCE_MAX_IDS = 30
+ACTIVE_STATUSES = {"active", "stale", "pending"}
+INACTIVE_STATUSES = {"resolved", "superseded", "inactive", "archived"}
+ROLE_BY_TYPE = {
+    "action_item": "next_action",
+    "todo": "next_action",
+    "open_issue": "open_issue",
+    "open_question": "open_issue",
+    "decision": "active_decision",
+    "approach_change": "recent_change",
+    "method_change": "recent_change",
+    "proposal": "pending_validation",
+    "argument": "pending_validation",
+    "finding": "current_status",
+    "result": "current_status",
+}
 
 
 def _tokens(text: str) -> set[str]:
@@ -59,6 +76,104 @@ def _is_transient_merge_error(exc: BaseException) -> bool:
 
 def _topic_set(row: dict[str, Any]) -> set[str]:
     return {topic.lower() for topic in normalize_str_list(row.get("related_topics"))}
+
+
+def _status(value: Any) -> str:
+    status = normalize_str(value).lower()
+    if status in INACTIVE_STATUSES:
+        return status
+    if status in ACTIVE_STATUSES:
+        return status
+    return "active"
+
+
+def _infer_role(source_obj: dict[str, Any], decision: dict[str, Any]) -> str:
+    role = normalize_str(decision.get("role")).lower()
+    if role:
+        return role
+    obj_type = normalize_str(source_obj.get("type")).lower()
+    return ROLE_BY_TYPE.get(obj_type, "current_status")
+
+
+def _infer_role_from_unit(unit: dict[str, Any]) -> str:
+    role = normalize_str(unit.get("role")).lower()
+    if role:
+        return role
+    for obj_type in normalize_str_list(unit.get("types")):
+        mapped = ROLE_BY_TYPE.get(obj_type.lower())
+        if mapped:
+            return mapped
+    return "current_status"
+
+
+def _source_meeting_id(obj_id: str) -> str:
+    match = re.match(r"^L1-([^-]+)-", normalize_str(obj_id))
+    return match.group(1) if match else ""
+
+
+def _active_source_split(
+    source_ids: list[str],
+    memory: dict[str, Any],
+    *,
+    current_meeting_id: str,
+    meeting_window: int = ACTIVE_SOURCE_MEETING_WINDOW,
+    max_active_ids: int = ACTIVE_SOURCE_MAX_IDS,
+) -> tuple[list[str], list[str]]:
+    all_ids = dedupe_keep_order(source_ids)
+    history = dedupe_keep_order(
+        normalize_str_list(memory.get("meeting_history_ids")) + [current_meeting_id]
+    )
+    recent_meetings = set(history[-max(1, meeting_window):])
+    active: list[str] = []
+    historical: list[str] = []
+    for obj_id in all_ids:
+        meeting_id = _source_meeting_id(obj_id)
+        if not meeting_id or meeting_id in recent_meetings:
+            active.append(obj_id)
+        else:
+            historical.append(obj_id)
+
+    active = dedupe_keep_order(active)
+    if len(active) > max_active_ids:
+        overflow = active[:-max_active_ids]
+        active = active[-max_active_ids:]
+        historical = dedupe_keep_order(historical + overflow)
+    return active, dedupe_keep_order(historical)
+
+
+def normalize_active_state_memory(
+    memory: dict[str, Any],
+    *,
+    current_meeting_id: str,
+) -> dict[str, Any]:
+    """Backfill active-state fields for all short-term units.
+
+    This keeps legacy short-term JSON usable while preserving `source_obj_ids`
+    as full lineage and limiting prompt-visible evidence to recent active
+    sources.
+    """
+    for unit in memory.get("units", []):
+        if not isinstance(unit, dict):
+            continue
+        if not normalize_str(unit.get("current_state")):
+            unit["current_state"] = normalize_str(unit.get("summary"))
+        unit["role"] = _infer_role_from_unit(unit)
+        unit["status"] = _status(unit.get("status"))
+        all_source_ids = dedupe_keep_order(normalize_str_list(unit.get("source_obj_ids")))
+        prior_active = normalize_str_list(unit.get("active_source_obj_ids")) or all_source_ids
+        active_sources, newly_historical = _active_source_split(
+            prior_active,
+            memory,
+            current_meeting_id=current_meeting_id,
+        )
+        unit["source_obj_ids"] = all_source_ids
+        unit["active_source_obj_ids"] = active_sources
+        unit["historical_source_obj_ids"] = dedupe_keep_order(
+            normalize_str_list(unit.get("historical_source_obj_ids"))
+            + [obj_id for obj_id in all_source_ids if obj_id not in active_sources]
+            + newly_historical
+        )
+    return memory
 
 
 def _unit_text(unit: dict[str, Any]) -> str:
@@ -102,6 +217,8 @@ def select_candidate_units(
 
     for unit in memory.get("units", []):
         if not isinstance(unit, dict):
+            continue
+        if _status(unit.get("status")) in INACTIVE_STATUSES:
             continue
         score = 0.0
         unit_sources = set(normalize_str_list(unit.get("source_obj_ids")))
@@ -160,6 +277,8 @@ def _normalize_decision(decision: dict[str, Any]) -> dict[str, Any]:
         "summary": summary,
         "related_topics": normalize_str_list(decision.get("related_topics")),
         "rationale": normalize_str(decision.get("rationale")),
+        "role": normalize_str(decision.get("role")).lower(),
+        "status": _status(decision.get("status")),
     }
 
 
@@ -180,6 +299,8 @@ def apply_merge_decision(
     obj_type = normalize_str(source_obj.get("type"))
     source_topics = normalize_str_list(source_obj.get("related_topics"))
     source_ids = [source_obj_id]
+    role = _infer_role(source_obj, normalized)
+    status = normalized["status"]
 
     if normalized["action"] == "merge_existing":
         unit_id = normalized["unit_id"]
@@ -191,14 +312,32 @@ def apply_merge_decision(
             raise ValueError(f"unknown unit_id for merge_existing: {unit_id}")
         unit["title"] = normalized["title"]
         unit["summary"] = normalized["summary"]
+        unit["current_state"] = normalized["summary"]
+        unit["role"] = role
+        unit["status"] = status
         unit["types"] = dedupe_keep_order(normalize_str_list(unit.get("types")) + [obj_type])
         unit["related_topics"] = dedupe_keep_order(
             normalize_str_list(unit.get("related_topics"))
             + normalized["related_topics"]
             + source_topics
         )
-        unit["source_obj_ids"] = dedupe_keep_order(
+        all_source_ids = dedupe_keep_order(
             normalize_str_list(unit.get("source_obj_ids")) + source_ids
+        )
+        previous_active = normalize_str_list(unit.get("active_source_obj_ids"))
+        if not previous_active:
+            previous_active = normalize_str_list(unit.get("source_obj_ids"))
+        active_sources, newly_historical = _active_source_split(
+            previous_active + source_ids,
+            memory,
+            current_meeting_id=meeting_id,
+        )
+        unit["source_obj_ids"] = all_source_ids
+        unit["active_source_obj_ids"] = active_sources
+        unit["historical_source_obj_ids"] = dedupe_keep_order(
+            normalize_str_list(unit.get("historical_source_obj_ids"))
+            + [obj_id for obj_id in all_source_ids if obj_id not in active_sources]
+            + newly_historical
         )
         unit["last_updated_meeting_id"] = meeting_id
         unit["last_seen_meeting_index"] = meeting_index
@@ -220,9 +359,14 @@ def apply_merge_decision(
         "unit_id": next_unit_id(units),
         "title": normalized["title"],
         "summary": normalized["summary"],
+        "current_state": normalized["summary"],
+        "role": role,
+        "status": status,
         "types": dedupe_keep_order([obj_type]),
         "related_topics": dedupe_keep_order(normalized["related_topics"] + source_topics),
         "source_obj_ids": source_ids,
+        "active_source_obj_ids": source_ids,
+        "historical_source_obj_ids": [],
         "created_meeting_id": meeting_id,
         "last_updated_meeting_id": meeting_id,
         "last_seen_meeting_index": meeting_index,
@@ -297,9 +441,13 @@ def build_merge_prompt(
             "unit_id": unit.get("unit_id", ""),
             "title": unit.get("title", ""),
             "summary": unit.get("summary", ""),
+            "current_state": unit.get("current_state", ""),
+            "role": unit.get("role", ""),
+            "status": unit.get("status", "active"),
             "types": unit.get("types", []),
             "related_topics": unit.get("related_topics", []),
-            "source_obj_ids": unit.get("source_obj_ids", []),
+            "active_source_obj_ids": unit.get("active_source_obj_ids", []),
+            "historical_source_count": len(normalize_str_list(unit.get("historical_source_obj_ids"))),
             "candidate_score": unit.get("_candidate_score", 0.0),
         }
         for unit in candidates
@@ -307,16 +455,22 @@ def build_merge_prompt(
     return f"""
 You are updating short-term memory from share_mem L1 objects.
 
-Decide whether the new L1 object updates one candidate short-term topic unit or
-must create a new topic unit.
+Decide whether the new L1 object updates one candidate short-term active-state
+unit or must create a new active-state unit.
 
 Rules:
 1) Return JSON only.
 2) action must be merge_existing or create_new.
-3) Use merge_existing only when the L1 object is the same ongoing short-term topic.
+3) Use merge_existing only when the L1 object updates the same active work item,
+   open issue, current status, or recent decision. Same broad topic alone is not
+   enough.
 4) If action=merge_existing, unit_id must be one of the candidate unit IDs.
 5) Do not invent source object IDs.
 6) Keep title short and summary focused on the current state after this update.
+7) role may be current_status, active_decision, next_action, open_issue,
+   recent_change, or pending_validation.
+8) status should usually be active unless the new L1 explicitly resolves or
+   supersedes the unit.
 
 Meeting:
 {json.dumps({"meeting_id": meeting.get("meeting_id", ""), "meeting_date": meeting.get("meeting_date", "")}, ensure_ascii=False)}

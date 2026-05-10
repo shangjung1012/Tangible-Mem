@@ -1,0 +1,36 @@
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S021] LTM Node Attributes: Static Importance vs. Dynamic Activation/Decay, and Tunable Importance Design
+  score: 6.25
+  summary: The long-term memory model defines key node attributes: 'Importance' (a static score assigned at creation, now also tunable by users with system suggestions based on similarity search), 'Relevance' (dynamic, based on semantic similarity), and 'Recency' or 'Activation' (dynamic, decays over time). To preserve the historical significance of ideas, the static 'importance' score should be explicitly separated from the dynamic 'activation' parameter that handles decay. This separation ensures important but older ideas don't completely disappear by maintaining a 'baseline' value for high-importance items even as activation decays. The design of the human-in-the-loop system for tuning 'importance' remains an open issue, specifically regarding how users inspect/adjust scores and how the system proactively suggests related units for tuning.
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  source L1: L1-0506-022, L1-0506-036, L1-0506-038, L1-0506-039
+
+[S020] Memory Merging Policy: Meeting-Specific Scope
+  score: 2.25
+  summary: Memory node updates and merges are strictly limited to within a single meeting. The system is designed not to merge memories across different meetings, treating each meeting as an independent, self-contained processing unit for memory management.
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  source L1: L1-0506-021, L1-0506-031
+
+[S022] Dynamic Visualization Tool for Memory System
+  score: 2.25
+  summary: A dynamic visualization tool will be created to demonstrate the memory system's behavior. This tool will animate the construction and updating of the memory graph over time, making abstract concepts like node creation, updates, and decay tangible for development and presentation purposes.
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  source L1: L1-0506-035
+
+[S023] LTM Architecture: Time-Based vs. Topic-Based Hierarchical Models, Three-Tier Structure, and L2/L3 for Temporal Context
+  score: 2.25
+  summary: The long-term memory (LTM) system's architecture presents a key difference in handling recurring topics between time-based and topic-based models. The time-based model creates new L1 nodes for each mention to preserve chronological order, whereas the topic-based model updates existing L1 nodes to build an evolutionary history within a single node. This architectural debate is further contextualized by a proposed three-tier hierarchical structure (L1, L2, L3), designed to manage fine-grained ideas from single meetings (L1), summarize L1s from blocks of meetings (L2), and provide high-level summaries (L3), influencing how revisited topics are managed. For time-oriented memory structures, retrieval should provide matching L1 units along with their L2/L3 parent nodes to furnish large language models with essential temporal context, an approach influenced by the TiM paper to facilitate the extraction of chronological context.
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  source L1: L1-0506-037, L1-0506-040, L1-0506-041, L1-0506-042, L1-0506-043, L1-0506-044
+
+[S004] System Architecture: Prompt Modification vs. Agent-Based Refactoring for Desired Behavior
+  score: 2.1875
+  summary: The system's current behavior deviates significantly from desired outcomes, leading to an open question on the best approach to resolve this: either by first modifying the prompt or by refactoring the system into an agent-based architecture. The overall plan involves refactoring the system from a monolithic 'manager' process to a multi-agent model for improved testability and task separation, with an initial step of prompt modification to align with desired behavior, followed by the agent-based refactoring. This multi-agent approach allows for independent, step-by-step testing, 
+...(truncated)

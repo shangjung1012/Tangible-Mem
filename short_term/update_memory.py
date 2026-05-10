@@ -22,6 +22,7 @@ from short_term.merge import (
     GeminiMergeDecider,
     MergeDecider,
     apply_merge_decision,
+    normalize_active_state_memory,
     select_candidate_units,
 )
 from short_term.schema import DEFAULT_MODEL_NAME, MEMORY_SCHEMA_VERSION
@@ -106,6 +107,7 @@ def update_memory_from_snapshot(
         touched_unit_ids.add(normalize_str(unit.get("unit_id")))
 
     _bump_untouched_units(memory, touched_unit_ids)
+    normalize_active_state_memory(memory, current_meeting_id=meeting_id)
     memory["units"] = sorted(
         memory.get("units", []),
         key=lambda unit: normalize_str(unit.get("unit_id")),

@@ -237,14 +237,25 @@ Short-term units track current working context rather than full history:
 - `unit_id`
 - `title`
 - `summary`
+- `current_state`
+- `role` (`current_status`, `active_decision`, `next_action`, `open_issue`,
+  `recent_change`, or `pending_validation`)
+- `status` (`active`, `stale`, `pending`, `resolved`, or `superseded`)
 - `types`
 - `related_topics`
 - `source_obj_ids`
+- `active_source_obj_ids`
+- `historical_source_obj_ids`
 - `created_meeting_id`
 - `last_updated_meeting_id`
 - `last_seen_meeting_index`
 - `missed_meeting_count`
 - `update_history`
+
+`source_obj_ids` remains the full lineage. `active_source_obj_ids` is the
+bounded recent evidence slice intended for prompt display. Older lineage moves
+to `historical_source_obj_ids` so short-term memory stays a current-state view
+instead of becoming another long-term topic history.
 
 When a unit is not touched by a new meeting, `missed_meeting_count` increases.
 Units missed for two meetings are dropped. This keeps short-term focused on
@@ -257,7 +268,7 @@ short_term.retrieval.short_term_context.retrieve_short_term_context(
     query,
     api_key,
     retrieval_mode="hybrid",
-    top_k=6,
+    top_k=4,
     max_context_chars=...
 )
 ```
@@ -265,7 +276,10 @@ short_term.retrieval.short_term_context.retrieve_short_term_context(
 It reads `short_term/short_term_memory.json`, ranks active `S###` units by
 query overlap against `title`, `summary`, `types`, and `related_topics`, lightly
 prefers fresher units through `missed_meeting_count`, and formats compact
-context with source L1 ids. `app/memory_context.py::retrieve_short_term_context_adapter`
+context with query-ranked active source L1 previews. If a checked-in legacy
+unit does not yet have explicit `active_source_obj_ids`, retrieval derives a
+recent active source slice from the last three `meeting_history_ids` instead of
+showing the full historical source list. `app/memory_context.py::retrieve_short_term_context_adapter`
 calls this module directly.
 
 ## Retrieve Flow
