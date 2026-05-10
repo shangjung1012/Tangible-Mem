@@ -483,6 +483,99 @@ class L3PromotionTests(unittest.TestCase):
             "L2-evidence-grounding-and-line-coverage",
         )
 
+    def test_transcript_idea_unit_child_assignments_cover_specific_scenarios(self) -> None:
+        node = {
+            "l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+            "label": "transcript segmentation and idea-unit coverage",
+            "current_state": "Crowded transcript processing topic.",
+            "linked_obj_ids": [
+                "L1-method",
+                "L1-coverage",
+                "L1-granularity",
+                "L1-classification",
+                "L1-core",
+            ],
+            "meeting_ids": ["0408", "0429", "0506"],
+            "timeline_digest": [
+                {
+                    "meeting_id": "0506",
+                    "meeting_date": "2026-05-06",
+                    "obj_id": "L1-method",
+                    "summary": (
+                        "The top-down pipeline uses a Segment Agent to extract "
+                        "idea units from transcript segments."
+                    ),
+                },
+                {
+                    "meeting_id": "0506",
+                    "meeting_date": "2026-05-06",
+                    "obj_id": "L1-coverage",
+                    "summary": (
+                        "The process can miss transcript gaps, so missed lines "
+                        "are added back as low-quality raw text idea units."
+                    ),
+                },
+                {
+                    "meeting_id": "0506",
+                    "meeting_date": "2026-05-06",
+                    "obj_id": "L1-granularity",
+                    "summary": (
+                        "A segment is a broader topic while an idea unit is a "
+                        "smaller semantic unit inside that segment."
+                    ),
+                },
+                {
+                    "meeting_id": "0429",
+                    "meeting_date": "2026-04-29",
+                    "obj_id": "L1-classification",
+                    "summary": (
+                        "Type agents classify candidate objects and reconcile "
+                        "labels before final memory object creation."
+                    ),
+                },
+                {
+                    "meeting_id": "0408",
+                    "meeting_date": "2026-04-08",
+                    "obj_id": "L1-core",
+                    "summary": "An atomic unit should contain one standalone idea.",
+                },
+            ],
+        }
+        promotions = build_l3_promotion_sidecar(
+            {"l2_nodes": [node]},
+            total_l1_count=10,
+            thresholds={"absolute_l1_threshold": 5},
+            generated_at_utc="2026-05-09T00:00:00Z",
+        )
+
+        materialized = build_l3_materialization_sidecar(
+            {"l2_nodes": [node]},
+            promotions,
+            generated_at_utc="2026-05-09T00:00:00Z",
+        )
+
+        index = materialized["l3_index"]
+        self.assertEqual(
+            index["L1-method"]["child_l2_id"],
+            "L2-idea-unit-generation-methods",
+        )
+        self.assertEqual(
+            index["L1-coverage"]["child_l2_id"],
+            "L2-missing-line-coverage",
+        )
+        self.assertEqual(
+            index["L1-granularity"]["child_l2_id"],
+            "L2-idea-unit-granularity-and-semantics",
+        )
+        self.assertEqual(
+            index["L1-classification"]["child_l2_id"],
+            "L2-idea-unit-candidate-classification",
+        )
+        self.assertEqual(
+            index["L1-core"]["child_l2_id"],
+            "L2-idea-unit-generation",
+        )
+
     def test_llm_assignment_is_validated_and_falls_back_when_invalid(self) -> None:
         node = {
             "l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",

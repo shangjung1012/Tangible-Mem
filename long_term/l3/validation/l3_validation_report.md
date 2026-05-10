@@ -7,8 +7,7 @@
 - Duplicate assignment count: 0
 
 ## Child Size Distribution
-- acceptable_but_watch: 2
-- ideal: 12
+- ideal: 14
 
 ## Issues
 - [warning] needs_retrieval_slice: Child L2 full timeline exceeds prompt context threshold.

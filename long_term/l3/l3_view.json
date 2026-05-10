@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-05-10T16:29:58Z",
+  "generated_at_utc": "2026-05-10T16:50:34Z",
   "source": "long_term_l3_materialization",
   "materialized_l3_count": 2,
   "l3_nodes": [
@@ -387,17 +387,15 @@
             "per-turn",
             "chunk size"
           ],
-          "current_state": "This child L2 has 28 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 24 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0325-007",
             "L1-0422-004",
             "L1-0422-005",
-            "L1-0422-007",
             "L1-0422-018",
             "L1-0422-020",
             "L1-0422-023",
             "L1-0422-024",
-            "L1-0429-018",
             "L1-0429-023",
             "L1-0429-026",
             "L1-0429-028",
@@ -405,8 +403,6 @@
             "L1-0429-033",
             "L1-0429-034",
             "L1-0429-035",
-            "L1-0429-051",
-            "L1-0429-052",
             "L1-0429-058",
             "L1-0429-060",
             "L1-0429-065",
@@ -445,12 +441,6 @@
             {
               "meeting_id": "0422",
               "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-007",
-              "summary": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。"
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
               "obj_id": "L1-0422-018",
               "summary": "關於動態文本分塊 (dynamic transcript chunking) 機制的具體實作方式尚不清楚。問題在於，該過程是先將整個逐字稿以固定大小（例如每次三行）進行處理然後再合併，還是採用其他不同的運作方式。"
             },
@@ -471,12 +461,6 @@
               "meeting_date": "2026-04-22",
               "obj_id": "L1-0422-024",
               "summary": "團隊提出了一種基於資訊熵的動態文本分塊（chunking）方法。此方法會預測當前主題將持續多少句子，並將其作為一個批次處理。接著計算新區塊的熵，若熵值跳升過高，則表示主題已變更，系統會回溯並縮小區塊（例如減半）以找到最佳切點。此方法旨在克服固定大小分塊常會切斷完整想法的缺點，但代價是需要更多的計算時間。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-018",
-              "summary": "為了進行比較，RAG 基準 (baseline) 被定義為一種僅包含文本分塊 (chunking) 和語義搜索的簡單方法。"
             },
             {
               "meeting_id": "0429",
@@ -519,18 +503,6 @@
               "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-035",
               "summary": "固定的 chunking 策略存在缺陷：若 chunk 過大（如 3 個 turn），可能錯誤地將多個想法合併到一個摘要中；若 chunk 過於零碎（如一個句子一個 chunk），則計算成本會過高。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-051",
-              "summary": "關於逐字稿處理的基本策略，團隊尚未達成共識。目前存在「由上而下」（top-down）與「由下而上」（bottom-up）兩種方法的爭論，甚至還提出了一種動態的「由下而上」妥協方案，顯示核心架構的決策點仍懸而未決。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-052",
-              "summary": "「Top-down」處理方法的一個關鍵權衡是其輸出的不確定性 (non-deterministic)。對於同一個大的文本塊，LLM 可能會識別出不同數量的 topics，導致結果不一致。"
             },
             {
               "meeting_id": "0429",
@@ -593,7 +565,7 @@
               "summary": "在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。"
             }
           ],
-          "event_count": 28
+          "event_count": 24
         },
         {
           "l2_id": "L2-window-and-boundary-selection",
@@ -613,13 +585,14 @@
             "line immediately following",
             "resume"
           ],
-          "current_state": "This child L2 has 8 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0408-016",
             "L1-0422-028",
-            "L1-0429-046",
-            "L1-0429-081",
-            "L1-0429-126",
+            "L1-0429-041",
+            "L1-0429-079",
+            "L1-0429-122",
+            "L1-0429-129",
             "L1-0506-003",
             "L1-0506-007",
             "L1-0506-014"
@@ -646,20 +619,26 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-046",
-              "summary": "由於現有的五次會議逐字稿品質不佳，考慮使用 LLM 協助修正內容。"
+              "obj_id": "L1-0429-041",
+              "summary": "團隊需要修正現有的5次會議（總計約180分鐘）的逐字稿，因為其品質不佳，並考慮使用 LLM 來協助校正。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-081",
-              "summary": "調查並解決短期記憶 agent 處理逐字稿時，因 LLM 自行決定讀取範圍（例如，讀取 1-40 行後，接著讀取 31-80 行）而導致區塊重疊和重複處理的問題。"
+              "obj_id": "L1-0429-079",
+              "summary": "決定讓 LLM (Gemini) 自主決定讀取逐字稿的參數（如起訖行號），而非由程式碼嚴格控制。目前的實作是透過提示（prompt）建議模型每次讀取 40 到 80 行，賦予其根據上下文需求決定讀取範圍的彈性，而非強制使用固定的窗口大小。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-126",
-              "summary": "當 agent 在一個文本區塊中識別出多個主題時，其處理來源文本的具體機制尚不清楚。目前的作法似乎是針對每個主題，都使用整個文本區塊的內容進行 `write` 操作，而不是將來源文本分段，這引發了關於此方法精確性的問題。"
+              "obj_id": "L1-0429-122",
+              "summary": "專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-129",
+              "summary": "需要調查並釐清記憶體更新機制的具體實作。目前不清楚在更新特定記憶節點時，系統是使用整個相關的文本區塊（text chunk），還是有辦法只隔離出直接相關的句子。這個問題在嘗試檢查程式碼後仍未解決。"
             },
             {
               "meeting_id": "0506",
@@ -680,7 +659,7 @@
               "summary": "團隊過去曾嘗試一種自適應窗口（adaptive window）的分割方法，但因效果不佳（導致更多拒絕和更少驗證）而被放棄。失敗的原因是該方法無法精確定位邊界，任何不準確都需要回退到邊界校正，從而使其失去了自適應的優勢。"
             }
           ],
-          "event_count": 8
+          "event_count": 9
         },
         {
           "l2_id": "L2-tool-calling-transcript-reading",
@@ -698,15 +677,16 @@
             "code-driven",
             "Gemini reads transcript lines"
           ],
-          "current_state": "This child L2 has 7 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 8 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0408-015",
             "L1-0422-027",
-            "L1-0429-041",
-            "L1-0429-079",
+            "L1-0429-032",
+            "L1-0429-062",
             "L1-0429-092",
             "L1-0429-093",
-            "L1-0506-041"
+            "L1-0506-031",
+            "L1-0506-043"
           ],
           "meeting_ids": [
             "0408",
@@ -730,14 +710,14 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-041",
-              "summary": "團隊需要修正現有的5次會議（總計約180分鐘）的逐字稿，因為其品質不佳，並考慮使用 LLM 來協助校正。"
+              "obj_id": "L1-0429-032",
+              "summary": "系統的輸入區塊大小（例如 20 行）與最終的記憶物件結構無關。系統能夠在單一輸入區塊內識別出多個不同長度的獨立主題（物件）。這意味著因區塊邊界而截斷想法的擔憂不大。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-079",
-              "summary": "決定讓 LLM (Gemini) 自主決定讀取逐字稿的參數（如起訖行號），而非由程式碼嚴格控制。目前的實作是透過提示（prompt）建議模型每次讀取 40 到 80 行，賦予其根據上下文需求決定讀取範圍的彈性，而非強制使用固定的窗口大小。"
+              "obj_id": "L1-0429-062",
+              "summary": "目前系統以約 20 行的固定大小文本塊 (chunk) 來處理逐字稿。在單一文本塊內，系統能夠識別出多個不同長度的 objects。"
             },
             {
               "meeting_id": "0429",
@@ -754,64 +734,48 @@
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-041",
-              "summary": "專案面臨一個關鍵的記憶體架構設計決策：要採用以時間為基礎的結構，還是以主題為基礎的結構。以時間為基礎的方法將每個 L2 節點對應到單次會議，以保留清晰的時序脈絡。相對地，以主題為基礎的方法則根據語意主題組織 L1 想法單元，並在想法重現時更新現有節點，而非創建新節點。此決策是對原始時間基礎架構的重新評估。"
+              "obj_id": "L1-0506-031",
+              "summary": "每個會議都會生成新的 L1 節點。相似的想法可以在單次會議的節點內合併，但不能跨會議合併，因為每個會議都被視為一個獨立的組織單位。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-043",
+              "summary": "提議創建一個動態的動畫視覺化來展示記憶系統。這個動畫將展示隨著系統處理連續會議的逐字稿，記憶圖譜如何增長和更新，使 agent 記憶的抽象概念變得具體化。"
             }
           ],
-          "event_count": 7
+          "event_count": 8
         },
         {
           "l2_id": "L2-idea-unit-generation",
-          "label": "idea-unit generation",
+          "label": "idea-unit core definition",
           "source": "long_term_l3_materialized_child_l2",
           "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-          "split_reason": "Separate creation and definition of idea units as atomic transcript-processing units.",
+          "split_reason": "Separate core definitions of idea units as atomic transcript-processing units from generation methods, coverage repair, and candidate classification.",
           "assignment_criteria": [
-            "idea unit",
-            "idea-unit",
-            "idea units",
             "atomic unit",
             "single utterance",
-            "granular viewpoint"
+            "granular viewpoint",
+            "standalone idea",
+            "one idea"
           ],
-          "current_state": "This child L2 has 32 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 12 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0325-017",
-            "L1-0408-013",
-            "L1-0408-014",
-            "L1-0422-006",
-            "L1-0422-009",
-            "L1-0422-014",
+            "L1-0422-010",
             "L1-0422-016",
-            "L1-0429-019",
-            "L1-0429-057",
-            "L1-0429-064",
-            "L1-0429-072",
-            "L1-0429-103",
+            "L1-0429-054",
+            "L1-0429-086",
             "L1-0429-105",
-            "L1-0429-106",
-            "L1-0429-124",
             "L1-0429-125",
-            "L1-0429-133",
             "L1-0429-135",
             "L1-0429-137",
-            "L1-0506-001",
-            "L1-0506-002",
-            "L1-0506-005",
-            "L1-0506-008",
-            "L1-0506-009",
-            "L1-0506-010",
-            "L1-0506-012",
-            "L1-0506-017",
             "L1-0506-021",
-            "L1-0506-024",
-            "L1-0506-027",
             "L1-0506-033",
             "L1-0506-040"
           ],
           "meeting_ids": [
             "0325",
-            "0408",
             "0422",
             "0429",
             "0506"
@@ -824,34 +788,10 @@
               "summary": "使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。"
             },
             {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-013",
-              "summary": "在逐字稿切分上存在一個設計挑戰：一個想法單元（idea unit）是否應假設只包含一種想法類型，或可允許多種類型，此問題尚未解決。"
-            },
-            {
-              "meeting_id": "0408",
-              "meeting_date": "2026-04-08",
-              "obj_id": "L1-0408-014",
-              "summary": "目前尚不清楚由哪個具體的腳本或 agent 負責為長期記憶聚合器尋找語義叢集（clusters）和想法單元（idea units）。"
-            },
-            {
               "meeting_id": "0422",
               "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-006",
-              "summary": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。"
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-009",
-              "summary": "提案一種迭代生成 idea unit 的方法：系統讀取固定行數（例如 3 或 5 行）作為「候選」，若後續內容主題相同則合併更新，直到主題變更為止。"
-            },
-            {
-              "meeting_id": "0422",
-              "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-014",
-              "summary": "提出一個想法，認為讓每個傳入的 idea unit 同時更新短期 (short-term) 和長期 (long-term) 記憶是更合理的做法。"
+              "obj_id": "L1-0422-010",
+              "summary": "目前的系統架構決定，short-term memory 和 long-term memory 將分開獨立更新。每個記憶體處理過程都會接收完整的逐字稿，並在沒有互動的情況下各自進行更新。"
             },
             {
               "meeting_id": "0422",
@@ -862,32 +802,14 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-019",
-              "summary": "完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次的結論層以提供更廣泛的上下文，並包含一個更詳細的 short-term memory 組件來追蹤近期的活動。"
+              "obj_id": "L1-0429-054",
+              "summary": "團隊對於系統如何在固定的20行文本塊內識別和創建不同長度的「物件」（objects）的具體機制尚不清楚，討論最終以需要審查程式碼來釐清，這表明物件的結構和創建邏輯是一個待解的疑問。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-057",
-              "summary": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-064",
-              "summary": "團隊確認了逐字稿處理採用「由上而下」(top-down) 的方法。系統會讀取固定大小的文本區塊（約20行），並由 LLM 在其中識別出多個「物件」(objects) 或「想法單元」(idea units)。此方法與「由下而上」(bottom-up) 的策略（如逐句處理或迭代式摘要）形成對比，並澄清了團隊內部對現行方法的共識。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-072",
-              "summary": "對 chunking 實驗的評估將採用 precision 和 recall 指標，並以人類定義的「重要 idea units」作為 ground truth 進行比對。目標是在減少運算量（以請求次數衡量）的同時，實現高 precision 和高 recall，這與預期 precision 較低的逐輪次摘要方法有所不同。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-103",
-              "summary": "記憶體更新流程已確定：第一步是將逐字稿明確地分割成「idea units」，然後系統必須為每一個 idea unit 執行後續的記憶體搜尋與更新操作。這個分割步驟是強制性的。"
+              "obj_id": "L1-0429-086",
+              "summary": "觀察到一個系統失敗模式：由於允許 LLM (Gemini) 根據提示中的建議範圍（例如 40-80 行）自行決定讀取逐字稿的起訖行數，導致其讀取重疊的文本區塊（例如，先讀取 1-40 行，再讀取 31-80 行），造成部分內容被重複處理。"
             },
             {
               "meeting_id": "0429",
@@ -898,26 +820,8 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-106",
-              "summary": "建議為每個 idea unit 生成一個小摘要，並利用該摘要來搜尋相關的記憶。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-124",
-              "summary": "目前的記憶體寫入實作方法，並未將來源文本分割成細粒度的「idea units」。當 agent 在一個較大的文本區塊中識別出多個主題時，它會為每個主題發出獨立的 `write` 指令，但每次寫入的來源都是整個文本區塊，而非特定的文本子片段。這意味著系統接受了較低精度的更新方式。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-125",
               "summary": "有一個論點指出，若不將文本細分為「idea units」而是用大文本區塊（例如 80 行）來更新多個相關的記憶節點，可能會導致這些節點的內容隨著時間推移而趨於同質化，失去各自的獨特性。"
-            },
-            {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-133",
-              "summary": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱..."
             },
             {
               "meeting_id": "0429",
@@ -934,68 +838,8 @@
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-001",
-              "summary": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-002",
-              "summary": "團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit` 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-005",
-              "summary": "目前的處理流程存在一個已知問題，即在處理過程中會遺漏部分逐字稿內容。這些遺漏的「間隙」（gaps）目前是透過將其作為低品質的原始文本 idea unit 加回來進行修補。團隊計劃在未來版本中加入一個正式的修復機制，但尚未實施。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-008",
-              "summary": "處理流程的基本架構受到質疑，特別是關於是否有必要採用目前由上而下（top-down）的兩階段作法，即先切分出較廣泛的 `segments`（主題），再將其分解為 `idea units`（觀點）。有人認為，由下而上（bottom-up）的方法，也就是先識別 `idea units` 再將其組合成主題，可能更為自然。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-009",
-              "summary": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-010",
-              "summary": "計劃在未來版本中加入一個修復機制，以處理因提示問題導致的逐字稿遺漏（gaps）。目前的做法是將遺漏的行作為原始文本、低品質的 idea unit 加回。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-012",
-              "summary": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-017",
-              "summary": "系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-021",
               "summary": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-024",
-              "summary": "提出一個更具層次性的資料結構定義：`idea units`（話語）構成 `segments`（微主題），而多個相關的 `segments` 則組成一個 `batch`（較大的主題）。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-027",
-              "summary": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。"
             },
             {
               "meeting_id": "0506",
@@ -1010,7 +854,7 @@
               "summary": "決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。"
             }
           ],
-          "event_count": 32
+          "event_count": 12
         },
         {
           "l2_id": "L2-idea-unit-granularity-and-semantics",
@@ -1029,22 +873,38 @@
             "細粒度",
             "微小",
             "微主題",
+            "semantic",
+            "semantics",
+            "what counts",
+            "counts as an idea unit",
+            "unit boundary",
+            "smaller semantic unit",
+            "broader topic",
+            "一個想法",
+            "語義",
+            "單一想法",
             "無語義",
             "嗯哼",
             "話語"
           ],
-          "current_state": "This child L2 has 7 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 12 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0325-041",
-            "L1-0422-010",
-            "L1-0429-027",
-            "L1-0429-056",
-            "L1-0429-089",
-            "L1-0429-130",
-            "L1-0506-025"
+            "L1-0408-013",
+            "L1-0408-014",
+            "L1-0422-007",
+            "L1-0422-014",
+            "L1-0429-018",
+            "L1-0429-019",
+            "L1-0429-124",
+            "L1-0506-002",
+            "L1-0506-024",
+            "L1-0506-025",
+            "L1-0506-027"
           ],
           "meeting_ids": [
             "0325",
+            "0408",
             "0422",
             "0429",
             "0506"
@@ -1057,43 +917,73 @@
               "summary": "提出一個使用 LLM 處理會議記錄的短期記憶 (Short-Term Memory) 更新機制。該機制會根據相似性更新現有記憶項目、附加新項目，並根據最後更新時間戳驅逐未被參考的舊項目。"
             },
             {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-013",
+              "summary": "在逐字稿切分上存在一個設計挑戰：一個想法單元（idea unit）是否應假設只包含一種想法類型，或可允許多種類型，此問題尚未解決。"
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-014",
+              "summary": "目前尚不清楚由哪個具體的腳本或 agent 負責為長期記憶聚合器尋找語義叢集（clusters）和想法單元（idea units）。"
+            },
+            {
               "meeting_id": "0422",
               "meeting_date": "2026-04-22",
-              "obj_id": "L1-0422-010",
-              "summary": "目前的系統架構決定，short-term memory 和 long-term memory 將分開獨立更新。每個記憶體處理過程都會接收完整的逐字稿，並在沒有互動的情況下各自進行更新。"
+              "obj_id": "L1-0422-007",
+              "summary": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。"
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-014",
+              "summary": "提出一個想法，認為讓每個傳入的 idea unit 同時更新短期 (short-term) 和長期 (long-term) 記憶是更合理的做法。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-027",
-              "summary": "系統中 `re-transcribe` 函數讀取固定大小約 20 行的區塊，此數值是任意設定的，並未動態調整。雖然目前的結果可接受，但這個參數並未經過優化，其對系統效能的影響仍是個待解決的設計問題。"
+              "obj_id": "L1-0429-018",
+              "summary": "為了進行比較，RAG 基準 (baseline) 被定義為一種僅包含文本分塊 (chunking) 和語義搜索的簡單方法。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-056",
-              "summary": "提出一個假設，認為目前系統的優勢在於能夠過濾並避免儲存無關的對話填充詞，這點與較簡單的方法不同。"
+              "obj_id": "L1-0429-019",
+              "summary": "完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次的結論層以提供更廣泛的上下文，並包含一個更詳細的 short-term memory 組件來追蹤近期的活動。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-089",
-              "summary": "建議在資料處理流程中增加中間檢查點，而非一次性執行到底。中間結果（例如預測逐字稿中的換行）將被寫入資料庫以供驗證，從而提高流程的可見性。"
+              "obj_id": "L1-0429-124",
+              "summary": "目前的記憶體寫入實作方法，並未將來源文本分割成細粒度的「idea units」。當 agent 在一個較大的文本區塊中識別出多個主題時，它會為每個主題發出獨立的 `write` 指令，但每次寫入的來源都是整個文本區塊，而非特定的文本子片段。這意味著系統接受了較低精度的更新方式。"
             },
             {
-              "meeting_id": "0429",
-              "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-130",
-              "summary": "提出一個思想實驗來分析系統的行為。該實驗假設一段包含兩個不同主題（例如專案海報和記憶體架構）的逐字稿，對應到兩個獨立的記憶節點，用以檢視系統在更新時是否會發生主題交叉污染的問題。"
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-002",
+              "summary": "團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit` 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-024",
+              "summary": "提出一個更具層次性的資料結構定義：`idea units`（話語）構成 `segments`（微主題），而多個相關的 `segments` 則組成一個 `batch`（較大的主題）。"
             },
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-025",
               "summary": "採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-027",
+              "summary": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。"
             }
           ],
-          "event_count": 7
+          "event_count": 12
         },
         {
           "l2_id": "L2-idea-unit-generation-methods",
@@ -1108,32 +998,52 @@
             "pre-segmentation",
             "iterative method",
             "iterative generation",
+            "generate idea units",
+            "generating idea units",
+            "extract idea units",
+            "segment agent",
+            "top-down",
+            "bottom-up",
+            "LLM generate",
             "配方",
             "提示工程",
             "迭代",
             "預分割",
             "生成方法",
+            "生成 idea unit",
+            "抽取 idea unit",
             "來回",
             "非線性"
           ],
-          "current_state": "This child L2 has 10 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 20 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0325-033",
             "L1-0408-011",
             "L1-0408-017",
+            "L1-0422-006",
+            "L1-0422-009",
             "L1-0422-017",
             "L1-0422-019",
             "L1-0429-025",
             "L1-0429-036",
             "L1-0429-049",
+            "L1-0429-051",
+            "L1-0429-052",
             "L1-0429-053",
-            "L1-0429-055"
+            "L1-0429-055",
+            "L1-0429-057",
+            "L1-0429-064",
+            "L1-0506-001",
+            "L1-0506-008",
+            "L1-0506-009",
+            "L1-0506-012"
           ],
           "meeting_ids": [
             "0325",
             "0408",
             "0422",
-            "0429"
+            "0429",
+            "0506"
           ],
           "timeline_digest": [
             {
@@ -1153,6 +1063,18 @@
               "meeting_date": "2026-04-08",
               "obj_id": "L1-0408-017",
               "summary": "另一個團隊已開發出一套有效的「配方」(recipe)，可透過提示工程 (prompt engineering) 將中文文本分割成「想法單元」(idea units)。該方法是為論壇討論而設計，並包含對不同分割 agent 的詳細比較。"
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-006",
+              "summary": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。"
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-009",
+              "summary": "提案一種迭代生成 idea unit 的方法：系統讀取固定行數（例如 3 或 5 行）作為「候選」，若後續內容主題相同則合併更新，直到主題變更為止。"
             },
             {
               "meeting_id": "0422",
@@ -1187,6 +1109,18 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-051",
+              "summary": "關於逐字稿處理的基本策略，團隊尚未達成共識。目前存在「由上而下」（top-down）與「由下而上」（bottom-up）兩種方法的爭論，甚至還提出了一種動態的「由下而上」妥協方案，顯示核心架構的決策點仍懸而未決。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-052",
+              "summary": "「Top-down」處理方法的一個關鍵權衡是其輸出的不確定性 (non-deterministic)。對於同一個大的文本塊，LLM 可能會識別出不同數量的 topics，導致結果不一致。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-053",
               "summary": "團隊已決定推遲一項旨在比較不同文本分塊（chunking）方法優劣的實驗。因此，當前所用方法是否優於其他方法（如迭代合併）仍是一個未經證實的假設。"
             },
@@ -1195,9 +1129,45 @@
               "meeting_date": "2026-04-29",
               "obj_id": "L1-0429-055",
               "summary": "提出一種妥協方案：採用動態的由下而上（bottom-up）方法。系統將動態識別關於同一主題的連續對話區塊，處理該區塊以生成小型摘要，然後再進行迭代合併。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-057",
+              "summary": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-064",
+              "summary": "團隊確認了逐字稿處理採用「由上而下」(top-down) 的方法。系統會讀取固定大小的文本區塊（約20行），並由 LLM 在其中識別出多個「物件」(objects) 或「想法單元」(idea units)。此方法與「由下而上」(bottom-up) 的策略（如逐句處理或迭代式摘要）形成對比，並澄清了團隊內部對現行方法的共識。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-001",
+              "summary": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-008",
+              "summary": "處理流程的基本架構受到質疑，特別是關於是否有必要採用目前由上而下（top-down）的兩階段作法，即先切分出較廣泛的 `segments`（主題），再將其分解為 `idea units`（觀點）。有人認為，由下而上（bottom-up）的方法，也就是先識別 `idea units` 再將其組合成主題，可能更為自然。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-009",
+              "summary": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-012",
+              "summary": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。"
             }
           ],
-          "event_count": 10
+          "event_count": 20
         },
         {
           "l2_id": "L2-idea-unit-candidate-classification",
@@ -1213,29 +1183,37 @@
             "classification",
             "label",
             "labels",
+            "candidate object",
+            "candidate objects",
+            "memory object candidates",
             "reconcile",
             "reconciliation",
             "agent 標記",
             "標記",
             "標籤",
+            "候選",
+            "分類 object",
             "六種",
             "並行",
             "協調",
             "分類"
           ],
-          "current_state": "This child L2 has 13 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 16 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0307-034",
             "L1-0325-004",
             "L1-0408-018",
             "L1-0429-021",
-            "L1-0429-088",
-            "L1-0429-129",
+            "L1-0429-072",
+            "L1-0429-103",
+            "L1-0429-106",
+            "L1-0429-133",
             "L1-0429-136",
             "L1-0506-004",
             "L1-0506-013",
             "L1-0506-015",
             "L1-0506-016",
+            "L1-0506-017",
             "L1-0506-018",
             "L1-0506-026"
           ],
@@ -1274,14 +1252,26 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-088",
-              "summary": "針對是否在處理流程中增加中間檢查點（intermediate checkpoints）存在一個懸而未決的問題。核心爭議點在於這些檢查點的根本目的：是為了評估效能（例如評估 prompts 或步驟），還是為了在執行期間對流程進行更精細的控制。"
+              "obj_id": "L1-0429-072",
+              "summary": "對 chunking 實驗的評估將採用 precision 和 recall 指標，並以人類定義的「重要 idea units」作為 ground truth 進行比對。目標是在減少運算量（以請求次數衡量）的同時，實現高 precision 和高 recall，這與預期 precision 較低的逐輪次摘要方法有所不同。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-129",
-              "summary": "需要調查並釐清記憶體更新機制的具體實作。目前不清楚在更新特定記憶節點時，系統是使用整個相關的文本區塊（text chunk），還是有辦法只隔離出直接相關的句子。這個問題在嘗試檢查程式碼後仍未解決。"
+              "obj_id": "L1-0429-103",
+              "summary": "記憶體更新流程已確定：第一步是將逐字稿明確地分割成「idea units」，然後系統必須為每一個 idea unit 執行後續的記憶體搜尋與更新操作。這個分割步驟是強制性的。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-106",
+              "summary": "建議為每個 idea unit 生成一個小摘要，並利用該摘要來搜尋相關的記憶。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-133",
+              "summary": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱..."
             },
             {
               "meeting_id": "0429",
@@ -1316,6 +1306,12 @@
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-017",
+              "summary": "系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
               "obj_id": "L1-0506-018",
               "summary": "在標記 `idea unit` 的過程中，雖然並行運行的 agent 可能會給出多個類型標籤，但已建立一項約束：最終需將其解析為一個精確的標籤，僅在必要時才允許多達兩種。"
             },
@@ -1326,7 +1322,7 @@
               "summary": "儘管多個並行 agent 可能會為同一個 `idea unit` 分配多種類型標籤，但存在一個限制，即最終必須將其解析為一個精確的標籤，最多只在必要時允許兩種。這個限制驅動了對 `candidate` 進行協調（reconciliation）的需求。"
             }
           ],
-          "event_count": 13
+          "event_count": 16
         },
         {
           "l2_id": "L2-missing-line-coverage",
@@ -1342,17 +1338,23 @@
             "coverage",
             "100%",
             "verification",
-            "check every"
+            "check every",
+            "low-quality raw text",
+            "low quality raw text",
+            "raw text idea unit",
+            "added back"
           ],
-          "current_state": "This child L2 has 7 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0325-059",
             "L1-0422-013",
-            "L1-0429-030",
-            "L1-0429-059",
-            "L1-0429-122",
-            "L1-0429-131",
-            "L1-0506-031"
+            "L1-0429-027",
+            "L1-0429-056",
+            "L1-0429-088",
+            "L1-0429-127",
+            "L1-0429-132",
+            "L1-0506-005",
+            "L1-0506-010"
           ],
           "meeting_ids": [
             "0325",
@@ -1376,35 +1378,47 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-030",
-              "summary": "支持「動態分塊」方法的論點是，透過預測一個主題將持續多少對話回合，可以創建可變大小的區塊，從而比固定區塊更準確地捕捉想法的邊界。"
+              "obj_id": "L1-0429-027",
+              "summary": "系統中 `re-transcribe` 函數讀取固定大小約 20 行的區塊，此數值是任意設定的，並未動態調整。雖然目前的結果可接受，但這個參數並未經過優化，其對系統效能的影響仍是個待解決的設計問題。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-059",
-              "summary": "當前系統的一個假設性優勢是，與較簡單的方法不同，它能夠過濾並避免儲存無關的對話填充詞 (conversational filler)。"
+              "obj_id": "L1-0429-056",
+              "summary": "提出一個假設，認為目前系統的優勢在於能夠過濾並避免儲存無關的對話填充詞，這點與較簡單的方法不同。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-122",
-              "summary": "專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。"
+              "obj_id": "L1-0429-088",
+              "summary": "針對是否在處理流程中增加中間檢查點（intermediate checkpoints）存在一個懸而未決的問題。核心爭議點在於這些檢查點的根本目的：是為了評估效能（例如評估 prompts 或步驟），還是為了在執行期間對流程進行更精細的控制。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-131",
-              "summary": "發現記憶體更新的具體機制目前尚未定義。團隊不清楚系統在更新時是使用整個文本區塊，還是有方法能分離出僅與特定節點相關的句子。嘗試透過檢查程式碼來釐清此問題但未能成功。"
+              "obj_id": "L1-0429-127",
+              "summary": "提出一項設計原則：為避免記憶節點因內容過於相似而收斂，系統應避免使用單一、未分化的大塊文本來更新多個相關的記憶節點。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-132",
+              "summary": "團隊揚棄了使用大塊、未分化的文本區塊進行低精準度記憶體更新的方法。此舉是為了解決一個關鍵風險：當使用同一大段文本更新多個相關記憶節點時，會發生「交叉污染」，導致節點內容隨時間趨同，失去其獨特性。"
             },
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-031",
-              "summary": "每個會議都會生成新的 L1 節點。相似的想法可以在單次會議的節點內合併，但不能跨會議合併，因為每個會議都被視為一個獨立的組織單位。"
+              "obj_id": "L1-0506-005",
+              "summary": "目前的處理流程存在一個已知問題，即在處理過程中會遺漏部分逐字稿內容。這些遺漏的「間隙」（gaps）目前是透過將其作為低品質的原始文本 idea unit 加回來進行修補。團隊計劃在未來版本中加入一個正式的修復機制，但尚未實施。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-010",
+              "summary": "計劃在未來版本中加入一個修復機制，以處理因提示問題導致的逐字稿遺漏（gaps）。目前的做法是將遺漏的行作為原始文本、低品質的 idea unit 加回。"
             }
           ],
-          "event_count": 7
+          "event_count": 9
         },
         {
           "l2_id": "L2-repair-and-coarsening",
@@ -1422,14 +1436,15 @@
             "batch",
             "combining"
           ],
-          "current_state": "This child L2 has 8 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0408-012",
             "L1-0422-022",
-            "L1-0429-032",
-            "L1-0429-062",
-            "L1-0429-123",
-            "L1-0429-132",
+            "L1-0429-030",
+            "L1-0429-059",
+            "L1-0429-089",
+            "L1-0429-128",
+            "L1-0506-011",
             "L1-0506-023",
             "L1-0506-028"
           ],
@@ -1455,26 +1470,32 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-032",
-              "summary": "系統的輸入區塊大小（例如 20 行）與最終的記憶物件結構無關。系統能夠在單一輸入區塊內識別出多個不同長度的獨立主題（物件）。這意味著因區塊邊界而截斷想法的擔憂不大。"
+              "obj_id": "L1-0429-030",
+              "summary": "支持「動態分塊」方法的論點是，透過預測一個主題將持續多少對話回合，可以創建可變大小的區塊，從而比固定區塊更準確地捕捉想法的邊界。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-062",
-              "summary": "目前系統以約 20 行的固定大小文本塊 (chunk) 來處理逐字稿。在單一文本塊內，系統能夠識別出多個不同長度的 objects。"
+              "obj_id": "L1-0429-059",
+              "summary": "當前系統的一個假設性優勢是，與較簡單的方法不同，它能夠過濾並避免儲存無關的對話填充詞 (conversational filler)。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-123",
-              "summary": "決定 agent 將具備 `Write` 記憶體功能，並允許連續進行多次 `write` 呼叫（例如最多三次）。此設計旨在讓 agent 能夠從單一文本區塊中，將多個不同的想法分別記錄下來。"
+              "obj_id": "L1-0429-089",
+              "summary": "建議在資料處理流程中增加中間檢查點，而非一次性執行到底。中間結果（例如預測逐字稿中的換行）將被寫入資料庫以供驗證，從而提高流程的可見性。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-132",
-              "summary": "團隊揚棄了使用大塊、未分化的文本區塊進行低精準度記憶體更新的方法。此舉是為了解決一個關鍵風險：當使用同一大段文本更新多個相關記憶節點時，會發生「交叉污染」，導致節點內容隨時間趨同，失去其獨特性。"
+              "obj_id": "L1-0429-128",
+              "summary": "系統採用了新的 agent-memory 互動模型，基於 `Read` 和 `Write` 函數。其中一個關鍵特性是允許 agent 連續進行多次 `write` 操作，以處理單一文本區塊中包含多個不同想法的情況。Agent 的工作流程是：讀取一個文本區塊，然後決定發出一個或多個 `write` 指令。"
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-011",
+              "summary": "有一個發現是，追求完美的文本分割可能效益不大，因為下游的 LLM 能夠處理較大且未完美分割的文本塊。"
             },
             {
               "meeting_id": "0506",
@@ -1489,7 +1510,7 @@
               "summary": "`batch` 機制的功能被定義為：1) 將因固定處理窗口而被截斷的 `segments` 與後續的 `segment` 合併以進行修復；2) 將相關內容分組以形成一個連貫的區塊，為 L1 agent 提供足夠的上下文以進行準確分類。"
             }
           ],
-          "event_count": 8
+          "event_count": 9
         },
         {
           "l2_id": "L2-cross-window-continuity",
@@ -1512,11 +1533,11 @@
             "L1-0307-039",
             "L1-0422-002",
             "L1-0422-044",
-            "L1-0429-050",
-            "L1-0429-085",
-            "L1-0429-127",
-            "L1-0506-011",
-            "L1-0506-043"
+            "L1-0429-046",
+            "L1-0429-081",
+            "L1-0429-123",
+            "L1-0429-130",
+            "L1-0506-041"
           ],
           "meeting_ids": [
             "0307",
@@ -1546,32 +1567,32 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-050",
-              "summary": "為了解決關於 `create_object` 函數和物件結構的模糊之處，會議結論是需要審查相關程式碼。"
+              "obj_id": "L1-0429-046",
+              "summary": "由於現有的五次會議逐字稿品質不佳，考慮使用 LLM 協助修正內容。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-085",
-              "summary": "目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。"
+              "obj_id": "L1-0429-081",
+              "summary": "調查並解決短期記憶 agent 處理逐字稿時，因 LLM 自行決定讀取範圍（例如，讀取 1-40 行後，接著讀取 31-80 行）而導致區塊重疊和重複處理的問題。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-127",
-              "summary": "提出一項設計原則：為避免記憶節點因內容過於相似而收斂，系統應避免使用單一、未分化的大塊文本來更新多個相關的記憶節點。"
+              "obj_id": "L1-0429-123",
+              "summary": "決定 agent 將具備 `Write` 記憶體功能，並允許連續進行多次 `write` 呼叫（例如最多三次）。此設計旨在讓 agent 能夠從單一文本區塊中，將多個不同的想法分別記錄下來。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-130",
+              "summary": "提出一個思想實驗來分析系統的行為。該實驗假設一段包含兩個不同主題（例如專案海報和記憶體架構）的逐字稿，對應到兩個獨立的記憶節點，用以檢視系統在更新時是否會發生主題交叉污染的問題。"
             },
             {
               "meeting_id": "0506",
               "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-011",
-              "summary": "有一個發現是，追求完美的文本分割可能效益不大，因為下游的 LLM 能夠處理較大且未完美分割的文本塊。"
-            },
-            {
-              "meeting_id": "0506",
-              "meeting_date": "2026-05-06",
-              "obj_id": "L1-0506-043",
-              "summary": "提議創建一個動態的動畫視覺化來展示記憶系統。這個動畫將展示隨著系統處理連續會議的逐字稿，記憶圖譜如何增長和更新，使 agent 記憶的抽象概念變得具體化。"
+              "obj_id": "L1-0506-041",
+              "summary": "專案面臨一個關鍵的記憶體架構設計決策：要採用以時間為基礎的結構，還是以主題為基礎的結構。以時間為基礎的方法將每個 L2 節點對應到單次會議，以保留清晰的時序脈絡。相對地，以主題為基礎的方法則根據語意主題組織 L1 想法單元，並在想法重現時更新現有節點，而非創建新節點。此決策是對原始時間基礎架構的重新評估。"
             }
           ],
           "event_count": 8
@@ -1594,14 +1615,15 @@
             "range",
             "support"
           ],
-          "current_state": "This child L2 has 7 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
+          "current_state": "This child L2 has 8 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.",
           "linked_obj_ids": [
             "L1-0325-002",
             "L1-0325-010",
             "L1-0429-024",
-            "L1-0429-054",
-            "L1-0429-086",
-            "L1-0429-128",
+            "L1-0429-050",
+            "L1-0429-085",
+            "L1-0429-126",
+            "L1-0429-131",
             "L1-0506-020"
           ],
           "meeting_ids": [
@@ -1631,20 +1653,26 @@
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-054",
-              "summary": "團隊對於系統如何在固定的20行文本塊內識別和創建不同長度的「物件」（objects）的具體機制尚不清楚，討論最終以需要審查程式碼來釐清，這表明物件的結構和創建邏輯是一個待解的疑問。"
+              "obj_id": "L1-0429-050",
+              "summary": "為了解決關於 `create_object` 函數和物件結構的模糊之處，會議結論是需要審查相關程式碼。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-086",
-              "summary": "觀察到一個系統失敗模式：由於允許 LLM (Gemini) 根據提示中的建議範圍（例如 40-80 行）自行決定讀取逐字稿的起訖行數，導致其讀取重疊的文本區塊（例如，先讀取 1-40 行，再讀取 31-80 行），造成部分內容被重複處理。"
+              "obj_id": "L1-0429-085",
+              "summary": "目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。"
             },
             {
               "meeting_id": "0429",
               "meeting_date": "2026-04-29",
-              "obj_id": "L1-0429-128",
-              "summary": "系統採用了新的 agent-memory 互動模型，基於 `Read` 和 `Write` 函數。其中一個關鍵特性是允許 agent 連續進行多次 `write` 操作，以處理單一文本區塊中包含多個不同想法的情況。Agent 的工作流程是：讀取一個文本區塊，然後決定發出一個或多個 `write` 指令。"
+              "obj_id": "L1-0429-126",
+              "summary": "當 agent 在一個文本區塊中識別出多個主題時，其處理來源文本的具體機制尚不清楚。目前的作法似乎是針對每個主題，都使用整個文本區塊的內容進行 `write` 操作，而不是將來源文本分段，這引發了關於此方法精確性的問題。"
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-131",
+              "summary": "發現記憶體更新的具體機制目前尚未定義。團隊不清楚系統在更新時是使用整個文本區塊，還是有方法能分離出僅與特定節點相關的句子。嘗試透過檢查程式碼來釐清此問題但未能成功。"
             },
             {
               "meeting_id": "0506",
@@ -1653,7 +1681,7 @@
               "summary": "決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。"
             }
           ],
-          "event_count": 7
+          "event_count": 8
         }
       ],
       "coverage": {
@@ -1880,7 +1908,7 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2029,20 +2057,20 @@
       "obj_id": "L1-0408-013",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 5,
       "manual_review": false
     },
     "L1-0408-014": {
       "obj_id": "L1-0408-014",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0408-015": {
@@ -2119,28 +2147,28 @@
       "obj_id": "L1-0422-006",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0422-007": {
       "obj_id": "L1-0422-007",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
-      "child_l2_label": "fixed vs dynamic chunking",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 2,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0422-009": {
       "obj_id": "L1-0422-009",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
       "assignment_score": 8,
       "manual_review": false
@@ -2149,8 +2177,8 @@
       "obj_id": "L1-0422-010",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
-      "child_l2_label": "idea-unit granularity and semantics",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2169,10 +2197,10 @@
       "obj_id": "L1-0422-014",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 5,
       "manual_review": false
     },
     "L1-0422-016": {
@@ -2180,9 +2208,9 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0422-017": {
@@ -2319,20 +2347,20 @@
       "obj_id": "L1-0429-018",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
-      "child_l2_label": "fixed vs dynamic chunking",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 1,
+      "assignment_score": 3,
       "manual_review": false
     },
     "L1-0429-019": {
       "obj_id": "L1-0429-019",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0429-020": {
@@ -2352,7 +2380,7 @@
       "child_l2_id": "L2-idea-unit-candidate-classification",
       "child_l2_label": "idea-unit candidate classification",
       "assignment_reason": "criteria_match",
-      "assignment_score": 4,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0429-023": {
@@ -2399,8 +2427,8 @@
       "obj_id": "L1-0429-027",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
-      "child_l2_label": "idea-unit granularity and semantics",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2429,8 +2457,8 @@
       "obj_id": "L1-0429-030",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-missing-line-coverage",
-      "child_l2_label": "missing-line coverage",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2439,8 +2467,8 @@
       "obj_id": "L1-0429-032",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-repair-and-coarsening",
-      "child_l2_label": "repair and coarsening",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2519,8 +2547,8 @@
       "obj_id": "L1-0429-041",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-tool-calling-transcript-reading",
-      "child_l2_label": "tool-calling transcript reading",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2539,8 +2567,8 @@
       "obj_id": "L1-0429-046",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-window-and-boundary-selection",
-      "child_l2_label": "window and boundary selection",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2569,8 +2597,8 @@
       "obj_id": "L1-0429-050",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-cross-window-continuity",
-      "child_l2_label": "cross-window continuity",
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2579,8 +2607,8 @@
       "obj_id": "L1-0429-051",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
-      "child_l2_label": "fixed vs dynamic chunking",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
       "assignment_score": 6,
       "manual_review": false
@@ -2589,8 +2617,8 @@
       "obj_id": "L1-0429-052",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-fixed-vs-dynamic-chunking",
-      "child_l2_label": "fixed vs dynamic chunking",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
       "assignment_score": 3,
       "manual_review": false
@@ -2609,8 +2637,8 @@
       "obj_id": "L1-0429-054",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2622,15 +2650,15 @@
       "child_l2_id": "L2-idea-unit-generation-methods",
       "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
-      "assignment_score": 3,
+      "assignment_score": 6,
       "manual_review": false
     },
     "L1-0429-056": {
       "obj_id": "L1-0429-056",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
-      "child_l2_label": "idea-unit granularity and semantics",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2639,10 +2667,10 @@
       "obj_id": "L1-0429-057",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0429-058": {
@@ -2659,8 +2687,8 @@
       "obj_id": "L1-0429-059",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-missing-line-coverage",
-      "child_l2_label": "missing-line coverage",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2679,8 +2707,8 @@
       "obj_id": "L1-0429-062",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-repair-and-coarsening",
-      "child_l2_label": "repair and coarsening",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2699,8 +2727,8 @@
       "obj_id": "L1-0429-064",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
       "assignment_score": 10,
       "manual_review": false
@@ -2779,18 +2807,18 @@
       "obj_id": "L1-0429-072",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-candidate-classification",
+      "child_l2_label": "idea-unit candidate classification",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0429-079": {
       "obj_id": "L1-0429-079",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-tool-calling-transcript-reading",
-      "child_l2_label": "tool-calling transcript reading",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2799,8 +2827,8 @@
       "obj_id": "L1-0429-081",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-window-and-boundary-selection",
-      "child_l2_label": "window and boundary selection",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2819,8 +2847,8 @@
       "obj_id": "L1-0429-085",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-cross-window-continuity",
-      "child_l2_label": "cross-window continuity",
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2829,8 +2857,8 @@
       "obj_id": "L1-0429-086",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
-      "child_l2_label": "evidence grounding and line coverage",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2839,8 +2867,8 @@
       "obj_id": "L1-0429-088",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-candidate-classification",
-      "child_l2_label": "idea-unit candidate classification",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2849,8 +2877,8 @@
       "obj_id": "L1-0429-089",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
-      "child_l2_label": "idea-unit granularity and semantics",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -2879,10 +2907,10 @@
       "obj_id": "L1-0429-103",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-candidate-classification",
+      "child_l2_label": "idea-unit candidate classification",
       "assignment_reason": "criteria_match",
-      "assignment_score": 11,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0429-105": {
@@ -2890,63 +2918,23 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 11,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0429-106": {
       "obj_id": "L1-0429-106",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-candidate-classification",
+      "child_l2_label": "idea-unit candidate classification",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0429-122": {
       "obj_id": "L1-0429-122",
-      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-missing-line-coverage",
-      "child_l2_label": "missing-line coverage",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
-      "manual_review": false
-    },
-    "L1-0429-123": {
-      "obj_id": "L1-0429-123",
-      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-repair-and-coarsening",
-      "child_l2_label": "repair and coarsening",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
-      "manual_review": false
-    },
-    "L1-0429-124": {
-      "obj_id": "L1-0429-124",
-      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 10,
-      "manual_review": false
-    },
-    "L1-0429-125": {
-      "obj_id": "L1-0429-125",
-      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
-      "assignment_reason": "criteria_match",
-      "assignment_score": 10,
-      "manual_review": false
-    },
-    "L1-0429-126": {
-      "obj_id": "L1-0429-126",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-window-and-boundary-selection",
@@ -2955,8 +2943,8 @@
       "assignment_score": 0,
       "manual_review": false
     },
-    "L1-0429-127": {
-      "obj_id": "L1-0429-127",
+    "L1-0429-123": {
+      "obj_id": "L1-0429-123",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-cross-window-continuity",
@@ -2965,8 +2953,28 @@
       "assignment_score": 0,
       "manual_review": false
     },
-    "L1-0429-128": {
-      "obj_id": "L1-0429-128",
+    "L1-0429-124": {
+      "obj_id": "L1-0429-124",
+      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 4,
+      "manual_review": false
+    },
+    "L1-0429-125": {
+      "obj_id": "L1-0429-125",
+      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "child_l2_id": "L2-idea-unit-generation",
+      "child_l2_label": "idea-unit core definition",
+      "assignment_reason": "criteria_match",
+      "assignment_score": 1,
+      "manual_review": false
+    },
+    "L1-0429-126": {
+      "obj_id": "L1-0429-126",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-evidence-grounding-and-line-coverage",
@@ -2975,28 +2983,8 @@
       "assignment_score": 0,
       "manual_review": false
     },
-    "L1-0429-129": {
-      "obj_id": "L1-0429-129",
-      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-candidate-classification",
-      "child_l2_label": "idea-unit candidate classification",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
-      "manual_review": false
-    },
-    "L1-0429-130": {
-      "obj_id": "L1-0429-130",
-      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
-      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
-      "child_l2_label": "idea-unit granularity and semantics",
-      "assignment_reason": "balanced_fallback",
-      "assignment_score": 0,
-      "manual_review": false
-    },
-    "L1-0429-131": {
-      "obj_id": "L1-0429-131",
+    "L1-0429-127": {
+      "obj_id": "L1-0429-127",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-missing-line-coverage",
@@ -3005,8 +2993,8 @@
       "assignment_score": 0,
       "manual_review": false
     },
-    "L1-0429-132": {
-      "obj_id": "L1-0429-132",
+    "L1-0429-128": {
+      "obj_id": "L1-0429-128",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-repair-and-coarsening",
@@ -3015,14 +3003,54 @@
       "assignment_score": 0,
       "manual_review": false
     },
+    "L1-0429-129": {
+      "obj_id": "L1-0429-129",
+      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "child_l2_id": "L2-window-and-boundary-selection",
+      "child_l2_label": "window and boundary selection",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
+      "manual_review": false
+    },
+    "L1-0429-130": {
+      "obj_id": "L1-0429-130",
+      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
+      "manual_review": false
+    },
+    "L1-0429-131": {
+      "obj_id": "L1-0429-131",
+      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "child_l2_id": "L2-evidence-grounding-and-line-coverage",
+      "child_l2_label": "evidence grounding and line coverage",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
+      "manual_review": false
+    },
+    "L1-0429-132": {
+      "obj_id": "L1-0429-132",
+      "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
+      "assignment_reason": "balanced_fallback",
+      "assignment_score": 0,
+      "manual_review": false
+    },
     "L1-0429-133": {
       "obj_id": "L1-0429-133",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-candidate-classification",
+      "child_l2_label": "idea-unit candidate classification",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0429-135": {
@@ -3030,9 +3058,9 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 11,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0429-136": {
@@ -3050,29 +3078,29 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0506-001": {
       "obj_id": "L1-0506-001",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0506-002": {
       "obj_id": "L1-0506-002",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 5,
       "manual_review": false
     },
     "L1-0506-003": {
@@ -3099,10 +3127,10 @@
       "obj_id": "L1-0506-005",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 6,
       "manual_review": false
     },
     "L1-0506-007": {
@@ -3119,18 +3147,18 @@
       "obj_id": "L1-0506-008",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0506-009": {
       "obj_id": "L1-0506-009",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
       "assignment_score": 8,
       "manual_review": false
@@ -3139,18 +3167,18 @@
       "obj_id": "L1-0506-010",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-missing-line-coverage",
+      "child_l2_label": "missing-line coverage",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 6,
       "manual_review": false
     },
     "L1-0506-011": {
       "obj_id": "L1-0506-011",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-cross-window-continuity",
-      "child_l2_label": "cross-window continuity",
+      "child_l2_id": "L2-repair-and-coarsening",
+      "child_l2_label": "repair and coarsening",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -3159,8 +3187,8 @@
       "obj_id": "L1-0506-012",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-generation-methods",
+      "child_l2_label": "idea-unit generation methods",
       "assignment_reason": "criteria_match",
       "assignment_score": 8,
       "manual_review": false
@@ -3209,10 +3237,10 @@
       "obj_id": "L1-0506-017",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-candidate-classification",
+      "child_l2_label": "idea-unit candidate classification",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0506-018": {
@@ -3240,9 +3268,9 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 8,
+      "assignment_score": 2,
       "manual_review": false
     },
     "L1-0506-023": {
@@ -3259,10 +3287,10 @@
       "obj_id": "L1-0506-024",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 7,
       "manual_review": false
     },
     "L1-0506-025": {
@@ -3272,7 +3300,7 @@
       "child_l2_id": "L2-idea-unit-granularity-and-semantics",
       "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 13,
       "manual_review": false
     },
     "L1-0506-026": {
@@ -3289,10 +3317,10 @@
       "obj_id": "L1-0506-027",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_id": "L2-idea-unit-granularity-and-semantics",
+      "child_l2_label": "idea-unit granularity and semantics",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 4,
       "manual_review": false
     },
     "L1-0506-028": {
@@ -3309,8 +3337,8 @@
       "obj_id": "L1-0506-031",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-missing-line-coverage",
-      "child_l2_label": "missing-line coverage",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
@@ -3320,9 +3348,9 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0506-040": {
@@ -3330,17 +3358,17 @@
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
       "child_l2_id": "L2-idea-unit-generation",
-      "child_l2_label": "idea-unit generation",
+      "child_l2_label": "idea-unit core definition",
       "assignment_reason": "criteria_match",
-      "assignment_score": 10,
+      "assignment_score": 1,
       "manual_review": false
     },
     "L1-0506-041": {
       "obj_id": "L1-0506-041",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-tool-calling-transcript-reading",
-      "child_l2_label": "tool-calling transcript reading",
+      "child_l2_id": "L2-cross-window-continuity",
+      "child_l2_label": "cross-window continuity",
       "assignment_reason": "criteria_match",
       "assignment_score": 1,
       "manual_review": false
@@ -3349,8 +3377,8 @@
       "obj_id": "L1-0506-043",
       "source_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
       "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
-      "child_l2_id": "L2-cross-window-continuity",
-      "child_l2_label": "cross-window continuity",
+      "child_l2_id": "L2-tool-calling-transcript-reading",
+      "child_l2_label": "tool-calling transcript reading",
       "assignment_reason": "balanced_fallback",
       "assignment_score": 0,
       "manual_review": false
