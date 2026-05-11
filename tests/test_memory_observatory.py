@@ -199,6 +199,8 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertTrue(result["truncated"])
         self.assertGreater(result["metrics"]["estimated_context_tokens"], 0)
         self.assertEqual(result["included_meeting_count"], 1)
+        self.assertNotIn("truncated", result["context"].lower())
+        self.assertTrue(result["context"].endswith("\n..."))
 
     def test_full_context_can_stop_at_token_budget_without_gold_oracle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -216,6 +218,7 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertTrue(result["truncated"])
         self.assertLessEqual(result["metrics"]["estimated_context_tokens"], 140)
         self.assertEqual(result["full_context_scope"], "all")
+        self.assertNotIn("truncated", result["context"].lower())
 
     def test_lexical_rag_returns_chunk_metadata_with_line_range(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -254,6 +257,7 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertTrue(result["truncated"])
         self.assertLess(result["retrieved_chunk_count"], 999)
         self.assertLessEqual(result["metrics"]["estimated_context_tokens"], 190)
+        self.assertNotIn("truncated", result["context"].lower())
 
     def test_lexical_rag_max_context_zero_disables_truncation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -274,6 +278,26 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertFalse(result["truncated"])
         self.assertNotIn("...(truncated)", result["context"])
         self.assertGreater(result["metrics"]["context_char_count"], 0)
+
+    def test_lexical_rag_char_truncation_marker_uses_plain_ellipsis(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            transcript = root / "meeting_recording" / "transcript" / "grace" / "0307.txt"
+            transcript.write_text(
+                "\n".join(f"line {index} memory retrieval detail" for index in range(1, 80)),
+                encoding="utf-8",
+            )
+            result = retrieve_lexical_rag(
+                "memory retrieval",
+                repo_root=root,
+                top_k=6,
+                max_context_chars=120,
+            )
+
+        self.assertTrue(result["truncated"])
+        self.assertNotIn("truncated", result["context"].lower())
+        self.assertTrue(result["context"].endswith("\n..."))
 
     def test_layered_trace_max_context_zero_disables_truncation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -381,6 +405,49 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertNotIn("stale_temp_dir", {row["run_id"] for row in store.list_runs()})
             self.assertEqual(store.load_run(run_dir.name)["summary"]["query_count"], 1)
 
+    def test_report_store_hides_legacy_observatory_runs_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = ReportStore(Path(tmp) / "runs")
+            legacy = store.runs_root / "observatory_20260509_224528"
+            current = store.runs_root / "observatory_20260511_213533"
+            legacy.mkdir(parents=True)
+            current.mkdir(parents=True)
+            store.write_json(
+                legacy / "results.json",
+                {
+                    "run_id": legacy.name,
+                    "config": {
+                        "retrieval_mode": "lexical",
+                        "no_llm": False,
+                        "max_context_chars": 12000,
+                    },
+                    "summary": {"query_count": 3},
+                },
+            )
+            store.write_json(legacy / "summary.json", {"query_count": 3})
+            store.write_json(
+                current / "results.json",
+                {
+                    "run_id": current.name,
+                    "config": {
+                        "retrieval_mode": "hybrid",
+                        "no_llm": True,
+                        "planner_model": "heuristic",
+                        "budget_profile": "generous_layered",
+                        "full_context_scope": "all",
+                        "rag_top_k": 999,
+                    },
+                    "summary": {"query_count": 8},
+                },
+            )
+            store.write_json(current / "summary.json", {"query_count": 8})
+
+            visible = {row["run_id"] for row in store.list_runs()}
+            all_rows = {row["run_id"] for row in store.list_runs(include_legacy=True)}
+
+        self.assertEqual(visible, {current.name})
+        self.assertEqual(all_rows, {legacy.name, current.name})
+
     def test_api_smoke_and_retrieval_trace(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -400,6 +467,34 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertEqual(payload["strategy"], "layered_memory")
             self.assertGreaterEqual(payload["metrics"]["selected_l1_count"], 1)
             self.assertIn("formatted_prompt_context", payload)
+
+    def test_api_create_run_forwards_fairness_parameters(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            client = TestClient(create_app(repo_root=root))
+            with patch("memory_observatory.main.run_experiment", return_value={"run_id": "run-x", "summary": {}}) as run_call:
+                response = client.post(
+                    "/api/runs",
+                    json={
+                        "strategies": ["full_context", "rag_baseline", "layered_memory"],
+                        "retrieval_mode": "hybrid",
+                        "no_llm": True,
+                        "full_context_scope": "gold",
+                        "baseline_token_multiplier": 5,
+                        "full_context_max_tokens": 12000,
+                        "rag_max_context_tokens": 8000,
+                        "rag_top_k": 999,
+                        "budget_profile": "generous_layered",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(run_call.call_args.kwargs["full_context_scope"], "gold")
+        self.assertEqual(run_call.call_args.kwargs["baseline_token_multiplier"], 5.0)
+        self.assertEqual(run_call.call_args.kwargs["full_context_max_tokens"], 12000)
+        self.assertEqual(run_call.call_args.kwargs["rag_max_context_tokens"], 8000)
+        self.assertEqual(run_call.call_args.kwargs["rag_top_k"], 999)
 
     def test_topic_detail_api_includes_linked_l1_objects_for_tree_drilldown(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -552,6 +647,58 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertTrue(query["strategies"]["full_context"]["truncated"])
         self.assertTrue(query["strategies"]["rag_baseline"]["truncated"])
 
+    def test_layered_experiment_score_counts_l2_timeline_obj_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            queries = root / "queries.jsonl"
+            queries.write_text(
+                json.dumps(
+                    {
+                        "query_id": "q001",
+                        "query": "topic evolution",
+                        "expected_obj_ids": ["L1-timeline"],
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with patch(
+                "memory_observatory.services.experiment_runner.RetrievalTraceService.run_trace",
+                return_value={
+                    "strategy": "layered_memory",
+                    "query": "topic evolution",
+                    "l1_evidence_seeds": [{"obj_id": "L1-seed"}],
+                    "l2_evolution_context": [
+                        {
+                            "l2_id": "L2-topic",
+                            "timeline_digest": [{"obj_id": "L1-timeline"}],
+                        }
+                    ],
+                    "l3_navigation": [],
+                    "context": "layered context with timeline",
+                    "metrics": {
+                        "estimated_context_tokens": 10,
+                        "total_ms": 1,
+                        "retrieval_ms": 1,
+                        "generation_ms": 0,
+                    },
+                },
+            ):
+                result = run_experiment(
+                    repo_root=root,
+                    queries_path=queries,
+                    out=root / "memory_observatory" / "runs",
+                    strategies=["layered_memory"],
+                    retrieval_mode="lexical",
+                    no_llm=True,
+                    generate_answers=False,
+                )
+
+        score = result["queries"][0]["strategies"]["layered_memory"]["scores"]
+        self.assertEqual(score["expected_obj_recall_at_context"], 1.0)
+
     def test_experiment_records_planner_model_and_passes_it_to_trace(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -591,6 +738,59 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(trace_call.call_args.kwargs["model_name"], "gemini-2.5-pro")
         self.assertEqual(trace_call.call_args.kwargs["planner_model_name"], "gemini-2.5-flash")
 
+    def test_no_llm_experiment_records_heuristic_planner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "memory_observatory.services.experiment_runner.RetrievalTraceService.run_trace",
+                return_value={
+                    "strategy": "layered_memory",
+                    "query": "How does memory retrieval work?",
+                    "l1_evidence_seeds": [],
+                    "l2_evolution_context": [],
+                    "l3_navigation": [],
+                    "context": "layered context",
+                    "metrics": {
+                        "estimated_context_tokens": 3,
+                        "total_ms": 1,
+                        "retrieval_ms": 1,
+                        "generation_ms": 0,
+                    },
+                },
+            ) as trace_call:
+                result = run_experiment(
+                    repo_root=root,
+                    queries_path=root / "long_term" / "eval" / "long_term_retrieval_queries.jsonl",
+                    out=root / "memory_observatory" / "runs",
+                    strategies=["layered_memory"],
+                    no_llm=True,
+                    generate_answers=False,
+                )
+
+        self.assertEqual(result["config"]["retrieval_mode"], "hybrid")
+        self.assertEqual(result["config"]["planner_model"], "heuristic")
+        self.assertIsNone(trace_call.call_args.kwargs["planner_model_name"])
+
+    def test_layered_scoring_counts_child_l2_parent_hit(self) -> None:
+        from memory_observatory.services.experiment_runner import _score_layered
+
+        scores = _score_layered(
+            {"expected_l2_ids": ["L2-parent"], "expected_l3_ids": ["L3-topic"]},
+            {
+                "l2_evolution_context": [
+                    {
+                        "l2_id": "L2-child",
+                        "promoted_from_l2_id": "L2-parent",
+                    }
+                ],
+                "l3_navigation": [{"l3_id": "L3-topic"}],
+            },
+        )
+
+        self.assertTrue(scores["expected_l2_hit"])
+        self.assertEqual(scores["selected_l2_ids"], ["L2-child", "L2-parent"])
+
     def test_layered_trace_can_use_tight_budget_profile(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -621,6 +821,129 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(recall_call.call_args.kwargs["max_l1_seeds_for_prompt"], 8)
         self.assertEqual(recall_call.call_args.kwargs["max_events_per_child_l2"], 1)
         self.assertEqual(recall_call.call_args.kwargs["max_event_chars"], 80)
+
+    def test_layered_trace_defaults_to_hybrid_without_llm_planner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch("recall_planner.plan_recall", side_effect=AssertionError("planner called")), patch(
+                "share_mem.l1.io_utils.load_api_keys",
+                return_value=["semantic-key"],
+            ) as load_keys, patch(
+                "recall.recall",
+                return_value={
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-0307-001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1, "retrieval_mode": "hybrid"},
+                },
+            ) as recall_call, patch(
+                "recall.format_recall_for_prompt",
+                return_value="=== L1 Evidence Seeds ===\nL1-0307-001",
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root).run_trace(
+                    "memory retrieval",
+                    max_context_chars=0,
+                )
+
+        self.assertEqual(result["retrieval_mode"], "hybrid")
+        self.assertFalse(result["use_llm_planner"])
+        self.assertEqual(result["planner_model"], "heuristic")
+        self.assertEqual(recall_call.call_args.kwargs["retrieval_mode"], "hybrid")
+        self.assertEqual(recall_call.call_args.kwargs["api_key"], ["semantic-key"])
+        self.assertTrue(load_keys.called)
+
+    def test_layered_trace_defaults_to_generous_budget_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "recall.recall",
+                return_value={
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-0307-001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1},
+                },
+            ) as recall_call, patch(
+                "recall.format_recall_for_prompt",
+                return_value="=== L1 Evidence Seeds ===\nL1-0307-001",
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root).run_trace(
+                    "memory retrieval",
+                    max_context_chars=0,
+                )
+
+        self.assertEqual(result["budget_profile"], "generous_layered")
+        self.assertEqual(recall_call.call_args.kwargs["top_k_raw"], 60)
+        self.assertEqual(recall_call.call_args.kwargs["max_l1_seeds_for_prompt"], 24)
+        self.assertEqual(recall_call.call_args.kwargs["max_events_per_child_l2"], 8)
+        self.assertEqual(recall_call.call_args.kwargs["max_event_chars"], 220)
+
+    def test_layered_trace_adds_current_state_context_for_current_queries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "recall.recall",
+                return_value={
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-0307-001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1},
+                },
+            ), patch(
+                "recall.format_recall_for_prompt",
+                return_value="=== L1 Evidence Seeds ===\nL1-0307-001",
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root).run_trace(
+                    "L1 到 L2 的分群現在是怎麼決定的？",
+                    max_context_chars=0,
+                )
+
+        self.assertIn("=== Current Implementation State ===", result["formatted_prompt_context"])
+        self.assertIn("topic-based", result["formatted_prompt_context"])
+        self.assertLess(
+            result["formatted_prompt_context"].index("=== Current Implementation State ==="),
+            result["formatted_prompt_context"].index("=== L1 Evidence Seeds ==="),
+        )
+
+    def test_layered_trace_context_truncation_marker_uses_plain_ellipsis(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "recall.recall",
+                return_value={
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-0307-001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1},
+                },
+            ), patch(
+                "recall.format_recall_for_prompt",
+                return_value="0123456789" * 20,
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root).run_trace(
+                    "memory retrieval",
+                    max_context_chars=40,
+                )
+
+        self.assertFalse(result["metrics"]["prompt_budget_pass"])
+        self.assertTrue(result["formatted_prompt_context"].endswith("\n..."))
+        self.assertNotIn("truncated", result["formatted_prompt_context"].lower())
 
     def test_experiment_passes_budget_profile_to_layered_trace(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -668,6 +991,7 @@ class MemoryObservatoryTests(unittest.TestCase):
 
         self.assertTrue(runner.call_args.kwargs["generate_answers"])
         self.assertTrue(runner.call_args.kwargs["no_llm"])
+        self.assertEqual(runner.call_args.kwargs["retrieval_mode"], "hybrid")
 
     def test_experiment_cli_defaults_to_unbounded_context_for_fair_comparison(self) -> None:
         with patch(
@@ -677,6 +1001,7 @@ class MemoryObservatoryTests(unittest.TestCase):
             experiment_cli.main([])
 
         self.assertEqual(runner.call_args.kwargs["max_context_chars"], 0)
+        self.assertEqual(runner.call_args.kwargs["full_context_scope"], "all")
 
     def test_experiment_cli_can_opt_into_llm_planner(self) -> None:
         with patch(
@@ -716,6 +1041,18 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(runner.call_args.kwargs["full_context_scope"], "all")
         self.assertEqual(runner.call_args.kwargs["baseline_token_multiplier"], 5.0)
         self.assertEqual(runner.call_args.kwargs["rag_top_k"], 999)
+
+    def test_experiment_cli_accepts_repo_root_for_synthetic_runs(self) -> None:
+        with patch(
+            "memory_observatory.services.experiment_cli.run_experiment",
+            return_value={"run_id": "run-test"},
+        ) as runner:
+            experiment_cli.main(["--repo-root", "long_term/eval/synthetic_repo"])
+
+        self.assertEqual(
+            runner.call_args.kwargs["repo_root"],
+            Path("long_term/eval/synthetic_repo"),
+        )
 
     def test_formatter_can_expand_l1_evidence_for_observatory_answers(self) -> None:
         long_content = "A standard RAG approach is insufficient because it cannot track rejected versus adopted topic lifecycle state."
@@ -841,11 +1178,125 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(query["expected_answer"], "Use L1 evidence.")
         self.assertEqual(query["expected_winner"], "Layered Memory")
 
+    def test_answer_prompt_requires_chronological_evolution_synthesis(self) -> None:
+        from memory_observatory.services.experiment_runner import ANSWER_SYSTEM_PROMPT
+
+        self.assertIn("chronological", ANSWER_SYSTEM_PROMPT.lower())
+        self.assertIn("latest retrieved stage", ANSWER_SYSTEM_PROMPT.lower())
+        self.assertIn("L1 Evidence Seeds", ANSWER_SYSTEM_PROMPT)
+        self.assertIn("L2 / child-L2 Evolution Context", ANSWER_SYSTEM_PROMPT)
+
+    def test_answer_prompt_surfaces_latest_evidence_for_evolution_queries(self) -> None:
+        from memory_observatory.services.experiment_runner import _answer_prompt
+
+        context = """=== L1 Evidence Seeds ===
+- [0408 | 2026-04-08 | L1-0408-006] type=proposal importance=0.70 score=0.50
+  content: Early retrieve design matches L1 first and then pulls L2/L3 context.
+- [0506 | 2026-05-06 | L1-0506-040] type=decision importance=0.68 score=0.40
+  content: Latest retrieve-facing design emphasizes inspector tooling and visualization of memory graph updates.
+
+=== L2 / Child-L2 Evolution Context ===
+[L2-memory-retrieval] memory retrieval
+  timeline_digest:
+    - [2026-04-08 L1-0408-006] Early retrieve design matches L1 first.
+    - [2026-05-06 L1-0506-040] Inspector tooling and visualization become the latest retrieve-facing design.
+"""
+
+        prompt = _answer_prompt("How did the retrieve design evolve later?", context)
+
+        latest_block_index = prompt.index("Latest Relevant Evidence")
+        context_index = prompt.index("Context:")
+        self.assertLess(latest_block_index, context_index)
+        self.assertIn("L1-0506-040", prompt[:context_index])
+        self.assertIn("inspector tooling and visualization", prompt[:context_index])
+
+    def test_answer_prompt_does_not_add_latest_evidence_block_for_local_queries(self) -> None:
+        from memory_observatory.services.experiment_runner import _answer_prompt
+
+        prompt = _answer_prompt(
+            "What is the current pipeline?",
+            "- [0506 | 2026-05-06 | L1-0506-001]\n  content: Current pipeline uses fixed windows.",
+        )
+
+        self.assertNotIn("Latest Relevant Evidence", prompt)
+
+    def test_latest_evidence_block_keeps_context_rank_when_overlap_ties(self) -> None:
+        from memory_observatory.services.experiment_runner import _answer_prompt
+
+        context = """=== L1 Evidence Seeds ===
+- [0506 | 2026-05-06 | L1-0506-040] type=decision importance=0.68 score=0.40
+  content: Inspector tooling and graph visualization are the latest presentation-facing design.
+- [0506 | 2026-05-06 | L1-0506-001] type=finding importance=0.50 score=0.30
+  content: Generic latest evidence 1.
+- [0506 | 2026-05-06 | L1-0506-002] type=finding importance=0.50 score=0.30
+  content: Generic latest evidence 2.
+- [0506 | 2026-05-06 | L1-0506-003] type=finding importance=0.50 score=0.30
+  content: Generic latest evidence 3.
+- [0506 | 2026-05-06 | L1-0506-004] type=finding importance=0.50 score=0.30
+  content: Generic latest evidence 4.
+- [0506 | 2026-05-06 | L1-0506-005] type=finding importance=0.50 score=0.30
+  content: Generic latest evidence 5.
+- [0506 | 2026-05-06 | L1-0506-006] type=finding importance=0.50 score=0.30
+  content: Generic latest evidence 6.
+"""
+
+        prompt = _answer_prompt("What happened later?", context)
+        prefix = prompt[: prompt.index("Context:")]
+
+        self.assertIn("L1-0506-040", prefix)
+        self.assertNotIn("L1-0506-006", prefix)
+
+    def test_experiment_records_answer_generation_errors_without_losing_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            queries = root / "queries.jsonl"
+            queries.write_text(
+                json.dumps({"query_id": "q001", "query": "What changed?"}, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+
+            with patch(
+                "memory_observatory.services.experiment_runner._generate_answer",
+                side_effect=RuntimeError("quota exhausted"),
+            ):
+                result = run_experiment(
+                    repo_root=root,
+                    queries_path=queries,
+                    out=root / "memory_observatory" / "runs",
+                    strategies=["rag_baseline"],
+                    retrieval_mode="lexical",
+                    no_llm=True,
+                    generate_answers=True,
+                )
+
+            run_dir = root / "memory_observatory" / "runs" / result["run_id"]
+            strategy = result["queries"][0]["strategies"]["rag_baseline"]
+            self.assertIn("answer_error", strategy)
+            self.assertEqual(strategy["answer_error"]["type"], "RuntimeError")
+            self.assertIn("quota exhausted", strategy["answer_error"]["message"])
+            self.assertTrue((run_dir / "results.json").exists())
+            self.assertIn(
+                "Answer generation failed",
+                (run_dir / "answers" / "q001" / "rag_baseline.txt").read_text(encoding="utf-8"),
+            )
+
     def test_v2_scorer_can_select_answer_only_variant(self) -> None:
         from app.score_evaluation_answers_v2 import selected_variants
 
         self.assertEqual(selected_variants("answer"), [("answer", "Answer")])
         self.assertEqual(selected_variants("answer,evidence"), [("answer", "Answer"), ("evidence", "Evidence")])
+
+    def test_v2_scorer_load_rows_accepts_utf8_bom(self) -> None:
+        from app.score_evaluation_answers_v2 import load_rows
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "scores.csv"
+            path.write_text("\ufeffquestion_id,agent_answer\nVM-E12,answer\n", encoding="utf-8")
+
+            rows = load_rows(path)
+
+        self.assertEqual(rows[0]["question_id"], "VM-E12")
 
 
 if __name__ == "__main__":

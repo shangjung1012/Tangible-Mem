@@ -8,6 +8,8 @@ import json
 import re
 from typing import Any, Callable
 
+from topic_state import build_topic_state
+
 L3_PROMOTION_SCHEMA_VERSION = 1
 L3_ASSIGNMENT_CONFIDENCE_THRESHOLD = 0.55
 
@@ -1345,6 +1347,15 @@ def build_l3_materialization_sidecar(
                 continue
             linked_ids = [str(row.get("obj_id", "") or "") for row in rows]
             meeting_ids = sorted({str(row.get("meeting_id", "") or "") for row in rows if row.get("meeting_id")})
+            topic_state = build_topic_state(
+                str(child.get("label", "") or ""),
+                rows,
+                assignment_criteria=[
+                    str(item)
+                    for item in _as_list(child.get("assignment_criteria"))
+                    if str(item).strip()
+                ],
+            )
             child_nodes.append(
                 {
                     "l2_id": child_id,
@@ -1353,10 +1364,13 @@ def build_l3_materialization_sidecar(
                     "promoted_from_l2_id": source_l2_id,
                     "split_reason": str(child.get("split_reason", "") or ""),
                     "assignment_criteria": deepcopy(_as_list(child.get("assignment_criteria"))),
-                    "current_state": (
-                        f"This child L2 has {len(linked_ids)} linked L1 evidence "
-                        f"object(s) split from {source_l2_id}."
-                    ),
+                    "current_state": topic_state["current_state"],
+                    "evolution_summary": topic_state["evolution_summary"],
+                    "latest_position": topic_state["latest_position"],
+                    "key_rationale": topic_state["key_rationale"],
+                    "open_tensions": topic_state["open_tensions"],
+                    "representative_l1_ids": topic_state["representative_l1_ids"],
+                    "state_source": topic_state["state_source"],
                     "linked_obj_ids": linked_ids,
                     "meeting_ids": meeting_ids,
                     "timeline_digest": rows,

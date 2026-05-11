@@ -29,10 +29,12 @@ from taxonomy_refinement import (
     build_unknown_large_l2_split_proposal_sidecar,
     write_split_proposal_sidecar,
 )
+from topic_state import build_topic_state
 
 L2_VIEW_SCHEMA_VERSION = 1
 L2_VIEW_FILE_NAME = "l2_view.json"
 L2_INDEX_FILE_NAME = "l2_index.json"
+L2_SECONDARY_LINKS_FILE_NAME = "l2_secondary_links.json"
 L2_MANIFEST_FILE_NAME = "manifest.json"
 L2_UPDATES_DIR_NAME = "l2_updates"
 L2_UNLINKED_FILE_NAME = "unlinked_l1_report.json"
@@ -1234,6 +1236,125 @@ def _concept_label(obj: dict[str, Any]) -> tuple[str | None, str]:
     return None, "no_concept"
 
 
+def _concept_label_matches(obj: dict[str, Any]) -> list[tuple[str, str]]:
+    primary_text = str(obj.get("content", "") or "").lower()
+    matches: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for label, hints in (*PRIORITY_CONCEPT_RULES, *CONCEPT_RULES):
+        if label in seen:
+            continue
+        if any(_hint_matches(primary_text, hint) for hint in hints):
+            seen.add(label)
+            matches.append((label, "concept_rule"))
+    return matches
+
+
+def _contains_any(text: str, hints: tuple[str, ...]) -> bool:
+    return any(hint in text for hint in hints)
+
+
+def _cross_topic_bridge_labels(obj: dict[str, Any]) -> list[tuple[str, str, float]]:
+    text = " ".join(
+        [
+            str(obj.get("content", "") or ""),
+            str(obj.get("evidence", "") or ""),
+            " ".join(str(topic) for topic in obj.get("related_topics", []) if str(topic).strip())
+            if isinstance(obj.get("related_topics"), list)
+            else "",
+        ]
+    ).lower()
+    bridges: list[tuple[str, str, float]] = []
+
+    def add(label: str, reason: str, confidence: float) -> None:
+        if not any(existing_label == label for existing_label, _, _ in bridges):
+            bridges.append((label, reason, confidence))
+
+    has_rag_baseline = _contains_any(
+        text,
+        (
+            "rag",
+            "full transcript",
+            "full context",
+            "baseline",
+            "基準",
+            "完整逐字稿",
+        ),
+    )
+    has_lifecycle = _contains_any(
+        text,
+        (
+            "topic lifecycle",
+            "topic evolution",
+            "abandoned",
+            "decision status",
+            "fade out",
+            "fade-out",
+            "activation",
+            "importance",
+            "淡出",
+            "活躍",
+            "重要性",
+            "演進",
+        ),
+    )
+    has_stm_ltm = _contains_any(
+        text,
+        (
+            "stm",
+            "ltm",
+            "short-term",
+            "long-term",
+            "short term",
+            "long term",
+            "短期",
+            "長期",
+        ),
+    )
+    has_update = _contains_any(text, ("update", "updated", "updating", "更新"))
+    has_hierarchy = _contains_any(
+        text,
+        (
+            "object-based",
+            "l1",
+            "l2",
+            "l3",
+            "hierarchy",
+            "hierarchical",
+            "architecture",
+            "架構",
+            "層",
+            "物件",
+        ),
+    )
+    has_demo = _contains_any(
+        text,
+        (
+            "demo",
+            "demonstrat",
+            "show the added value",
+            "highlight",
+            "展示",
+            "專題展",
+            "價值",
+        ),
+    )
+
+    if has_rag_baseline:
+        add("retrieval baseline comparison", "rag_or_full_context_bridge", 0.76)
+    if has_rag_baseline and has_lifecycle:
+        add("memory lifecycle", "baseline_lifecycle_bridge", 0.78)
+    if has_stm_ltm and has_update:
+        add("memory update semantics", "stm_ltm_update_bridge", 0.74)
+        add("stm ltm integration", "stm_ltm_update_bridge", 0.74)
+    if has_hierarchy:
+        add("memory processing architecture", "hierarchy_bridge", 0.73)
+    if has_demo:
+        add("project demo strategy", "demo_bridge", 0.72)
+    if has_demo and has_lifecycle:
+        add("memory lifecycle", "demo_lifecycle_bridge", 0.76)
+    return bridges
+
+
 def _topic_label_fallback(obj: dict[str, Any]) -> tuple[str | None, str]:
     candidates = normalized_l2_candidates_from_related_topics(obj)
     for candidate in candidates:
@@ -1498,6 +1619,7 @@ def clean_l2_outputs(output_root: Path | str) -> None:
     for file_name in (
         L2_VIEW_FILE_NAME,
         L2_INDEX_FILE_NAME,
+        L2_SECONDARY_LINKS_FILE_NAME,
         L2_MANIFEST_FILE_NAME,
         L2_UNLINKED_FILE_NAME,
         L2_ASSIGNMENT_REVIEW_FILE_NAME,
@@ -1550,20 +1672,128 @@ def _build_l2_node(label: str, linked: list[dict[str, Any]]) -> dict[str, Any]:
         if linked
         else 0.0
     )
+    topic_state = build_topic_state(label, timeline)
     return {
         "l2_id": f"L2-{_slug(label)}",
         "label": label,
         "source": "long_term_l2",
-        "current_state": (
-            f"This L2 topic has {len(linked)} linked L1 evidence objects across "
-            f"{len(meeting_ids)} meeting(s). Latest evidence: {latest}"
-        ),
+        "current_state": topic_state["current_state"],
+        "evolution_summary": topic_state["evolution_summary"],
+        "latest_position": topic_state["latest_position"],
+        "key_rationale": topic_state["key_rationale"],
+        "open_tensions": topic_state["open_tensions"],
+        "representative_l1_ids": topic_state["representative_l1_ids"],
+        "state_source": topic_state["state_source"],
         "timeline_digest": timeline,
         "linked_obj_ids": [str(item["obj"].get("obj_id", "") or "") for item in linked],
         "meeting_ids": meeting_ids,
         "event_count": len(linked),
         "confidence": round(avg_confidence, 3),
         "last_updated_meeting_id": str(linked[-1]["meeting"].get("meeting_id", "") or "") if linked else "",
+    }
+
+
+def _build_l2_secondary_links_sidecar(
+    *,
+    tree: dict[str, Any],
+    l2_index: dict[str, dict[str, Any]],
+    l2_view: dict[str, Any],
+    source_tree_hash: str,
+) -> dict[str, Any]:
+    label_to_id = {
+        str(node.get("label", "") or ""): str(node.get("l2_id", "") or "")
+        for node in l2_view.get("l2_nodes", [])
+        if isinstance(node, dict) and str(node.get("label", "") or "").strip()
+    }
+    links: list[dict[str, Any]] = []
+    links_by_obj_id: dict[str, list[dict[str, Any]]] = {}
+    reason_counts: dict[str, int] = defaultdict(int)
+
+    def add_candidate(
+        *,
+        obj: dict[str, Any],
+        primary: dict[str, Any],
+        label: str,
+        reason: str,
+        confidence: float,
+    ) -> None:
+        obj_id = str(obj.get("obj_id", "") or "")
+        primary_l2_id = str(primary.get("l2_id", "") or "")
+        primary_l2_label = str(primary.get("l2_label", "") or "")
+        secondary_l2_id = label_to_id.get(label, "")
+        if not obj_id or not secondary_l2_id:
+            return
+        if secondary_l2_id == primary_l2_id or label == primary_l2_label:
+            return
+        existing = links_by_obj_id.setdefault(obj_id, [])
+        if any(row.get("secondary_l2_id") == secondary_l2_id for row in existing):
+            return
+        link = {
+            "obj_id": obj_id,
+            "meeting_id": str(primary.get("meeting_id", "") or ""),
+            "meeting_date": str(primary.get("meeting_date", "") or ""),
+            "primary_l2_id": primary_l2_id,
+            "primary_l2_label": primary_l2_label,
+            "secondary_l2_id": secondary_l2_id,
+            "secondary_l2_label": label,
+            "confidence": round(min(0.92, max(0.55, confidence)), 3),
+            "reason": reason,
+            "source": "deterministic_secondary_l2_bridge",
+        }
+        existing.append(link)
+        links.append(link)
+        reason_counts[reason] += 1
+
+    for meeting in iter_meetings(tree):
+        for obj in meeting.get("memory_objects", []):
+            if not isinstance(obj, dict):
+                continue
+            obj_id = str(obj.get("obj_id", "") or "")
+            primary = l2_index.get(obj_id)
+            if not isinstance(primary, dict):
+                continue
+            for candidate in normalized_l2_candidates_from_related_topics(obj):
+                add_candidate(
+                    obj=obj,
+                    primary=primary,
+                    label=str(candidate.get("label", "") or ""),
+                    reason="related_topic_secondary",
+                    confidence=0.66,
+                )
+            for label, reason in _concept_label_matches(obj):
+                add_candidate(
+                    obj=obj,
+                    primary=primary,
+                    label=label,
+                    reason=f"{reason}_secondary",
+                    confidence=0.68,
+                )
+            for label, reason, confidence in _cross_topic_bridge_labels(obj):
+                add_candidate(
+                    obj=obj,
+                    primary=primary,
+                    label=label,
+                    reason=reason,
+                    confidence=confidence,
+                )
+
+    for rows in links_by_obj_id.values():
+        rows.sort(key=lambda row: -float(row.get("confidence", 0.0) or 0.0))
+    links.sort(key=lambda row: (row["obj_id"], -float(row["confidence"]), row["secondary_l2_id"]))
+    return {
+        "schema_version": L2_VIEW_SCHEMA_VERSION,
+        "generated_at_utc": utc_now_iso(),
+        "source": "long_term_l2_secondary_links",
+        "source_tree_hash": source_tree_hash,
+        "link_count": len(links),
+        "linked_obj_count": len(links_by_obj_id),
+        "reason_counts": dict(sorted(reason_counts.items())),
+        "links": links,
+        "links_by_obj_id": links_by_obj_id,
+        "notes": [
+            "Secondary links are retrieval hints only.",
+            "They do not change primary L2 assignment, L2 event_count, L3 promotion, or raw L1 evidence.",
+        ],
     }
 
 
@@ -1789,6 +2019,17 @@ def _build_outputs(
         unlinked_report=unlinked_report,
         source_l1_count=source_l1_count,
     )
+    secondary_links_sidecar = _build_l2_secondary_links_sidecar(
+        tree=tree,
+        l2_index=l2_index,
+        l2_view=l2_view,
+        source_tree_hash=source_tree_hash,
+    )
+    manifest["l2_secondary_links_path"] = str((output_root / L2_SECONDARY_LINKS_FILE_NAME).resolve())
+    manifest["secondary_l2_link_count"] = int(secondary_links_sidecar.get("link_count", 0) or 0)
+    manifest["secondary_l2_linked_obj_count"] = int(
+        secondary_links_sidecar.get("linked_obj_count", 0) or 0
+    )
     child_taxonomy_proposer = None
     child_assignment_proposer = None
     if l3_mode == "llm-assisted":
@@ -1861,6 +2102,7 @@ def _build_outputs(
         "updates_by_meeting": updates_by_meeting,
         "unlinked_report": unlinked_report,
         "assignment_review_report": assignment_review_report,
+        "secondary_links_sidecar": secondary_links_sidecar,
         "l3_promotion_sidecar": l3_promotion_sidecar,
         "l3_materialization_sidecar": l3_materialization_sidecar,
         "l2_merge_review_sidecar": l2_merge_review_sidecar,
@@ -1913,6 +2155,7 @@ def build_l2_view_outputs(
 
     _write_json(out_root / L2_VIEW_FILE_NAME, outputs["l2_view"])
     _write_json(out_root / L2_INDEX_FILE_NAME, outputs["l2_index"])
+    _write_json(out_root / L2_SECONDARY_LINKS_FILE_NAME, outputs["secondary_links_sidecar"])
     _write_json(out_root / L2_UNLINKED_FILE_NAME, outputs["unlinked_report"])
     _write_json(out_root / L2_ASSIGNMENT_REVIEW_FILE_NAME, outputs["assignment_review_report"])
     for meeting_id, update in sorted(outputs["updates_by_meeting"].items()):

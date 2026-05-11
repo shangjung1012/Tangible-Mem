@@ -107,7 +107,7 @@ class MemoryRouterTests(unittest.TestCase):
         self.assertIn("=== Long-Term Memory ===", context)
         self.assertIn("historical long-term context", context)
 
-    def test_long_term_context_uses_planner_model_separately_from_answer_model(self) -> None:
+    def test_long_term_context_defaults_to_no_llm_hybrid_retrieval(self) -> None:
         with patch.object(
             memory_context,
             "load_json_object",
@@ -115,12 +115,8 @@ class MemoryRouterTests(unittest.TestCase):
         ), patch.object(
             memory_context,
             "plan_recall",
-            return_value={
-                "complexity": "simple",
-                "search_targets": ["long_term_l1"],
-                "keywords": ["memory"],
-            },
-        ) as planner, patch.object(
+            side_effect=AssertionError("planner should not be called by default"),
+        ), patch.object(
             memory_context,
             "recall",
             return_value={
@@ -142,8 +138,111 @@ class MemoryRouterTests(unittest.TestCase):
             )
 
         self.assertEqual(context, "formatted context")
-        self.assertEqual(planner.call_args.kwargs["model_name"], "planner-model")
         self.assertEqual(recall_call.call_args.kwargs["model_name"], "answer-model")
+        self.assertEqual(recall_call.call_args.kwargs["retrieval_mode"], "hybrid")
+        self.assertEqual(
+            recall_call.call_args.kwargs["plan"]["search_targets"],
+            ["long_term_l1", "long_term_l2", "long_term_l3"],
+        )
+
+    def test_long_term_context_uses_generous_runtime_budget_and_previews(self) -> None:
+        with patch.object(
+            memory_context,
+            "load_json_object",
+            return_value={"meetings": []},
+        ), patch.object(
+            memory_context,
+            "recall",
+            return_value={
+                "global_topic_map": {},
+                "long_term_l1": [],
+                "long_term_l2": [],
+                "long_term_l3": [],
+            },
+        ) as recall_call, patch.object(
+            memory_context,
+            "format_recall_for_prompt",
+            return_value="formatted context",
+        ) as formatter_call:
+            memory_context.retrieve_long_term_context(
+                query="memory retrieval",
+                api_key="test-key",
+                model_name="answer-model",
+            )
+
+        kwargs = recall_call.call_args.kwargs
+        self.assertEqual(kwargs["top_k_raw"], 60)
+        self.assertEqual(kwargs["max_l1_seeds_for_prompt"], 24)
+        self.assertEqual(kwargs["max_global_topic_map_chars"], 600)
+        self.assertEqual(kwargs["max_relevant_l2_summaries"], 2)
+        self.assertEqual(kwargs["max_expanded_l2_topics"], 2)
+        self.assertEqual(kwargs["max_events_per_l2"], 4)
+        self.assertEqual(kwargs["max_events_per_child_l2"], 8)
+        self.assertEqual(kwargs["max_event_chars"], 220)
+        self.assertEqual(formatter_call.call_args.kwargs["l1_content_chars"], 220)
+        self.assertEqual(formatter_call.call_args.kwargs["l1_evidence_chars"], 320)
+
+    def test_current_state_query_adds_current_implementation_context(self) -> None:
+        with patch.object(
+            memory_context,
+            "load_json_object",
+            return_value={"meetings": []},
+        ), patch.object(
+            memory_context,
+            "recall",
+            return_value={
+                "global_topic_map": {},
+                "long_term_l1": [],
+                "long_term_l2": [],
+                "long_term_l3": [],
+            },
+        ), patch.object(
+            memory_context,
+            "format_recall_for_prompt",
+            return_value="=== L1 Evidence Seeds ===\nhistorical meeting evidence",
+        ):
+            context = memory_context.retrieve_long_term_context(
+                query="L1 到 L2 的分群現在是怎麼決定的？",
+                api_key="test-key",
+                model_name="answer-model",
+            )
+
+        self.assertIn("=== Current Implementation State ===", context)
+        self.assertIn("topic-based", context)
+        self.assertIn("share_mem/tree.json", context)
+        self.assertIn("long_term/l2/l2_view.json", context)
+        self.assertIn("L3 promotion", context)
+        self.assertLess(
+            context.index("=== Current Implementation State ==="),
+            context.index("=== L1 Evidence Seeds ==="),
+        )
+
+    def test_historical_query_does_not_add_current_implementation_context(self) -> None:
+        with patch.object(
+            memory_context,
+            "load_json_object",
+            return_value={"meetings": []},
+        ), patch.object(
+            memory_context,
+            "recall",
+            return_value={
+                "global_topic_map": {},
+                "long_term_l1": [],
+                "long_term_l2": [],
+                "long_term_l3": [],
+            },
+        ), patch.object(
+            memory_context,
+            "format_recall_for_prompt",
+            return_value="=== L1 Evidence Seeds ===\nhistorical meeting evidence",
+        ):
+            context = memory_context.retrieve_long_term_context(
+                query="我們之前為什麼要把 transcript 拆成 segment / idea units？",
+                api_key="test-key",
+                model_name="answer-model",
+            )
+
+        self.assertNotIn("=== Current Implementation State ===", context)
 
     def test_unified_context_preserves_both_sections_when_truncated(self) -> None:
         with patch.object(
@@ -176,7 +275,7 @@ class MemoryRouterTests(unittest.TestCase):
         self.assertIn("=== Long-Term Memory ===", context)
         self.assertIn("long context", context)
 
-    def test_unified_context_default_budget_allows_six_thousand_chars(self) -> None:
+    def test_unified_context_default_budget_allows_twelve_thousand_chars(self) -> None:
         with patch.object(
             memory_context,
             "plan_memory_retrieval",
@@ -189,7 +288,7 @@ class MemoryRouterTests(unittest.TestCase):
         ), patch.object(
             memory_context,
             "retrieve_long_term_context",
-            return_value="long context " * 430,
+            return_value="long context " * 800,
         ):
             context = memory_context.retrieve_memory_context(
                 query="manager-agent 架構怎麼演變？",
@@ -197,9 +296,37 @@ class MemoryRouterTests(unittest.TestCase):
                 model_name="test-model",
             )
 
-        self.assertGreater(len(context), 4000)
-        self.assertLess(len(context), 6000)
+        self.assertGreater(len(context), 8000)
+        self.assertLess(len(context), 12000)
         self.assertNotIn("...(truncated)", context)
+
+    def test_unified_context_gives_long_term_more_room_when_short_term_is_present(self) -> None:
+        with patch.object(
+            memory_context,
+            "plan_memory_retrieval",
+            return_value={
+                "targets": ["short_term", "long_term"],
+                "strategy": "both",
+                "reason": "recent status plus historical rationale",
+                "confidence": 0.85,
+            },
+        ), patch.object(
+            memory_context,
+            "retrieve_short_term_context_adapter",
+            return_value="short context",
+        ) as short_call, patch.object(
+            memory_context,
+            "retrieve_long_term_context",
+            return_value="long context",
+        ) as long_call:
+            memory_context.retrieve_memory_context(
+                query="recent status and long-term rationale",
+                api_key="test-key",
+                model_name="test-model",
+            )
+
+        self.assertGreaterEqual(short_call.call_args.kwargs["max_context_chars"], 2400)
+        self.assertGreaterEqual(long_call.call_args.kwargs["max_context_chars"], 9000)
 
     def test_short_term_adapter_uses_retrieval_module(self) -> None:
         context = memory_context.retrieve_short_term_context_adapter(

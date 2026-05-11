@@ -10,6 +10,11 @@ from .experiment_runner import run_experiment
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run Memory Observatory comparison experiment.")
+    parser.add_argument(
+        "--repo-root",
+        default=str(REPO_ROOT),
+        help="Repository/artifact root to read share_mem, long_term, transcripts, and observatory outputs from.",
+    )
     parser.add_argument("--queries", default="long_term/eval/long_term_retrieval_queries.jsonl")
     parser.add_argument("--out", default="memory_observatory/runs")
     parser.add_argument(
@@ -17,7 +22,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="full_context,rag_baseline,layered_memory",
         help="Comma-separated: full_context, rag_baseline, layered_memory",
     )
-    parser.add_argument("--retrieval-mode", choices=("lexical", "semantic"), default="lexical")
+    parser.add_argument(
+        "--retrieval-mode",
+        choices=("hybrid", "lexical", "semantic"),
+        default="hybrid",
+        help="L1 seed retrieval mode. Hybrid fuses lexical and semantic hits when available.",
+    )
     parser.add_argument(
         "--no-llm",
         action="store_true",
@@ -32,7 +42,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model", default="gemini-2.5-pro")
     parser.add_argument(
         "--planner-model",
-        default=os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
+        default=os.getenv("GEMINI_PLANNER_MODEL", ""),
         help="Model used only for LLM recall planning. Answer generation still uses --model.",
     )
     parser.add_argument(
@@ -45,8 +55,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--full-context-scope",
         choices=("gold", "all"),
-        default="gold",
-        help="Full-context baseline scope. 'gold' preserves legacy oracle meeting IDs; 'all' uses chronological all-transcript context.",
+        default="all",
+        help="Full-context baseline scope. 'all' uses chronological all-transcript context; 'gold' is an explicit oracle upper bound.",
     )
     parser.add_argument(
         "--baseline-token-multiplier",
@@ -78,7 +88,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     strategies = [item.strip() for item in args.strategies.split(",") if item.strip()]
     result = run_experiment(
-        repo_root=REPO_ROOT,
+        repo_root=Path(args.repo_root),
         queries_path=Path(args.queries),
         out=Path(args.out),
         strategies=strategies,

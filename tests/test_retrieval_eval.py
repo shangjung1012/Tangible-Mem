@@ -40,6 +40,25 @@ class RetrievalEvalTests(unittest.TestCase):
         self.assertEqual(scored["strict_obj_recall_at_context"], 0.0)
         self.assertEqual(scored["acceptable_obj_recall_at_context"], 1.0)
 
+    def test_score_counts_expected_obj_ids_in_l2_timeline_context(self) -> None:
+        scored = evaluate_retrieval._score_query_result(
+            {"query": "topic evolution", "expected_obj_ids": ["L1-timeline"]},
+            {
+                "global_topic_map": {},
+                "long_term_l1": [{"obj_id": "L1-seed"}],
+                "long_term_l2": [
+                    {
+                        "l2_id": "L2-topic",
+                        "timeline_digest": [{"obj_id": "L1-timeline"}],
+                    }
+                ],
+                "long_term_l3": [],
+                "retrieval_debug": {},
+            },
+        )
+
+        self.assertEqual(scored["expected_obj_recall_at_context"], 1.0)
+
     def test_no_llm_mode_uses_heuristic_plan_without_planner_call(self) -> None:
         with patch.object(evaluate_retrieval, "plan_recall", side_effect=AssertionError("planner called")), patch.object(
             evaluate_retrieval,
@@ -146,8 +165,8 @@ class RetrievalEvalTests(unittest.TestCase):
             self.assertTrue((out / "retrieval_eval_report.json").exists())
             self.assertTrue((out / "retrieval_eval_report.md").exists())
 
-    def test_prompt_budget_allows_six_thousand_chars(self) -> None:
-        with patch.object(evaluate_retrieval, "format_recall_for_prompt", return_value="x" * 5000):
+    def test_prompt_budget_allows_twelve_thousand_runtime_chars(self) -> None:
+        with patch.object(evaluate_retrieval, "format_recall_for_prompt", return_value="x" * 11000):
             scored = evaluate_retrieval._score_query_result(
                 {"query": "memory retrieval", "expected_obj_ids": ["L1-a"]},
                 {
@@ -170,6 +189,7 @@ class RetrievalEvalTests(unittest.TestCase):
             evaluate_retrieval.main([])
 
         self.assertFalse(runner.call_args.kwargs["use_llm_planner"])
+        self.assertEqual(runner.call_args.kwargs["retrieval_mode"], "hybrid")
 
     def test_eval_cli_can_opt_into_llm_planner(self) -> None:
         with patch.object(
@@ -191,6 +211,46 @@ class RetrievalEvalTests(unittest.TestCase):
         self.assertEqual(profile["max_events_per_child_l2"], 1)
         self.assertLessEqual(profile["max_global_topic_map_chars"], 300)
         self.assertLessEqual(profile["max_event_chars"], 100)
+
+    def test_eval_best_profile_uses_hybrid_balanced_seed_budget(self) -> None:
+        profile = retrieval_profiles.get_retrieval_budget_profile("eval_best")
+
+        self.assertEqual(profile["top_k_raw"], 30)
+        self.assertEqual(profile["max_l1_seeds_for_prompt"], 12)
+        self.assertEqual(profile["max_expanded_l2_topics"], 1)
+        self.assertEqual(profile["max_events_per_child_l2"], 2)
+        self.assertLessEqual(profile["max_global_topic_map_chars"], 300)
+        self.assertLessEqual(profile["max_event_chars"], 100)
+
+    def test_deep_layered_profile_keeps_more_l1_and_timeline_coverage(self) -> None:
+        profile = retrieval_profiles.get_retrieval_budget_profile("deep_layered")
+
+        self.assertGreaterEqual(profile["max_l1_seeds_for_prompt"], 32)
+        self.assertGreaterEqual(profile["max_events_per_child_l2"], 20)
+        self.assertGreaterEqual(profile["max_relevant_l2_summaries"], 5)
+
+    def test_generous_layered_profile_relaxes_eval_best_without_becoming_deep(self) -> None:
+        profile = retrieval_profiles.get_retrieval_budget_profile("generous_layered")
+
+        self.assertGreater(profile["top_k_raw"], 30)
+        self.assertGreaterEqual(profile["max_l1_seeds_for_prompt"], 20)
+        self.assertGreaterEqual(profile["max_global_topic_map_chars"], 600)
+        self.assertGreaterEqual(profile["max_relevant_l2_summaries"], 2)
+        self.assertGreaterEqual(profile["max_expanded_l2_topics"], 2)
+        self.assertGreaterEqual(profile["max_events_per_l2"], 4)
+        self.assertGreaterEqual(profile["max_events_per_child_l2"], 6)
+        self.assertGreaterEqual(profile["max_event_chars"], 220)
+        self.assertLess(profile["max_l1_seeds_for_prompt"], 32)
+        self.assertLess(profile["max_events_per_child_l2"], 20)
+
+    def test_observatory_trace_profile_keeps_tight_topic_count_but_readable_events(self) -> None:
+        profile = retrieval_profiles.get_retrieval_budget_profile("observatory_trace")
+
+        self.assertEqual(profile["max_l1_seeds_for_prompt"], 8)
+        self.assertEqual(profile["max_expanded_l2_topics"], 1)
+        self.assertEqual(profile["max_events_per_child_l2"], 1)
+        self.assertGreaterEqual(profile["max_event_chars"], 220)
+        self.assertLess(profile["max_event_chars"], 300)
 
     def test_eval_cli_budget_profile_overrides_grid_with_single_run(self) -> None:
         with patch.object(

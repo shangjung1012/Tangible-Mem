@@ -1,8 +1,7 @@
-# Synthetic Campus Energy Schema Validation
+# Schema Validation
 
-- meeting_count: 50
-- object_count: 3197
-- schema_pass: True
-- missing_meeting_fields: {}
-- missing_object_fields: {}
-- object_count_stats: {'min': 61, 'max': 67, 'avg': 63.94, 'std_dev': 2.024}
+- source: `C:\Users\yiihsinn\Downloads\Synthetic-CampusEnergyMeet-50\Synthetic-CampusEnergyMeet-50\share_mem_experiments\synthetic_campus_energy_50_idea_units`
+- meetings: 50
+- objects: 3197
+- missing root files: []
+- schema issues: 0

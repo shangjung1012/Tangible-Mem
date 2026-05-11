@@ -56,18 +56,20 @@ uv run python memory_observatory/run_experiment.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out memory_observatory/runs \
   --strategies full_context,rag_baseline,layered_memory \
-  --retrieval-mode lexical \
+  --retrieval-mode hybrid \
   --no-llm
 ```
 
-No-LLM mode does not call the Gemini planner, embedding API, or final answer
-LLM. It uses lexical RAG, heuristic layered recall planning, deterministic token
-estimates, and retrieval/context-build timing. The experiment CLI now defaults
-to the heuristic layered planner; `--no-llm` is kept in examples for clarity.
+No-LLM mode does not call the Gemini recall planner or final answer LLM. The
+layered retrieval default is `hybrid`: it fuses lexical L1 hits with semantic L1
+hits when an embedding client is available, and falls back to lexical when it is
+not. Use `--retrieval-mode lexical` for a fully offline retrieval smoke test.
+The experiment CLI defaults to the heuristic layered planner; `--no-llm` is kept
+in examples for clarity.
 
 The experiment CLI defaults to `--max-context-chars 0`, which means an
 unbounded diagnostic run. In that mode the experiment runner does not locally
-truncate full-context, RAG, or layered-memory prompt contexts; the model
+shorten full-context, RAG, or layered-memory prompt contexts; the model
 provider's real context window is the only remaining limit. RAG still has its
 retrieval definition limit, controlled by `--rag-top-k`:
 
@@ -76,7 +78,7 @@ uv run python memory_observatory/run_experiment.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out memory_observatory/runs \
   --strategies full_context,rag_baseline,layered_memory \
-  --retrieval-mode lexical \
+  --retrieval-mode hybrid \
   --no-llm \
   --generate-answers \
   --model gemini-2.5-pro \
@@ -84,21 +86,63 @@ uv run python memory_observatory/run_experiment.py \
   --rag-top-k 12
 ```
 
-## Run With Flash Planner And Pro Answers
+For a more realistic budgeted comparison, avoid the gold-meeting full-context
+oracle and cap Full Context / RAG to a multiplier of the Layered Memory context
+tokens for each query:
 
-When you want live answers but still want faster planning, keep `--model` for
-answer generation and set `--planner-model` separately:
+```bash
+uv run python memory_observatory/run_experiment.py \
+  --queries doc/evaluation_questions_0307_0506.csv \
+  --out memory_observatory/runs \
+  --strategies full_context,rag_baseline,layered_memory \
+  --retrieval-mode hybrid \
+  --no-llm \
+  --generate-answers \
+  --model gemini-2.5-pro \
+  --budget-profile deep_layered \
+  --full-context-scope all \
+  --baseline-token-multiplier 5 \
+  --rag-top-k 999 \
+  --max-context-chars 0
+```
+
+The UI Retrieval Trace demo profile is `observatory_trace`: it keeps the
+evidence-first path visible with one compact L2 / child-L2 slice, but gives the
+selected timeline event enough text to explain the method or decision being
+shown. The underlying `RetrievalTraceService` service default is
+`generous_layered` when no explicit budget profile is passed. It allows more
+L1 seeds and topic timeline events for API callers and CLI experiments.
+`large_corpus_tight` remains available for large-corpus budget diagnostics, and
+`deep_layered` remains available for diagnostic runs where quality is more
+important than prompt size.
+`--baseline-token-multiplier 5` means Full Context and RAG can use about 5x the
+Layered Memory context tokens for the same query.
+
+## Run Artifacts And Legacy Runs
+
+New generated run directories under `memory_observatory/runs/` are ignored by
+git. Some old demo runs may still exist locally or in historical checkouts; the
+`/api/runs` endpoint hides legacy run artifacts by default when their config was
+created before the current hybrid/no-LLM/fairness-parameter schema. Use
+`/api/runs?include_legacy=true` only when you explicitly need to inspect those
+historical runs.
+
+## Optional LLM Planner
+
+The default path uses the heuristic no-LLM planner. If you explicitly want
+Gemini to plan recall targets, pass `--use-llm-planner`; by default that planner
+uses the same model as `--model` unless `--planner-model` or
+`GEMINI_PLANNER_MODEL` is set.
 
 ```bash
 uv run python memory_observatory/run_experiment.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out memory_observatory/runs \
   --strategies full_context,rag_baseline,layered_memory \
-  --retrieval-mode lexical \
+  --retrieval-mode hybrid \
   --generate-answers \
   --use-llm-planner \
-  --model gemini-2.5-pro \
-  --planner-model gemini-2.5-flash
+  --model gemini-2.5-pro
 ```
 
 `--use-llm-planner` opts into Gemini recall planning. `--planner-model` is used

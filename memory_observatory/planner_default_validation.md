@@ -19,6 +19,10 @@ retrieval_mode: lexical
 max_context_chars: 12000
 ```
 
+Note: this validation predates the current `hybrid` retrieval default. Its
+planner conclusion still applies: heuristic no-LLM planning remains the default,
+while the L1 seed search can now run hybrid lexical+semantic fusion.
+
 ## Summary
 
 | Layered memory metric | no-LLM planner | Flash planner |

@@ -185,7 +185,7 @@ def score_from_parsed(parsed: dict[str, Any], metric_key: str) -> dict[str, Any]
 
 
 def load_rows(path: Path) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as f:
+    with path.open(newline="", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 

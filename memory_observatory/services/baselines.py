@@ -52,7 +52,7 @@ def _trim_to_token_budget(text: str, max_tokens: int) -> str:
     lo = 0
     hi = len(text)
     best = ""
-    suffix = "\n...(token budget truncated)"
+    suffix = "\n..."
     while lo <= hi:
         mid = (lo + hi) // 2
         candidate = text[:mid].rstrip() + suffix
@@ -91,7 +91,8 @@ def build_full_context(
     original_tokens = estimate_tokens(context)
     truncated = bool(max_context_chars and max_context_chars > 0 and len(context) > max_context_chars)
     if truncated:
-        context = context[:max_context_chars] + "\n...(truncated)"
+        suffix = "\n..."
+        context = context[: max(0, max_context_chars - len(suffix))].rstrip() + suffix
     token_truncated = bool(max_context_tokens and max_context_tokens > 0 and estimate_tokens(context) > max_context_tokens)
     if token_truncated:
         context = _trim_to_token_budget(context, max_context_tokens)
@@ -207,7 +208,8 @@ def retrieve_lexical_rag(
         token_truncated = True
     truncated = bool(max_context_chars and max_context_chars > 0 and len(context) > max_context_chars)
     if truncated:
-        context = context[:max_context_chars] + "\n...(truncated)"
+        suffix = "\n..."
+        context = context[: max(0, max_context_chars - len(suffix))].rstrip() + suffix
     truncated = truncated or token_truncated
     elapsed = (time.perf_counter() - started) * 1000
     metrics = context_token_metrics(context)

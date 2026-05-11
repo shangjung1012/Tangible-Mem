@@ -26,28 +26,64 @@ RETRIEVAL_BUDGET_PROFILES: dict[str, dict[str, Any]] = {
         "topic_size_penalty": 0.05,
     },
     "deep_layered": {
-        "top_k_raw": 60,
-        "max_l1_seeds_for_prompt": 16,
+        "top_k_raw": 80,
+        "max_l1_seeds_for_prompt": 32,
         "max_global_topic_map_chars": 1200,
-        "max_relevant_l2_summaries": 4,
+        "max_relevant_l2_summaries": 5,
         "max_expanded_l2_topics": 3,
+        "max_sibling_child_l2_topics": 2,
         "max_events_per_l2": 10,
-        "max_events_per_child_l2": 12,
+        "max_events_per_child_l2": 20,
+        "max_events_per_sibling_child_l2": 3,
         "max_event_chars": 420,
         "prefer_materialized_l3": True,
         "topic_size_penalty": 0.03,
     },
-    # Good default for the 8-query Grace eval after L3 materialization:
-    # preserves L1/L2/L3 hits while avoiding large timeline injection.
+    # Balanced preset for evolution/history questions. It leaves room for
+    # cross-meeting L1 evidence and several L2/child-L2 slices without using the
+    # much larger deep_layered context.
+    "evolution_balanced": {
+        "top_k_raw": 120,
+        "max_l1_seeds_for_prompt": 16,
+        "max_global_topic_map_chars": 800,
+        "max_relevant_l2_summaries": 4,
+        "max_expanded_l2_topics": 3,
+        "max_events_per_l2": 4,
+        "max_events_per_child_l2": 6,
+        "max_event_chars": 180,
+        "prefer_materialized_l3": True,
+        "topic_size_penalty": 0.04,
+    },
+    # Good default for the 8-query Grace eval after L3 materialization and
+    # hybrid L1 retrieval: keeps more L1 evidence seeds while staying below the
+    # legacy 6000-char prompt-budget guard on all current demo queries.
     "eval_best": {
-        "top_k_raw": 20,
-        "max_l1_seeds_for_prompt": 8,
+        "top_k_raw": 30,
+        "max_l1_seeds_for_prompt": 12,
         "max_global_topic_map_chars": 300,
         "max_relevant_l2_summaries": 1,
         "max_expanded_l2_topics": 1,
         "max_events_per_l2": 2,
         "max_events_per_child_l2": 2,
         "max_event_chars": 100,
+        "prefer_materialized_l3": True,
+        "topic_size_penalty": 0.05,
+    },
+    # Runtime-oriented default for the app and Observatory trace. It is wider
+    # than eval_best so answer quality is not dominated by token saving, but it
+    # still keeps a bounded L1/L2/L3 slice instead of degenerating into full
+    # context.
+    "generous_layered": {
+        "top_k_raw": 60,
+        "max_l1_seeds_for_prompt": 24,
+        "max_global_topic_map_chars": 600,
+        "max_relevant_l2_summaries": 2,
+        "max_expanded_l2_topics": 2,
+        "max_sibling_child_l2_topics": 2,
+        "max_events_per_l2": 4,
+        "max_events_per_child_l2": 8,
+        "max_events_per_sibling_child_l2": 3,
+        "max_event_chars": 220,
         "prefer_materialized_l3": True,
         "topic_size_penalty": 0.05,
     },
@@ -67,12 +103,33 @@ RETRIEVAL_BUDGET_PROFILES: dict[str, dict[str, Any]] = {
         "prefer_materialized_l3": True,
         "topic_size_penalty": 0.05,
     },
+    # Demo-oriented trace profile for Memory Observatory. It keeps the same
+    # small topic fan-out as large_corpus_tight, but gives the selected timeline
+    # event enough room to explain the actual method or decision being shown.
+    "observatory_trace": {
+        "top_k_raw": 20,
+        "max_l1_seeds_for_prompt": 8,
+        "max_global_topic_map_chars": 220,
+        "max_relevant_l2_summaries": 1,
+        "max_expanded_l2_topics": 1,
+        "max_events_per_l2": 1,
+        "max_events_per_child_l2": 1,
+        "max_event_chars": 240,
+        "prefer_materialized_l3": True,
+        "topic_size_penalty": 0.05,
+    },
 }
 
 PROFILE_ALIASES = {
     "tight": "large_corpus_tight",
     "large": "large_corpus_tight",
+    "trace": "observatory_trace",
+    "demo": "observatory_trace",
     "deep": "deep_layered",
+    "generous": "generous_layered",
+    "runtime": "generous_layered",
+    "evolution": "evolution_balanced",
+    "balanced": "evolution_balanced",
 }
 
 

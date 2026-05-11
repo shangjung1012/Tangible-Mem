@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,9 @@ ANSWER_SYSTEM_PROMPT = (
     "你是一個會議記憶問答助手。請只根據提供的 context 回答使用者問題。"
     "若 context 不足，請說目前資料不足。請用繁體中文回答。"
     "回答中請盡量指出來源 meeting_id / obj_id / line range。"
+    "回答演進、歷史、設計轉變、或 why later 類問題時，請按 chronological order 整合 "
+    "L1 Evidence Seeds 與 L2 / child-L2 Evolution Context。"
+    "如果 context 中有 latest retrieved stage，必須簡短納入；不要只回答早期或中期階段。"
 )
 
 
@@ -43,11 +47,15 @@ def _score_layered(row: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any]
     scoring_obj_ids = expected_obj_ids | acceptable_obj_ids or strict_gold_obj_ids
     expected_l2_ids = set(_as_list(row.get("expected_l2_ids")))
     expected_l3_ids = set(_as_list(row.get("expected_l3_ids")))
-    selected_obj_ids = {str(item.get("obj_id", "")) for item in trace.get("l1_evidence_seeds", [])}
-    selected_l2_ids = {
-        str(item.get("l2_id", "") or item.get("promoted_from_l2_id", ""))
-        for item in trace.get("l2_evolution_context", [])
-    }
+    selected_obj_ids = _layered_context_obj_ids(trace)
+    selected_l2_ids: set[str] = set()
+    for item in trace.get("l2_evolution_context", []) or []:
+        if not isinstance(item, dict):
+            continue
+        for key in ("l2_id", "promoted_from_l2_id", "source_l2_id"):
+            value = str(item.get(key, "") or "").strip()
+            if value:
+                selected_l2_ids.add(value)
     selected_l3_ids = {str(item.get("l3_id", "")) for item in trace.get("l3_navigation", [])}
     return {
         "expected_obj_recall_at_context": (
@@ -71,6 +79,40 @@ def _score_layered(row: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any]
         "selected_l2_ids": sorted(selected_l2_ids),
         "selected_l3_ids": sorted(selected_l3_ids),
     }
+
+
+def _layered_context_obj_ids(trace: dict[str, Any]) -> set[str]:
+    """Return L1 ids that are actually visible in the layered prompt context.
+
+    This intentionally counts evidence seeds and selected timeline slices, but
+    not full linked_obj_ids from an L2 node, because those are navigation data
+    and are not necessarily injected into the prompt.
+    """
+    selected: set[str] = set()
+    for item in trace.get("l1_evidence_seeds", []) or []:
+        if isinstance(item, dict) and item.get("obj_id"):
+            selected.add(str(item["obj_id"]))
+    for node in trace.get("l2_evolution_context", []) or []:
+        if not isinstance(node, dict):
+            continue
+        for obj_id in node.get("matched_l1_ids", []) or []:
+            if str(obj_id).strip():
+                selected.add(str(obj_id))
+        for event in node.get("timeline_digest", []) or []:
+            if isinstance(event, dict) and event.get("obj_id"):
+                selected.add(str(event["obj_id"]))
+        materialized = node.get("materialized_l3")
+        if isinstance(materialized, dict):
+            for child in materialized.get("child_l2_contexts", []) or []:
+                if not isinstance(child, dict):
+                    continue
+                for obj_id in child.get("matched_l1_ids", []) or []:
+                    if str(obj_id).strip():
+                        selected.add(str(obj_id))
+                for event in child.get("timeline_digest", []) or []:
+                    if isinstance(event, dict) and event.get("obj_id"):
+                        selected.add(str(event["obj_id"]))
+    return selected
 
 
 def _summarize(results: list[dict[str, Any]], strategies: list[str]) -> dict[str, Any]:
@@ -142,8 +184,135 @@ def _default_api_key() -> str | list[str]:
         return os.getenv("GEMINI_API_KEY", "")
 
 
+def _is_evolution_answer_query(query: str) -> bool:
+    lowered = str(query or "").lower()
+    if re.search(r"\bfrom\b.+\bto\b", lowered):
+        return True
+    markers = (
+        "evolve",
+        "evolution",
+        "history",
+        "timeline",
+        "progression",
+        "later",
+        "changed",
+        "change over time",
+        "演進",
+        "演變",
+        "歷史",
+        "時間線",
+        "後來",
+        "最後",
+        "轉變",
+        "轉折",
+        "怎麼變",
+        "變成",
+        "從",
+        "到",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _query_terms_for_answer_selection(query: str) -> set[str]:
+    lowered = str(query or "").lower()
+    terms = {term for term in re.findall(r"[a-z0-9][a-z0-9_-]{2,}", lowered)}
+    for marker in ("update", "retrieve", "retrieval", "memory", "inspector", "visualization", "l1", "l2", "l3"):
+        if marker in lowered:
+            terms.add(marker)
+    return terms
+
+
+def _extract_context_evidence_rows(context: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    lines = str(context or "").splitlines()
+    seed_pattern = re.compile(
+        r"^\s*-\s*\[(?P<meeting>[^|\]]+)\|\s*(?P<date>\d{4}-\d{2}-\d{2})\s*\|\s*(?P<obj_id>L1-[^\]]+)\]"
+    )
+    timeline_pattern = re.compile(
+        r"^\s*-\s*\[(?P<date>\d{4}-\d{2}-\d{2})\s+(?P<obj_id>L1-[^\]]+)\]\s*(?P<content>.+)$"
+    )
+    for index, line in enumerate(lines):
+        seed_match = seed_pattern.match(line)
+        if seed_match:
+            content = ""
+            for following in lines[index + 1 : index + 5]:
+                stripped = following.strip()
+                if stripped.startswith("content:"):
+                    content = stripped.removeprefix("content:").strip()
+                    break
+            rows.append(
+                {
+                    "date": seed_match.group("date"),
+                    "meeting": seed_match.group("meeting").strip(),
+                    "obj_id": seed_match.group("obj_id").strip(),
+                    "content": content,
+                    "order": index,
+                }
+            )
+            continue
+
+        timeline_match = timeline_pattern.match(line)
+        if timeline_match:
+            obj_id = timeline_match.group("obj_id").strip()
+            meeting_match = re.match(r"L1-([^-]+)-", obj_id)
+            rows.append(
+                {
+                    "date": timeline_match.group("date"),
+                    "meeting": meeting_match.group(1) if meeting_match else "",
+                    "obj_id": obj_id,
+                    "content": timeline_match.group("content").strip(),
+                    "order": index,
+                }
+            )
+    return rows
+
+
+def _latest_relevant_evidence_block(query: str, context: str, *, limit: int = 6) -> str:
+    if not _is_evolution_answer_query(query):
+        return ""
+    rows = _extract_context_evidence_rows(context)
+    if not rows:
+        return ""
+
+    latest_date = max(row["date"] for row in rows)
+    latest_rows = [row for row in rows if row.get("date") == latest_date]
+    query_terms = _query_terms_for_answer_selection(query)
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for row in latest_rows:
+        key = row.get("obj_id") or f"{row.get('date')}:{row.get('content')}"
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+
+    def score(row: dict[str, Any]) -> int:
+        text = f"{row.get('obj_id', '')} {row.get('content', '')}".lower()
+        return sum(1 for term in query_terms if term in text)
+
+    deduped.sort(key=lambda row: (-score(row), int(row.get("order", 0) or 0)))
+    if not deduped:
+        return ""
+
+    lines = [
+        "Latest Relevant Evidence",
+        "Use this checklist before answering evolution/history/update questions; it is extracted from the same context below.",
+    ]
+    for row in deduped[:limit]:
+        content = " ".join(row.get("content", "").split())
+        if len(content) > 260:
+            content = content[:257].rstrip() + "..."
+        lines.append(
+            f"- [{row.get('meeting', '').strip()} | {row.get('date')} | {row.get('obj_id')}] {content}"
+        )
+    return "\n".join(lines)
+
+
 def _answer_prompt(query: str, context: str) -> str:
+    latest_block = _latest_relevant_evidence_block(query, context)
+    latest_section = f"{latest_block}\n\n" if latest_block else ""
     return (
+        latest_section +
         "Context:\n"
         f"{context.strip()}\n\n"
         "Question:\n"
@@ -195,7 +364,7 @@ def run_experiment(
     queries_path: Path | str,
     out: Path | str,
     strategies: Sequence[str],
-    retrieval_mode: str = "lexical",
+    retrieval_mode: str = "hybrid",
     no_llm: bool = True,
     generate_answers: bool = False,
     model: str = "gemini-2.5-pro",
@@ -203,13 +372,13 @@ def run_experiment(
     max_context_chars: int = 0,
     rag_top_k: int = 6,
     budget_profile: str = "",
-    full_context_scope: str = "gold",
+    full_context_scope: str = "all",
     baseline_token_multiplier: float = 0.0,
     full_context_max_tokens: int = 0,
     rag_max_context_tokens: int = 0,
 ) -> dict[str, Any]:
     repo = Path(repo_root)
-    effective_planner_model = planner_model or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
+    effective_planner_model = planner_model or os.getenv("GEMINI_PLANNER_MODEL", "") or model
     loader = ObservatoryDataLoader(repo)
     query_rows = loader.load_eval_queries(queries_path)
     strategy_list = [str(item).strip() for item in strategies if str(item).strip()]
@@ -223,7 +392,7 @@ def run_experiment(
         "no_llm": no_llm,
         "generate_answers": generate_answers,
         "model": model,
-        "planner_model": effective_planner_model,
+        "planner_model": "heuristic" if no_llm else effective_planner_model,
         "max_context_chars": max_context_chars,
         "rag_top_k": rag_top_k,
         "budget_profile": budget_profile,
@@ -269,7 +438,7 @@ def run_experiment(
                 no_llm=no_llm,
                 include_debug=True,
                 model_name=model,
-                planner_model_name=effective_planner_model,
+                planner_model_name=None if no_llm else effective_planner_model,
                 max_context_chars=max_context_chars,
                 budget_profile=budget_profile,
             )
@@ -321,19 +490,32 @@ def run_experiment(
         for strategy, data in query_result["strategies"].items():
             context = str(data.get("context") or data.get("formatted_prompt_context") or "")
             if generate_answers:
-                answer_result = _generate_answer(query, context, model=model)
-                data["answer"] = answer_result["answer"]
                 metrics = data.setdefault("metrics", {})
-                metrics["generation_ms"] = answer_result["generation_ms"]
-                metrics["actual_input_tokens"] = answer_result["actual_input_tokens"]
-                metrics["actual_output_tokens"] = answer_result["actual_output_tokens"]
-                metrics["actual_total_tokens"] = answer_result["actual_total_tokens"]
-                metrics["token_source"] = answer_result["token_source"]
-                metrics["total_ms"] = round(
-                    float(metrics.get("total_ms", 0.0) or 0.0)
-                    + float(answer_result["generation_ms"] or 0.0),
-                    3,
-                )
+                try:
+                    answer_result = _generate_answer(query, context, model=model)
+                    data["answer"] = answer_result["answer"]
+                    metrics["generation_ms"] = answer_result["generation_ms"]
+                    metrics["actual_input_tokens"] = answer_result["actual_input_tokens"]
+                    metrics["actual_output_tokens"] = answer_result["actual_output_tokens"]
+                    metrics["actual_total_tokens"] = answer_result["actual_total_tokens"]
+                    metrics["token_source"] = answer_result["token_source"]
+                    metrics["total_ms"] = round(
+                        float(metrics.get("total_ms", 0.0) or 0.0)
+                        + float(answer_result["generation_ms"] or 0.0),
+                        3,
+                    )
+                except Exception as exc:
+                    error_message = f"{type(exc).__name__}: {exc}"
+                    data["answer"] = f"Answer generation failed: {error_message}"
+                    data["answer_error"] = {
+                        "type": type(exc).__name__,
+                        "message": str(exc),
+                    }
+                    metrics["generation_ms"] = 0.0
+                    metrics["actual_input_tokens"] = None
+                    metrics["actual_output_tokens"] = None
+                    metrics["actual_total_tokens"] = None
+                    metrics["token_source"] = "generation_error"
             report_store.write_text(run_dir / "contexts" / qid / f"{strategy}.txt", context)
             report_store.write_json(
                 run_dir / "retrieved" / qid / f"{strategy}.json",

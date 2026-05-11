@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-05-10T23:16:50Z",
+  "generated_at_utc": "2026-05-11T22:12:06Z",
   "source": "long_term_l2_view",
   "total_l1_count": 448,
   "promotion_count": 7,
@@ -114,7 +114,15 @@
             "system evaluation",
             "rag-only",
             "short-term-only",
-            "long-term-only"
+            "long-term-only",
+            "gold mapping",
+            "gold mapping table",
+            "gold event",
+            "unanswerable",
+            "false-premise",
+            "false premise",
+            "experiment lab",
+            "comparison page"
           ]
         },
         {
@@ -125,10 +133,21 @@
             "llm-as-judge",
             "llm as judge",
             "metric",
+            "metrics",
             "scoring",
             "correctness",
             "judge",
-            "quality"
+            "quality",
+            "validation report",
+            "l1 recall",
+            "l2 hit rate",
+            "l3 hit rate",
+            "context token count",
+            "prompt budget pass rate",
+            "unassigned l1 count",
+            "duplicate assignment count",
+            "manual review count",
+            "expected_obj_recall"
           ]
         },
         {
@@ -168,7 +187,7 @@
       "source_l2_id": "L2-memory-lifecycle",
       "source_l2_label": "memory lifecycle",
       "proposed_l3_id": "L3-memory-lifecycle",
-      "status": "needs_split_review",
+      "status": "promotion_candidate",
       "reason_codes": [
         "too_many_l1_nodes"
       ],
@@ -185,7 +204,74 @@
         "share_minimum_l1_count": 12,
         "min_child_l2_count": 2
       },
-      "child_l2_candidates": [],
+      "child_l2_candidates": [
+        {
+          "child_l2_id": "L2-memory-retention-and-forgetting",
+          "label": "memory retention and forgetting",
+          "split_reason": "Separate retention windows, deletion rules, selective forgetting, and sensitive-information forgetting behavior.",
+          "assignment_criteria": [
+            "forgetting",
+            "selective forgetting",
+            "forget",
+            "forgot",
+            "retention",
+            "delete",
+            "deleted",
+            "three meetings",
+            "sensitive information",
+            "privacy"
+          ]
+        },
+        {
+          "child_l2_id": "L2-importance-activation-and-recency",
+          "label": "importance, activation, and recency",
+          "split_reason": "Separate the scoring parameters that drive memory lifecycle behavior: importance, activation, relevance, recency, decay, and floors.",
+          "assignment_criteria": [
+            "importance",
+            "activation",
+            "relevance",
+            "recency",
+            "decay",
+            "floor",
+            "score",
+            "threshold",
+            "static importance"
+          ]
+        },
+        {
+          "child_l2_id": "L2-importance-feedback-and-editor",
+          "label": "importance feedback and editor",
+          "split_reason": "Separate user correction, human-in-the-loop review, editor adjustments, and feedback signals for future importance prediction.",
+          "assignment_criteria": [
+            "feedback",
+            "user correction",
+            "correction",
+            "human-in-the-loop",
+            "human in the loop",
+            "editor",
+            "adjust",
+            "adjustment",
+            "importance editor",
+            "personalize"
+          ]
+        },
+        {
+          "child_l2_id": "L2-topic-lifecycle-and-evolution",
+          "label": "topic lifecycle and evolution",
+          "split_reason": "Separate topic evolution, lifecycle tracking, state updates, and questions about whether old decisions remain current.",
+          "assignment_criteria": [
+            "topic lifecycle",
+            "topic evolution",
+            "evolution",
+            "lifecycle",
+            "current state",
+            "state version",
+            "update",
+            "outdated decision",
+            "final version"
+          ]
+        }
+      ],
       "llm_usage": {
         "used": false,
         "stage": "none",
@@ -194,7 +280,12 @@
       "mapping": {
         "old_l2_id": "L2-memory-lifecycle",
         "new_l3_id": "L3-memory-lifecycle",
-        "new_child_l2_ids": []
+        "new_child_l2_ids": [
+          "L2-memory-retention-and-forgetting",
+          "L2-importance-activation-and-recency",
+          "L2-importance-feedback-and-editor",
+          "L2-topic-lifecycle-and-evolution"
+        ]
       }
     },
     {
@@ -340,6 +431,25 @@
             "programmer-controlled",
             "code-driven",
             "Gemini reads transcript lines"
+          ]
+        },
+        {
+          "child_l2_id": "L2-transcript-segmentation-strategy-and-validation",
+          "label": "transcript segmentation strategy and validation",
+          "split_reason": "Separate general transcript segmentation strategy, validation reports, review gates, and size diagnostics from concrete tool-calling mechanics.",
+          "assignment_criteria": [
+            "transcript segmentation strategy",
+            "segmentation strategy",
+            "validation report",
+            "validator gate",
+            "manual review count",
+            "largest child l2 size",
+            "prompt budget pass rate",
+            "child l2 size",
+            "scale summary",
+            "scale_summary",
+            "l2_index.json",
+            "l2_view.json"
           ]
         },
         {
@@ -520,6 +630,7 @@
           "L2-fixed-vs-dynamic-chunking",
           "L2-window-and-boundary-selection",
           "L2-tool-calling-transcript-reading",
+          "L2-transcript-segmentation-strategy-and-validation",
           "L2-idea-unit-generation",
           "L2-idea-unit-granularity-and-semantics",
           "L2-idea-unit-generation-methods",

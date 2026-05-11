@@ -132,7 +132,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
     @app.get("/api/retrieval/trace")
     def api_retrieval_trace(
         query: str = Query(..., min_length=1),
-        retrieval_mode: str = Query("lexical", pattern="^(lexical|semantic)$"),
+        retrieval_mode: str = Query("hybrid", pattern="^(hybrid|lexical|semantic)$"),
         no_llm: bool = True,
         include_debug: bool = True,
         planner_model: str | None = None,
@@ -160,8 +160,8 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
         return feedback_store().load_summary()
 
     @app.get("/api/runs")
-    def api_runs() -> list[dict[str, Any]]:
-        return report_store().list_runs()
+    def api_runs(include_legacy: bool = False) -> list[dict[str, Any]]:
+        return report_store().list_runs(include_legacy=include_legacy)
 
     @app.get("/api/runs/{run_id}")
     def api_run(run_id: str) -> dict[str, Any]:
@@ -210,7 +210,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
             queries_path=payload.get("queries_path", "long_term/eval/long_term_retrieval_queries.jsonl"),
             out=report_store().runs_root,
             strategies=strategies,
-            retrieval_mode=payload.get("retrieval_mode", "lexical"),
+            retrieval_mode=payload.get("retrieval_mode", "hybrid"),
             no_llm=bool(payload.get("no_llm", True)),
             generate_answers=bool(payload.get("generate_answers", False)),
             model=payload.get("model", "gemini-2.5-pro"),
@@ -218,6 +218,10 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
             max_context_chars=int(max_context_chars),
             rag_top_k=int(payload.get("rag_top_k", 6) or 6),
             budget_profile=str(payload.get("budget_profile", "") or ""),
+            full_context_scope=str(payload.get("full_context_scope", "all") or "all"),
+            baseline_token_multiplier=float(payload.get("baseline_token_multiplier", 0.0) or 0.0),
+            full_context_max_tokens=int(payload.get("full_context_max_tokens", 0) or 0),
+            rag_max_context_tokens=int(payload.get("rag_max_context_tokens", 0) or 0),
         )
         return {"run_id": result["run_id"], "summary": result["summary"]}
 

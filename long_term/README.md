@@ -83,7 +83,7 @@ Long-term recall is bottom-up:
 
 ```text
 query
-  -> semantic L1 retrieval from share_mem/tree.json
+  -> hybrid L1 retrieval from share_mem/tree.json
   -> compact global topic map from l3_view + unpromoted l2_view labels
   -> l3_index.json lookup by seed obj_id, when available
   -> materialized child L2 context first
@@ -173,29 +173,37 @@ uv run python long_term/evaluate_retrieval.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out long_term/eval \
   --no-llm \
-  --retrieval-mode lexical
+  --retrieval-mode hybrid
 ```
 
-With `--no-llm --retrieval-mode lexical`, the eval path is deterministic and
-offline: it uses a heuristic recall plan and lexical L1 retrieval, so it does
-not call the Gemini planner, embedding API, or a final answer LLM. This is now
-the default eval behavior; `--no-llm` remains in examples for clarity. Use
-`--retrieval-mode semantic` only when you intentionally want embedding-backed
+With `--no-llm`, the eval path uses the heuristic recall plan and does not call
+the Gemini planner or a final answer LLM. The default L1 seed retrieval mode is
+`hybrid`: lexical hits are always used, semantic hits are fused in when an
+embedding client is available, and the path falls back to lexical when offline.
+Use `--retrieval-mode lexical` for a fully offline retrieval smoke test. Use
+`--retrieval-mode semantic` only when you intentionally want embedding-only
 retrieval. The default grid covers the current smoke surface for `top_k_raw`,
 seed count, child-L2 events, expanded topic count, and topic-size penalty. The
 report compares expected L1/L2/L3 hits, prompt character budget, omitted events,
 and whether a large L2 was expanded without child split context.
 
-Named retrieval budget profiles are optional presets. They do not change the
-runtime default unless a caller explicitly selects one:
+Named retrieval budget profiles are deterministic presets used by the app,
+Observatory, and eval scripts:
 
-- `eval_best`: current Grace eval best profile.
+- `eval_best`: current Grace no-LLM hybrid eval profile.
+- `generous_layered`: current app and Observatory trace runtime profile. It
+  keeps a bounded evidence-first slice, but raises the default from the older
+  tight profile to 24 L1 seeds, two relevant topic summaries, two expanded
+  L2/child-L2 topics, up to 8 child-L2 timeline events, and up to two
+  same-parent L3 sibling child-L2 slices for rationale/evolution/architecture
+  queries. This is the default because the tighter profile saved tokens at the
+  cost of answer context.
 - `large_corpus_tight`: large-corpus, RAG-competitive budget profile. It keeps
-  the same 8 L1 evidence seeds as `eval_best`, but slices global topic map and
+  8 L1 evidence seeds versus `eval_best`'s 12, and slices global topic map and
   L2/child-L2 timeline context more aggressively. Treat it as a quality-preserving
   efficiency profile, not as a hard ultra-short target. The eval prompt-budget
-  threshold is currently 6000 characters, because retrieval quality should not
-  be sacrificed just to shorten already-RAG-competitive context.
+  threshold is currently 16000 characters so retrieval quality is not sacrificed
+  just to shorten already-RAG-competitive context.
 
 Use the tight profile only with a guard run for the target dataset:
 
@@ -204,7 +212,7 @@ uv run python long_term/evaluate_retrieval.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out long_term/eval/grace_tight_profile_guard \
   --no-llm \
-  --retrieval-mode lexical \
+  --retrieval-mode hybrid \
   --budget-profile large_corpus_tight
 ```
 
@@ -224,22 +232,22 @@ uv run python long_term/evaluate_retrieval.py \
   --l3-root long_term/eval/synthetic_longmeet_50_diverse_idea_units/l3 \
   --out long_term/eval/synthetic_longmeet_50_diverse_idea_units/retrieval_issue_tight \
   --no-llm \
-  --retrieval-mode lexical \
+  --retrieval-mode hybrid \
   --budget-profile large_corpus_tight
 ```
 
 For API-backed planner experiments, `--model` remains the recall/answer model,
 `--use-llm-planner` opts into Gemini recall planning, and `--planner-model`
-controls only that planner call. The intended fast live setting is:
+controls only that planner call. If no planner model is provided, the planner
+uses `--model`:
 
 ```bash
 uv run python long_term/evaluate_retrieval.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out long_term/eval \
-  --retrieval-mode lexical \
+  --retrieval-mode hybrid \
   --use-llm-planner \
-  --model gemini-2.5-pro \
-  --planner-model gemini-2.5-flash
+  --model gemini-2.5-pro
 ```
 
 ## Current Generated State
@@ -249,15 +257,15 @@ uv run python long_term/evaluate_retrieval.py \
 - L2 view: 16 L2 topics, 411 linked L1 objects, 37 unlinked L1 objects.
 - L2 validation: 0 severe issues; 3 warnings for high-importance unlinked
   administrative / project-logistics objects.
-- L3 validation: 0 severe issues; 3 warnings, all prompt-slice diagnostics
+- L3 validation: 0 severe issues; 5 warnings, all prompt-slice diagnostics
   rather than assignment coverage or oversized-child failures.
 - Materialized L3: 2 parents, 14 child L2 topics, 169 assigned L1 objects,
   0 unassigned L1 objects.
 - Reviewed deterministic L3: `L3-transcript-segmentation-and-idea-unit-coverage`
   and `L3-memory-evaluation-strategy`.
-- Retrieval eval: 8 demo-safe queries, 32 offline lexical parameter runs, best
-  strict/acceptable L1 recall 1.0, L2 hit rate 1.0, L3 hit rate 1.0, and
-  prompt-budget pass rate 1.0.
+- Retrieval eval: 8 demo-safe queries, no-LLM hybrid `generous_layered` run,
+  expected L1 recall 0.8594, strict L1 recall 1.0, L2 hit rate 1.0, L3 hit
+  rate 1.0, average context 12018.38 chars, and prompt-budget pass rate 1.0.
 
 ## Archive Boundary
 

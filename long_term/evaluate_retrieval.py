@@ -28,7 +28,7 @@ from share_mem.store import load_share_tree
 
 DEFAULT_QUERIES_PATH = Path(__file__).resolve().parent / "eval" / "long_term_retrieval_queries.jsonl"
 DEFAULT_OUT = Path(__file__).resolve().parent / "eval"
-DEFAULT_PROMPT_BUDGET_CHARS = 6000
+DEFAULT_PROMPT_BUDGET_CHARS = 16000
 
 
 def _load_queries(path: Path) -> list[dict[str, Any]]:
@@ -53,6 +53,31 @@ def _as_list(value: Any) -> list[Any]:
 
 def _ids(rows: list[dict[str, Any]], key: str) -> set[str]:
     return {str(row.get(key, "") or "") for row in rows if str(row.get(key, "") or "").strip()}
+
+
+def _layered_context_obj_ids(result: dict[str, Any]) -> set[str]:
+    selected: set[str] = _ids(_as_list(result.get("long_term_l1")), "obj_id")
+    for node in _as_list(result.get("long_term_l2")):
+        if not isinstance(node, dict):
+            continue
+        for obj_id in node.get("matched_l1_ids", []) or []:
+            if str(obj_id).strip():
+                selected.add(str(obj_id))
+        for event in node.get("timeline_digest", []) or []:
+            if isinstance(event, dict) and str(event.get("obj_id", "") or "").strip():
+                selected.add(str(event["obj_id"]))
+        materialized = node.get("materialized_l3")
+        if isinstance(materialized, dict):
+            for child in materialized.get("child_l2_contexts", []) or []:
+                if not isinstance(child, dict):
+                    continue
+                for obj_id in child.get("matched_l1_ids", []) or []:
+                    if str(obj_id).strip():
+                        selected.add(str(obj_id))
+                for event in child.get("timeline_digest", []) or []:
+                    if isinstance(event, dict) and str(event.get("obj_id", "") or "").strip():
+                        selected.add(str(event["obj_id"]))
+    return selected
 
 
 def _parse_csv_ints(value: str) -> list[int]:
@@ -114,11 +139,11 @@ def run_retrieval_once(
     planner_model_name: str | None = None,
     embed_cache: EmbedCache | None = None,
     use_llm_planner: bool = True,
-    retrieval_mode: str = "semantic",
+    retrieval_mode: str = "hybrid",
     l2_root: Path | str | None = None,
     l3_root: Path | str | None = None,
 ) -> dict[str, Any]:
-    effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
+    effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "") or model_name
     plan = (
         plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
         if use_llm_planner
@@ -135,6 +160,7 @@ def run_retrieval_once(
         l2_path = Path(l2_root)
         sidecar_paths["l2_index_path"] = l2_path / "l2_index.json"
         sidecar_paths["l2_view_path"] = l2_path / "l2_view.json"
+        sidecar_paths["l2_secondary_links_path"] = l2_path / "l2_secondary_links.json"
     if l3_root is not None:
         l3_path = Path(l3_root)
         sidecar_paths["l3_promotions_path"] = l3_path / "l3_promotions.json"
@@ -166,7 +192,7 @@ def _score_query_result(query_row: dict[str, Any], result: dict[str, Any]) -> di
         scoring_obj_ids = strict_obj_ids
     expected_l2_ids = {str(x) for x in _as_list(query_row.get("expected_l2_ids"))}
     expected_l3_ids = {str(x) for x in _as_list(query_row.get("expected_l3_ids"))}
-    l1_ids = _ids(_as_list(result.get("long_term_l1")), "obj_id")
+    l1_ids = _layered_context_obj_ids(result)
     l2_rows = _as_list(result.get("long_term_l2"))
     l2_ids = _ids(l2_rows, "l2_id") | _ids(l2_rows, "promoted_from_l2_id")
     l3_ids = _ids(_as_list(result.get("long_term_l3")), "l3_id")
@@ -229,7 +255,7 @@ def evaluate_retrieval_grid(
     share_mem_root: Path | str = REPO_ROOT / "share_mem",
     grid: dict[str, list[Any]] | None = None,
     use_llm_planner: bool = True,
-    retrieval_mode: str = "semantic",
+    retrieval_mode: str = "hybrid",
     l2_root: Path | str | None = None,
     l3_root: Path | str | None = None,
     budget_profile: str = "",
@@ -324,7 +350,11 @@ def evaluate_retrieval_grid(
         "l2_root": str(l2_root) if l2_root else "",
         "l3_root": str(l3_root) if l3_root else "",
         "model": model_name,
-        "planner_model": planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
+        "planner_model": (
+            "heuristic"
+            if not use_llm_planner
+            else planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "") or model_name
+        ),
         "runs": runs,
         "best_params": runs[0]["params"] if runs else {},
     }
@@ -378,7 +408,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model", default=os.getenv("GEMINI_MODEL", "gemini-2.5-pro"))
     parser.add_argument(
         "--planner-model",
-        default=os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
+        default=os.getenv("GEMINI_PLANNER_MODEL", ""),
         help="Model used only for LLM recall planning. Recall scoring still uses --model.",
     )
     parser.add_argument("--top-k-raw", default="20,30")
@@ -396,7 +426,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="",
         help="Use one named retrieval budget profile as a single-run grid.",
     )
-    parser.add_argument("--retrieval-mode", choices=["lexical", "semantic"], default="lexical")
+    parser.add_argument(
+        "--retrieval-mode",
+        choices=["hybrid", "lexical", "semantic"],
+        default="hybrid",
+        help="L1 seed retrieval mode. Hybrid fuses lexical and semantic hits when an embedding client is available.",
+    )
     parser.add_argument(
         "--no-llm",
         action="store_true",
@@ -405,7 +440,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--use-llm-planner",
         action="store_true",
-        help="Opt in to Gemini recall planning. With --retrieval-mode lexical, only the planner calls Gemini.",
+        help="Opt in to Gemini recall planning. Without this flag, recall planning is deterministic.",
     )
     return parser.parse_args(argv)
 

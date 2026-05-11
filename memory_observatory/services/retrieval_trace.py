@@ -9,7 +9,7 @@ from typing import Any
 from .data_loader import ObservatoryDataLoader, REPO_ROOT
 from .token_utils import context_token_metrics
 
-DEFAULT_PLANNER_MODEL = os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
+DEFAULT_PLANNER_MODEL = os.getenv("GEMINI_PLANNER_MODEL", "")
 
 
 def _ensure_long_term_path(repo_root: Path) -> None:
@@ -47,21 +47,21 @@ class RetrievalTraceService:
         _ensure_long_term_path(self.repo_root)
 
     def _recall_params(self, budget_profile: str = "") -> dict[str, Any]:
-        if budget_profile:
-            from retrieval_profiles import get_retrieval_budget_profile
+        from retrieval_profiles import get_retrieval_budget_profile
 
-            return get_retrieval_budget_profile(budget_profile)
-        best = self.loader.load_retrieval_eval_report().get("best_params", {})
-        if not isinstance(best, dict):
-            best = {}
+        best = get_retrieval_budget_profile(budget_profile or "generous_layered")
         return {
             "top_k_raw": int(best.get("top_k_raw", 30) or 30),
             "max_l1_seeds_for_prompt": int(best.get("max_l1_seeds_for_prompt", 8) or 8),
             "max_global_topic_map_chars": int(best.get("max_global_topic_map_chars", 800) or 800),
-            "max_relevant_l2_summaries": int(best.get("max_expanded_l2_topics", 2) or 2),
+            "max_relevant_l2_summaries": int(best.get("max_relevant_l2_summaries", 2) or 2),
             "max_expanded_l2_topics": int(best.get("max_expanded_l2_topics", 2) or 2),
+            "max_sibling_child_l2_topics": int(best.get("max_sibling_child_l2_topics", 0) or 0),
             "max_events_per_l2": int(best.get("max_events_per_l2", 6) or 6),
             "max_events_per_child_l2": int(best.get("max_events_per_child_l2", 8) or 8),
+            "max_events_per_sibling_child_l2": int(
+                best.get("max_events_per_sibling_child_l2", 3) or 3
+            ),
             "max_event_chars": int(best.get("max_event_chars", 280) or 280),
             "prefer_materialized_l3": bool(best.get("prefer_materialized_l3", True)),
             "topic_size_penalty": float(best.get("topic_size_penalty", 0.05) or 0.05),
@@ -71,30 +71,32 @@ class RetrievalTraceService:
         self,
         query: str,
         *,
-        retrieval_mode: str = "lexical",
+        retrieval_mode: str = "hybrid",
         no_llm: bool = True,
         include_debug: bool = True,
         model_name: str = "gemini-2.5-pro",
         planner_model_name: str | None = None,
-        max_context_chars: int = 6000,
+        max_context_chars: int = 16000,
         budget_profile: str = "",
     ) -> dict[str, Any]:
         started = time.perf_counter()
+        from current_state_context import current_state_context_for_query
         from recall import format_recall_for_prompt, recall
         from recall_planner import plan_recall
 
         tree = self.loader.load_share_tree()
         effective_planner_model = planner_model_name or DEFAULT_PLANNER_MODEL or model_name
-        if no_llm:
-            plan = _heuristic_plan(query)
-            api_key: str | list[str] = ""
-        else:
+        api_key: str | list[str] = ""
+        if retrieval_mode in {"hybrid", "semantic"}:
             try:
                 from share_mem.l1.io_utils import load_api_keys
 
                 api_key = load_api_keys()
             except Exception:
                 api_key = ""
+        if no_llm:
+            plan = _heuristic_plan(query)
+        else:
             plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
             plan["search_targets"] = ["long_term_l1", "long_term_l2", "long_term_l3"]
         params = self._recall_params(budget_profile)
@@ -106,6 +108,7 @@ class RetrievalTraceService:
             model_name=model_name,
             l2_index_path=self.repo_root / "long_term" / "l2" / "l2_index.json",
             l2_view_path=self.repo_root / "long_term" / "l2" / "l2_view.json",
+            l2_secondary_links_path=self.repo_root / "long_term" / "l2" / "l2_secondary_links.json",
             l3_promotions_path=self.repo_root / "long_term" / "l3" / "l3_promotions.json",
             l3_view_path=self.repo_root / "long_term" / "l3" / "l3_view.json",
             l3_index_path=self.repo_root / "long_term" / "l3" / "l3_index.json",
@@ -119,10 +122,14 @@ class RetrievalTraceService:
             l1_content_chars=320,
             l1_evidence_chars=420,
         )
+        current_state_context = current_state_context_for_query(query, self.repo_root)
+        if current_state_context:
+            formatted = f"{current_state_context}\n\n{formatted}"
         original_chars = len(formatted)
         truncated = bool(max_context_chars and max_context_chars > 0 and original_chars > max_context_chars)
         if truncated:
-            formatted = formatted[:max_context_chars] + "\n...(truncated)"
+            suffix = "\n..."
+            formatted = formatted[: max(0, max_context_chars - len(suffix))].rstrip() + suffix
         elapsed = (time.perf_counter() - started) * 1000
         debug = result.get("retrieval_debug", {}) if isinstance(result.get("retrieval_debug"), dict) else {}
         metrics = context_token_metrics(formatted)
@@ -150,12 +157,13 @@ class RetrievalTraceService:
             "use_llm_planner": not no_llm,
             "planner_model": effective_planner_model if not no_llm else "heuristic",
             "answer_model": model_name,
-            "budget_profile": budget_profile,
+            "budget_profile": budget_profile or "generous_layered",
             "plan": plan,
             "global_topic_map": result.get("global_topic_map", {}),
             "l1_evidence_seeds": result.get("long_term_l1", []),
             "l2_evolution_context": result.get("long_term_l2", []),
             "l3_navigation": result.get("long_term_l3", []),
+            "current_implementation_state": current_state_context,
             "retrieval_debug": debug,
             "formatted_prompt_context": formatted,
             "context": formatted,

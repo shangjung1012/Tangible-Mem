@@ -147,6 +147,7 @@ class L2ViewTests(unittest.TestCase):
 
             self.assertTrue((out_root / "l2_view.json").exists())
             self.assertTrue((out_root / "l2_index.json").exists())
+            self.assertTrue((out_root / "l2_secondary_links.json").exists())
             self.assertTrue((out_root / "manifest.json").exists())
             self.assertTrue((out_root / "unlinked_l1_report.json").exists())
             self.assertTrue((out_root / "l2_assignment_review_report.json").exists())
@@ -166,7 +167,16 @@ class L2ViewTests(unittest.TestCase):
                 l2_index["L1-0506-009"]["l2_label"],
                 "memory processing architecture",
             )
-
+            architecture_node = next(
+                node
+                for node in load_l2_view(out_root)["l2_nodes"]
+                if node["l2_id"] == "L2-memory-processing-architecture"
+            )
+            self.assertNotIn("This L2 topic has", architecture_node["current_state"])
+            self.assertIn("Hierarchical memory processing", architecture_node["current_state"])
+            self.assertIn("evolution_summary", architecture_node)
+            self.assertIn("latest_position", architecture_node)
+            self.assertIn("representative_l1_ids", architecture_node)
             unlinked = json.loads((out_root / "unlinked_l1_report.json").read_text(encoding="utf-8"))
             self.assertIn("L1-0318-002", {item["obj_id"] for item in unlinked["unlinked_objects"]})
             review = json.loads(
@@ -176,6 +186,64 @@ class L2ViewTests(unittest.TestCase):
             self.assertEqual(review["linked_l1_count"], manifest["linked_l1_count"])
             self.assertIn("review_items", review)
             self.assertIn("topic_summaries", review)
+
+    def test_build_l2_view_writes_secondary_links_without_changing_primary_l2(self) -> None:
+        tree = {
+            "tree_version": 3,
+            "last_updated_utc": "2026-05-09T00:00:00Z",
+            "project_profile": {},
+            "phases": [],
+            "meetings": [
+                {
+                    "meeting_id": "0429",
+                    "timestamp": "2026-04-29T00:00:00Z",
+                    "meeting_date": "2026-04-29",
+                    "source_file": "0429.txt",
+                    "phase_id": "",
+                    "memory_objects": [
+                        _obj(
+                            "L1-baseline",
+                            "argument",
+                            "RAG baseline comparison should include full transcript and token cost.",
+                            importance=0.76,
+                            topics=["rag baseline"],
+                        ),
+                        _obj(
+                            "L1-cross-topic",
+                            "argument",
+                            "L1 L2 L3 hierarchy explains layered context for long-term memory.",
+                            importance=0.79,
+                            topics=["long term memory architecture", "rag baseline"],
+                        ),
+                    ],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            share_root = Path(tmp) / "share_mem"
+            out_root = Path(tmp) / "long_term" / "l2"
+            refresh_share_mem_outputs(root=share_root, tree=tree, source_transcript_dir=Path(tmp))
+
+            manifest = build_l2_view_outputs(
+                share_mem_root=share_root,
+                output_root=out_root,
+                mode="deterministic",
+                clean=True,
+            )
+
+            l2_index = load_l2_index(out_root)
+            self.assertEqual(
+                l2_index["L1-cross-topic"]["l2_label"],
+                "memory processing architecture",
+            )
+            secondary = json.loads((out_root / "l2_secondary_links.json").read_text(encoding="utf-8"))
+            bridge_targets = {
+                row["secondary_l2_label"]
+                for row in secondary["links"]
+                if row["obj_id"] == "L1-cross-topic"
+            }
+            self.assertIn("retrieval baseline comparison", bridge_targets)
+            self.assertGreaterEqual(manifest["secondary_l2_link_count"], 1)
 
     def test_clean_l2_view_does_not_delete_l1_research_logs_when_roots_share_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

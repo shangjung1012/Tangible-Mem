@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from embedder import EmbedCache, cosine_similarity, embed_text
-from gemini_clients import create_gemini_client
+from gemini_clients import create_gemini_client, get_configured_client_count
 from importance import normalize_importance_score
 from memory_activity import (
     activity_score_for_obj,
@@ -29,6 +29,7 @@ from schema import DEFAULT_MODEL_NAME, EMBED_MODEL_NAME, RECALL_GATE_SCHEMA
 FALLBACK_SCORE_THRESHOLD = 0.80
 FALLBACK_MAX_RESULTS = 8
 DEFAULT_L2_ROOT = Path(__file__).resolve().parent / "l2"
+DEFAULT_L2_SECONDARY_LINKS_PATH = DEFAULT_L2_ROOT / "l2_secondary_links.json"
 DEFAULT_L3_PROMOTIONS_PATH = Path(__file__).resolve().parent / "l3" / "l3_promotions.json"
 DEFAULT_L3_VIEW_PATH = Path(__file__).resolve().parent / "l3" / "l3_view.json"
 DEFAULT_L3_INDEX_PATH = Path(__file__).resolve().parent / "l3" / "l3_index.json"
@@ -133,6 +134,91 @@ def _lexical_score(query_units: set[str], text: str, keywords: list[str] | None 
 
 
 QUERY_EXPANSION_GROUPS = [
+    {
+        "triggers": {
+            "短期記憶",
+            "短期",
+            "近期記憶",
+            "長期記憶",
+            "長期",
+            "整合",
+            "stm",
+            "ltm",
+            "short-term",
+            "long-term",
+            "short term",
+            "long term",
+        },
+        "expansions": {
+            "stm",
+            "ltm",
+            "short-term",
+            "long-term",
+            "short term memory",
+            "long term memory",
+            "memory routing",
+            "shared l1",
+            "recent meetings",
+            "long-term context",
+        },
+    },
+    {
+        "triggers": {
+            "rag",
+            "full transcript",
+            "full context",
+            "傳統 rag",
+            "一般 rag",
+            "逐字稿",
+            "生命週期",
+            "話題生命週期",
+            "追蹤話題",
+            "基準比較",
+        },
+        "expansions": {
+            "rag",
+            "full transcript",
+            "full context",
+            "retrieval baseline comparison",
+            "topic lifecycle",
+            "topic evolution",
+            "baseline",
+            "chunking",
+            "evidence",
+            "l1",
+            "l2",
+            "l3",
+        },
+    },
+    {
+        "triggers": {
+            "演進",
+            "轉折",
+            "後來",
+            "最後",
+            "從",
+            "到",
+            "為什麼最後",
+            "怎麼變",
+            "變成",
+            "evolution",
+            "evolve",
+            "timeline",
+            "history",
+            "progression",
+        },
+        "expansions": {
+            "evolution",
+            "timeline",
+            "history",
+            "progression",
+            "topic evolution",
+            "current state",
+            "decision",
+            "approach change",
+            "finding",
+        },
+    },
     {
         "triggers": {"rag", "full transcript", "baseline", "lifecycle"},
         "expansions": {
@@ -442,6 +528,156 @@ def search_l1_lexical(
     results.sort(key=lambda x: -x["score"])
     return results[:top_k]
 
+
+def _has_semantic_retrieval_client(api_key: str | list[str]) -> bool:
+    if api_key == "" or api_key == []:
+        return False
+    try:
+        return get_configured_client_count(api_key) > 0
+    except Exception:
+        return False
+
+
+def _merge_l1_candidates(
+    lexical_candidates: list[dict[str, Any]],
+    semantic_candidates: list[dict[str, Any]],
+    *,
+    top_k: int,
+) -> list[dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+
+    def candidate_id(row: dict[str, Any]) -> str:
+        return str(row.get("obj_id") or row.get("phase_id") or "")
+
+    def add(row: dict[str, Any], source: str) -> None:
+        key = candidate_id(row)
+        if not key:
+            return
+        score = float(row.get("score", 0.0) or 0.0)
+        existing = merged.get(key)
+        if existing is None:
+            copy = dict(row)
+            copy["retrieval_mode"] = "hybrid"
+            copy[f"{source}_score"] = round(score, 4)
+            copy["hybrid_sources"] = [source]
+            if source == "semantic":
+                copy["score"] = round(score * 0.82, 4)
+            merged[key] = copy
+            return
+        existing[f"{source}_score"] = round(score, 4)
+        sources = list(existing.get("hybrid_sources", []))
+        if source not in sources:
+            sources.append(source)
+        existing["hybrid_sources"] = sources
+        existing["score"] = round(
+            min(
+                1.0,
+                max(float(existing.get("score", 0.0) or 0.0), score)
+                + (0.12 if len(sources) > 1 else 0.0),
+            ),
+            4,
+        )
+
+    for row in lexical_candidates:
+        add(row, "lexical")
+    for row in semantic_candidates:
+        add(row, "semantic")
+
+    def sort_key(row: dict[str, Any]) -> tuple[float, int, str, str]:
+        return (
+            -float(row.get("score", 0.0) or 0.0),
+            -len(row.get("hybrid_sources", []) or []),
+            str(row.get("meeting_date") or ""),
+            str(row.get("obj_id") or ""),
+        )
+
+    ranked = sorted(merged.values(), key=sort_key)
+    lexical_quota = min(len(lexical_candidates), max(1, int(top_k * 0.92)))
+    selected: list[dict[str, Any]] = []
+    selected_keys: set[str] = set()
+    for row in lexical_candidates[:lexical_quota]:
+        key = candidate_id(row)
+        if key and key in merged and key not in selected_keys:
+            selected.append(merged[key])
+            selected_keys.add(key)
+    for row in ranked:
+        key = candidate_id(row)
+        if key in selected_keys:
+            continue
+        selected.append(row)
+        selected_keys.add(key)
+        if len(selected) >= top_k:
+            break
+    return sorted(selected[:top_k], key=sort_key)
+
+
+def search_l1_hybrid(
+    tree: dict[str, Any],
+    query: str,
+    *,
+    api_key: str | list[str],
+    cache: EmbedCache,
+    keywords: list[str] | None = None,
+    obj_types: list[str] | None = None,
+    min_importance: float = 0.0,
+    top_k: int = 30,
+    query_date: datetime | None = None,
+    embed_model: str = EMBED_MODEL_NAME,
+    activity_index: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Fuse lexical L1 hits with semantic L1 hits when embedding is available."""
+    lexical_top_k = max(top_k, top_k * 2)
+    lexical_candidates = search_l1_lexical(
+        tree=tree,
+        query=query,
+        keywords=keywords,
+        obj_types=obj_types,
+        min_importance=min_importance,
+        top_k=lexical_top_k,
+        query_date=query_date,
+        activity_index=activity_index,
+    )
+    debug = {
+        "hybrid_lexical_count": len(lexical_candidates),
+        "hybrid_semantic_count": 0,
+        "hybrid_semantic_used": False,
+        "hybrid_fallback": "",
+    }
+    if not _has_semantic_retrieval_client(api_key):
+        debug["hybrid_fallback"] = "lexical_no_api_key"
+        for row in lexical_candidates:
+            row["retrieval_mode"] = "hybrid"
+            row["hybrid_sources"] = ["lexical"]
+            row["lexical_score"] = row.get("score")
+        return lexical_candidates[:top_k], debug
+
+    semantic_candidates: list[dict[str, Any]] = []
+    try:
+        query_emb = embed_text(query, api_key, cache, model=embed_model)
+        semantic_candidates = search_l1_semantic(
+            tree=tree,
+            query_emb=query_emb,
+            api_key=api_key,
+            cache=cache,
+            obj_types=obj_types,
+            min_importance=min_importance,
+            top_k=max(top_k, top_k * 2),
+            query_date=query_date,
+            embed_model=embed_model,
+            activity_index=activity_index,
+        )
+        debug["hybrid_semantic_count"] = len(semantic_candidates)
+        debug["hybrid_semantic_used"] = True
+    except Exception as exc:
+        debug["hybrid_fallback"] = f"lexical_semantic_error:{type(exc).__name__}"
+        for row in lexical_candidates:
+            row["retrieval_mode"] = "hybrid"
+            row["hybrid_sources"] = ["lexical"]
+            row["lexical_score"] = row.get("score")
+        return lexical_candidates[:top_k], debug
+
+    return _merge_l1_candidates(lexical_candidates, semantic_candidates, top_k=top_k), debug
+
 # ===================================================================
 # L2 retrieval via active share_mem-generated L2 view
 # ===================================================================
@@ -464,6 +700,11 @@ def load_l2_index(path: Path | None = None) -> dict[str, Any]:
 def load_l2_view(path: Path | None = None) -> dict[str, Any]:
     """Load active materialized L2 topic view."""
     return _load_json_object(path or (DEFAULT_L2_ROOT / "l2_view.json"))
+
+
+def load_l2_secondary_links(path: Path | None = None) -> dict[str, Any]:
+    """Load optional obj_id -> secondary L2 bridge sidecar."""
+    return _load_json_object(path or DEFAULT_L2_SECONDARY_LINKS_PATH)
 
 
 def load_l3_promotions(path: Path | None = None) -> dict[str, Any]:
@@ -746,7 +987,18 @@ def _truncate_text(text: Any, max_chars: int) -> str:
     clean = " ".join(str(text or "").split())
     if len(clean) <= max_chars:
         return clean
-    return clean[: max(0, max_chars - 15)].rstrip() + "...(truncated)"
+    if max_chars <= 0:
+        return ""
+    if max_chars <= 3:
+        return "." * max_chars
+    budget = max(0, max_chars - 3)
+    head = clean[:budget].rstrip()
+    min_boundary = max(12, int(budget * 0.45))
+    boundary_chars = "。！？!?；;，,、."
+    boundary = max((idx for idx, char in enumerate(head) if char in boundary_chars), default=-1)
+    if boundary >= min_boundary:
+        head = head[: boundary + 1].rstrip()
+    return head + "..."
 
 
 def _timeline_event_date(entry: dict[str, Any]) -> str:
@@ -768,6 +1020,46 @@ def _extract_meeting_hints(query: str) -> list[str]:
 
 def _is_evolution_query(query: str) -> bool:
     lowered = str(query or "").lower()
+    clean_chinese_markers = (
+        "演進",
+        "演變",
+        "轉變",
+        "轉折",
+        "轉成",
+        "轉為",
+        "變成",
+        "後來",
+        "早期",
+        "最後",
+        "目前",
+        "歷史",
+        "脈絡",
+        "為什麼最後",
+        "怎麼變",
+        "怎麼演",
+    )
+    if any(marker in lowered for marker in clean_chinese_markers):
+        return True
+    if re.search(r"從.+(?:到|轉成|轉為|變成|具體化)", lowered):
+        return True
+    if any(
+        marker in lowered
+        for marker in (
+            "演進",
+            "轉折",
+            "後來",
+            "最後",
+            "怎麼變",
+            "變成",
+            "綜合",
+            "多場",
+            "跨會議",
+            "同時受到",
+            "因素影響",
+            "整體",
+        )
+    ):
+        return True
     if re.search(r"\bfrom\b.+\bto\b", lowered) or re.search(r"從.+到", lowered):
         return True
     chinese_markers = (
@@ -824,6 +1116,152 @@ def _node_event_count(node: dict[str, Any], timeline: list[Any] | None = None) -
     if isinstance(linked, list):
         return len(linked)
     return 0
+
+
+def _secondary_links_by_obj(sidecar: dict[str, Any] | None) -> dict[str, list[dict[str, Any]]]:
+    if not isinstance(sidecar, dict):
+        return {}
+    links = sidecar.get("links", [])
+    if not isinstance(links, list):
+        return {}
+    output: dict[str, list[dict[str, Any]]] = {}
+    for link in links:
+        if not isinstance(link, dict):
+            continue
+        obj_id = str(link.get("obj_id", "") or "").strip()
+        secondary_l2_id = str(link.get("secondary_l2_id", "") or "").strip()
+        if not obj_id or not secondary_l2_id:
+            continue
+        output.setdefault(obj_id, []).append(link)
+    for rows in output.values():
+        rows.sort(key=lambda row: -float(row.get("confidence", 0.0) or 0.0))
+    return output
+
+
+def _should_expand_secondary_l2_links(query: str) -> bool:
+    if _is_evolution_query(query):
+        return True
+    lowered = str(query or "").lower()
+    phrases = (
+        "why",
+        "insufficient",
+        "not enough",
+        "baseline",
+        "rag",
+        "full transcript",
+        "full context",
+        "compare",
+        "comparison",
+        "tradeoff",
+        "parallel",
+        "stm",
+        "ltm",
+        "short-term",
+        "long-term",
+        "l1",
+        "l2",
+        "l3",
+        "topic lifecycle",
+        "abandoned",
+        "decision status",
+        "fade-out",
+        "activation",
+    )
+    return any(phrase in lowered for phrase in phrases)
+
+
+def _should_expand_l3_sibling_context(query: str) -> bool:
+    lowered = str(query or "").lower()
+    markers = (
+        "why",
+        "rationale",
+        "reason",
+        "tradeoff",
+        "trade-off",
+        "evolution",
+        "evolve",
+        "evolved",
+        "lifecycle",
+        "architecture",
+        "design",
+        "shift",
+        "transition",
+        "from",
+        "toward",
+        "\u70ba\u4ec0\u9ebc",
+        "\u70ba\u4f55",
+        "\u539f\u56e0",
+        "\u600e\u9ebc\u6f14\u9032",
+        "\u600e\u9ebc\u6f14\u8b8a",
+        "\u6f14\u9032",
+        "\u6f14\u8b8a",
+        "\u67b6\u69cb",
+        "\u8a2d\u8a08",
+        "\u8f49\u6210",
+        "\u8b8a\u6210",
+        "\u6b0a\u8861",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _sibling_child_l2_score(query: str, child_node: dict[str, Any]) -> float:
+    query_units = _expanded_query_units(query)
+    if not query_units:
+        return 0.0
+    text_parts = [
+        str(child_node.get("label", "") or ""),
+        str(child_node.get("current_state", "") or ""),
+        str(child_node.get("evolution_summary", "") or ""),
+        str(child_node.get("latest_position", "") or ""),
+        str(child_node.get("key_rationale", "") or ""),
+        str(child_node.get("split_reason", "") or ""),
+        " ".join(str(x) for x in child_node.get("assignment_criteria", []) if str(x).strip())
+        if isinstance(child_node.get("assignment_criteria"), list)
+        else "",
+    ]
+    for row in child_node.get("timeline_digest", []):
+        if isinstance(row, dict):
+            text_parts.append(str(row.get("summary", row.get("content", "")) or ""))
+    text = " ".join(text_parts)
+    score = max(_node_query_similarity(query, child_node), _lexical_score(query_units, text))
+    return min(1.0, score)
+
+
+def _rationale_sibling_bonus(query: str, child_node: dict[str, Any]) -> float:
+    if not _should_expand_l3_sibling_context(query):
+        return 0.0
+    text = " ".join(
+        [
+            str(child_node.get("label", "") or ""),
+            str(child_node.get("split_reason", "") or ""),
+            " ".join(str(x) for x in child_node.get("assignment_criteria", []) if str(x).strip())
+            if isinstance(child_node.get("assignment_criteria"), list)
+            else "",
+        ]
+    ).lower()
+    strong_rationale_terms = (
+        "window",
+        "boundary",
+        "chunk",
+        "fixed",
+        "dynamic",
+    )
+    if any(term in text for term in strong_rationale_terms):
+        return 0.32
+    rationale_terms = (
+        "repair",
+        "coverage",
+        "evidence",
+        "baseline",
+        "tradeoff",
+        "trade-off",
+        "grounding",
+    )
+    return 0.08 if any(term in text for term in rationale_terms) else 0.0
+
+
+def _label_units_for_child(child_node: dict[str, Any]) -> set[str]:
+    return _lexical_units(str(child_node.get("label", "") or ""))
 
 
 def _select_timeline_slice(
@@ -955,6 +1393,19 @@ def _select_timeline_slice(
             ]
             latest_span_rows.sort(key=lambda row: -evolution_relevance(row))
             add(latest_span_rows[0])
+        if matched_rows:
+            matched_meeting_ids: list[str] = []
+            for row in matched_rows:
+                meeting_id = str(row.get("meeting_id", "") or "")
+                if meeting_id and meeting_id not in matched_meeting_ids:
+                    matched_meeting_ids.append(meeting_id)
+            for meeting_id in matched_meeting_ids:
+                meeting_rows = [
+                    row for row in rows if str(row.get("meeting_id", "") or "") == meeting_id
+                ]
+                if meeting_rows:
+                    meeting_rows.sort(key=_timeline_event_date)
+                    add(meeting_rows[0])
         remaining = [
             row
             for row in rows
@@ -1211,10 +1662,14 @@ def select_layered_l2_context(
     *,
     l3_view: dict[str, Any] | None = None,
     l3_index: dict[str, Any] | None = None,
+    l2_secondary_links: dict[str, Any] | None = None,
     max_relevant_l2_summaries: int = 3,
     max_expanded_l2_topics: int = 2,
+    max_secondary_l2_topics: int = 2,
+    max_sibling_child_l2_topics: int = 0,
     max_events_per_l2: int = 6,
     max_events_per_child_l2: int = 8,
+    max_events_per_sibling_child_l2: int = 3,
     max_event_chars: int = 280,
     prefer_materialized_l3: bool = True,
     topic_size_penalty: float = 0.05,
@@ -1223,6 +1678,9 @@ def select_layered_l2_context(
         return [], [], {
             "selected_l2_count": 0,
             "selected_child_l2_count": 0,
+            "selected_secondary_l2_count": 0,
+            "selected_sibling_child_l2_count": 0,
+            "sibling_candidate_count": 0,
             "omitted_event_count": 0,
             "large_l2_expanded_without_child_split": False,
         }
@@ -1233,6 +1691,7 @@ def select_layered_l2_context(
         for node in (l3_view or {}).get("l3_nodes", []) if isinstance(node, dict)
     } if isinstance(l3_view, dict) else {}
     groups: dict[str, dict[str, Any]] = {}
+    primary_l2_by_seed: dict[str, str] = {}
 
     for seed in l1_results:
         obj_id = str(seed.get("obj_id", "") or "")
@@ -1241,6 +1700,7 @@ def select_layered_l2_context(
         assignment = l2_index.get(obj_id) if isinstance(l2_index, dict) else None
         if not isinstance(assignment, dict):
             continue
+        primary_l2_by_seed[obj_id] = str(assignment.get("l2_id", "") or "")
         l3_assignment = l3_index.get(obj_id) if isinstance(l3_index, dict) else None
         if prefer_materialized_l3 and isinstance(l3_assignment, dict):
             l3_id = str(l3_assignment.get("l3_id", "") or "")
@@ -1259,6 +1719,10 @@ def select_layered_l2_context(
                         "l2_id": child_l2_id,
                         "label": str(child_node.get("label", "") or ""),
                         "current_state": str(child_node.get("current_state", "") or ""),
+                        "evolution_summary": str(child_node.get("evolution_summary", "") or ""),
+                        "latest_position": str(child_node.get("latest_position", "") or ""),
+                        "key_rationale": str(child_node.get("key_rationale", "") or ""),
+                        "open_tensions": str(child_node.get("open_tensions", "") or ""),
                         "node": child_node,
                         "matched_l1_ids": [],
                         "matched_seed_scores": [],
@@ -1282,6 +1746,10 @@ def select_layered_l2_context(
                 "l2_id": l2_id,
                 "label": str(node.get("label") or assignment.get("l2_label") or ""),
                 "current_state": str(node.get("current_state", "") or ""),
+                "evolution_summary": str(node.get("evolution_summary", "") or ""),
+                "latest_position": str(node.get("latest_position", "") or ""),
+                "key_rationale": str(node.get("key_rationale", "") or ""),
+                "open_tensions": str(node.get("open_tensions", "") or ""),
                 "node": node,
                 "matched_l1_ids": [],
                 "matched_seed_scores": [],
@@ -1292,6 +1760,63 @@ def select_layered_l2_context(
         group["matched_l1_ids"].append(obj_id)
         group["matched_seed_scores"].append(float(seed.get("score", 0.0) or 0.0))
         group["matched_importance"].append(float(seed.get("importance", 0.0) or 0.0))
+
+    if max_secondary_l2_topics > 0 and _should_expand_secondary_l2_links(query):
+        secondary_by_obj = _secondary_links_by_obj(l2_secondary_links)
+        secondary_added = 0
+        for seed in l1_results:
+            if secondary_added >= max_secondary_l2_topics:
+                break
+            obj_id = str(seed.get("obj_id", "") or "")
+            if not obj_id:
+                continue
+            for link in secondary_by_obj.get(obj_id, []):
+                if secondary_added >= max_secondary_l2_topics:
+                    break
+                confidence = float(link.get("confidence", 0.0) or 0.0)
+                if confidence < 0.55:
+                    continue
+                secondary_l2_id = str(link.get("secondary_l2_id", "") or "")
+                if not secondary_l2_id or secondary_l2_id == primary_l2_by_seed.get(obj_id):
+                    continue
+                node = l2_lookup.get(secondary_l2_id)
+                if not node:
+                    continue
+                query_similarity = _node_query_similarity(query, node)
+                if query_similarity <= 0 and confidence < 0.72:
+                    continue
+                key = f"secondary:{secondary_l2_id}"
+                is_new = key not in groups
+                groups.setdefault(
+                    key,
+                    {
+                        "source": "long_term_secondary_l2",
+                        "l2_id": secondary_l2_id,
+                        "label": str(node.get("label") or link.get("secondary_l2_label") or ""),
+                        "current_state": str(node.get("current_state", "") or ""),
+                        "evolution_summary": str(node.get("evolution_summary", "") or ""),
+                        "latest_position": str(node.get("latest_position", "") or ""),
+                        "key_rationale": str(node.get("key_rationale", "") or ""),
+                        "open_tensions": str(node.get("open_tensions", "") or ""),
+                        "node": node,
+                        "matched_l1_ids": [],
+                        "matched_seed_scores": [],
+                        "matched_importance": [],
+                        "secondary_bridge_obj_ids": [],
+                        "secondary_link_reasons": [],
+                    },
+                )
+                group = groups[key]
+                if obj_id not in group["matched_l1_ids"]:
+                    group["matched_l1_ids"].append(obj_id)
+                    group["matched_seed_scores"].append(
+                        float(seed.get("score", 0.0) or 0.0) * min(1.0, confidence)
+                    )
+                    group["matched_importance"].append(float(seed.get("importance", 0.0) or 0.0))
+                    group["secondary_bridge_obj_ids"].append(obj_id)
+                    group["secondary_link_reasons"].append(str(link.get("reason", "") or "secondary_l2_bridge"))
+                if is_new:
+                    secondary_added += 1
 
     rows: list[dict[str, Any]] = []
     for group in groups.values():
@@ -1315,7 +1840,13 @@ def select_layered_l2_context(
             + 0.05 * importance
             - topic_size_penalty * math.log(topic_size + 1)
         )
-        max_events = max_events_per_child_l2 if group["source"] == "long_term_child_l2" else max_events_per_l2
+        if group["source"] == "long_term_child_l2":
+            max_events = max_events_per_child_l2
+        elif group["source"] == "long_term_secondary_l2":
+            max_events = max(2, min(max_events_per_l2, 4))
+            l2_score -= 0.06
+        else:
+            max_events = max_events_per_l2
         selected_timeline, omitted = _select_timeline_slice(
             timeline,
             group["matched_l1_ids"],
@@ -1339,6 +1870,83 @@ def select_layered_l2_context(
     selected = rows[:max(max_relevant_l2_summaries, max_expanded_l2_topics)]
     selected = selected[:max_expanded_l2_topics] + selected[max_expanded_l2_topics:max_relevant_l2_summaries]
     selected = selected[:max_relevant_l2_summaries]
+    sibling_candidate_count = 0
+    if (
+        max_sibling_child_l2_topics > 0
+        and prefer_materialized_l3
+        and l3_nodes
+        and _should_expand_l3_sibling_context(query)
+    ):
+        selected_l2_ids = {str(row.get("l2_id", "") or "") for row in selected}
+        primary_by_parent: dict[str, list[str]] = {}
+        for row in selected:
+            if row.get("source") != "long_term_child_l2":
+                continue
+            parent_l3_id = str(row.get("parent_l3_id", "") or "")
+            child_l2_id = str(row.get("l2_id", "") or "")
+            if parent_l3_id and child_l2_id:
+                primary_by_parent.setdefault(parent_l3_id, []).append(child_l2_id)
+
+        sibling_candidates: list[dict[str, Any]] = []
+        for parent_l3_id, primary_child_ids in primary_by_parent.items():
+            l3_node = l3_nodes.get(parent_l3_id)
+            if not isinstance(l3_node, dict):
+                continue
+            child_lookup = _child_l2_nodes_by_id(l3_node)
+            primary_label_units: set[str] = set()
+            for primary_child_id in primary_child_ids:
+                primary_label_units.update(_label_units_for_child(child_lookup.get(primary_child_id, {})))
+            for child in _child_l2_nodes_by_id(l3_node).values():
+                child_id = str(child.get("l2_id", "") or "")
+                if not child_id or child_id in selected_l2_ids:
+                    continue
+                score = _sibling_child_l2_score(query, child)
+                label_units = _label_units_for_child(child)
+                if label_units:
+                    overlap = len(label_units & primary_label_units) / len(label_units)
+                    if overlap >= 0.5:
+                        score -= 0.35
+                    elif overlap < 0.35:
+                        score += 0.04
+                score += _rationale_sibling_bonus(query, child)
+                if score < 0.15:
+                    continue
+                sibling_candidate_count += 1
+                timeline = child.get("timeline_digest", []) if isinstance(child.get("timeline_digest"), list) else []
+                selected_timeline, omitted = _select_timeline_slice(
+                    timeline,
+                    [],
+                    max_events=max_events_per_sibling_child_l2,
+                    max_event_chars=max_event_chars,
+                    query=query,
+                )
+                sibling_candidates.append(
+                    {
+                        "source": "long_term_sibling_child_l2",
+                        "parent_l3_id": parent_l3_id,
+                        "parent_l3_label": str(l3_node.get("label", "") or ""),
+                        "promoted_from_l2_id": str(l3_node.get("promoted_from_l2_id", "") or ""),
+                        "l2_id": child_id,
+                        "label": str(child.get("label", "") or ""),
+                        "current_state": str(child.get("current_state", "") or ""),
+                        "evolution_summary": str(child.get("evolution_summary", "") or ""),
+                        "latest_position": str(child.get("latest_position", "") or ""),
+                        "key_rationale": str(child.get("key_rationale", "") or ""),
+                        "open_tensions": str(child.get("open_tensions", "") or ""),
+                        "matched_l1_ids": [],
+                        "primary_child_l2_ids": primary_child_ids,
+                        "sibling_expansion_reason": "same_parent_l3_rationale_context",
+                        "topic_size": _node_event_count(child, timeline=timeline),
+                        "selected_event_count": len(selected_timeline),
+                        "omitted_event_count": omitted,
+                        "timeline_digest": selected_timeline,
+                        "selection_score": round(score - topic_size_penalty * 0.5, 4),
+                    }
+                )
+
+        sibling_candidates.sort(key=lambda row: -float(row.get("selection_score", 0.0) or 0.0))
+        selected.extend(sibling_candidates[:max_sibling_child_l2_topics])
+
     l3_contexts: dict[str, dict[str, Any]] = {}
     for row in selected:
         parent_l3_id = str(row.get("parent_l3_id", "") or "")
@@ -1351,6 +1959,11 @@ def select_layered_l2_context(
     debug = {
         "selected_l2_count": sum(1 for row in selected if row.get("source") == "long_term_l2"),
         "selected_child_l2_count": sum(1 for row in selected if row.get("source") == "long_term_child_l2"),
+        "selected_secondary_l2_count": sum(1 for row in selected if row.get("source") == "long_term_secondary_l2"),
+        "selected_sibling_child_l2_count": sum(
+            1 for row in selected if row.get("source") == "long_term_sibling_child_l2"
+        ),
+        "sibling_candidate_count": sibling_candidate_count,
         "omitted_event_count": sum(int(row.get("omitted_event_count", 0) or 0) for row in selected),
         "large_l2_expanded_without_child_split": any(
             row.get("source") == "long_term_l2" and int(row.get("topic_size", 0) or 0) > max_events_per_l2
@@ -1503,6 +2116,62 @@ def expand_relation_graph(
             if len(linked) >= max_linked:
                 return sorted(output + linked, key=lambda row: -float(row.get("score", 0.0) or 0.0))
     return sorted(output + linked, key=lambda row: -float(row.get("score", 0.0) or 0.0))
+
+
+def _select_l1_seed_context(
+    query: str,
+    candidates: list[dict[str, Any]],
+    *,
+    max_l1_seeds: int,
+) -> list[dict[str, Any]]:
+    """Choose prompt-visible L1 seeds.
+
+    For ordinary queries this is score-first. For evolution/history questions,
+    reserve part of the budget for chronological meeting coverage so one
+    high-scoring meeting does not crowd out earlier or later turning points.
+    """
+    if max_l1_seeds <= 0:
+        return []
+    ranked = sorted(candidates, key=lambda row: -float(row.get("score", 0.0) or 0.0))
+    if not _is_evolution_query(query):
+        return ranked[:max_l1_seeds]
+
+    selected: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+
+    def add(row: dict[str, Any]) -> None:
+        if len(selected) >= max_l1_seeds:
+            return
+        obj_id = str(row.get("obj_id", "") or "").strip()
+        key = obj_id or f"{row.get('meeting_id', '')}:{row.get('content', '')}"
+        if key in seen_ids:
+            return
+        seen_ids.add(key)
+        selected.append(row)
+
+    top_score_quota = max(1, min(max_l1_seeds, math.ceil(max_l1_seeds * 0.5)))
+    for row in ranked[:top_score_quota]:
+        add(row)
+
+    by_meeting: dict[str, dict[str, Any]] = {}
+    for row in ranked:
+        meeting_key = str(row.get("meeting_date") or row.get("meeting_id") or "").strip()
+        if not meeting_key:
+            continue
+        if meeting_key not in by_meeting:
+            by_meeting[meeting_key] = row
+
+    for meeting_key in sorted(by_meeting):
+        add(by_meeting[meeting_key])
+        if len(selected) >= max_l1_seeds:
+            break
+
+    for row in ranked:
+        add(row)
+        if len(selected) >= max_l1_seeds:
+            break
+
+    return selected
 
 
 # ===================================================================
@@ -1673,11 +2342,13 @@ def recall(
     relations_index_path: Path | None = None,
     l2_index: dict[str, Any] | None = None,
     l2_view: dict[str, Any] | None = None,
+    l2_secondary_links: dict[str, Any] | None = None,
     l3_promotions: dict[str, Any] | None = None,
     l3_view: dict[str, Any] | None = None,
     l3_index: dict[str, Any] | None = None,
     l2_index_path: Path | None = None,
     l2_view_path: Path | None = None,
+    l2_secondary_links_path: Path | None = None,
     l3_promotions_path: Path | None = None,
     l3_view_path: Path | None = None,
     l3_index_path: Path | None = None,
@@ -1685,13 +2356,15 @@ def recall(
     max_global_topic_map_chars: int = 800,
     max_relevant_l2_summaries: int = 3,
     max_expanded_l2_topics: int = 2,
+    max_sibling_child_l2_topics: int = 0,
     max_events_per_l2: int = 6,
     max_events_per_child_l2: int = 8,
+    max_events_per_sibling_child_l2: int = 3,
     max_event_chars: int = 280,
     prefer_materialized_l3: bool = True,
     topic_size_penalty: float = 0.05,
     include_retrieval_debug: bool = False,
-    retrieval_mode: str = "semantic",
+    retrieval_mode: str = "hybrid",
     use_legacy_parent_fallback: bool = True,
 ) -> dict[str, Any]:
     """Execute a recall plan and return retrieved memories."""
@@ -1719,6 +2392,8 @@ def recall(
         l2_index = load_l2_index(l2_index_path)
     if l2_view is None:
         l2_view = load_l2_view(l2_view_path)
+    if l2_secondary_links is None:
+        l2_secondary_links = load_l2_secondary_links(l2_secondary_links_path)
     if l3_promotions is None:
         l3_promotions = load_l3_promotions(l3_promotions_path)
     if l3_view is None:
@@ -1740,6 +2415,9 @@ def recall(
         "selected_l1_count": 0,
         "selected_l2_count": 0,
         "selected_child_l2_count": 0,
+        "selected_secondary_l2_count": 0,
+        "selected_sibling_child_l2_count": 0,
+        "sibling_candidate_count": 0,
         "global_topic_map_chars": int(global_topic_map.get("char_count", 0) or 0),
         "expanded_context_chars": 0,
         "omitted_event_count": 0,
@@ -1779,9 +2457,23 @@ def recall(
                     }
                 )
 
-    # --- long-term search (semantic L1 + active L2 view expansion) ---
+    # --- long-term search (hybrid L1 + active L2 view expansion) ---
     if any(t.startswith("long_term") for t in targets):
-        if retrieval_mode == "lexical":
+        if retrieval_mode == "hybrid":
+            l1_candidates, hybrid_debug = search_l1_hybrid(
+                tree=tree,
+                query=query,
+                api_key=api_key,
+                cache=embed_cache,
+                keywords=[str(k) for k in keywords if str(k).strip()] if isinstance(keywords, list) else [],
+                obj_types=type_filter or None,
+                top_k=top_k_raw,
+                query_date=query_date,
+                embed_model=embed_model,
+                activity_index=activity_index,
+            )
+            retrieval_debug.update(hybrid_debug)
+        elif retrieval_mode == "lexical":
             l1_candidates = search_l1_lexical(
                 tree=tree,
                 query=query,
@@ -1791,7 +2483,7 @@ def recall(
                 query_date=query_date,
                 activity_index=activity_index,
             )
-        else:
+        elif retrieval_mode == "semantic":
             query_emb = embed_text(query, api_key, embed_cache, model=embed_model)
 
             l1_candidates = search_l1_semantic(
@@ -1805,16 +2497,32 @@ def recall(
                 embed_model=embed_model,
                 activity_index=activity_index,
             )
+        else:
+            l1_candidates, hybrid_debug = search_l1_hybrid(
+                tree=tree,
+                query=query,
+                api_key=api_key,
+                cache=embed_cache,
+                keywords=[str(k) for k in keywords if str(k).strip()] if isinstance(keywords, list) else [],
+                obj_types=type_filter or None,
+                top_k=top_k_raw,
+                query_date=query_date,
+                embed_model=embed_model,
+                activity_index=activity_index,
+            )
+            retrieval_debug["retrieval_mode"] = "hybrid"
+            retrieval_debug.update(hybrid_debug)
 
         if plan.get("complexity") == "complex" and len(l1_candidates) > 5:
             l1_results = recall_gate(query, l1_candidates, api_key, model_name)
         else:
             l1_results = l1_candidates
         l1_results = expand_relation_graph(tree, l1_results, relations_index)
-        l1_results = sorted(
+        l1_results = _select_l1_seed_context(
+            query,
             l1_results,
-            key=lambda row: -float(row.get("score", 0.0) or 0.0),
-        )[:max_l1_seeds_for_prompt]
+            max_l1_seeds=max_l1_seeds_for_prompt,
+        )
 
         l2_results, l3_results, topic_debug = select_layered_l2_context(
             query,
@@ -1823,10 +2531,13 @@ def recall(
             l2_view,
             l3_view=l3_view,
             l3_index=l3_index,
+            l2_secondary_links=l2_secondary_links,
             max_relevant_l2_summaries=max_relevant_l2_summaries,
             max_expanded_l2_topics=max_expanded_l2_topics,
+            max_sibling_child_l2_topics=max_sibling_child_l2_topics,
             max_events_per_l2=max_events_per_l2,
             max_events_per_child_l2=max_events_per_child_l2,
+            max_events_per_sibling_child_l2=max_events_per_sibling_child_l2,
             max_event_chars=max_event_chars,
             prefer_materialized_l3=prefer_materialized_l3,
             topic_size_penalty=topic_size_penalty,
@@ -2091,6 +2802,10 @@ def format_recall_for_prompt(
                 parts.append(
                     f"  parent L3: {node.get('parent_l3_id')} {node.get('parent_l3_label', '')}".rstrip()
                 )
+            if node.get("source") == "long_term_sibling_child_l2":
+                parts.append("  source: sibling child L2")
+                if node.get("sibling_expansion_reason"):
+                    parts.append(f"  why included: {node.get('sibling_expansion_reason')}")
             materialized = node.get("materialized_l3")
             if isinstance(materialized, dict) and materialized.get("l3_id"):
                 parts.append(f"  materialized L3: {materialized['l3_id']}")
@@ -2119,7 +2834,15 @@ def format_recall_for_prompt(
                 f"omitted_event_count={node.get('omitted_event_count', 0)}"
             )
             if node.get("current_state"):
-                parts.append(f"  current_state: {_truncate_text(node['current_state'], 260)}")
+                parts.append(f"  current_state: {_truncate_text(node['current_state'], 190)}")
+            if node.get("evolution_summary"):
+                parts.append(f"  evolution_summary: {_truncate_text(node['evolution_summary'], 180)}")
+            if node.get("latest_position"):
+                parts.append(f"  latest_position: {_truncate_text(node['latest_position'], 150)}")
+            if node.get("key_rationale"):
+                parts.append(f"  key_rationale: {_truncate_text(node['key_rationale'], 150)}")
+            if node.get("open_tensions"):
+                parts.append(f"  open_tensions: {_truncate_text(node['open_tensions'], 130)}")
             timeline = node.get("timeline_digest", [])
             if timeline:
                 parts.append("  timeline_digest:")

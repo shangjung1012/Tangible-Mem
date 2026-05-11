@@ -39,14 +39,23 @@
         <div class="toolbar">
           <input id="traceQuery" value="Why did we split transcripts into segments and idea units?" />
           <select id="traceMode">
-            <option value="lexical">lexical</option>
-            <option value="semantic">semantic</option>
+            <option value="hybrid" selected>Hybrid L1 seed search (lexical + semantic when available)</option>
+            <option value="lexical">Lexical L1 seed search (offline)</option>
+            <option value="semantic">Semantic L1 seed search (embedding API)</option>
           </select>
-          <input id="tracePlannerModel" value="gemini-2.5-flash" title="Planner model used only when no LLM planner is off" />
-          <label><input id="traceDebug" type="checkbox" checked /> include debug</label>
+          <label class="planner-control">
+            Planner model
+            <input id="tracePlannerModel" value="" placeholder="heuristic planner" title="Only used when no LLM planner is off" disabled />
+          </label>
+          <label><input id="traceDebug" type="checkbox" checked /> show debug panel</label>
           <label><input id="traceNoLlm" type="checkbox" checked /> no LLM planner</label>
           <button id="runTrace">Run Layered Retrieval Trace</button>
         </div>
+        <p class="toolbar-note">
+          Retrieval mode controls only the first L1 seed search. L2 / child-L2 / L3 expansion is always layered.
+          Hybrid fuses lexical hits with semantic hits when an embedding client is available, and falls back to lexical when offline.
+        </p>
+        <p id="tracePlannerHint" class="toolbar-note">Heuristic planner: no model call.</p>
         <div id="traceOutput" class="stack"></div>
       </section>
 

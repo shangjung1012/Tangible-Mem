@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ LONG_TERM_TREE_PATH = ROOT / "share_mem" / "tree.json"
 LONG_TERM_DIR = ROOT / "long_term"
 LONG_TERM_L2_INDEX_PATH = LONG_TERM_DIR / "l2" / "l2_index.json"
 LONG_TERM_L2_VIEW_PATH = LONG_TERM_DIR / "l2" / "l2_view.json"
+LONG_TERM_L2_SECONDARY_LINKS_PATH = LONG_TERM_DIR / "l2" / "l2_secondary_links.json"
 LONG_TERM_L3_PROMOTIONS_PATH = LONG_TERM_DIR / "l3" / "l3_promotions.json"
 LONG_TERM_L3_VIEW_PATH = LONG_TERM_DIR / "l3" / "l3_view.json"
 LONG_TERM_L3_INDEX_PATH = LONG_TERM_DIR / "l3" / "l3_index.json"
@@ -20,6 +22,8 @@ if str(LONG_TERM_DIR) not in sys.path:
 
 from recall import format_recall_for_prompt, recall
 from recall_planner import plan_recall
+from current_state_context import current_state_context_for_query
+from retrieval_profiles import get_retrieval_budget_profile
 
 try:
     from .memory_router import plan_memory_retrieval
@@ -37,10 +41,35 @@ def load_json_object(path: Path) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
+def _heuristic_long_term_plan(query: str) -> dict[str, Any]:
+    keywords = [
+        piece.lower().replace("_", "-")
+        for piece in re.findall(r"[A-Za-z0-9][A-Za-z0-9_-]*|[\u4e00-\u9fff]{2,}", str(query or ""))
+        if piece.strip()
+    ][:12]
+    return {
+        "complexity": "simple",
+        "reasoning": "no-LLM heuristic long-term memory plan",
+        "search_targets": ["long_term_l1", "long_term_l2", "long_term_l3"],
+        "keywords": keywords,
+        "time_range_hint": "",
+    }
+
+
 def _trim_context(context: str, max_chars: int) -> str:
+    if max_chars <= 0:
+        return context
     if len(context) <= max_chars:
         return context
     return context[:max_chars] + "\n...(truncated)"
+
+
+def _long_term_runtime_budget_profile() -> dict[str, Any]:
+    profile_name = os.getenv("LONG_TERM_RETRIEVAL_BUDGET_PROFILE", "generous_layered")
+    try:
+        return get_retrieval_budget_profile(profile_name)
+    except ValueError:
+        return get_retrieval_budget_profile("generous_layered")
 
 
 def retrieve_memory_context(
@@ -48,7 +77,9 @@ def retrieve_memory_context(
     api_key: str,
     model_name: str,
     planner_model_name: str | None = None,
-    max_context_chars: int = 6000,
+    max_context_chars: int = 16000,
+    use_llm_planner: bool = False,
+    retrieval_mode: str = "hybrid",
 ) -> str:
     plan = plan_memory_retrieval(query)
     targets = [
@@ -62,8 +93,15 @@ def retrieve_memory_context(
     short_term_budget = max_context_chars
     long_term_budget = max_context_chars
     if "short_term" in targets and "long_term" in targets:
-        short_term_budget = max(700, min(1600, max_context_chars // 3))
-        long_term_budget = max(1200, max_context_chars - short_term_budget - 300)
+        if max_context_chars <= 0:
+            short_term_budget = 0
+            long_term_budget = 0
+        elif max_context_chars < 2400:
+            short_term_budget = max(300, max_context_chars // 2 - 150)
+            long_term_budget = max(300, max_context_chars - short_term_budget - 300)
+        else:
+            short_term_budget = max(1200, min(2400, max_context_chars // 4))
+            long_term_budget = max(2400, max_context_chars - short_term_budget - 300)
 
     parts = [
         "=== Memory Router ===",
@@ -94,6 +132,8 @@ def retrieve_memory_context(
                     model_name=model_name,
                     planner_model_name=planner_model_name,
                     max_context_chars=long_term_budget,
+                    use_llm_planner=use_llm_planner,
+                    retrieval_mode=retrieval_mode,
                 )[:long_term_budget],
             ]
         )
@@ -135,19 +175,25 @@ def retrieve_long_term_context(
     api_key: str,
     model_name: str,
     planner_model_name: str | None = None,
-    max_context_chars: int = 6000,
+    max_context_chars: int = 16000,
+    use_llm_planner: bool = False,
+    retrieval_mode: str = "hybrid",
 ) -> str:
     tree = load_json_object(LONG_TERM_TREE_PATH)
     if not tree:
         return "（無長期記憶）"
 
-    effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
-    plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
+    if use_llm_planner:
+        effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "") or model_name
+        plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
+    else:
+        plan = _heuristic_long_term_plan(query)
     long_targets = [t for t in plan.get("search_targets", []) if t.startswith("long_term_")]
     if not long_targets:
         long_targets = ["long_term_l1", "long_term_l2", "long_term_l3"]
     plan["search_targets"] = long_targets
 
+    budget = _long_term_runtime_budget_profile()
     result = recall(
         query=query,
         plan=plan,
@@ -157,22 +203,35 @@ def retrieve_long_term_context(
         short_term_memory=None,
         l2_index_path=LONG_TERM_L2_INDEX_PATH,
         l2_view_path=LONG_TERM_L2_VIEW_PATH,
+        l2_secondary_links_path=LONG_TERM_L2_SECONDARY_LINKS_PATH,
         l3_promotions_path=LONG_TERM_L3_PROMOTIONS_PATH,
         l3_view_path=LONG_TERM_L3_VIEW_PATH,
         l3_index_path=LONG_TERM_L3_INDEX_PATH,
-        top_k_raw=30,
-        max_l1_seeds_for_prompt=8,
-        max_global_topic_map_chars=800,
-        max_relevant_l2_summaries=3,
-        max_expanded_l2_topics=2,
-        max_events_per_l2=6,
-        max_events_per_child_l2=8,
-        max_event_chars=280,
-        prefer_materialized_l3=True,
-        topic_size_penalty=0.05,
+        top_k_raw=int(budget["top_k_raw"]),
+        max_l1_seeds_for_prompt=int(budget["max_l1_seeds_for_prompt"]),
+        max_global_topic_map_chars=int(budget["max_global_topic_map_chars"]),
+        max_relevant_l2_summaries=int(budget["max_relevant_l2_summaries"]),
+        max_expanded_l2_topics=int(budget["max_expanded_l2_topics"]),
+        max_sibling_child_l2_topics=int(budget.get("max_sibling_child_l2_topics", 0) or 0),
+        max_events_per_l2=int(budget["max_events_per_l2"]),
+        max_events_per_child_l2=int(budget["max_events_per_child_l2"]),
+        max_events_per_sibling_child_l2=int(
+            budget.get("max_events_per_sibling_child_l2", 3) or 3
+        ),
+        max_event_chars=int(budget["max_event_chars"]),
+        prefer_materialized_l3=bool(budget["prefer_materialized_l3"]),
+        topic_size_penalty=float(budget["topic_size_penalty"]),
         include_retrieval_debug=False,
+        retrieval_mode=retrieval_mode,
     )
-    context = format_recall_for_prompt(result)
+    context = format_recall_for_prompt(
+        result,
+        l1_content_chars=220,
+        l1_evidence_chars=320,
+    )
+    current_state_context = current_state_context_for_query(query, ROOT)
+    if current_state_context:
+        context = f"{current_state_context}\n\n{context}"
     if len(context) > max_context_chars:
         return context[:max_context_chars] + "\n...(truncated)"
     return context

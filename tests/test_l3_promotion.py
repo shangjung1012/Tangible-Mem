@@ -406,6 +406,54 @@ class L3PromotionTests(unittest.TestCase):
         self.assertNotIn("L2-answer-quality-and-traceability", child_ids)
         self.assertEqual(set(materialized["l3_index"]), {"L1-full", "L1-layered"})
 
+    def test_materialized_child_l2_has_real_topic_state_not_placeholder(self) -> None:
+        node = {
+            "l2_id": "L2-retrieval-baseline-comparison",
+            "label": "retrieval baseline comparison",
+            "current_state": "Baseline comparison topic.",
+            "linked_obj_ids": ["L1-full", "L1-layered"],
+            "meeting_ids": ["0429", "0506"],
+            "timeline_digest": [
+                {
+                    "meeting_id": "0429",
+                    "meeting_date": "2026-04-29",
+                    "obj_id": "L1-full",
+                    "summary": "Full context baseline injects the whole transcript and creates a high token cost.",
+                },
+                {
+                    "meeting_id": "0506",
+                    "meeting_date": "2026-05-06",
+                    "obj_id": "L1-layered",
+                    "summary": "Layered memory answers from L1 evidence plus L2 and L3 navigation context.",
+                },
+            ],
+        }
+        promotions = build_l3_promotion_sidecar(
+            {"l2_nodes": [node]},
+            total_l1_count=10,
+            thresholds={"absolute_l1_threshold": 2},
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        materialized = build_l3_materialization_sidecar(
+            {"l2_nodes": [node]},
+            promotions,
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        child = next(
+            child
+            for child in materialized["l3_nodes"][0]["child_l2_nodes"]
+            if child["l2_id"] == "L2-layered-memory-comparison"
+        )
+        self.assertNotIn("This child L2 has", child["current_state"])
+        self.assertIn("Layered memory", child["current_state"])
+        self.assertIn("evolution_summary", child)
+        self.assertIn("latest_position", child)
+        self.assertIn("key_rationale", child)
+        self.assertIn("open_tensions", child)
+        self.assertEqual(child["representative_l1_ids"], ["L1-layered"])
+
     def test_memory_evaluation_validation_metrics_route_to_metrics_child(self) -> None:
         node = {
             "l2_id": "L2-memory-evaluation-strategy",

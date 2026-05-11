@@ -310,7 +310,9 @@ context on by default:
   retrieve long-term;
 - non-meeting questions retrieve none.
 
-Long-term retrieval starts from semantic L1 search over `share_mem/tree.json`.
+Long-term retrieval starts from hybrid L1 search over `share_mem/tree.json`:
+lexical hits are always available, semantic hits are fused when an embedding
+client is configured, and lexical fallback is used when offline.
 Every long-term retrieval also includes a compact global topic map, then expands
 only a small number of L2 / child L2 contexts from the selected L1 seeds:
 
@@ -322,6 +324,14 @@ L1 hit obj_id
   -> otherwise long_term/l2/l2_index.json and l2_view.json fallback
   -> compact evolution slice, not full large-topic timeline
 ```
+
+For rationale, evolution, architecture, design, and tradeoff queries, retrieval
+may also include a small same-parent L3 sibling child-L2 slice. This is a
+retrieval-time supplement only: it does not reassign L1, does not cross L3
+families, and does not run for local factual queries. The sibling cap is part
+of the selected retrieval budget profile, so large-corpus tight runs can keep it
+disabled while the app/Observatory `generous_layered` profile can expose the
+topic-family context needed for explanation.
 
 Missing L2 assignments are non-fatal; the system can still answer from L1.
 Legacy temporal phase/profile expansion is fallback only.
@@ -339,6 +349,12 @@ The global topic map is navigation context only. Concrete facts should be
 grounded in L1 evidence; L2/child L2 supplies cross-meeting evolution; L3 is a
 topic family layer.
 
+Generated L2 and child-L2 nodes now include deterministic topic-state metadata
+(`current_state`, `evolution_summary`, `latest_position`, `key_rationale`,
+`open_tensions`, and `representative_l1_ids`). These are rebuildable sidecar
+caches generated from each topic timeline, not raw evidence edits. If a
+summary conflicts with L1 evidence, L1 wins.
+
 Retrieval evaluation has an offline deterministic mode for repeatable parameter
 checks:
 
@@ -347,11 +363,13 @@ uv run python long_term/evaluate_retrieval.py \
   --queries long_term/eval/long_term_retrieval_queries.jsonl \
   --out long_term/eval \
   --no-llm \
-  --retrieval-mode lexical
+  --retrieval-mode hybrid
 ```
 
-In this mode `--no-llm` uses a heuristic recall plan and lexical L1 retrieval.
-It does not call the Gemini planner, embedding API, or final answer LLM.
+In this mode `--no-llm` uses a heuristic recall plan and does not call the
+Gemini planner or final answer LLM. `--retrieval-mode hybrid` may use semantic
+embeddings if a client is available; use `--retrieval-mode lexical` for a fully
+offline smoke test.
 `strict_gold_obj_ids` can preserve older exact seed expectations while
 `expected_obj_ids` records the current acceptable L1 evidence set used for
 regression scoring.

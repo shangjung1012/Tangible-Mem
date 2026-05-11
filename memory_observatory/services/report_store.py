@@ -37,7 +37,27 @@ class ReportStore:
         self.write_json(run_dir / "summary.json", result.get("summary", {}))
         self.write_json(run_dir / "visualization_data.json", result)
 
-    def list_runs(self) -> list[dict[str, Any]]:
+    def _is_legacy_run(self, run_id: str, data: dict[str, Any]) -> bool:
+        if not run_id.startswith("observatory_"):
+            return False
+        config = data.get("config", {})
+        if not isinstance(config, dict):
+            return True
+        required_keys = {
+            "retrieval_mode",
+            "no_llm",
+            "planner_model",
+            "full_context_scope",
+            "rag_top_k",
+        }
+        if not required_keys.issubset(config):
+            return True
+        planner_model = str(config.get("planner_model") or "")
+        if config.get("no_llm") is True and planner_model not in {"", "heuristic"}:
+            return True
+        return False
+
+    def list_runs(self, *, include_legacy: bool = False) -> list[dict[str, Any]]:
         if not self.runs_root.exists():
             return []
         rows: list[dict[str, Any]] = []
@@ -47,12 +67,18 @@ class ReportStore:
             results_path = child / "results.json"
             if not results_path.exists():
                 continue
+            data = load_json(results_path, {})
+            data = data if isinstance(data, dict) else {}
+            is_legacy = self._is_legacy_run(child.name, data)
+            if is_legacy and not include_legacy:
+                continue
             summary = load_json(child / "summary.json", {})
             rows.append(
                 {
                     "run_id": child.name,
                     "path": str(child),
                     "has_results": results_path.exists(),
+                    "is_legacy": is_legacy,
                     "summary": summary if isinstance(summary, dict) else {},
                 }
             )

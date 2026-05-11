@@ -30,6 +30,10 @@ class MemoryDemoReadinessTests(unittest.TestCase):
             tree_path = root / "share_mem" / "tree.json"
             l2_index_path = root / "long_term" / "l2" / "l2_index.json"
             l2_view_path = root / "long_term" / "l2" / "l2_view.json"
+            l2_secondary_links_path = root / "long_term" / "l2" / "l2_secondary_links.json"
+            l3_promotions_path = root / "long_term" / "l3" / "l3_promotions.json"
+            l3_view_path = root / "long_term" / "l3" / "l3_view.json"
+            l3_index_path = root / "long_term" / "l3" / "l3_index.json"
             _write_json(
                 tree_path,
                 {
@@ -85,6 +89,10 @@ class MemoryDemoReadinessTests(unittest.TestCase):
                     ]
                 },
             )
+            _write_json(l2_secondary_links_path, {})
+            _write_json(l3_promotions_path, {"promotions": []})
+            _write_json(l3_view_path, {"l3_nodes": []})
+            _write_json(l3_index_path, {})
 
             with patch.object(memory_context, "LONG_TERM_TREE_PATH", tree_path), patch.object(
                 memory_context,
@@ -94,6 +102,22 @@ class MemoryDemoReadinessTests(unittest.TestCase):
                 memory_context,
                 "LONG_TERM_L2_VIEW_PATH",
                 l2_view_path,
+            ), patch.object(
+                memory_context,
+                "LONG_TERM_L2_SECONDARY_LINKS_PATH",
+                l2_secondary_links_path,
+            ), patch.object(
+                memory_context,
+                "LONG_TERM_L3_PROMOTIONS_PATH",
+                l3_promotions_path,
+            ), patch.object(
+                memory_context,
+                "LONG_TERM_L3_VIEW_PATH",
+                l3_view_path,
+            ), patch.object(
+                memory_context,
+                "LONG_TERM_L3_INDEX_PATH",
+                l3_index_path,
             ), patch.object(
                 memory_context,
                 "plan_recall",

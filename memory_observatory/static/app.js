@@ -155,28 +155,208 @@ async function loadOverview() {
   $("#overviewCards").replaceChildren(...fields.map((key) => card(key, String(data[key] ?? 0))));
 }
 
+function traceModeLabel(mode) {
+  if (mode === "hybrid") return "L1 search: hybrid (lexical + semantic when available)";
+  if (mode === "semantic") return "L1 search: semantic (embedding API)";
+  return "L1 search: lexical (offline)";
+}
+
+function syncTracePlannerControl() {
+  const noLlm = $("#traceNoLlm").checked;
+  const tracePlannerModel = $("#tracePlannerModel");
+  const hint = $("#tracePlannerHint");
+  tracePlannerModel.disabled = noLlm;
+  if (noLlm) {
+    tracePlannerModel.value = "";
+    tracePlannerModel.placeholder = "heuristic planner";
+    hint.textContent = "Heuristic planner: no model call.";
+  } else {
+    if (!tracePlannerModel.value) tracePlannerModel.value = "gemini-2.5-pro";
+    tracePlannerModel.placeholder = "gemini-2.5-pro";
+    hint.textContent = "LLM planner enabled. This model is used only for recall planning; answer/recall model remains separate.";
+  }
+}
+
+function renderTraceL2Card(item) {
+  const node = memoryCard(
+    item.l2_id,
+    `${item.label || ""} | selected ${item.selected_event_count || 0} | omitted ${item.omitted_event_count || 0}`,
+    timelineText(item.timeline_digest) || item.current_state,
+    ["l2", "click for L2 detail"],
+  );
+  node.classList.add("clickable-card");
+  node.addEventListener("click", () => loadTraceL2Detail(item));
+  return node;
+}
+
+function renderTraceGlobalTopicMap(map) {
+  const topicMap = map || {};
+  const families = topicMap.l3_families || [];
+  const unpromoted = topicMap.l2_topics || [];
+  return el("div", { class: "panel trace-topic-map" }, [
+    el("h2", { text: "Global Topic Map" }),
+    el("p", {
+      class: "muted",
+      text: topicMap.note || "Navigation context only; do not use as standalone factual evidence.",
+    }),
+    ...families.map((family) => el("div", { class: "subpanel" }, [
+      el("div", { class: "tag-row" }, [
+        tag("L3", "l3"),
+        tag(`${family.event_count || 0} L1`, ""),
+        family.focused ? tag("query focused", "feedback") : null,
+      ]),
+      el("h3", { text: family.label || family.l3_id || "L3 topic family" }),
+      el("div", { class: "label", text: family.l3_id || "" }),
+      el("div", { class: "tag-row" }, (family.child_l2 || []).map((child) =>
+        tag(`${child.label || child.l2_id} (${child.event_count || 0})`, "l2")
+      )),
+    ])),
+    unpromoted.length ? el("div", { class: "subpanel" }, [
+      el("h3", { text: "Unpromoted L2 topics" }),
+      el("div", { class: "tag-row" }, unpromoted.map((topic) =>
+        tag(`${topic.label || topic.l2_id} (${topic.event_count || 0})`, "l2")
+      )),
+    ]) : null,
+  ]);
+}
+
+function renderTraceL3Navigation(items) {
+  const rows = items || [];
+  return el("div", { class: "panel trace-l3-navigation" }, [
+    el("h2", { text: "Parent L3 Navigation" }),
+    rows.length
+      ? el("div", { class: "cards mini-cards" }, rows.map((item) =>
+        memoryCard(item.l3_id, item.label || "", "Topic family selected from L1 seed obj_id links.", ["l3"])
+      ))
+      : el("p", { class: "muted", text: "No parent L3 selected for this trace." }),
+  ]);
+}
+
+function renderTraceDebugPanel(data) {
+  const metrics = data.metrics || {};
+  const debug = data.retrieval_debug || {};
+  return el("div", { class: "panel trace-debug" }, [
+    el("h2", { text: "Retrieval Debug" }),
+    keyValueRows([
+      { label: "selected L1", value: metrics.selected_l1_count },
+      { label: "selected L2", value: metrics.selected_l2_count },
+      { label: "selected child L2", value: metrics.selected_child_l2_count },
+      { label: "selected L3", value: metrics.selected_l3_count },
+      { label: "omitted events", value: metrics.omitted_event_count },
+      { label: "context chars", value: metrics.context_char_count },
+      { label: "estimated tokens", value: metrics.estimated_context_tokens },
+      { label: "prompt budget", value: metrics.prompt_budget_pass ? "pass" : "fail" },
+      { label: "hybrid lexical hits", value: debug.hybrid_lexical_count },
+      { label: "hybrid semantic hits", value: debug.hybrid_semantic_count },
+      { label: "semantic used", value: debug.hybrid_semantic_used === undefined ? "" : String(debug.hybrid_semantic_used) },
+    ]),
+  ]);
+}
+
+function renderTraceTimeline(title, timeline, limit = 80) {
+  const rows = (Array.isArray(timeline) ? timeline : []).slice(0, limit);
+  if (!rows.length) {
+    return el("div", { class: "subpanel" }, [
+      el("h3", { text: title }),
+      el("p", { class: "muted", text: "No timeline events in this view." }),
+    ]);
+  }
+  return el("div", { class: "subpanel" }, [
+    el("h3", { text: title }),
+    el("div", { class: "timeline" }, rows.map((event) => el("div", { class: "timeline-event" }, [
+      el("div", { class: "timeline-dot" }),
+      el("div", {}, [
+        el("strong", { text: `${event.meeting_date || event.meeting_id || ""} | ${event.obj_id || ""}` }),
+        el("p", { text: preview(event.summary || event.content || "", 520) }),
+      ]),
+    ]))),
+  ]);
+}
+
+async function loadTraceL2Detail(traceItem) {
+  const target = $("#traceL2Detail");
+  if (!target || !traceItem || !traceItem.l2_id) return;
+  target.replaceChildren(el("p", { class: "muted", text: "Loading L2 topic detail..." }));
+  const fullTopic = await api(`/api/topics/l2/${encodeURIComponent(traceItem.l2_id)}`);
+  const matched = traceItem.matched_l1_ids || [];
+  const linkedObjects = fullTopic.linked_l1_objects || [];
+  target.replaceChildren(
+    el("div", { class: "trace-l2-detail-header" }, [
+      el("div", {}, [
+        el("h2", { text: traceItem.label || fullTopic.label || traceItem.l2_id }),
+        el("div", { class: "label", text: traceItem.l2_id }),
+      ]),
+      el("div", { class: "tag-row" }, [
+        tag("Selected in this trace", "l2"),
+        fullTopic.parent_l3_id ? tag(`parent ${fullTopic.parent_l3_id}`, "l3") : tag("unpromoted L2", ""),
+      ]),
+    ]),
+    el("div", { class: "cards mini-cards" }, [
+      card("matched_l1", String(matched.length)),
+      card("selected_events", String(traceItem.selected_event_count || 0)),
+      card("omitted_events", String(traceItem.omitted_event_count || 0)),
+      card("full_l2_linked_l1", String(linkedObjects.length || fullTopic.event_count || 0)),
+    ]),
+    renderKeyValueBlock("Selected in this trace", [
+      `matched L1: ${matched.length ? matched.join(", ") : "none"}`,
+      `prompt slice: ${traceItem.selected_event_count || 0} event(s) shown, ${traceItem.omitted_event_count || 0} omitted`,
+      "This is the compact context actually injected into the trace prompt.",
+    ].join("\n")),
+    renderTraceTimeline("Selected timeline slice", traceItem.timeline_digest || [], 20),
+    renderKeyValueBlock("Full L2 topic", fullTopic.current_state || fullTopic.split_reason || "No full topic state available."),
+    renderTraceTimeline("Full L2 timeline", fullTopic.timeline_digest || [], 80),
+    el("div", { class: "subpanel" }, [
+      el("h3", { text: `Linked L1 objects (${linkedObjects.length})` }),
+      ...linkedObjects.slice(0, 30).map((obj) => el("div", { class: "evidence-card l1-evidence" }, [
+        el("strong", { text: obj.obj_id || "" }),
+        el("div", { class: "label", text: `${obj.meeting_id || ""} | ${obj.type || ""} | imp ${fmtNumber(obj.effective_importance ?? obj.importance)}` }),
+        el("p", { text: preview(obj.content || obj.content_preview, 300) }),
+      ])),
+      linkedObjects.length > 30 ? el("p", { class: "muted", text: `${linkedObjects.length - 30} more linked L1 objects omitted from the detail panel.` }) : null,
+    ]),
+  );
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 async function runTrace() {
+  syncTracePlannerControl();
   const q = encodeURIComponent($("#traceQuery").value);
   const mode = $("#traceMode").value;
   const noLlm = $("#traceNoLlm").checked;
   const debug = $("#traceDebug").checked;
-  const plannerModel = encodeURIComponent($("#tracePlannerModel").value || "");
-  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=${debug}&planner_model=${plannerModel}`);
+  const plannerModel = encodeURIComponent(noLlm ? "" : ($("#tracePlannerModel").value || ""));
+  const budgetProfile = "observatory_trace";
+  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=false&planner_model=${plannerModel}&budget_profile=${budgetProfile}`);
   const out = $("#traceOutput");
-  out.replaceChildren(
+  const planTags = [
+    { text: traceModeLabel(data.retrieval_mode) },
+    { text: "L2/L3 expansion: layered" },
+    data.use_llm_planner
+      ? { text: `planner model: ${data.planner_model || ""}` }
+      : { text: "Heuristic planner: no model call" },
+    { text: `recall/gate model: ${data.answer_model || ""}` },
+    { text: `budget profile: ${budgetProfile}` },
+    { text: `prompt budget: ${data.metrics.prompt_budget_pass ? "pass" : "fail"}`, class: data.metrics.prompt_budget_pass ? "feedback" : "warn" },
+    { text: `omitted events: ${data.metrics.omitted_event_count || 0}` },
+  ];
+  const traceSections = [
     card("Query / Plan", `${data.metrics.selected_l1_count} L1, ${data.metrics.selected_l2_count} L2, ${data.metrics.selected_child_l2_count} child L2`, [
-      { text: data.retrieval_mode },
-      { text: data.use_llm_planner ? "LLM planner" : "heuristic" },
-      { text: `planner: ${data.planner_model || ""}` },
-      { text: `answer: ${data.answer_model || ""}` },
+      ...planTags,
     ]),
-    section("Global Topic Map", JSON.stringify(data.global_topic_map, null, 2)),
     listSection("L1 Evidence Seeds", data.l1_evidence_seeds, (item) =>
       memoryCard(item.obj_id, `${item.meeting_id} | ${item.type} | score ${item.score}`, item.content, ["l1"])),
     listSection("L2 / Child-L2 Evolution Context", data.l2_evolution_context, (item) =>
-      memoryCard(item.l2_id, `${item.label || ""} | omitted ${item.omitted_event_count || 0}`, item.current_state || item.timeline_digest, ["l2"])),
+      renderTraceL2Card(item)),
+    renderTraceL3Navigation(data.l3_navigation),
+    renderTraceGlobalTopicMap(data.global_topic_map),
+    el("div", { id: "traceL2Detail", class: "panel trace-l2-detail" }, [
+      el("h2", { text: "L2 Detail" }),
+      el("p", { class: "muted", text: "Click an L2 / child-L2 card above to see what this trace selected and what the full L2 contains." }),
+    ]),
     section("Formatted Prompt Context", data.formatted_prompt_context),
-  );
+    debug ? renderTraceDebugPanel(data) : null,
+  ].filter(Boolean);
+  out.replaceChildren(...traceSections);
 }
 
 async function loadExplorer() {
@@ -545,7 +725,7 @@ function renderStrategyDetail(strategy, item) {
     el("div", { class: "panel-header" }, [
       el("h2", { text: STRATEGY_LABELS[strategy] || strategy }),
       el("div", { class: "tag-row" }, [
-        item.truncated || metrics.truncated ? tag("truncated", "warn") : tag("not truncated", "feedback"),
+        item.truncated || metrics.truncated ? tag("budget limited", "warn") : tag("not limited", "feedback"),
         strategy === "layered_memory" ? tag("L1 -> L2/L3", "l2") : null,
         strategy === "rag_baseline" ? tag("chunks", "rag") : null,
       ]),
@@ -628,10 +808,10 @@ $("#runExperiment").addEventListener("click", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       strategies: ["full_context", "rag_baseline", "layered_memory"],
-      retrieval_mode: "lexical",
+      retrieval_mode: "hybrid",
       no_llm: true,
       generate_answers: false,
-      planner_model: "gemini-2.5-flash",
+      planner_model: "",
       max_context_chars: 0,
     }),
   });
@@ -639,6 +819,8 @@ $("#runExperiment").addEventListener("click", async () => {
   $("#runSelect").value = result.run_id;
 });
 $("#runTrace").addEventListener("click", runTrace);
+$("#traceNoLlm").addEventListener("change", syncTracePlannerControl);
+syncTracePlannerControl();
 
 loadOverview();
 loadExplorer();

@@ -148,6 +148,8 @@ class RecallL2ViewTests(unittest.TestCase):
                 api_key="test-key",
                 l2_index=_l2_index(),
                 l2_view=_l2_view(),
+                l3_view={},
+                l3_index={},
                 relations_index={},
             )
 
@@ -214,6 +216,27 @@ class RecallL2ViewTests(unittest.TestCase):
         self.assertIn("Recall starts from semantic L1 evidence", formatted)
         self.assertIn("matched L1: L1-0307-001", formatted)
         self.assertIn("The team chose L1 evidence", formatted)
+
+    def test_prompt_context_truncation_marker_uses_plain_ellipsis(self) -> None:
+        shortened = recall._truncate_text("abcdefg", 6)
+
+        self.assertEqual(shortened, "abc...")
+        self.assertNotIn("truncated", shortened.lower())
+
+    def test_prompt_context_truncates_timeline_event_at_natural_boundary(self) -> None:
+        text = (
+            "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法"
+            "來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文字。"
+            "第二種是完整逐字稿切分後再修補跨窗口遺漏。"
+        )
+
+        shortened = recall._truncate_text(text, 80)
+
+        self.assertEqual(
+            shortened,
+            "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。...",
+        )
+        self.assertNotIn("第一種", shortened)
 
     def test_l2_context_includes_l3_promotion_when_sidecar_exists(self) -> None:
         promotions = {
@@ -352,6 +375,219 @@ class RecallL2ViewTests(unittest.TestCase):
         self.assertEqual(result["long_term_l2"][0]["parent_l3_id"], "L3-memory-retrieval")
         self.assertEqual(result["retrieval_debug"]["selected_child_l2_count"], 1)
 
+    def test_rationale_query_expands_relevant_sibling_child_l2_under_same_l3(self) -> None:
+        l1_results = [
+            {
+                "obj_id": "L1-primary",
+                "score": 0.94,
+                "importance": 0.8,
+            }
+        ]
+        l2_index = {"L1-primary": {"l2_id": "L2-transcript-processing"}}
+        l2_view = {"l2_nodes": [{"l2_id": "L2-transcript-processing", "label": "transcript processing"}]}
+        l3_view = {
+            "l3_nodes": [
+                {
+                    "l3_id": "L3-transcript-processing",
+                    "label": "transcript processing",
+                    "child_l2_nodes": [
+                        {
+                            "l2_id": "L2-idea-unit-generation-methods",
+                            "label": "idea-unit generation methods",
+                            "current_state": "The team moved toward idea-unit generation.",
+                            "timeline_digest": [
+                                {
+                                    "meeting_id": "0422",
+                                    "meeting_date": "2026-04-22",
+                                    "obj_id": "L1-primary",
+                                    "summary": "Idea-unit generation replaced turn-based updates.",
+                                }
+                            ],
+                            "linked_obj_ids": ["L1-primary"],
+                            "event_count": 1,
+                        },
+                        {
+                            "l2_id": "L2-window-and-boundary-selection",
+                            "label": "window and boundary selection",
+                            "current_state": "Window size and boundaries constrain segmentation quality.",
+                            "timeline_digest": [
+                                {
+                                    "meeting_id": "0429",
+                                    "meeting_date": "2026-04-29",
+                                    "obj_id": "L1-sibling-a",
+                                    "summary": "Fixed transcript windows can split one rationale across boundaries.",
+                                },
+                                {
+                                    "meeting_id": "0506",
+                                    "meeting_date": "2026-05-06",
+                                    "obj_id": "L1-sibling-b",
+                                    "summary": "Boundary selection affects segment and idea-unit quality.",
+                                },
+                                {
+                                    "meeting_id": "0506",
+                                    "meeting_date": "2026-05-06",
+                                    "obj_id": "L1-sibling-c",
+                                    "summary": "The pipeline reviews neighboring windows for continuity.",
+                                },
+                                {
+                                    "meeting_id": "0506",
+                                    "meeting_date": "2026-05-06",
+                                    "obj_id": "L1-sibling-d",
+                                    "summary": "A later diagnostic checks whether boundaries dropped evidence.",
+                                },
+                            ],
+                            "linked_obj_ids": [
+                                "L1-sibling-a",
+                                "L1-sibling-b",
+                                "L1-sibling-c",
+                                "L1-sibling-d",
+                            ],
+                            "event_count": 4,
+                        },
+                        {
+                            "l2_id": "L2-unrelated-sibling",
+                            "label": "administrative logistics",
+                            "current_state": "Meeting logistics and scheduling.",
+                            "timeline_digest": [
+                                {
+                                    "meeting_id": "0506",
+                                    "meeting_date": "2026-05-06",
+                                    "obj_id": "L1-logistics",
+                                    "summary": "The team discussed a meeting room.",
+                                }
+                            ],
+                            "linked_obj_ids": ["L1-logistics"],
+                            "event_count": 1,
+                        },
+                    ],
+                }
+            ]
+        }
+        l3_index = {
+            "L1-primary": {
+                "l3_id": "L3-transcript-processing",
+                "child_l2_id": "L2-idea-unit-generation-methods",
+            }
+        }
+
+        selected, l3_context, debug = recall.select_layered_l2_context(
+            "Why did the transcript architecture evolve from windows into segment and idea-unit processing?",
+            l1_results,
+            l2_index,
+            l2_view,
+            l3_view=l3_view,
+            l3_index=l3_index,
+            max_relevant_l2_summaries=3,
+            max_expanded_l2_topics=1,
+            max_events_per_child_l2=3,
+            max_sibling_child_l2_topics=2,
+            max_events_per_sibling_child_l2=3,
+        )
+
+        selected_by_id = {row["l2_id"]: row for row in selected}
+        self.assertIn("L2-idea-unit-generation-methods", selected_by_id)
+        self.assertIn("L2-window-and-boundary-selection", selected_by_id)
+        self.assertNotIn("L2-unrelated-sibling", selected_by_id)
+        sibling = selected_by_id["L2-window-and-boundary-selection"]
+        self.assertEqual(sibling["source"], "long_term_sibling_child_l2")
+        self.assertEqual(sibling["primary_child_l2_ids"], ["L2-idea-unit-generation-methods"])
+        self.assertLessEqual(sibling["selected_event_count"], 3)
+        self.assertEqual(l3_context[0]["l3_id"], "L3-transcript-processing")
+        self.assertEqual(debug["selected_sibling_child_l2_count"], 1)
+        self.assertEqual(debug["sibling_candidate_count"], 1)
+
+    def test_formatter_labels_sibling_context_and_topic_state_fields(self) -> None:
+        formatted = recall.format_recall_for_prompt(
+            {
+                "long_term_l1": [_l1_hit()],
+                "long_term_l2": [
+                    {
+                        "source": "long_term_sibling_child_l2",
+                        "l2_id": "L2-window-and-boundary-selection",
+                        "label": "window and boundary selection",
+                        "parent_l3_id": "L3-transcript-processing",
+                        "parent_l3_label": "transcript processing",
+                        "sibling_expansion_reason": "same_parent_l3_rationale_context",
+                        "matched_l1_ids": [],
+                        "topic_size": 4,
+                        "selected_event_count": 2,
+                        "omitted_event_count": 2,
+                        "current_state": "Boundary selection explains why segmentation needed context windows.",
+                        "evolution_summary": "The discussion moved from fixed windows to boundary repair.",
+                        "latest_position": "Latest position keeps boundary checks before idea-unit extraction.",
+                        "key_rationale": "Fixed windows can split one design rationale.",
+                        "open_tensions": "How much neighboring context to include remains open.",
+                        "timeline_digest": [
+                            {
+                                "meeting_date": "2026-04-29",
+                                "obj_id": "L1-sibling-a",
+                                "summary": "Fixed windows can split one rationale.",
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("source: sibling child L2", formatted)
+        self.assertIn("why included: same_parent_l3_rationale_context", formatted)
+        self.assertIn("evolution_summary: The discussion moved from fixed windows", formatted)
+        self.assertIn("latest_position: Latest position keeps boundary checks", formatted)
+        self.assertIn("key_rationale: Fixed windows can split one design rationale.", formatted)
+        self.assertIn("open_tensions: How much neighboring context to include remains open.", formatted)
+
+    def test_local_factual_query_does_not_expand_sibling_child_l2(self) -> None:
+        l1_results = [{"obj_id": "L1-primary", "score": 0.94, "importance": 0.8}]
+        l2_index = {"L1-primary": {"l2_id": "L2-transcript-processing"}}
+        l2_view = {"l2_nodes": [{"l2_id": "L2-transcript-processing", "label": "transcript processing"}]}
+        l3_view = {
+            "l3_nodes": [
+                {
+                    "l3_id": "L3-transcript-processing",
+                    "label": "transcript processing",
+                    "child_l2_nodes": [
+                        {
+                            "l2_id": "L2-idea-unit-generation-methods",
+                            "label": "idea-unit generation methods",
+                            "current_state": "The team moved toward idea-unit generation.",
+                            "timeline_digest": [{"obj_id": "L1-primary", "summary": "Primary fact."}],
+                            "linked_obj_ids": ["L1-primary"],
+                            "event_count": 1,
+                        },
+                        {
+                            "l2_id": "L2-window-and-boundary-selection",
+                            "label": "window and boundary selection",
+                            "current_state": "Window size and boundaries constrain segmentation quality.",
+                            "timeline_digest": [{"obj_id": "L1-sibling", "summary": "Sibling fact."}],
+                            "linked_obj_ids": ["L1-sibling"],
+                            "event_count": 1,
+                        },
+                    ],
+                }
+            ]
+        }
+        l3_index = {
+            "L1-primary": {
+                "l3_id": "L3-transcript-processing",
+                "child_l2_id": "L2-idea-unit-generation-methods",
+            }
+        }
+
+        selected, _, debug = recall.select_layered_l2_context(
+            "What did L1-primary decide?",
+            l1_results,
+            l2_index,
+            l2_view,
+            l3_view=l3_view,
+            l3_index=l3_index,
+            max_relevant_l2_summaries=3,
+            max_expanded_l2_topics=1,
+            max_sibling_child_l2_topics=2,
+        )
+
+        self.assertEqual([row["l2_id"] for row in selected], ["L2-idea-unit-generation-methods"])
+        self.assertEqual(debug["selected_sibling_child_l2_count"], 0)
+
     def test_recall_falls_back_to_l2_when_l3_index_has_no_seed(self) -> None:
         with patch.object(recall, "embed_text", return_value=[1.0]), patch.object(
             recall,
@@ -400,6 +636,97 @@ class RecallL2ViewTests(unittest.TestCase):
 
         self.assertEqual(result["long_term_l1"][0]["obj_id"], "L1-0307-001")
         self.assertEqual(result["retrieval_debug"]["retrieval_mode"], "lexical")
+
+    def test_hybrid_recall_fuses_lexical_and_semantic_l1_candidates(self) -> None:
+        lexical_hit = dict(_l1_hit(), obj_id="L1-lexical", score=0.82)
+        semantic_hit = dict(_l1_hit(), obj_id="L1-semantic", score=0.91)
+
+        with patch.object(recall, "embed_text", return_value=[1.0]), patch.object(
+            recall,
+            "search_l1_lexical",
+            return_value=[lexical_hit],
+        ) as lexical_search, patch.object(
+            recall,
+            "search_l1_semantic",
+            return_value=[semantic_hit],
+        ) as semantic_search:
+            result = recall.recall(
+                query="memory retrieval semantic evidence",
+                plan={
+                    "complexity": "simple",
+                    "search_targets": ["long_term_l1"],
+                    "keywords": ["memory"],
+                },
+                tree=_tree(),
+                api_key="test-key",
+                l2_index={},
+                l2_view={"l2_nodes": []},
+                relations_index={},
+                include_retrieval_debug=True,
+                retrieval_mode="hybrid",
+            )
+
+        self.assertTrue(lexical_search.called)
+        self.assertTrue(semantic_search.called)
+        self.assertEqual(
+            {row["obj_id"] for row in result["long_term_l1"]},
+            {"L1-lexical", "L1-semantic"},
+        )
+        self.assertEqual(result["retrieval_debug"]["retrieval_mode"], "hybrid")
+        self.assertTrue(result["retrieval_debug"]["hybrid_semantic_used"])
+
+    def test_hybrid_recall_falls_back_to_lexical_without_api_key(self) -> None:
+        with patch.object(recall, "embed_text", side_effect=AssertionError("embedding called")), patch.object(
+            recall,
+            "search_l1_lexical",
+            return_value=[_l1_hit()],
+        ) as lexical_search:
+            result = recall.recall(
+                query="memory retrieval evidence",
+                plan={
+                    "complexity": "simple",
+                    "search_targets": ["long_term_l1"],
+                    "keywords": ["memory"],
+                },
+                tree=_tree(),
+                api_key="",
+                l2_index={},
+                l2_view={"l2_nodes": []},
+                relations_index={},
+                include_retrieval_debug=True,
+                retrieval_mode="hybrid",
+            )
+
+        self.assertTrue(lexical_search.called)
+        self.assertEqual(result["long_term_l1"][0]["obj_id"], "L1-0307-001")
+        self.assertEqual(result["retrieval_debug"]["retrieval_mode"], "hybrid")
+        self.assertFalse(result["retrieval_debug"]["hybrid_semantic_used"])
+        self.assertEqual(result["retrieval_debug"]["hybrid_fallback"], "lexical_no_api_key")
+
+    def test_hybrid_merge_preserves_lexical_backbone(self) -> None:
+        merged = recall._merge_l1_candidates(
+            [
+                {"obj_id": "L1-lexical-a", "score": 0.62, "meeting_date": "2026-03-07"},
+                {"obj_id": "L1-lexical-b", "score": 0.58, "meeting_date": "2026-03-18"},
+                {"obj_id": "L1-overlap", "score": 0.52, "meeting_date": "2026-03-25"},
+            ],
+            [
+                {"obj_id": "L1-semantic-high", "score": 0.98, "meeting_date": "2026-04-08"},
+                {"obj_id": "L1-semantic-next", "score": 0.94, "meeting_date": "2026-04-22"},
+                {"obj_id": "L1-overlap", "score": 0.86, "meeting_date": "2026-03-25"},
+            ],
+            top_k=3,
+        )
+
+        merged_ids = [row["obj_id"] for row in merged]
+        self.assertIn("L1-lexical-a", merged_ids)
+        self.assertIn("L1-lexical-b", merged_ids)
+        self.assertIn("L1-overlap", merged_ids)
+        self.assertNotIn("L1-semantic-next", merged_ids)
+        self.assertEqual(
+            set(next(row for row in merged if row["obj_id"] == "L1-overlap")["hybrid_sources"]),
+            {"lexical", "semantic"},
+        )
 
     def test_formatter_orders_l1_evidence_before_l2_context(self) -> None:
         formatted = recall.format_recall_for_prompt(
@@ -657,10 +984,176 @@ class RecallL2ViewTests(unittest.TestCase):
 
         self.assertEqual(selected[0]["l2_id"], "L2-agentic-pipeline-control")
 
+    def test_evolution_query_can_expand_secondary_l2_bridge_context(self) -> None:
+        l1_results = [
+            {
+                "obj_id": "L1-rag-lifecycle",
+                "score": 0.91,
+                "importance": 0.76,
+            }
+        ]
+        l2_index = {
+            "L1-rag-lifecycle": {
+                "l2_id": "L2-retrieval-baseline-comparison",
+                "l2_label": "retrieval baseline comparison",
+            }
+        }
+        l2_view = {
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-retrieval-baseline-comparison",
+                    "label": "retrieval baseline comparison",
+                    "current_state": "RAG and full transcript are compared as baselines.",
+                    "event_count": 6,
+                    "timeline_digest": [
+                        {
+                            "meeting_id": "0422",
+                            "meeting_date": "2026-04-22",
+                            "obj_id": "L1-rag-lifecycle",
+                            "summary": "RAG is a baseline for the memory system.",
+                        }
+                    ],
+                },
+                {
+                    "l2_id": "L2-memory-lifecycle",
+                    "label": "memory lifecycle",
+                    "current_state": "Topic lifecycle tracks abandoned directions and final decision status.",
+                    "event_count": 10,
+                    "timeline_digest": [
+                        {
+                            "meeting_id": "0429",
+                            "meeting_date": "2026-04-29",
+                            "obj_id": "L1-lifecycle",
+                            "summary": "RAG cannot track topic lifecycle or abandoned directions.",
+                        }
+                    ],
+                },
+            ]
+        }
+        secondary_links = {
+            "links": [
+                {
+                    "obj_id": "L1-rag-lifecycle",
+                    "primary_l2_id": "L2-retrieval-baseline-comparison",
+                    "secondary_l2_id": "L2-memory-lifecycle",
+                    "secondary_l2_label": "memory lifecycle",
+                    "confidence": 0.78,
+                    "reason": "cross_topic_bridge",
+                }
+            ]
+        }
+
+        selected, _, debug = recall.select_layered_l2_context(
+            "why is ordinary RAG insufficient for tracking topic lifecycle evolution?",
+            l1_results,
+            l2_index,
+            l2_view,
+            l2_secondary_links=secondary_links,
+            max_relevant_l2_summaries=2,
+            max_expanded_l2_topics=2,
+            max_events_per_l2=2,
+        )
+
+        selected_ids = {row["l2_id"] for row in selected}
+        self.assertIn("L2-retrieval-baseline-comparison", selected_ids)
+        self.assertIn("L2-memory-lifecycle", selected_ids)
+        secondary = next(row for row in selected if row["l2_id"] == "L2-memory-lifecycle")
+        self.assertEqual(secondary["source"], "long_term_secondary_l2")
+        self.assertEqual(secondary["matched_l1_ids"], ["L1-rag-lifecycle"])
+        self.assertEqual(debug["selected_secondary_l2_count"], 1)
+
+    def test_evolution_timeline_slice_keeps_chronological_middle_event(self) -> None:
+        timeline = [
+            {
+                "meeting_id": "0307",
+                "meeting_date": "2026-03-07",
+                "obj_id": "L1-early",
+                "summary": "Early memory architecture started as a simple split.",
+            },
+            {
+                "meeting_id": "0318",
+                "meeting_date": "2026-03-18",
+                "obj_id": "L1-side-note",
+                "summary": "Side discussion about operational notes.",
+            },
+            {
+                "meeting_id": "0325",
+                "meeting_date": "2026-03-25",
+                "obj_id": "L1-middle",
+                "summary": "The architecture shifted into object-based memory.",
+            },
+            {
+                "meeting_id": "0408",
+                "meeting_date": "2026-04-08",
+                "obj_id": "L1-later-note",
+                "summary": "Another implementation detail was discussed.",
+            },
+            {
+                "meeting_id": "0506",
+                "meeting_date": "2026-05-06",
+                "obj_id": "L1-latest",
+                "summary": "The latest architecture used L1 L2 L3 hierarchy.",
+            },
+        ]
+
+        selected, omitted = recall._select_timeline_slice(
+            timeline,
+            ["L1-latest"],
+            max_events=3,
+            max_event_chars=200,
+            query="how did the memory architecture evolve over time?",
+        )
+
+        selected_ids = [row["obj_id"] for row in selected]
+        self.assertEqual(selected_ids, ["L1-early", "L1-middle", "L1-latest"])
+        self.assertEqual(omitted, 2)
+
+    def test_evolution_l1_seed_selection_keeps_cross_meeting_coverage(self) -> None:
+        candidates = [
+            {
+                "obj_id": f"L1-0408-{index:03d}",
+                "meeting_id": "0408",
+                "meeting_date": "2026-04-08",
+                "score": 0.95 - index * 0.01,
+            }
+            for index in range(6)
+        ] + [
+            {
+                "obj_id": "L1-0307-origin",
+                "meeting_id": "0307",
+                "meeting_date": "2026-03-07",
+                "score": 0.52,
+            },
+            {
+                "obj_id": "L1-0325-middle",
+                "meeting_id": "0325",
+                "meeting_date": "2026-03-25",
+                "score": 0.50,
+            },
+            {
+                "obj_id": "L1-0506-latest",
+                "meeting_id": "0506",
+                "meeting_date": "2026-05-06",
+                "score": 0.49,
+            },
+        ]
+
+        selected = recall._select_l1_seed_context(
+            "How did long-term memory evolve from STM/LTM to object-based L1/L2/L3?",
+            candidates,
+            max_l1_seeds=6,
+        )
+
+        selected_ids = {row["obj_id"] for row in selected}
+        self.assertIn("L1-0307-origin", selected_ids)
+        self.assertIn("L1-0325-middle", selected_ids)
+        self.assertIn("L1-0506-latest", selected_ids)
+
     def test_chinese_evolution_query_is_detected(self) -> None:
         self.assertTrue(recall._is_evolution_query("這個設計從 0307 到 0506 是怎麼演進的？"))
         self.assertTrue(recall._is_evolution_query("後來 retrieve 的設計變成什麼樣子？"))
         self.assertTrue(recall._is_evolution_query("為什麼最後沒有採用 adaptive segmentation？"))
+        self.assertTrue(recall._is_evolution_query("架構為什麼從早期的 STM/LTM 分離討論，轉成 object-based，再具體化成 L1/L2/L3？"))
 
     def test_evolution_timeline_slice_covers_mentioned_meeting_endpoints(self) -> None:
         timeline = [
@@ -704,6 +1197,54 @@ class RecallL2ViewTests(unittest.TestCase):
         self.assertIn("L1-0429-match", selected_ids)
         self.assertEqual(omitted, 1)
 
+    def test_synthesis_timeline_slice_keeps_origin_event_for_matched_meetings(self) -> None:
+        timeline = [
+            {
+                "meeting_id": "ND-008",
+                "meeting_date": "2026-07-20",
+                "obj_id": "L1-ND-008-origin",
+                "summary": "Offline replay benchmark started as an unresolved data and user behavior issue.",
+            },
+            {
+                "meeting_id": "ND-008",
+                "meeting_date": "2026-07-20",
+                "obj_id": "L1-ND-008-match",
+                "summary": "Offline replay benchmark later connected to deployment limitations.",
+            },
+            {
+                "meeting_id": "ND-015",
+                "meeting_date": "2026-09-07",
+                "obj_id": "L1-ND-015-distractor",
+                "summary": "Offline replay benchmark pilot baseline discussion with strong lexical overlap.",
+            },
+            {
+                "meeting_id": "ND-030",
+                "meeting_date": "2026-12-21",
+                "obj_id": "L1-ND-030-origin",
+                "summary": "Offline replay benchmark was revisited as a data quality finding.",
+            },
+            {
+                "meeting_id": "ND-030",
+                "meeting_date": "2026-12-21",
+                "obj_id": "L1-ND-030-match",
+                "summary": "Offline replay benchmark later connected to user trust and field rollout.",
+            },
+        ]
+
+        selected, _ = recall._select_timeline_slice(
+            timeline,
+            ["L1-ND-008-match", "L1-ND-030-match"],
+            max_events=4,
+            max_event_chars=200,
+            query="請綜合多場會議說明 offline replay benchmark 如何同時受到資料、現場部署與使用者因素影響。",
+        )
+
+        selected_ids = [row["obj_id"] for row in selected]
+        self.assertIn("L1-ND-008-origin", selected_ids)
+        self.assertIn("L1-ND-030-origin", selected_ids)
+        self.assertIn("L1-ND-008-match", selected_ids)
+        self.assertIn("L1-ND-030-match", selected_ids)
+
     def test_lexical_query_expansion_finds_parallel_stm_ltm_update_evidence(self) -> None:
         tree = {
             "meetings": [
@@ -732,15 +1273,40 @@ class RecallL2ViewTests(unittest.TestCase):
 
         self.assertEqual(results[0]["obj_id"], "L1-0422-parallel")
 
+    def test_chinese_short_long_term_query_expands_to_english_topic_keys(self) -> None:
+        expansions = recall._expand_query_terms("短期記憶和長期記憶要怎麼整合？")
+
+        self.assertIn("stm", expansions)
+        self.assertIn("ltm", expansions)
+        self.assertIn("short-term", expansions)
+        self.assertIn("long-term", expansions)
+
+    def test_chinese_rag_lifecycle_query_expands_to_topic_lifecycle_keys(self) -> None:
+        expansions = recall._expand_query_terms(
+            "為什麼一般 RAG 不足以追蹤話題生命週期，比 full transcript 差在哪？"
+        )
+
+        self.assertIn("rag", expansions)
+        self.assertIn("full transcript", expansions)
+        self.assertIn("topic lifecycle", expansions)
+        self.assertIn("retrieval baseline comparison", expansions)
+
+    def test_chinese_plain_evolution_query_is_detected(self) -> None:
+        self.assertTrue(recall._is_evolution_query("這個架構從 0307 到 0506 怎麼演進？"))
+
     def test_deep_layered_profile_allows_more_context_than_default(self) -> None:
         from retrieval_profiles import get_retrieval_budget_profile
 
         default = get_retrieval_budget_profile("default")
         deep = get_retrieval_budget_profile("deep_layered")
+        balanced = get_retrieval_budget_profile("evolution_balanced")
 
         self.assertGreater(deep["max_l1_seeds_for_prompt"], default["max_l1_seeds_for_prompt"])
         self.assertGreater(deep["max_events_per_child_l2"], default["max_events_per_child_l2"])
         self.assertGreater(deep["max_event_chars"], default["max_event_chars"])
+        self.assertGreater(balanced["max_l1_seeds_for_prompt"], default["max_l1_seeds_for_prompt"])
+        self.assertLess(balanced["max_events_per_child_l2"], deep["max_events_per_child_l2"])
+        self.assertLess(balanced["max_event_chars"], deep["max_event_chars"])
 
 
 if __name__ == "__main__":
