@@ -814,12 +814,53 @@ def _llm_metrics(call_records: list[dict[str, Any]] | None) -> dict[str, Any]:
     response_chars = [int(record.get("response_chars", 0) or 0) for record in records]
     stage_counts: Counter[str] = Counter()
     stage_latencies: dict[str, list[float]] = {}
+    actual_tokens_by_stage: dict[str, dict[str, int]] = {}
+    actual_prompt_tokens = 0
+    actual_response_tokens = 0
+    actual_thoughts_tokens = 0
+    actual_cached_tokens = 0
+    actual_total_tokens = 0
+    records_with_actual_usage = 0
     for record in records:
         family = _llm_stage_family(str(record.get("stage", "unknown") or "unknown"))
         stage_counts[family] += 1
         stage_latencies.setdefault(family, []).append(
             float(record.get("latency_sec", 0.0) or 0.0)
         )
+        usage = record.get("usage_metadata") or {}
+        if not isinstance(usage, dict):
+            usage = {}
+        prompt_tokens = int(usage.get("prompt_token_count") or 0)
+        response_tokens = int(usage.get("candidates_token_count") or 0)
+        thoughts_tokens = int(usage.get("thoughts_token_count") or 0)
+        cached_tokens = int(usage.get("cached_content_token_count") or 0)
+        total_tokens = int(usage.get("total_token_count") or 0)
+        if total_tokens <= 0 and (prompt_tokens or response_tokens or thoughts_tokens):
+            total_tokens = prompt_tokens + response_tokens + thoughts_tokens
+        if prompt_tokens or response_tokens or total_tokens:
+            records_with_actual_usage += 1
+            actual_prompt_tokens += prompt_tokens
+            actual_response_tokens += response_tokens
+            actual_thoughts_tokens += thoughts_tokens
+            actual_cached_tokens += cached_tokens
+            actual_total_tokens += total_tokens
+            stage_usage = actual_tokens_by_stage.setdefault(
+                family,
+                {
+                    "call_count_with_usage": 0,
+                    "prompt_token_count": 0,
+                    "candidates_token_count": 0,
+                    "thoughts_token_count": 0,
+                    "cached_content_token_count": 0,
+                    "total_token_count": 0,
+                },
+            )
+            stage_usage["call_count_with_usage"] += 1
+            stage_usage["prompt_token_count"] += prompt_tokens
+            stage_usage["candidates_token_count"] += response_tokens
+            stage_usage["thoughts_token_count"] += thoughts_tokens
+            stage_usage["cached_content_token_count"] += cached_tokens
+            stage_usage["total_token_count"] += total_tokens
 
     prompt_char_total = sum(prompt_chars)
     response_char_total = sum(response_chars)
@@ -839,6 +880,16 @@ def _llm_metrics(call_records: list[dict[str, Any]] | None) -> dict[str, Any]:
             "response": _char_token_proxy(response_char_total),
             "total": _char_token_proxy(prompt_char_total + response_char_total),
             "note": "rough chars/4 proxy for diagnostics, not provider billing",
+        },
+        "actual_usage_metadata": {
+            "call_count_with_usage": records_with_actual_usage,
+            "prompt_token_count": actual_prompt_tokens,
+            "candidates_token_count": actual_response_tokens,
+            "thoughts_token_count": actual_thoughts_tokens,
+            "cached_content_token_count": actual_cached_tokens,
+            "total_token_count": actual_total_tokens,
+            "tokens_by_stage": dict(sorted(actual_tokens_by_stage.items())),
+            "note": "Gemini SDK usage_metadata when exposed by provider response",
         },
     }
 

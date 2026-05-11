@@ -61,6 +61,7 @@ class ResearchLogger:
         latency_sec: float,
         success: bool,
         error: dict[str, Any] | None,
+        usage_metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         self._api_call_seq += 1
         safe_stage = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(stage)).strip("_")
@@ -78,6 +79,7 @@ class ResearchLogger:
             "latency_sec": latency_sec,
             "success": bool(success),
             "error": error,
+            "usage_metadata": to_plain(usage_metadata or {}),
         }
         path = self.api_calls_dir / (
             f"{self._api_call_seq:03d}_{safe_stage or 'stage'}_attempt{attempt}.json"

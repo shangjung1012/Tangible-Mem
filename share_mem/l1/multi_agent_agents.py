@@ -385,6 +385,39 @@ class MultiAgentLLMRunner:
         self.call_records: list[dict[str, Any]] = []
         self.call_counts: Counter[str] = Counter()
 
+    @staticmethod
+    def _usage_metadata(response: Any | None) -> dict[str, Any]:
+        metadata = getattr(response, "usage_metadata", None) if response is not None else None
+        if metadata is None:
+            return {}
+        if isinstance(metadata, dict):
+            return dict(metadata)
+
+        plain: dict[str, Any] = {}
+        for method_name in ("to_json_dict", "model_dump", "dict"):
+            method = getattr(metadata, method_name, None)
+            if callable(method):
+                try:
+                    value = method()
+                except TypeError:
+                    continue
+                if isinstance(value, dict):
+                    plain.update(value)
+                    break
+
+        for key in (
+            "prompt_token_count",
+            "candidates_token_count",
+            "total_token_count",
+            "cached_content_token_count",
+            "thoughts_token_count",
+            "tool_use_prompt_token_count",
+        ):
+            value = getattr(metadata, key, None)
+            if value is not None:
+                plain[key] = value
+        return plain
+
     def call_json(self, stage: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         self.logger.write_prompt(stage, prompt)
         timeout_s = _resolve_call_timeout_s()
@@ -399,6 +432,7 @@ class MultiAgentLLMRunner:
             started_at = time.monotonic()
             raw_text = ""
             parsed_json: dict[str, Any] | None = None
+            usage_metadata: dict[str, Any] = {}
             try:
                 with _hard_timeout(stage, timeout_s):
                     response = self.client.models.generate_content(
@@ -406,6 +440,7 @@ class MultiAgentLLMRunner:
                         contents=prompt,
                         config=config,
                     )
+                usage_metadata = self._usage_metadata(response)
                 raw_text = response.text or ""
                 self.logger.write_response(stage, raw_text)
                 parsed_json = extract_json_object(raw_text)
@@ -427,6 +462,7 @@ class MultiAgentLLMRunner:
                     latency_sec=latency_sec,
                     success=False,
                     error=error_payload,
+                    usage_metadata=usage_metadata,
                 )
                 record = {
                     "stage": stage,
@@ -437,6 +473,7 @@ class MultiAgentLLMRunner:
                     "timeout_s": timeout_s,
                     "prompt_chars": len(prompt),
                     "response_chars": len(raw_text),
+                    "usage_metadata": usage_metadata,
                     "error_type": type(exc).__name__,
                 }
                 self.call_records.append(record)
@@ -472,6 +509,7 @@ class MultiAgentLLMRunner:
                 latency_sec=latency_sec,
                 success=True,
                 error=None,
+                usage_metadata=usage_metadata,
             )
             record = {
                 "stage": stage,
@@ -482,6 +520,7 @@ class MultiAgentLLMRunner:
                 "timeout_s": timeout_s,
                 "prompt_chars": len(prompt),
                 "response_chars": len(raw_text),
+                "usage_metadata": usage_metadata,
             }
             self.call_records.append(record)
             self.call_counts[stage] += 1

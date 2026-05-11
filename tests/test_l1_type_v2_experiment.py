@@ -10,6 +10,7 @@ from share_mem.build_tree import _run_bridge_for_transcript, parse_args
 from share_mem.compare_l1_runs import compare_l1_trees, iter_l1_objects, write_comparison_outputs
 from share_mem.l1.multi_agent_agents import l1_fallback_agent, l1_type_agent
 from share_mem.l1.multi_agent_logger import ResearchLogger
+from share_mem.l1.multi_agent_pipeline import _llm_metrics
 from share_mem.l1.multi_agent_reducer import reduce_l1_patch
 from share_mem.l1.multi_agent_state import IdeaUnit
 from share_mem.l1.taxonomy import (
@@ -388,6 +389,11 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
                 latency_sec=1.25,
                 success=True,
                 error=None,
+                usage_metadata={
+                    "prompt_token_count": 12,
+                    "candidates_token_count": 5,
+                    "total_token_count": 17,
+                },
             )
 
             call_file = logger.run_dir / "api_calls" / "001_l1_proposal_agent_B-001_attempt1.json"
@@ -399,7 +405,52 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
             self.assertEqual(payload["prompt"], "PROMPT")
             self.assertEqual(payload["raw_response"], '{"candidates":[]}')
             self.assertEqual(payload["parsed_json"], {"candidates": []})
+            self.assertEqual(payload["usage_metadata"]["total_token_count"], 17)
             self.assertTrue(payload["success"])
+
+    def test_llm_metrics_aggregates_actual_usage_metadata(self) -> None:
+        metrics = _llm_metrics(
+            [
+                {
+                    "stage": "segmentation_W-001",
+                    "success": True,
+                    "latency_sec": 1.0,
+                    "prompt_chars": 120,
+                    "response_chars": 40,
+                    "usage_metadata": {
+                        "prompt_token_count": 30,
+                        "candidates_token_count": 10,
+                        "thoughts_token_count": 5,
+                        "total_token_count": 40,
+                    },
+                },
+                {
+                    "stage": "l1_finding_agent_B-001",
+                    "success": True,
+                    "latency_sec": 2.0,
+                    "prompt_chars": 200,
+                    "response_chars": 80,
+                    "usage_metadata": {
+                        "prompt_token_count": 50,
+                        "candidates_token_count": 20,
+                        "cached_content_token_count": 3,
+                        "total_token_count": 70,
+                    },
+                },
+            ]
+        )
+
+        actual_usage = metrics["actual_usage_metadata"]
+        self.assertEqual(actual_usage["call_count_with_usage"], 2)
+        self.assertEqual(actual_usage["prompt_token_count"], 80)
+        self.assertEqual(actual_usage["candidates_token_count"], 30)
+        self.assertEqual(actual_usage["thoughts_token_count"], 5)
+        self.assertEqual(actual_usage["cached_content_token_count"], 3)
+        self.assertEqual(actual_usage["total_token_count"], 110)
+        self.assertEqual(
+            actual_usage["tokens_by_stage"]["segmentation_agent"]["total_token_count"],
+            40,
+        )
 
     def test_research_logger_writes_structured_api_call_error_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
