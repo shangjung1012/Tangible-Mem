@@ -1,0 +1,58 @@
+=== Memory Router ===
+strategy: forced_short_plus_long_ablation
+reason: short-term ablation variant
+
+=== Short-Term Memory ===
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S001] LLM Memory: Hierarchical Structure, Idea Unit Segmentation Repair, Labeling, and Retrieval
+  score: 2.25
+  summary: The memory system utilizes a hierarchical data structure, with 'idea units' forming 'segments' and 'topics'. A repair mechanism has been adopted in the idea unit segmentation process to handle incomplete fragments by merging fragmented sentences with their most relevant context, ensuring information completeness and preventing omissions. To optimize retrieval, the system also uses a dual-labeling strategy (functional and theme labels) for each memory unit, with the optimal search priority still under discussion.
+  role: recent_change
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 30
+  historical_source_count: 200
+  total_source_count: 230
+  source_note: broad unit; source L1 preview is query-ranked
+  source_scope: active
+  source L1: L1-0506-001, L1-0429-188, L1-0429-189, L1-0429-190, L1-0429-191, L1-0429-192, L1-0506-002, L1-0506-003, L1-0506-005, L1-0506-007, L1-0506-008, L1-0506-009, L1-0506-010, L1-0506-011, L1-0506-012, L1-0506-014 ...
+
+[S006] Agent Evaluation Framework, Step Verification, and Benchmarking
+  score: 2.25
+  summary: The agent's evaluation
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-project-demo-strategy: project demo strategy
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-086] type=argument importance=0.7 score=0.7709
+  content: 簡單的 RAG 方法不足以追蹤主題的演變，例如一個主題何時被放棄以及原因。RAG 只能找到所有相關的提及，但無法捕捉到關鍵的時間順序和最終決定。
+  evidence: [SPEAKER_02]: 就是如果有就是有有時間的話可以再就是再可能就是再找找看再想完的東西之後可以再可能一起講好啊好啊好啊嗯好謝謝謝謝今天聽起來應該是都蠻蠻好的但其實...(truncated)
+- [0422 | 2026-04-22 | L1-0422-045] type=argument importance=0.7 score=0.8107
+  content: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.7922
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制...(truncated)
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0429 | 2026-04-29 | L1-0429-016] type=argument importance=0.7 score=0.8067
+  content: 實現記憶「遺忘」有兩種途徑：基於 RAG 的數據刪除或修改模型基礎權重。由於後者被認為過於複雜且不切實際，目前的共識是採用基於 RAG 的方法。
+  evidence: [SPEAKER_02]: 因為我在想的是因為language model它在跟人的對話過程當中它其實就算你慢慢把external那個拔掉之後它已經慢慢的就被捲進它的la...(truncated)
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.7993
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importanc...(truncated)
+- [0429 | 2026-04-29 | L1-0429-048] type=decision importance=0.7 score=0.7835
+  content: 決定進行一項消融研究 (ablation study) 來評估系統。該研究將比較完整系統與幾個基準線：僅 RAG、僅短期記憶、僅長期記憶。在所有實驗條件下，工作記憶 (w...(truncated)
+  evidence: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其...(truncated)
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.7621
+  c

@@ -1,0 +1,16 @@
+根據提供的 context，關於 transcript segmentation 的相關資訊如下：
+
+根據短期記憶的摘要 [S001]，記憶系統採用了階層式資料結構，其中逐字稿被分割成「idea units」，這些單位再組成「segments」和「topics」。
+
+關於您提到的幾個關鍵字：
+
+*   **Segmentation & Adaptive Segmentation (動態分塊)**：
+    *   專案最初曾嘗試將完整逐字稿一次性提供給模型，但因上下文長度過大而放棄，轉而採用分塊處理的策略 (L1-0429-122)。
+    *   團隊決定探索一種「動態分塊 (dynamic chunking)」方法，系統將不再使用固定大小的區塊，而是預測接下來有多少對話輪次屬於同一主題，並將它們組合成一個可變大小的區塊 (L1-0429-029)。
+    *   同時，團隊也決定進行實驗，比較「動態分塊」與「固定分塊 (fixed-chunk)」兩種方法的成效 (L1-0429-065)。
+    *   另一種相關方法是採用以 Gemini Tool Calling 為核心的架構，將逐字稿視為資料庫，讓 Gemini 動態決定要讀取哪些部分 (L1-0422-001)。
+    *   這些討論對應到全域主題地圖中的 `L3-transcript-segmentation-and-idea-unit-coverage` -> `L2-fixed-vs-dynamic-chunking`。
+
+*   **Repair, Gap & Coverage (修復、間隙與覆蓋率)**：
+    *   為了處理分割過程中可能產生的不完整片段 (gap)，系統採用了一種修復機制 (repair mechanism)。此機制會將破碎的句子與其最相關的上下文合併，以確保資訊的完整性並防止遺漏 (coverage) (S001)。
+    *   這些概念對應到全域主題地圖中的 `L3-transcript-segmentation-and-idea-unit-coverage` 下的 `L2-repair-and-coarsening` 和 `L2-missing-line-coverage`。

@@ -1,0 +1,23 @@
+根據提供的 context，關於 evaluation 的 baseline、metrics 以及 0429 會議的相關資訊整理如下：
+
+目前的 Agent 評估框架（S006）仍在發展中，一個明確的評估計畫尚待確定，但已有多項決策與提案。
+
+**L3-memory-evaluation-strategy (記憶體評估策略)**
+*   **L2-overall-memory-system-evaluation (整體記憶體系統評估)**
+    *   **L1-0429-010**: 0429 會議中提出一個三分類的 agent 評估計畫：
+        1.  短期正確性：確保 agent 不會遺漏或捏造資訊。
+        2.  長期主題演變的追蹤能力。
+        3.  對過去決策背後原因的理解。
+*   **L2-memory-mechanism-evaluation-metrics (記憶體機制評估與指標)**
+    *   **Baseline 方法**:
+        *   **L1-0422-020**: 決定採用兩階段評估策略，首先會比較「動態分塊 (dynamic chunking)」與基線 (baseline) 方法，如「固定大小 (fixed-size)」和「逐句 (sentence-by-sentence)」。
+        *   **L1-0429-065**: 0429 會議中決定進行實驗，比較「動態分塊」與「固定分塊 (fixed-chunk)」兩種方法。
+        *   **S006**: 評估方法學將會比較「結構化記憶體 (structured memory)」與「RAG」的表現。
+    *   **Metrics (評估指標)**:
+        *   **L1-0429-072**: 針對分塊 (chunking) 實驗，將採用 `precision` 和 `recall` 作為指標。
+        *   **L1-0429-039**: 評分方法已確定，將使用預先定義的「標準答案 (ground truth)」，並利用 LLM 來比較 agent 生成的答案與標準答案的正確性以進行評分。
+*   **L2-evaluation-datasets-ground-truth (評估資料集與 Ground Truth)**
+    *   **L1-0429-072**: Ground truth 將以人類定義的「重要 idea units」為基準。
+    *   **L1-0429-042**: 0429 會議中提到，現有的 180 分鐘會議資料量可能不足以進行穩健評估，因此需要尋求資料擴增策略。
+
+關於 0318 的 paper review，目前 context 不足以回答此問題。Context 中僅在 L1-0429-042 提及評估方法有參考之前看過的幾篇 paper，但未指明具體日期或內容。

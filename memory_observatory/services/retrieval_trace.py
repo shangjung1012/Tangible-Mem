@@ -46,7 +46,11 @@ class RetrievalTraceService:
         self.loader = ObservatoryDataLoader(self.repo_root)
         _ensure_long_term_path(self.repo_root)
 
-    def _recall_params(self) -> dict[str, Any]:
+    def _recall_params(self, budget_profile: str = "") -> dict[str, Any]:
+        if budget_profile:
+            from retrieval_profiles import get_retrieval_budget_profile
+
+            return get_retrieval_budget_profile(budget_profile)
         best = self.loader.load_retrieval_eval_report().get("best_params", {})
         if not isinstance(best, dict):
             best = {}
@@ -72,7 +76,8 @@ class RetrievalTraceService:
         include_debug: bool = True,
         model_name: str = "gemini-2.5-pro",
         planner_model_name: str | None = None,
-        max_context_chars: int = 4000,
+        max_context_chars: int = 6000,
+        budget_profile: str = "",
     ) -> dict[str, Any]:
         started = time.perf_counter()
         from recall import format_recall_for_prompt, recall
@@ -92,7 +97,7 @@ class RetrievalTraceService:
                 api_key = ""
             plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
             plan["search_targets"] = ["long_term_l1", "long_term_l2", "long_term_l3"]
-        params = self._recall_params()
+        params = self._recall_params(budget_profile)
         result = recall(
             query=query,
             plan=plan,
@@ -114,7 +119,8 @@ class RetrievalTraceService:
             l1_content_chars=320,
             l1_evidence_chars=420,
         )
-        truncated = len(formatted) > max_context_chars
+        original_chars = len(formatted)
+        truncated = bool(max_context_chars and max_context_chars > 0 and original_chars > max_context_chars)
         if truncated:
             formatted = formatted[:max_context_chars] + "\n...(truncated)"
         elapsed = (time.perf_counter() - started) * 1000
@@ -144,6 +150,7 @@ class RetrievalTraceService:
             "use_llm_planner": not no_llm,
             "planner_model": effective_planner_model if not no_llm else "heuristic",
             "answer_model": model_name,
+            "budget_profile": budget_profile,
             "plan": plan,
             "global_topic_map": result.get("global_topic_map", {}),
             "l1_evidence_seeds": result.get("long_term_l1", []),
@@ -152,6 +159,8 @@ class RetrievalTraceService:
             "retrieval_debug": debug,
             "formatted_prompt_context": formatted,
             "context": formatted,
+            "truncated": truncated,
+            "truncated_from_chars": original_chars if truncated else None,
             "metrics": metrics,
             "raw_recall_result": result,
         }

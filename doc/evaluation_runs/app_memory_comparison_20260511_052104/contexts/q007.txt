@@ -1,0 +1,57 @@
+=== Memory Router ===
+strategy: long_term_only
+reason: query asks for history, rationale, method evolution, or cross-meeting context
+confidence: 0.8
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-086] type=argument importance=0.7 score=0.8305
+  content: 簡單的 RAG 方法不足以追蹤主題的演變，例如一個主題何時被放棄以及原因。RAG 只能找到所有相關的提及，但無法捕捉到關鍵的時間順序和最終決定。
+  evidence: [SPEAKER_02]: 就是如果有就是有有時間的話可以再就是再可能就是再找找看再想完的東西之後可以再可能一起講好啊好啊好啊嗯好謝謝謝謝今天聽起來應該是都蠻蠻好的但其實...(truncated)
+- [0408 | 2026-04-08 | L1-0408-043] type=argument importance=0.67 score=0.776
+  content: 反對一種將短期記憶在淡忘後才移入長期記憶的簡單模型。理由是，如果一個主題持續演進（例如從 A 到 D），而最新的討論（C、D）仍在短期記憶中，那麼長期記憶將會過時，無法反映專案的當前狀態。
+  evidence: [SPEAKER_04]: 但如果照你這樣說會有問題。假設一個題目的演進是 A 到 B 到 C，再多一個 D。假設上次討論了 C 跟 D，這時短期在 C、D 這裡，長期卻...(truncated)
+- [0408 | 2026-04-08 | L1-0408-055] type=argument importance=0.66 score=0.7743
+  content: 支持採用逐句處理並透過 function calling 進行記憶體更新的細粒度模型，理由是這種方法能實現更複雜的行為，例如在重新討論某個主題時，能將相關的 LTM 內容拉回 STM 中。
+  evidence: [SPEAKER_00]: 也就是要確定架構之間的關係和 update。還有 meeting transcription 的話，我覺得需要經過一個前處理，例如送一個句子、...(truncated)
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.8037
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制...(truncated)
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0422 | 2026-04-22 | L1-0422-045] type=argument importance=0.7 score=0.8013
+  content: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0422 | 2026-04-22 | L1-0422-037] type=argument importance=0.67 score=0.7814
+  content: Long-term memory 檢索的設計理論上能提供一個時間線，讓 LLM 可以利用時間戳來識別相似的論點，觀察哪些被推翻，並採納最新的版本。
+  evidence: [SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM...(truncated)
+- [0429 | 2026-04-29 | L1-0429-019] type=argument importance=0.73 score=0.8101
+  content: 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次...(truncated)
+  evidence: [SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼 [SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-project-demo-strategy] project demo strategy
+  matched L1: L1-0422-045
+  topic_size=4 selected_event_count=4 omitted_event_count=0
+  current_state: This L2 topic has 4 linked L1 evidence objects across 2 meeting(s). Latest evidence: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  timeline_digest:
+    - [2026-03-07 L1-0307-020] 專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。
+    - [2026-03-07 L1-0307-026] 示範策略為並列比較，展示記憶體增強 agent 和基準 agent 在特定情境下產生不同結果，以凸顯長期記憶的價值。
+    - [2026-04-22 L1-0422-043] 評估計畫是透過 demo 來展示 agent 因其遺忘機制而能正確忽略過時資訊，從而證明其優於標準 RAG 模型。然而，一項發現是目前的會議資料集時間跨度可能太短，無法有效展示此效果。因此，團隊將在現有資料中尋找特定案例，或合成更長的對話歷史，以創造一個清晰的展示。
+    - [2026-04-22 L1-0422-045] 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+
+[L2-memory-lifecycle] memory lifecycle
+  matched L1: L1-0325-086
+  topic_size=28 selected_event_count=6 omitted_event_count=22
+  current_state: This L2 topic has 28 linked L1 evidence objects across 6 meeting(s). Latest evidence: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  timeline_digest:
+    - [2026-03-25 L1-0325-086] 簡單的 RAG 方法不足以追蹤主題
+...(truncated)

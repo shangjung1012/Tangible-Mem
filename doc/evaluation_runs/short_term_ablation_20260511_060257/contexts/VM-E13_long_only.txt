@@ -1,0 +1,53 @@
+=== Memory Router ===
+strategy: forced_long_only_ablation
+reason: short-term ablation variant
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.8049
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可...(truncated)
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有...(truncated)
+- [0422 | 2026-04-22 | L1-0422-010] type=decision importance=0.71 score=0.8034
+  content: 目前的系統架構決定，short-term memory 和 long-term memory 將分開獨立更新。每個記憶體處理過程都會接收完整的逐字稿，並在沒有互動的情況下各自進行更新。
+  evidence: [SPEAKER_02]: 因為我們現在是個別update就是他們不會通常跟 short term 在update的時候他們都會各自拿到完整的transcription在...(truncated)
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.8018
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制...(truncated)
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.7993
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中...(truncated)
+- [0422 | 2026-04-22 | L1-0422-036] type=argument importance=0.7 score=0.7921
+  content: 反對取消 short-term memory 的論點是，它能捕捉近期對話中的細微細節，而這些細節在更為摘要式的 long-term memory 中可能會遺失，這類似於人...(truncated)
+  evidence: [SPEAKER_00]: 然後所以短期跟長期的差異在哪裡？短期它最大的差異儲存的方式不一樣嘛 [SPEAKER_03]: 嗯 對 然後長期還是會比較精簡短期感覺會短期還...(truncated)
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.7971
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就...(truncated)
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.7929
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importanc...(truncated)
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.8038
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減...(truncated)
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他impor...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-lifecycle] memory lifecycle
+  matched L1: L1-0506-030, L1-0422-039, L1-0429-007, L1-0429-037
+  topic_size=28 selected_event_count=6 omitted_event_count=22
+  current_state: This L2 topic has 28 linked L1 evidence objects across 6 meeting(s). Latest evidence: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  timeline_digest:
+    - [2026-03-07 L1-0307-001] 系統採用了一種遺忘機制，如果一個記憶項目在特定次數的近期會議（例如三次）內未被再次討論，該項目將被刪除。
+    - [2026-03-07 L1-0307-004] 系統的遺忘機制（例如，如果一個項目在三次會議內未被討論則刪除）的具體參數和邏輯可能需要進一步定義和調整。
+    - [2026-04-22 L1-0422-039] 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+    - [2026-04-29 L1-0429-007] 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函數調用來存取。如果重複提及使其分數增加，這些記憶可以被重新激活。
+    - [2026-04-29 L1-0429-037] 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在
+...(truncated)

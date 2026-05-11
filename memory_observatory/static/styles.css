@@ -70,9 +70,72 @@ h2 { margin: 0 0 10px; font-size: 16px; }
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
-.card { padding: 12px; }
-.card .value { font-size: 26px; font-weight: 750; }
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+}
+.card .value {
+  font-size: 26px;
+  font-weight: 750;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
 .card .label { color: var(--muted); }
+.metric-card .label {
+  margin-bottom: 8px;
+}
+.metric-map {
+  display: grid;
+  gap: 6px;
+}
+.metric-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+}
+.metric-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.metric-number {
+  color: var(--ink);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.kv-list {
+  display: grid;
+  gap: 6px;
+}
+.kv-row {
+  display: grid;
+  grid-template-columns: minmax(84px, .8fr) minmax(0, 1.2fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 3px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.kv-row:last-child {
+  border-bottom: 0;
+}
+.kv-key {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kv-value {
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
 .stack { display: grid; gap: 10px; }
 .panel { padding: 14px; min-height: 120px; overflow: auto; }
 .toolbar {
@@ -273,6 +336,45 @@ pre {
   border-radius: 8px;
   background: #fbfcff;
 }
+.feedback-item,
+.evidence-card,
+.answer-box {
+  padding: 10px;
+  border: 1px solid #dbe4f1;
+  border-radius: 8px;
+  background: white;
+}
+.feedback-item + .feedback-item,
+.evidence-card + .evidence-card {
+  margin-top: 8px;
+}
+.rag-evidence {
+  border-left: 3px solid #9aa4b2;
+}
+.l1-evidence {
+  border-left: 3px solid var(--blue);
+}
+.l2-evidence {
+  border-left: 3px solid var(--purple);
+}
+.strategy-detail {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.strategy-metrics {
+  display: grid;
+  gap: 10px;
+}
+.strategy-detail.full_context {
+  border-top: 4px solid #d9822b;
+}
+.strategy-detail.rag_baseline {
+  border-top: 4px solid #8792a2;
+}
+.strategy-detail.layered_memory {
+  border-top: 4px solid var(--purple);
+}
 .timeline {
   display: grid;
   gap: 0;
@@ -304,6 +406,11 @@ pre {
   display: grid;
   gap: 10px;
   max-height: 620px;
+  overflow: auto;
+  padding-right: 4px;
+}
+#feedbackObjects {
+  max-height: calc(100vh - 110px);
   overflow: auto;
   padding-right: 4px;
 }

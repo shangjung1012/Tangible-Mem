@@ -208,11 +208,27 @@ def existing_rows(path: Path) -> dict[tuple[str, str, str], dict[str, str]]:
     }
 
 
+def selected_variants(value: str) -> list[tuple[str, str]]:
+    requested = {part.strip().lower() for part in str(value or "").split(",") if part.strip()}
+    if not requested or requested == {"all"}:
+        return VARIANTS
+    allowed = {key: (key, label) for key, label in VARIANTS}
+    unknown = sorted(requested - set(allowed))
+    if unknown:
+        raise ValueError(f"Unknown scoring variant(s): {', '.join(unknown)}")
+    return [allowed[key] for key, _label in VARIANTS if key in requested]
+
+
 def run(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Score evaluation answers with shared base metrics plus type-specific metrics.")
     parser.add_argument("--input", default=str(DEFAULT_INPUT))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     parser.add_argument("--model", default=MODEL_NAME)
+    parser.add_argument(
+        "--types",
+        default="answer,evidence",
+        help="Comma-separated scoring variants to run: answer, evidence, or all.",
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
 
@@ -220,6 +236,7 @@ def run(argv: list[str] | None = None) -> int:
     output_path = Path(args.output)
     source_rows = load_rows(input_path)
     existing = {} if args.force else existing_rows(output_path)
+    variants = selected_variants(args.types)
 
     api_keys = resolve_api_keys()
     api_key: Any = api_keys if len(api_keys) > 1 else (api_keys[0] if api_keys else None)
@@ -228,7 +245,7 @@ def run(argv: list[str] | None = None) -> int:
     output_rows: list[dict[str, str]] = []
     for row in source_rows:
         for method_label, answer_col, evidence_col in METHODS:
-            for variant_key, variant_label in VARIANTS:
+            for variant_key, variant_label in variants:
                 key = (row["question_id"], method_label, variant_label)
                 if key in existing:
                     output_rows.append(existing[key])

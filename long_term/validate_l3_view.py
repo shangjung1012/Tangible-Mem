@@ -21,6 +21,7 @@ from share_mem.store import build_l1_index, load_share_tree
 
 TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+", re.IGNORECASE)
 PROMPT_CONTEXT_CHAR_THRESHOLD = 1500
+COHERENT_LARGE_CHILD_HIT_RATE = 0.70
 
 
 def _load_json(path: Path) -> Any:
@@ -134,6 +135,25 @@ def _coherence(child: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _scale_assessment(size_bucket: str, coherence: dict[str, Any]) -> str:
+    if size_bucket != "needs_split_review":
+        return size_bucket
+    try:
+        hit_rate = float(coherence.get("assignment_criteria_hit_rate", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        hit_rate = 0.0
+    if hit_rate >= COHERENT_LARGE_CHILD_HIT_RATE:
+        return "large_coherent_needs_retrieval_slice"
+    return "large_low_coherence_needs_split_review"
+
+
+def _is_family_l3_parent(l3_view: dict[str, Any], parent: dict[str, Any]) -> bool:
+    return (
+        str(l3_view.get("source", "") or "") == "synthetic_related_topics_family_materialization"
+        or str(parent.get("source", "") or "") == "related_topics_family_sidecar"
+    )
+
+
 def _markdown_report(report: dict[str, Any]) -> str:
     lines = [
         "# L3 Validation Report",
@@ -182,6 +202,7 @@ def validate_l3_view_outputs(
     issues: list[dict[str, Any]] = []
     manual_queue: list[dict[str, Any]] = []
     size_distribution: Counter[str] = Counter()
+    scale_assessment_distribution: Counter[str] = Counter()
     child_reports: list[dict[str, Any]] = []
     total_unassigned = 0
     total_duplicate = 0
@@ -196,26 +217,38 @@ def validate_l3_view_outputs(
         if not isinstance(parent, dict):
             continue
         l3_id = str(parent.get("l3_id", "") or "")
+        family_parent = _is_family_l3_parent(l3_view, parent if isinstance(parent, dict) else {})
         source_l2_id = str(parent.get("promoted_from_l2_id", "") or "")
         source_node = l2_lookup.get(source_l2_id)
-        if not source_node:
+        if not family_parent and not source_node:
             issues.append(_issue("promoted_source_l2_missing", "severe", "L3 parent references a missing source L2.", l3_id=l3_id, source_l2_id=source_l2_id))
             continue
-        source_ids = _source_timeline_obj_ids(source_node)
+        source_ids = _source_timeline_obj_ids(source_node) if source_node else []
         source_set = set(source_ids)
         assigned_sequence: list[str] = []
         child_nodes = [child for child in parent.get("child_l2_nodes", []) if isinstance(child, dict)] if isinstance(parent.get("child_l2_nodes"), list) else []
-        if len(child_nodes) < 2:
+        if not family_parent and len(child_nodes) < 2:
             issues.append(_issue("needs_split_review", "warning", "Promoted L2 has fewer than two child L2 nodes.", l3_id=l3_id, source_l2_id=source_l2_id))
         for child in child_nodes:
             child_id = str(child.get("l2_id", "") or "")
             child_ids = _timeline_obj_ids(child)
             assigned_sequence.extend(child_ids)
+            if family_parent:
+                child_source_node = l2_lookup.get(child_id)
+                if not child_source_node:
+                    issues.append(_issue("child_l2_source_missing", "severe", "Family L3 child references a missing L2 source.", l3_id=l3_id, child_l2_id=child_id))
+                    child_source_set: set[str] = set()
+                else:
+                    child_source_set = set(_source_timeline_obj_ids(child_source_node))
+                for obj_id in sorted(set(child_ids) - child_source_set):
+                    issues.append(_issue("child_assignment_outside_child_l2", "severe", "Family L3 child references an L1 outside its child L2.", l3_id=l3_id, child_l2_id=child_id, obj_id=obj_id))
             event_count = _child_event_count(child)
             bucket = child_l2_size_bucket(event_count)
             size_distribution[bucket] += 1
             char_count = _context_char_count(child)
             coherence = _coherence(child)
+            scale_assessment = _scale_assessment(bucket, coherence)
+            scale_assessment_distribution[scale_assessment] += 1
             child_report = {
                 "parent_l3_id": l3_id,
                 "source_l2_id": source_l2_id,
@@ -223,6 +256,7 @@ def validate_l3_view_outputs(
                 "label": str(child.get("label", "") or ""),
                 "event_count": event_count,
                 "size_bucket": bucket,
+                "scale_assessment": scale_assessment,
                 "formatted_context_char_count": char_count,
                 "coherence": coherence,
             }
@@ -233,7 +267,7 @@ def validate_l3_view_outputs(
                 manual_queue.append(issue)
                 if child_id not in merge_review_ids:
                     issues.append(_issue("tiny_child_l2_missing_merge_review", "warning", "Tiny child L2 is absent from l2_merge_review.json.", parent_l3_id=l3_id, child_l2_id=child_id))
-            elif bucket == "needs_split_review":
+            elif scale_assessment == "large_low_coherence_needs_split_review":
                 issue = _issue("oversized_child_l2", "warning", "Child L2 is still too large and should be reviewed for another split.", **child_report)
                 issues.append(issue)
                 manual_queue.append(issue)
@@ -241,23 +275,24 @@ def validate_l3_view_outputs(
                 issues.append(_issue("needs_retrieval_slice", "warning", "Child L2 full timeline exceeds prompt context threshold.", **child_report))
         assigned_counts = Counter(assigned_sequence)
         duplicates = {obj_id for obj_id, count in assigned_counts.items() if count > 1}
-        unassigned = source_set - set(assigned_sequence)
-        outside_source = set(assigned_sequence) - source_set
         total_duplicate += len(duplicates)
-        total_unassigned += len(unassigned)
         for obj_id in sorted(duplicates):
             issues.append(_issue("duplicate_child_assignment", "severe", "Source L1 is assigned to multiple child L2 nodes.", l3_id=l3_id, obj_id=obj_id))
-        for obj_id in sorted(unassigned):
-            issues.append(_issue("unassigned_source_l1", "severe", "Promoted source L2 has an L1 item missing from child L2 assignments.", l3_id=l3_id, obj_id=obj_id))
-        for obj_id in sorted(outside_source):
-            issues.append(_issue("child_assignment_outside_source_l2", "severe", "Child L2 references an L1 outside the promoted source L2.", l3_id=l3_id, obj_id=obj_id))
+        if not family_parent:
+            unassigned = source_set - set(assigned_sequence)
+            outside_source = set(assigned_sequence) - source_set
+            total_unassigned += len(unassigned)
+            for obj_id in sorted(unassigned):
+                issues.append(_issue("unassigned_source_l1", "severe", "Promoted source L2 has an L1 item missing from child L2 assignments.", l3_id=l3_id, obj_id=obj_id))
+            for obj_id in sorted(outside_source):
+                issues.append(_issue("child_assignment_outside_source_l2", "severe", "Child L2 references an L1 outside the promoted source L2.", l3_id=l3_id, obj_id=obj_id))
 
     for obj_id, row in l3_index.items():
         if obj_id not in l1_index:
             invalid_index_count += 1
             issues.append(_issue("l3_index_obj_missing_from_share_mem", "severe", "l3_index references an obj_id absent from share_mem.", obj_id=obj_id))
             continue
-        source_l2_id = str(row.get("source_l2_id", "") or "")
+        source_l2_id = str(row.get("source_l2_id", "") or row.get("child_l2_id", "") or "")
         source_node = l2_lookup.get(source_l2_id)
         if source_node and obj_id not in set(_source_timeline_obj_ids(source_node)):
             invalid_index_count += 1
@@ -277,6 +312,7 @@ def validate_l3_view_outputs(
             "invalid_l3_index_count": invalid_index_count,
         },
         "child_size_distribution": dict(size_distribution),
+        "scale_assessment_distribution": dict(scale_assessment_distribution),
         "child_l2_reports": child_reports,
         "issue_count": len(issues),
         "severe_count": severe_count,

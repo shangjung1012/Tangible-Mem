@@ -25,6 +25,10 @@ from l3_promotion import (
     create_gemini_child_assignment_proposer,
     create_gemini_child_taxonomy_proposer,
 )
+from taxonomy_refinement import (
+    build_unknown_large_l2_split_proposal_sidecar,
+    write_split_proposal_sidecar,
+)
 
 L2_VIEW_SCHEMA_VERSION = 1
 L2_VIEW_FILE_NAME = "l2_view.json"
@@ -76,6 +80,8 @@ RELATED_TOPIC_CANONICAL_LABELS = {
     "alternative approaches": "alternative approaches",
     "agent based systems": "agentic pipeline control",
     "agent orchestration": "agentic pipeline control",
+    "api budget": "operational constraints and resource budget",
+    "api budget and operational constraints": "operational constraints and resource budget",
     "code architecture": "agentic pipeline control",
     "data pipeline": "transcript segmentation and idea-unit coverage",
     "data processing": "transcript segmentation and idea-unit coverage",
@@ -109,6 +115,10 @@ RELATED_TOPIC_CANONICAL_LABELS = {
     "memory evaluation": "memory evaluation strategy",
     "memory model": "memory processing architecture",
     "memory retrieval": "memory retrieval",
+    "missing line coverage": "transcript segmentation and idea-unit coverage",
+    "missing line coverage and repair": "transcript segmentation and idea-unit coverage",
+    "missing-line coverage": "transcript segmentation and idea-unit coverage",
+    "missing-line coverage and repair": "transcript segmentation and idea-unit coverage",
     "retrieval strategy": "memory retrieval",
     "memory system": "memory processing architecture",
     "memory system architecture": "memory processing architecture",
@@ -117,8 +127,25 @@ RELATED_TOPIC_CANONICAL_LABELS = {
     "memory system performance": "memory evaluation strategy",
     "model performance evaluation": "memory evaluation strategy",
     "model evaluation": "memory evaluation strategy",
+    "offline eval": "operational constraints and resource budget",
+    "operational budget": "operational constraints and resource budget",
+    "operational constraints": "operational constraints and resource budget",
     "output quality": "transcript segmentation and idea-unit coverage",
     "rag": "memory retrieval",
+    "rag baseline": "retrieval baseline comparison",
+    "rag and full context baseline comparison": "retrieval baseline comparison",
+    "rag full context baseline comparison": "retrieval baseline comparison",
+    "traditional rag": "retrieval baseline comparison",
+    "full context": "retrieval baseline comparison",
+    "full context baseline": "retrieval baseline comparison",
+    "baseline comparison": "retrieval baseline comparison",
+    "context tokens": "operational constraints and resource budget",
+    "latency and token budget control": "operational constraints and resource budget",
+    "retrieval evaluation": "retrieval baseline comparison",
+    "prompt pass": "operational constraints and resource budget",
+    "token cost": "retrieval baseline comparison",
+    "token budget": "operational constraints and resource budget",
+    "layered memory comparison": "retrieval baseline comparison",
     "research methodology": "research methodology",
     "short term memory": "stm ltm integration",
     "activation score": "memory lifecycle",
@@ -161,7 +188,12 @@ CONTENT_REFINEMENT_OVERRIDE_LABELS = {
     "l2 topic grouping",
     "memory evidence anchoring",
     "memory retrieval",
+    "retrieval baseline comparison",
     "transcript segmentation and idea-unit coverage",
+}
+
+CROSS_CUTTING_L2_LABELS = {
+    "memory evidence anchoring",
 }
 
 ADMINISTRATIVE_HINTS = (
@@ -187,6 +219,24 @@ ADMINISTRATIVE_HINTS = (
     "work-study account",
     "公讀帳號",
     "經費",
+)
+
+DURABLE_OPERATIONAL_CONSTRAINT_HINTS = (
+    "api budget and operational constraints",
+    "offline eval",
+    "no-llm",
+    "no llm",
+    "context token count",
+    "p95 retrieval latency",
+    "retrieval latency",
+    "token budget overflow",
+    "l2 hit rate",
+    "l3 hit rate",
+    "prompt budget pass rate",
+    "gold mapping table",
+    "duplicate assignment count",
+    "unassigned l1 count",
+    "scale_summary.md",
 )
 
 PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -245,6 +295,28 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "最終決定",
             "曾經 explored",
             "沒有再要講",
+        ),
+    ),
+    (
+        "operational constraints and resource budget",
+        (
+            "api budget and operational constraints",
+            "offline eval",
+            "no-llm",
+            "no llm",
+            "context token count",
+            "p95 retrieval latency",
+            "retrieval latency",
+            "token budget overflow",
+            "latency and token budget control",
+            "api budget",
+            "context tokens",
+            "operational constraints",
+            "prompt pass",
+            "resource budget",
+            "token budget",
+            "budget constraint",
+            "budget constraints",
         ),
     ),
     (
@@ -320,6 +392,29 @@ PRIORITY_CONCEPT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "衡量正確性",
             "長期演變",
             "決策推理",
+        ),
+    ),
+    (
+        "retrieval baseline comparison",
+        (
+            "rag and full-context baseline comparison",
+            "rag and full context baseline comparison",
+            "full-context baseline",
+            "full context baseline",
+            "ordinary rag",
+            "traditional rag",
+            "rag baseline",
+            "baseline comparison",
+            "layered memory system",
+            "layered memory comparison",
+            "full context may",
+            "full context 可能",
+            "full transcript baseline",
+            "retrieved chunks",
+            "what each method retrieved",
+            "token cost",
+            "tokens and time",
+            "token and time",
         ),
     ),
     (
@@ -1085,8 +1180,41 @@ def _importance(obj: dict[str, Any]) -> float:
         return 0.0
 
 
+def _has_administrative_related_topic(obj: dict[str, Any]) -> bool:
+    topics = obj.get("related_topics", [])
+    if not isinstance(topics, list):
+        return False
+    admin_tokens = {
+        "academia sinica internship",
+        "billing",
+        "expense reimbursement",
+        "expense_reimbursement",
+        "fund transfer",
+        "lab administration",
+        "lab_administration",
+        "project administration",
+        "project_administration",
+        "resume and transcript",
+        "work study account",
+        "work_study_account",
+    }
+    normalized = {
+        str(topic or "").strip().lower().replace("-", " ").replace("_", " ")
+        for topic in topics
+    }
+    raw = {str(topic or "").strip().lower() for topic in topics}
+    return bool((normalized | raw) & admin_tokens)
+
+
+def _has_durable_operational_constraint_context(obj: dict[str, Any]) -> bool:
+    text = _obj_text(obj).lower()
+    return any(hint in text for hint in DURABLE_OPERATIONAL_CONSTRAINT_HINTS)
+
+
 def _is_administrative(obj: dict[str, Any]) -> bool:
     text = _obj_text(obj).lower()
+    if _has_durable_operational_constraint_context(obj) and not _has_administrative_related_topic(obj):
+        return False
     return any(hint in text for hint in ADMINISTRATIVE_HINTS)
 
 
@@ -1121,7 +1249,24 @@ def _normalize_related_topic_label(raw: Any) -> str:
     return " ".join(text.split())
 
 
-def _label_from_topic_text(normalized_topic: str) -> str | None:
+def _freeform_related_topic_label(normalized_topic: str) -> str | None:
+    if not normalized_topic:
+        return None
+    if normalized_topic in GENERIC_LABELS or normalized_topic in TYPE_LIKE_LABELS:
+        return None
+    if "synthetic campus energy" in normalized_topic:
+        return None
+    if not re.search(r"[a-z]", normalized_topic):
+        return None
+    tokens = [token for token in normalized_topic.split() if token]
+    if len(tokens) < 2:
+        return None
+    if any(token in TYPE_LIKE_LABELS for token in tokens):
+        return None
+    return normalized_topic
+
+
+def _label_from_topic_text(normalized_topic: str, *, allow_freeform_related_topics: bool = False) -> str | None:
     if not normalized_topic:
         return None
     if normalized_topic in GENERIC_LABELS or normalized_topic in TYPE_LIKE_LABELS:
@@ -1132,10 +1277,16 @@ def _label_from_topic_text(normalized_topic: str) -> str | None:
     for label, hints in (*PRIORITY_CONCEPT_RULES, *CONCEPT_RULES):
         if normalized_topic == label or any(normalized_topic == _normalize_related_topic_label(hint) for hint in hints):
             return label
+    if allow_freeform_related_topics:
+        return _freeform_related_topic_label(normalized_topic)
     return None
 
 
-def normalized_l2_candidates_from_related_topics(obj: dict[str, Any]) -> list[dict[str, Any]]:
+def normalized_l2_candidates_from_related_topics(
+    obj: dict[str, Any],
+    *,
+    allow_freeform_related_topics: bool = False,
+) -> list[dict[str, Any]]:
     """Return ordered L2 candidates derived from L1 related_topics.
 
     Normalization rules:
@@ -1154,15 +1305,24 @@ def normalized_l2_candidates_from_related_topics(obj: dict[str, Any]) -> list[di
     seen_labels: set[str] = set()
     for raw in topics:
         normalized = _normalize_related_topic_label(raw)
-        label = _label_from_topic_text(normalized)
+        label = _label_from_topic_text(
+            normalized,
+            allow_freeform_related_topics=allow_freeform_related_topics,
+        )
         if not label or label in seen_labels:
             continue
+        freeform_label = (
+            allow_freeform_related_topics
+            and label == normalized
+            and normalized not in RELATED_TOPIC_CANONICAL_LABELS
+        )
         seen_labels.add(label)
         candidates.append(
             {
                 "label": label,
                 "raw_topic": str(raw or ""),
                 "normalized_topic": normalized,
+                "source": "freeform_related_topic" if freeform_label else "curated_related_topic",
                 "specificity": (
                     "broad"
                     if normalized in BROAD_RELATED_TOPIC_LABELS or label in GENERIC_LABELS
@@ -1173,7 +1333,11 @@ def normalized_l2_candidates_from_related_topics(obj: dict[str, Any]) -> list[di
     return candidates
 
 
-def choose_l2_assignment(obj: dict[str, Any]) -> dict[str, Any]:
+def choose_l2_assignment(
+    obj: dict[str, Any],
+    *,
+    allow_freeform_related_topics: bool = False,
+) -> dict[str, Any]:
     """Return a deterministic L2 assignment or skip decision for one L1 object."""
     importance = _importance(obj)
     obj_type = str(obj.get("type", "") or "")
@@ -1198,7 +1362,10 @@ def choose_l2_assignment(obj: dict[str, Any]) -> dict[str, Any]:
             "confidence": 0.78,
         }
 
-    topic_candidates = normalized_l2_candidates_from_related_topics(obj)
+    topic_candidates = normalized_l2_candidates_from_related_topics(
+        obj,
+        allow_freeform_related_topics=allow_freeform_related_topics,
+    )
     concept_label, concept_reason = _concept_label(obj)
 
     label = None
@@ -1207,10 +1374,22 @@ def choose_l2_assignment(obj: dict[str, Any]) -> dict[str, Any]:
         primary = topic_candidates[0]
         label = str(primary["label"])
         reason = "related_topic_seed"
+        concrete_candidates = [
+            candidate
+            for candidate in topic_candidates[1:]
+            if str(candidate.get("label", "") or "") not in CROSS_CUTTING_L2_LABELS
+        ]
+        if label in CROSS_CUTTING_L2_LABELS and concrete_candidates:
+            label = str(concrete_candidates[0]["label"])
+            reason = "related_topic_seed_cross_cutting_refined"
         if (
             (
                 primary.get("specificity") == "broad"
-                or concept_label in CONTENT_REFINEMENT_OVERRIDE_LABELS
+                or label == "retrieval baseline comparison"
+                or (
+                    concept_label in CONTENT_REFINEMENT_OVERRIDE_LABELS
+                    and primary.get("source") != "freeform_related_topic"
+                )
             )
             and concept_label is not None
             and concept_label != label
@@ -1339,6 +1518,8 @@ def clean_l3_outputs(output_root: Path | str) -> None:
         "l3_view.json",
         "l3_index.json",
         "l2_merge_review.json",
+        "l2_split_proposals.json",
+        "l2_split_proposals.md",
     ):
         path = root / file_name
         if path.exists():
@@ -1474,6 +1655,7 @@ def _build_outputs(
     l3_thresholds: dict[str, float] | None = None,
     l3_materialization: bool = True,
     l3_assignment_confidence_threshold: float = 0.55,
+    allow_freeform_related_topics: bool = False,
 ) -> dict[str, Any]:
     source_tree_hash = stable_hash(tree)
     linked_by_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1491,7 +1673,10 @@ def _build_outputs(
                 continue
             source_l1_count += 1
             obj_id = str(obj.get("obj_id", "") or "")
-            assignment = choose_l2_assignment(obj)
+            assignment = choose_l2_assignment(
+                obj,
+                allow_freeform_related_topics=allow_freeform_related_topics,
+            )
             event = {
                 "event_id": _event_id(meeting_id, ordinal),
                 "meeting_id": meeting_id,
@@ -1583,6 +1768,7 @@ def _build_outputs(
         "mode": mode,
         "l3_mode": l3_mode,
         "l3_model": model or "",
+        "allow_freeform_related_topics": allow_freeform_related_topics,
         "source_tree_hash": source_tree_hash,
         "meeting_count": len(list(iter_meetings(tree))),
         "source_l1_count": source_l1_count,
@@ -1665,6 +1851,10 @@ def _build_outputs(
             }
         )
     l2_merge_review_sidecar = build_l2_merge_review_sidecar(l3_materialization_sidecar)
+    l2_split_proposal_sidecar = build_unknown_large_l2_split_proposal_sidecar(
+        l2_view,
+        l3_promotion_sidecar,
+    )
     return {
         "l2_view": l2_view,
         "l2_index": dict(sorted(l2_index.items())),
@@ -1674,6 +1864,7 @@ def _build_outputs(
         "l3_promotion_sidecar": l3_promotion_sidecar,
         "l3_materialization_sidecar": l3_materialization_sidecar,
         "l2_merge_review_sidecar": l2_merge_review_sidecar,
+        "l2_split_proposal_sidecar": l2_split_proposal_sidecar,
         "manifest": manifest,
     }
 
@@ -1689,6 +1880,7 @@ def build_l2_view_outputs(
     l3_thresholds: dict[str, float] | None = None,
     l3_materialization: bool = True,
     l3_assignment_confidence_threshold: float = 0.55,
+    allow_freeform_related_topics: bool = False,
     clean: bool = False,
     dry_run: bool = False,
 ) -> dict[str, Any]:
@@ -1714,6 +1906,7 @@ def build_l2_view_outputs(
         l3_thresholds=l3_thresholds,
         l3_materialization=l3_materialization,
         l3_assignment_confidence_threshold=l3_assignment_confidence_threshold,
+        allow_freeform_related_topics=allow_freeform_related_topics,
     )
     if dry_run:
         return outputs["manifest"]
@@ -1732,6 +1925,7 @@ def build_l2_view_outputs(
         outputs["l3_materialization_sidecar"].get("l3_index", {}),
     )
     _write_json(out_root.parent / "l3" / "l2_merge_review.json", outputs["l2_merge_review_sidecar"])
+    write_split_proposal_sidecar(outputs["l2_split_proposal_sidecar"], out_root.parent / "l3")
     return outputs["manifest"]
 
 
@@ -1816,6 +2010,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Write L3 promotions but skip materialized l3_view/l3_index child assignments.",
     )
+    parser.add_argument(
+        "--allow-freeform-related-topics",
+        action="store_true",
+        help=(
+            "Opt in to using specific English related_topics as L2 labels when they "
+            "are not in the curated Grace taxonomy. Default off preserves canonical Grace behavior."
+        ),
+    )
     parser.add_argument("--clean", action="store_true", help="Clean generated L2 outputs.")
     parser.add_argument("--dry-run", action="store_true", help="Validate inputs without writing.")
     return parser.parse_args(argv)
@@ -1838,6 +2040,7 @@ def main(argv: list[str] | None = None) -> None:
         },
         l3_materialization=not bool(args.no_l3_materialization),
         l3_assignment_confidence_threshold=args.l3_assignment_confidence_threshold,
+        allow_freeform_related_topics=bool(args.allow_freeform_related_topics),
         clean=bool(args.clean),
         dry_run=bool(args.dry_run),
     )

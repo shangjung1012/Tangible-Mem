@@ -174,14 +174,20 @@ Materialized L3 output is written separately:
 - `long_term/l3/l3_view.json`: L3 parent plus child L2 nodes.
 - `long_term/l3/l3_index.json`: `obj_id -> l3_id / child_l2_id` assignment.
 - `long_term/l3/l2_merge_review.json`: tiny/weak/oversized child L2 follow-up queue.
-- `long_term/l3/validation/`: split coverage, child size, prompt budget, and
-  merge review reports.
+- `long_term/l3/validation/`: split coverage, scale-aware child size, prompt
+  budget, and merge review reports.
 
 The materializer only promotes candidates that already have at least two child
 L2 definitions. By default, it assigns every old L2 timeline item to exactly
 one child L2 using deterministic `assignment_criteria`; unmatched items are
 assigned by a balanced fallback so no L1 is lost. The current generated
 materialization is:
+
+Validation separates two large-child cases. A coherent long-running child L2 is
+marked `large_coherent_needs_retrieval_slice`, which means retrieval should
+slice its timeline instead of injecting it whole. A large low-coherence child L2
+is marked `large_low_coherence_needs_split_review` and remains in manual review
+because it may be a mixed assignment or missing taxonomy split.
 
 ```text
 L3-transcript-segmentation-and-idea-unit-coverage

@@ -13,6 +13,7 @@ if str(LONG_TERM_DIR) not in sys.path:
     sys.path.insert(0, str(LONG_TERM_DIR))
 
 import evaluate_retrieval  # noqa: E402
+import retrieval_profiles  # noqa: E402
 
 
 class RetrievalEvalTests(unittest.TestCase):
@@ -145,6 +146,21 @@ class RetrievalEvalTests(unittest.TestCase):
             self.assertTrue((out / "retrieval_eval_report.json").exists())
             self.assertTrue((out / "retrieval_eval_report.md").exists())
 
+    def test_prompt_budget_allows_six_thousand_chars(self) -> None:
+        with patch.object(evaluate_retrieval, "format_recall_for_prompt", return_value="x" * 5000):
+            scored = evaluate_retrieval._score_query_result(
+                {"query": "memory retrieval", "expected_obj_ids": ["L1-a"]},
+                {
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-a"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {},
+                },
+            )
+
+        self.assertTrue(scored["prompt_budget_pass"])
+
     def test_eval_cli_defaults_to_no_llm_planner(self) -> None:
         with patch.object(
             evaluate_retrieval,
@@ -164,6 +180,59 @@ class RetrievalEvalTests(unittest.TestCase):
             evaluate_retrieval.main(["--use-llm-planner"])
 
         self.assertTrue(runner.call_args.kwargs["use_llm_planner"])
+
+    def test_large_corpus_tight_profile_is_named_and_compact(self) -> None:
+        profile = retrieval_profiles.get_retrieval_budget_profile("large_corpus_tight")
+
+        self.assertEqual(profile["top_k_raw"], 20)
+        self.assertEqual(profile["max_l1_seeds_for_prompt"], 8)
+        self.assertEqual(profile["max_expanded_l2_topics"], 1)
+        self.assertEqual(profile["max_events_per_l2"], 1)
+        self.assertEqual(profile["max_events_per_child_l2"], 1)
+        self.assertLessEqual(profile["max_global_topic_map_chars"], 300)
+        self.assertLessEqual(profile["max_event_chars"], 100)
+
+    def test_eval_cli_budget_profile_overrides_grid_with_single_run(self) -> None:
+        with patch.object(
+            evaluate_retrieval,
+            "evaluate_retrieval_grid",
+            return_value={"query_count": 0, "run_count": 0},
+        ) as runner:
+            evaluate_retrieval.main(["--budget-profile", "large_corpus_tight"])
+
+        grid = runner.call_args.kwargs["grid"]
+        self.assertEqual(grid["top_k_raw"], [20])
+        self.assertEqual(grid["max_l1_seeds_for_prompt"], [8])
+        self.assertEqual(grid["max_expanded_l2_topics"], [1])
+        self.assertEqual(grid["max_events_per_child_l2"], [1])
+
+    def test_eval_can_pass_sidecar_l2_l3_roots_to_recall(self) -> None:
+        with patch.object(
+            evaluate_retrieval,
+            "plan_recall",
+            side_effect=AssertionError("planner called"),
+        ), patch.object(
+            evaluate_retrieval,
+            "recall",
+            return_value={"long_term_l1": [], "long_term_l2": [], "long_term_l3": [], "retrieval_debug": {}},
+        ) as recall_call:
+            evaluate_retrieval.run_retrieval_once(
+                query="memory retrieval",
+                tree={"meetings": []},
+                api_key="",
+                model_name="test-model",
+                params={"top_k_raw": 10},
+                use_llm_planner=False,
+                retrieval_mode="lexical",
+                l2_root=Path("synthetic/l2"),
+                l3_root=Path("synthetic/l3"),
+            )
+
+        _, kwargs = recall_call.call_args
+        self.assertEqual(kwargs["l2_index_path"], Path("synthetic/l2/l2_index.json"))
+        self.assertEqual(kwargs["l2_view_path"], Path("synthetic/l2/l2_view.json"))
+        self.assertEqual(kwargs["l3_view_path"], Path("synthetic/l3/l3_view.json"))
+        self.assertEqual(kwargs["l3_index_path"], Path("synthetic/l3/l3_index.json"))
 
 
 if __name__ == "__main__":

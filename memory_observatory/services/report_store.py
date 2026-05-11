@@ -45,6 +45,8 @@ class ReportStore:
             if not child.is_dir():
                 continue
             results_path = child / "results.json"
+            if not results_path.exists():
+                continue
             summary = load_json(child / "summary.json", {})
             rows.append(
                 {
@@ -72,4 +74,3 @@ class ReportStore:
     def load_answer(self, run_id: str, query_id: str, strategy: str) -> str:
         path = self.runs_root / run_id / "answers" / query_id / f"{strategy}.txt"
         return path.read_text(encoding="utf-8") if path.exists() else ""
-

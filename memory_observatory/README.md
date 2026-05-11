@@ -65,6 +65,25 @@ LLM. It uses lexical RAG, heuristic layered recall planning, deterministic token
 estimates, and retrieval/context-build timing. The experiment CLI now defaults
 to the heuristic layered planner; `--no-llm` is kept in examples for clarity.
 
+The experiment CLI defaults to `--max-context-chars 0`, which means an
+unbounded diagnostic run. In that mode the experiment runner does not locally
+truncate full-context, RAG, or layered-memory prompt contexts; the model
+provider's real context window is the only remaining limit. RAG still has its
+retrieval definition limit, controlled by `--rag-top-k`:
+
+```bash
+uv run python memory_observatory/run_experiment.py \
+  --queries long_term/eval/long_term_retrieval_queries.jsonl \
+  --out memory_observatory/runs \
+  --strategies full_context,rag_baseline,layered_memory \
+  --retrieval-mode lexical \
+  --no-llm \
+  --generate-answers \
+  --model gemini-2.5-pro \
+  --max-context-chars 0 \
+  --rag-top-k 12
+```
+
 ## Run With Flash Planner And Pro Answers
 
 When you want live answers but still want faster planning, keep `--model` for
@@ -101,6 +120,48 @@ Each run writes:
 - `answers/<query_id>/<strategy>.txt`
 
 Generated run directories are ignored by git; `.gitkeep` preserves the folder.
+
+## Export Answers For Judge Scoring
+
+Existing judge scripts under `app/score_evaluation_answers_v2.py` use a flat CSV
+schema. Export a Memory Observatory run into that schema with:
+
+```bash
+uv run python memory_observatory/export_scoring_csv.py \
+  --run memory_observatory/runs/<run_id> \
+  --out memory_observatory/runs/<run_id>/observatory_scoring_input.csv
+```
+
+Observatory runs normally produce one answer per strategy, not a separate
+evidence-answer variant. Score those exports with Answer rows only:
+
+```bash
+uv run python app/score_evaluation_answers_v2.py \
+  --input memory_observatory/runs/<run_id>/observatory_scoring_input.csv \
+  --output memory_observatory/runs/<run_id>/observatory_scores_v2.csv \
+  --types answer
+```
+
+The exporter also writes `observatory_scoring_input.summary.json/md`. If
+`missing_expected_answer_count` is nonzero, the run is useful for inspecting
+retrieval and answers but should not be treated as a valid answer-quality judge
+run until gold expected answers are attached.
+
+For answer-quality experiments, use a query file that includes
+`expected_answer`, such as `doc/evaluation_questions_0307_0506.csv`. The
+experiment runner accepts both JSONL and CSV query files.
+
+## Visual QA With Playwright
+
+Playwright is available as a dev dependency for checking the local UI:
+
+```bash
+uv run python -m playwright install chromium
+uv run uvicorn memory_observatory.main:app --host 127.0.0.1 --port 8765
+```
+
+Then a small Playwright script can open `http://127.0.0.1:8765/`, switch to
+Experiment Lab, and capture screenshots or check element overflow.
 
 ## Pages
 

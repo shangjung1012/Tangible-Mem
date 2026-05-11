@@ -1,0 +1,56 @@
+=== Memory Router ===
+strategy: forced_long_only_ablation
+reason: short-term ablation variant
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-transcript-segmentation-and-idea-unit-coverage: transcript segmentation and idea-unit coverage
+  - child L2 L2-fixed-vs-dynamic-chunking: fixed vs dynamic chunking
+  - child L2 L2-window-and-boundary-selection: window and boundary selection
+  - child L2 L2-tool-calling-transcript-reading: tool-calling transcript reading
+  - child L2 L2-idea-unit-generation: idea-unit core definition
+  - child L2 L2-idea-unit-granularity-and-semantics: idea-unit granularity and semantics
+  - child L2 L2-idea-unit-generation-methods: idea-unit generation methods
+  - child L2 L2-idea-unit-candidate-classification: idea-unit candidate classification
+  - child L2 L2-missing-line-coverage: missing-line coverage
+  - child L2 L2-repair-and-coarsening: repair and coarsening
+  - child L2 L2-cross-window-continuity: cross-window continuity
+  - child L2 L2-evidence-grounding-and-line-coverage: evidence grounding and line coverage
+- Unpromoted L2 topics:
+  - L2-memory-retrieval: memory retrieval
+
+=== L1 Evidence Seeds ===
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.8289
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKE...(truncated)
+- [0429 | 2026-04-29 | L1-0429-133] type=approach_change importance=0.75 score=0.8265
+  content: 為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種...(truncated)
+  evidence: [SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是...(truncated)
+- [0506 | 2026-05-06 | L1-0506-001] type=approach_change importance=0.72 score=0.8734
+  content: 團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，...(truncated)
+  evidence: [SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcrip...(truncated)
+- [0506 | 2026-05-06 | L1-0506-007] type=open_issue importance=0.6 score=0.8355
+  content: 關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一...(truncated)
+  evidence: [SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段...(truncated)
+- [0506 | 2026-05-06 | L1-0506-015] type=proposal importance=0.65 score=0.8352
+  content: 資料處理流程被定義為：將 `idea units` 發送給六個並行運行的 agent 進行分類。這些 agent 的輸出稱為 `candidates`，可能存在重複。接著...(truncated)
+  evidence: [SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 s...(truncated)
+- [0506 | 2026-05-06 | L1-0506-002] type=decision importance=0.62 score=0.8336
+  content: 團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit...(truncated)
+  evidence: [SPEAKER_01]: 因為我們想像可能是說segment會是一個相關的段落就是他都在討論這件事情那idea unit可能是裡面有講到裡面可能to-do是什麼什麼de...(truncated)
+- [0506 | 2026-05-06 | L1-0506-016] type=approach_change importance=0.72 score=0.8336
+  content: 記憶更新的基本單位被確立為 `idea unit`。一個 `idea unit` 經由 agent 標記後會成為一個 `candidate`，該 `candidate` 接著被用來更新一個記憶節點。
+  evidence: [SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candida...(truncated)
+- [0506 | 2026-05-06 | L1-0506-024] type=proposal importance=0.58 score=0.8179
+  content: 提出一個更具層次性的資料結構定義：`idea units`（話語）構成 `segments`（微主題），而多個相關的 `segments` 則組成一個 `batch`（較大的主題）。
+  evidence: [SPEAKER_02]: 它就是一個updated incomplete的segment對它其實就是segment只是它update過我剛剛把想像的batch 是說好這...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-idea-unit-candidate-classification] idea-unit candidate classification
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0506-015, L1-0506-016, L1-0429-133
+  topic_size=16 selected_event_count=8 omitted_event_count=8
+  current_stat
+...(truncated)

@@ -132,6 +132,128 @@ def _lexical_score(query_units: set[str], text: str, keywords: list[str] | None 
     return max(overlap, keyword_score)
 
 
+QUERY_EXPANSION_GROUPS = [
+    {
+        "triggers": {"rag", "full transcript", "baseline", "lifecycle"},
+        "expansions": {
+            "rag",
+            "full transcript",
+            "逐字稿",
+            "基準",
+            "baseline",
+            "生命週期",
+            "狀態演變",
+            "被否決",
+            "採用",
+            "轉向",
+            "chunking",
+        },
+    },
+    {
+        "triggers": {"stm", "ltm", "short-term", "long-term", "routing", "route", "memory"},
+        "expansions": {
+            "stm",
+            "ltm",
+            "short-term",
+            "long-term",
+            "短期",
+            "長期",
+            "記憶",
+            "平行",
+            "同時",
+            "更新",
+            "路由",
+            "routing",
+            "manager",
+            "agent",
+        },
+    },
+    {
+        "triggers": {"evaluation", "baseline", "metric", "metrics", "judge", "locomo", "mem0"},
+        "expansions": {
+            "evaluation",
+            "baseline",
+            "metrics",
+            "judge",
+            "latency",
+            "token",
+            "評估",
+            "基準",
+            "指標",
+            "裁判",
+            "題型",
+            "正確性",
+            "三類",
+            "single-hop",
+            "multi-hop",
+            "temporal",
+        },
+    },
+    {
+        "triggers": {"forgetting", "fade", "fade-out", "activation", "decay", "floor"},
+        "expansions": {
+            "forgetting",
+            "fade",
+            "fade-out",
+            "activation",
+            "decay",
+            "floor",
+            "遺忘",
+            "淡出",
+            "激活",
+            "重新激活",
+            "非活躍",
+            "衰減",
+            "下限",
+            "importance",
+        },
+    },
+    {
+        "triggers": {"retrieve", "retrieval", "update", "inspector", "visualization"},
+        "expansions": {
+            "retrieve",
+            "retrieval",
+            "update",
+            "inspector",
+            "visualization",
+            "檢索",
+            "更新",
+            "視覺化",
+            "檢查",
+            "脈絡",
+            "l1",
+            "l2",
+            "l3",
+        },
+    },
+]
+
+
+def _expand_query_terms(query: str, keywords: list[str] | None = None) -> list[str]:
+    text = " ".join([str(query or ""), " ".join(str(k) for k in keywords or [])]).lower()
+    normalized = text.replace("_", " ").replace("-", " ")
+    expansions: list[str] = []
+    seen: set[str] = set()
+
+    def add(term: str) -> None:
+        clean = str(term or "").strip()
+        if clean and clean.lower() not in seen:
+            seen.add(clean.lower())
+            expansions.append(clean)
+
+    for group in QUERY_EXPANSION_GROUPS:
+        triggers = group["triggers"]
+        if any(trigger in text or trigger.replace("-", " ") in normalized for trigger in triggers):
+            for expansion in group["expansions"]:
+                add(expansion)
+    return expansions
+
+
+def _expanded_query_units(query: str, keywords: list[str] | None = None) -> set[str]:
+    expanded_terms = _expand_query_terms(query, keywords)
+    return _lexical_units(" ".join([str(query or ""), " ".join(str(k) for k in keywords or []), " ".join(expanded_terms)]))
+
+
 # ===================================================================
 # L1 semantic search
 # ===================================================================
@@ -244,7 +366,8 @@ def search_l1_lexical(
     """Search L1 objects with deterministic lexical scoring, no API calls."""
     if query_date is None:
         query_date = datetime.now(timezone.utc)
-    query_text = " ".join([str(query or ""), " ".join(str(k) for k in keywords or [])])
+    expanded_keywords = [str(k) for k in keywords or []] + _expand_query_terms(query, keywords)
+    query_text = " ".join([str(query or ""), " ".join(expanded_keywords)])
     query_units = _lexical_units(query_text)
     results: list[dict[str, Any]] = []
 
@@ -275,7 +398,7 @@ def search_l1_lexical(
             ).strip()
             if not text:
                 continue
-            lexical = _lexical_score(query_units, text, keywords=keywords)
+            lexical = _lexical_score(query_units, text, keywords=expanded_keywords)
             if lexical <= 0:
                 continue
             s_recency = _recency_score(
@@ -630,8 +753,38 @@ def _timeline_event_date(entry: dict[str, Any]) -> str:
     return str(entry.get("meeting_date") or entry.get("meeting_id") or "")
 
 
+def _extract_meeting_hints(query: str) -> list[str]:
+    text = str(query or "")
+    hints: list[str] = []
+    for match in re.findall(r"\b(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])\b", text):
+        if match not in hints:
+            hints.append(match)
+    for month, day in re.findall(r"\b20\d{2}[-/](\d{2})[-/](\d{2})\b", text):
+        hint = f"{month}{day}"
+        if hint not in hints:
+            hints.append(hint)
+    return hints
+
+
 def _is_evolution_query(query: str) -> bool:
     lowered = str(query or "").lower()
+    if re.search(r"\bfrom\b.+\bto\b", lowered) or re.search(r"從.+到", lowered):
+        return True
+    chinese_markers = (
+        "演進",
+        "演變",
+        "轉變",
+        "轉折",
+        "後來",
+        "最後",
+        "變成",
+        "歷程",
+        "時間線",
+        "為什麼最後",
+        "怎麼變",
+    )
+    if any(marker in lowered for marker in chinese_markers):
+        return True
     if any(
         marker in lowered
         for marker in (
@@ -707,7 +860,7 @@ def _select_timeline_slice(
 
     matched_rows = [row for row in rows if str(row.get("obj_id", "") or "") in matched]
     if _is_evolution_query(query) and max_events > 1:
-        query_units = _lexical_units(query)
+        query_units = _expanded_query_units(query)
 
         def evolution_relevance(row: dict[str, Any]) -> float:
             text = str(row.get("summary", row.get("content", "")) or "")
@@ -732,6 +885,39 @@ def _select_timeline_slice(
                 if marker in lowered_text:
                     transition_bonus += 0.08
             return base_score + min(0.24, transition_bonus)
+
+        meeting_hints = _extract_meeting_hints(query)
+
+        def rows_for_meeting_hint(hint: str) -> list[dict[str, Any]]:
+            matches = [
+                row
+                for row in rows
+                if str(row.get("meeting_id", "") or "") == hint
+                or str(row.get("meeting_date", "") or "").replace("-", "")[4:8] == hint
+            ]
+            matches.sort(
+                key=lambda row: (
+                    0 if str(row.get("obj_id", "") or "") in matched else 1,
+                    -evolution_relevance(row),
+                    _timeline_event_date(row),
+                )
+            )
+            return matches
+
+        if meeting_hints:
+            endpoint_hints = [meeting_hints[0]]
+            if meeting_hints[-1] != meeting_hints[0]:
+                endpoint_hints.append(meeting_hints[-1])
+            for hint in endpoint_hints:
+                hinted_rows = rows_for_meeting_hint(hint)
+                if hinted_rows:
+                    add(hinted_rows[0])
+            for row in matched_rows:
+                add(row)
+            for hint in meeting_hints[1:-1]:
+                hinted_rows = rows_for_meeting_hint(hint)
+                if hinted_rows:
+                    add(hinted_rows[0])
 
         relevant_rows = [
             row
@@ -835,21 +1021,116 @@ def _node_query_similarity(query: str, node: dict[str, Any]) -> float:
     return min(1.0, score)
 
 
+def _is_topic_navigation_query(query: str) -> bool:
+    text = " ".join(str(query or "").lower().replace("-", " ").split())
+    navigation_markers = [
+        "child l2",
+        "children l2",
+        "child topic",
+        "topic map",
+        "topic hierarchy",
+        "被拆成",
+        "拆成哪些",
+        "哪些 child",
+        "哪些 l2",
+        "主題被拆",
+        "大主題",
+    ]
+    return any(marker in text for marker in navigation_markers)
+
+
 def build_global_topic_map(
     l2_view: dict[str, Any] | None,
     l3_view: dict[str, Any] | None,
     *,
     max_chars: int = 800,
+    query: str = "",
 ) -> dict[str, Any]:
     """Build a compact navigation map from materialized L3 plus remaining L2 labels."""
     promoted_source_l2_ids: set[str] = set()
     l3_families: list[dict[str, Any]] = []
     char_count = 0
+    query_text = str(query or "")
+    query_tokens = _tokens(query_text)
+    query_units = _lexical_units(query_text)
+    navigation_query = _is_topic_navigation_query(query_text)
 
-    for l3_node in (l3_view or {}).get("l3_nodes", []) if isinstance(l3_view, dict) else []:
+    def family_score(l3_node: dict[str, Any]) -> float:
+        children = (
+            l3_node.get("child_l2_nodes", [])
+            if isinstance(l3_node.get("child_l2_nodes"), list)
+            else []
+        )
+        text_parts = [
+            str(l3_node.get("l3_id", "") or ""),
+            str(l3_node.get("label", "") or ""),
+            str(l3_node.get("promoted_from_l2_id", "") or ""),
+        ]
+        for child in children:
+            if isinstance(child, dict):
+                text_parts.extend(
+                    [
+                        str(child.get("l2_id", "") or ""),
+                        str(child.get("label", "") or ""),
+                    ]
+                )
+        text = " ".join(text_parts)
+        tokens = _tokens(text)
+        units = _lexical_units(text)
+        token_score = (
+            len(query_tokens & tokens) / len(query_tokens)
+            if query_tokens and tokens
+            else 0.0
+        )
+        unit_score = (
+            len(query_units & units) / len(query_units)
+            if query_units and units
+            else 0.0
+        )
+        return max(token_score, unit_score)
+
+    def l2_score(node: dict[str, Any]) -> float:
+        text = " ".join(
+            [
+                str(node.get("l2_id", "") or ""),
+                str(node.get("label", "") or ""),
+                str(node.get("current_state", "") or ""),
+            ]
+        )
+        tokens = _tokens(text)
+        units = _lexical_units(text)
+        token_score = (
+            len(query_tokens & tokens) / len(query_tokens)
+            if query_tokens and tokens
+            else 0.0
+        )
+        unit_score = (
+            len(query_units & units) / len(query_units)
+            if query_units and units
+            else 0.0
+        )
+        return max(token_score, unit_score)
+
+    l3_nodes = [
+        node
+        for node in ((l3_view or {}).get("l3_nodes", []) if isinstance(l3_view, dict) else [])
+        if isinstance(node, dict)
+    ]
+    scored_l3_nodes = [
+        (family_score(node), index, node)
+        for index, node in enumerate(l3_nodes)
+    ]
+    if query_tokens or query_units:
+        scored_l3_nodes.sort(key=lambda item: (-item[0], item[1]))
+
+    focused_family_added = False
+    for score, _index, l3_node in scored_l3_nodes:
+        if focused_family_added:
+            break
         if not isinstance(l3_node, dict):
             continue
         children = []
+        include_all_children = bool(navigation_query and score > 0)
         for child in l3_node.get("child_l2_nodes", []) if isinstance(l3_node.get("child_l2_nodes"), list) else []:
             if not isinstance(child, dict):
                 continue
@@ -859,7 +1140,7 @@ def build_global_topic_map(
                 "event_count": _node_event_count(child),
             }
             row_text = f"{child_row['l2_id']} {child_row['label']}"
-            if char_count + len(row_text) > max_chars and children:
+            if not include_all_children and char_count + len(row_text) > max_chars and children:
                 continue
             char_count += len(row_text)
             children.append(child_row)
@@ -867,17 +1148,36 @@ def build_global_topic_map(
             "l3_id": str(l3_node.get("l3_id", "") or ""),
             "label": str(l3_node.get("label", "") or ""),
             "child_l2": children,
+            "query_score": round(score, 4),
+            "focused": bool(include_all_children),
         }
         promoted_source_l2_id = str(l3_node.get("promoted_from_l2_id", "") or "")
         if promoted_source_l2_id:
             promoted_source_l2_ids.add(promoted_source_l2_id)
         family_text = f"{family['l3_id']} {family['label']}"
-        if char_count + len(family_text) <= max_chars or not l3_families:
+        if include_all_children or char_count + len(family_text) <= max_chars or not l3_families:
             char_count += len(family_text)
             l3_families.append(family)
+            focused_family_added = bool(include_all_children)
 
     l2_topics: list[dict[str, Any]] = []
-    for node in (l2_view or {}).get("l2_nodes", []) if isinstance(l2_view, dict) else []:
+    if focused_family_added:
+        return {
+            "source": "long_term_global_topic_map",
+            "note": "Navigation context only; do not use as standalone factual evidence.",
+            "l3_families": l3_families,
+            "l2_topics": l2_topics,
+            "char_count": char_count,
+        }
+    l2_nodes = [
+        node
+        for node in ((l2_view or {}).get("l2_nodes", []) if isinstance(l2_view, dict) else [])
+        if isinstance(node, dict)
+    ]
+    scored_l2_nodes = [(l2_score(node), index, node) for index, node in enumerate(l2_nodes)]
+    if query_tokens or query_units:
+        scored_l2_nodes.sort(key=lambda item: (-item[0], item[1]))
+    for _score, _index, node in scored_l2_nodes:
         if not isinstance(node, dict):
             continue
         l2_id = str(node.get("l2_id", "") or "")
@@ -1434,6 +1734,7 @@ def recall(
         l2_view,
         l3_view,
         max_chars=max_global_topic_map_chars,
+        query=query,
     )
     retrieval_debug: dict[str, Any] = {
         "selected_l1_count": 0,
@@ -1739,7 +2040,13 @@ def format_recall_for_prompt(
             if not isinstance(family, dict):
                 continue
             parts.append(f"- L3 {family.get('l3_id', '')}: {family.get('label', '')}".rstrip())
-            for child in family.get("child_l2", []):
+            children = [child for child in family.get("child_l2", []) if isinstance(child, dict)]
+            if family.get("focused") and len(children) > 4:
+                child_ids = [str(child.get("l2_id", "") or "") for child in children if child.get("l2_id")]
+                if child_ids:
+                    parts.append(f"  - child L2 map: {'; '.join(child_ids)}")
+                continue
+            for child in children:
                 if isinstance(child, dict):
                     parts.append(
                         f"  - child L2 {child.get('l2_id', '')}: {child.get('label', '')}".rstrip()

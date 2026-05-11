@@ -1,0 +1,30 @@
+根據提供的 context，關於 transcript segmentation pipeline 的資訊如下：
+
+### 整體架構與流程
+
+目前的文本處理採用由上而下（top-down）的架構。此架構的演變是為了解決一次性處理完整逐字稿會因上下文過長而難以處理的問題（L1-0429-122）。
+
+1.  **Context Planner**: 整個流程的起點。`Context Planner` 會將固定大小的窗口（例如 80 行）的逐字稿內容，交給 `Segment Agent` 處理（L1-0506-001）。
+2.  **Segment Agent**: 接收來自 `Context Planner` 的文本窗口。然而，如何最有效地對逐字稿進行分段（segmentation）仍是一個待解決的問題（L1-0506-007）。
+3.  **Idea Units**: 處理流程會產生 `idea units`。這些 `idea units` 會被送給六個並行運行的 agent 進行分類（L1-0506-015）。
+4.  **Candidates**: 一個 `idea unit` 經過 agent 標記（加 label）後，會成為一個 `candidate`（L1-0506-016）。這些 `candidates` 可能存在重複（L1-0505-015）。
+5.  **記憶更新**: `candidate` 是用來更新記憶節點的基本單位（L1-0506-016）。
+
+### 關鍵詞定義
+
+*   **Segment vs. Idea Unit**:
+    *   **Segment**: 指一個較廣泛的相關主題，例如關於海報設計的整段討論（L1-0506-002）。
+    *   **Idea Unit**: 指 `segment` 中一個具體的、可操作的或資訊性的點，例如一個待辦事項、一個決策或一個問題（L1-0506-002）。記憶更新的基本單位被確立為 `idea unit`（L1-0506-016）。
+    *   另有一個提案建議更具層次的結構：`idea units`（話語）構成 `segments`（微主題），而多個 `segments` 組成 `batch`（較大主題）（L1-0506-024）。
+
+*   **Candidate / L1**:
+    *   **Candidate**: 當一個 `idea unit` 經過 agent 加上標籤（label）後，就成為一個 `candidate`（L1-0506-016）。
+    *   **與 L1 的關係**: `candidate` 是被用來更新一個記憶節點的單位（L1-0506-016）。在 context 中，L1 evidence seeds 就是這些記憶節點的實例。
+
+### 相關主題脈絡
+
+從全域主題地圖（Global Topic Map）中可以看到，這些討論都屬於 `L3-transcript-segmentation-and-idea-unit-coverage` 的範疇。
+
+*   **L1-0506-015** 和 **L1-0506-016** 提供了 `idea unit` 如何轉換為 `candidate` 並用於記憶更新的資訊，這些證據與以下主題相關：
+    *   L1 Evidence -> L2 Topic -> L3 Topic
+    *   `L1-0506-015`, `L1-0506-016` -> `L2-idea-unit-candidate-classification` -> `L3-transcript-segmentation-and-idea-unit-coverage`

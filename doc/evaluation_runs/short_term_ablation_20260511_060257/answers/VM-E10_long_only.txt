@@ -1,0 +1,14 @@
+根據提供的 context，關於 short-term memory、long-term memory 與 transcript 的關係和差異如下：
+
+**記憶體更新與逐字稿 (Transcript) 的關係**
+
+最初的設計是 short-term memory 和 long-term memory 會各自接收完整的逐字稿 (transcription) 並獨立進行更新，彼此之間沒有互動 (L1-0422-010)。這個決策屬於 `L3-transcript-segmentation-and-idea-unit-coverage` (transcript segmentation and idea-unit coverage) -> `L2-idea-unit-generation` (idea-unit core definition) 的討論範疇。
+
+然而，根據較新的會議記錄，此方法已被放棄。由於一次性處理完整逐字稿的上下文長度過大，難以處理，因此專案已轉為採用分塊處理 (chunking) 的策略來更新記憶體 (L1-0429-122)。
+
+**Short-term 與 Long-term Memory 的主要差異**
+
+1.  **更新機制**：兩者為獨立更新的系統。團隊放棄了早期讓短期記憶在淡忘後轉存為長期記憶的設計 (L1-0408-036, L1-0422-010)。
+2.  **內容精細度**：Short-term memory 能捕捉近期對話中的細微細節，而 long-term memory 則較為摘要式、精簡，可能會遺失這些細節 (L1-0422-036)。
+3.  **遺忘機制**：Long-term memory 的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性隨時間衰減，這是與 short-term memory 的區別之一 (L1-0422-039)。這個衰減機制由一個獨立的 "activation" 參數處理，而節點創建時的 "importance" 分數則保持靜態 (L1-0506-030)。
+4.  **儲存架構**：Long-term memory 目前的設計目標是使其結構盡可能扁平化，而非採用可能與 short-term memory 合併的樹狀結構 (L1-0422-030)。

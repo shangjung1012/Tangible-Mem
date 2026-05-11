@@ -136,6 +136,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
         no_llm: bool = True,
         include_debug: bool = True,
         planner_model: str | None = None,
+        budget_profile: str = "",
     ) -> dict[str, Any]:
         return RetrievalTraceService(root).run_trace(
             query=query,
@@ -143,6 +144,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
             no_llm=no_llm,
             include_debug=include_debug,
             planner_model_name=planner_model,
+            budget_profile=budget_profile,
         )
 
     @app.get("/api/feedback/importance")
@@ -200,6 +202,9 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
     @app.post("/api/runs")
     def api_create_run(payload: dict[str, Any]) -> dict[str, Any]:
         strategies = payload.get("strategies") or ["full_context", "rag_baseline", "layered_memory"]
+        max_context_chars = payload.get("max_context_chars", 0)
+        if max_context_chars is None:
+            max_context_chars = 0
         result = run_experiment(
             repo_root=root,
             queries_path=payload.get("queries_path", "long_term/eval/long_term_retrieval_queries.jsonl"),
@@ -210,7 +215,9 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
             generate_answers=bool(payload.get("generate_answers", False)),
             model=payload.get("model", "gemini-2.5-pro"),
             planner_model=payload.get("planner_model"),
-            max_context_chars=int(payload.get("max_context_chars", 4000) or 4000),
+            max_context_chars=int(max_context_chars),
+            rag_top_k=int(payload.get("rag_top_k", 6) or 6),
+            budget_profile=str(payload.get("budget_profile", "") or ""),
         )
         return {"run_id": result["run_id"], "summary": result["summary"]}
 

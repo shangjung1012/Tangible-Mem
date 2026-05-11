@@ -492,6 +492,64 @@ class RecallL2ViewTests(unittest.TestCase):
         self.assertEqual(global_map["l3_families"][0]["child_l2"][0]["event_count"], 5)
         self.assertEqual(global_map["l2_topics"][0]["event_count"], 7)
 
+    def test_global_topic_map_prioritizes_query_relevant_child_l2_navigation(self) -> None:
+        global_map = recall.build_global_topic_map(
+            {"l2_nodes": []},
+            {
+                "l3_nodes": [
+                    {
+                        "l3_id": "L3-memory-evaluation-strategy",
+                        "label": "memory evaluation strategy",
+                        "promoted_from_l2_id": "L2-memory-evaluation-strategy",
+                        "child_l2_nodes": [
+                            {
+                                "l2_id": "L2-overall-memory-system-evaluation",
+                                "label": "overall memory system evaluation",
+                                "event_count": 8,
+                            }
+                        ],
+                    },
+                    {
+                        "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+                        "label": "transcript segmentation and idea-unit coverage",
+                        "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+                        "child_l2_nodes": [
+                            {
+                                "l2_id": "L2-window-and-boundary-selection",
+                                "label": "window and boundary selection",
+                                "event_count": 9,
+                            },
+                            {
+                                "l2_id": "L2-idea-unit-generation-methods",
+                                "label": "idea-unit generation methods",
+                                "event_count": 20,
+                            },
+                            {
+                                "l2_id": "L2-missing-line-coverage",
+                                "label": "missing-line coverage",
+                                "event_count": 7,
+                            },
+                        ],
+                    },
+                ]
+            },
+            query="transcript segmentation 這個大主題被拆成哪些 child L2?",
+            max_chars=120,
+        )
+
+        self.assertEqual(
+            global_map["l3_families"][0]["l3_id"],
+            "L3-transcript-segmentation-and-idea-unit-coverage",
+        )
+        self.assertEqual(
+            [child["l2_id"] for child in global_map["l3_families"][0]["child_l2"]],
+            [
+                "L2-window-and-boundary-selection",
+                "L2-idea-unit-generation-methods",
+                "L2-missing-line-coverage",
+            ],
+        )
+
     def test_l2_ranking_prefers_query_label_match_over_generic_seed_majority(self) -> None:
         l1_results = [
             {"obj_id": f"L1-life-{index}", "score": 0.90, "importance": 0.8}
@@ -598,6 +656,91 @@ class RecallL2ViewTests(unittest.TestCase):
         )
 
         self.assertEqual(selected[0]["l2_id"], "L2-agentic-pipeline-control")
+
+    def test_chinese_evolution_query_is_detected(self) -> None:
+        self.assertTrue(recall._is_evolution_query("這個設計從 0307 到 0506 是怎麼演進的？"))
+        self.assertTrue(recall._is_evolution_query("後來 retrieve 的設計變成什麼樣子？"))
+        self.assertTrue(recall._is_evolution_query("為什麼最後沒有採用 adaptive segmentation？"))
+
+    def test_evolution_timeline_slice_covers_mentioned_meeting_endpoints(self) -> None:
+        timeline = [
+            {
+                "meeting_id": "0307",
+                "meeting_date": "2026-03-07",
+                "obj_id": "L1-0307-start",
+                "summary": "Early update-first memory design.",
+            },
+            {
+                "meeting_id": "0325",
+                "meeting_date": "2026-03-25",
+                "obj_id": "L1-0325-middle",
+                "summary": "Object-based memory direction became more concrete.",
+            },
+            {
+                "meeting_id": "0429",
+                "meeting_date": "2026-04-29",
+                "obj_id": "L1-0429-match",
+                "summary": "Retrieval evaluation and topic lifecycle discussion.",
+            },
+            {
+                "meeting_id": "0506",
+                "meeting_date": "2026-05-06",
+                "obj_id": "L1-0506-latest",
+                "summary": "Latest inspector and visualization retrieve design.",
+            },
+        ]
+
+        selected, omitted = recall._select_timeline_slice(
+            timeline,
+            ["L1-0429-match"],
+            max_events=3,
+            max_event_chars=200,
+            query="從 0307 到 0506 retrieve 設計怎麼演進？",
+        )
+
+        selected_ids = [row["obj_id"] for row in selected]
+        self.assertIn("L1-0307-start", selected_ids)
+        self.assertIn("L1-0506-latest", selected_ids)
+        self.assertIn("L1-0429-match", selected_ids)
+        self.assertEqual(omitted, 1)
+
+    def test_lexical_query_expansion_finds_parallel_stm_ltm_update_evidence(self) -> None:
+        tree = {
+            "meetings": [
+                {
+                    "meeting_id": "0422",
+                    "meeting_date": "2026-04-22",
+                    "memory_objects": [
+                        {
+                            "obj_id": "L1-0422-parallel",
+                            "type": "decision",
+                            "content": "短期記憶和長期記憶會平行更新，避免同時具有近期細節與長期脈絡價值的資訊被過早丟棄。",
+                            "evidence": "團隊決定不要先把 idea unit 路由到單一 memory。",
+                            "importance": 0.86,
+                            "related_topics": ["short-term memory", "long-term memory"],
+                        }
+                    ],
+                }
+            ]
+        }
+
+        results = recall.search_l1_lexical(
+            tree,
+            "Why not route transcript units to only STM or LTM?",
+            top_k=5,
+        )
+
+        self.assertEqual(results[0]["obj_id"], "L1-0422-parallel")
+
+    def test_deep_layered_profile_allows_more_context_than_default(self) -> None:
+        from retrieval_profiles import get_retrieval_budget_profile
+
+        default = get_retrieval_budget_profile("default")
+        deep = get_retrieval_budget_profile("deep_layered")
+
+        self.assertGreater(deep["max_l1_seeds_for_prompt"], default["max_l1_seeds_for_prompt"])
+        self.assertGreater(deep["max_events_per_child_l2"], default["max_events_per_child_l2"])
+        self.assertGreater(deep["max_event_chars"], default["max_event_chars"])
 
 
 if __name__ == "__main__":

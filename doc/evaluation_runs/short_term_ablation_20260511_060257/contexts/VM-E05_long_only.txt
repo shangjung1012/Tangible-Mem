@@ -1,0 +1,56 @@
+=== Memory Router ===
+strategy: forced_long_only_ablation
+reason: short-term ablation variant
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-memory-lifecycle: memory lifecycle
+
+=== L1 Evidence Seeds ===
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.8286
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可...(truncated)
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有...(truncated)
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.8209
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制...(truncated)
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.8259
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就...(truncated)
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.8609
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減...(truncated)
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他impor...(truncated)
+- [0506 | 2026-05-06 | L1-0506-038] type=finding importance=0.65 score=0.853
+  content: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  evidence: [SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 r...(truncated)
+- [0506 | 2026-05-06 | L1-0506-033] type=decision importance=0.65 score=0.8186
+  content: 決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最...(truncated)
+- [0506 | 2026-05-06 | L1-0506-037] type=argument importance=0.64 score=0.8038
+  content: 即使「重要性 (importance)」分數是靜態的，也應該捕獲用戶對 LLM 初始評分的修正。這樣做的理由是，這些回饋可用於個人化並改進 LLM 未來的預測能力。
+  evidence: [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importan...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-lifecycle] memory lifecycle
+  matched L1: L1-0506-030, L1-0506-038, L1-0429-007, L1-0506-037
+  topic_size=28 selected_event_count=6 omitted_event_count=22
+  current_state: This L2 topic has 28 linked L1 evidence objects across 6 meeting(s). Latest evidence: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  timeline_digest:
+    - [2026-03-07 L1-0307-001] 系統採用了一種遺忘機制，如果一個記憶項目在特定次數的近期會議（例如三次）內未被再次討論，該項目將被刪除。
+    - [2026-03-07 L1-0307-004] 系統的遺忘機制（例如，如果一個項目在三次會議內未被討論則刪除）的具體參數和邏輯可能需要進一步定義和調整。
+    - [2026-04-29 L1-0429-007] 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函數調用來存取。如果重複提及使其分數增加，這些記憶可以被重新激活。
+    - [2026-05-06 L1-0506-030] 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減下限（floor），以防止其值降得過低。
+    - [2026-05-06 L1-0506-037] 即使「重要性 (importance)」分數是靜態的，也應該捕獲用戶對 LLM 初始評分的修正。這樣做的理由是，這些回饋可用於個人化並改進 LLM 未來的預測能力。
+    - [2026-05-06 L1-0506-038] 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+
+[L2-memory-retrieval] memory retrieval
+  matched L1: L1-0408-007, L1-0422-042
+  topic_size=47 selected_event_count=6 omitted_event_count=41
+  current_state: This L2 topic has 47 linked L1
+...(truncated)

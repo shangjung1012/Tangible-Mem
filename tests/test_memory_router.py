@@ -176,6 +176,31 @@ class MemoryRouterTests(unittest.TestCase):
         self.assertIn("=== Long-Term Memory ===", context)
         self.assertIn("long context", context)
 
+    def test_unified_context_default_budget_allows_six_thousand_chars(self) -> None:
+        with patch.object(
+            memory_context,
+            "plan_memory_retrieval",
+            return_value={
+                "targets": ["long_term"],
+                "strategy": "long_term_only",
+                "reason": "historical rationale",
+                "confidence": 0.85,
+            },
+        ), patch.object(
+            memory_context,
+            "retrieve_long_term_context",
+            return_value="long context " * 430,
+        ):
+            context = memory_context.retrieve_memory_context(
+                query="manager-agent 架構怎麼演變？",
+                api_key="test-key",
+                model_name="test-model",
+            )
+
+        self.assertGreater(len(context), 4000)
+        self.assertLess(len(context), 6000)
+        self.assertNotIn("...(truncated)", context)
+
     def test_short_term_adapter_uses_retrieval_module(self) -> None:
         context = memory_context.retrieve_short_term_context_adapter(
             query="目前 memory retrieval 的最新狀態是什麼？",

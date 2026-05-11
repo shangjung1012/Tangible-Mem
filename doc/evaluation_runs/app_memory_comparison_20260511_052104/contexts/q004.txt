@@ -1,0 +1,55 @@
+=== Memory Router ===
+strategy: long_term_only
+reason: query asks for history, rationale, method evolution, or cross-meeting context
+confidence: 0.8
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0422 | 2026-04-22 | L1-0422-043] type=argument importance=0.65 score=0.8219
+  content: 評估計畫是透過 demo 來展示 agent 因其遺忘機制而能正確忽略過時資訊，從而證明其優於標準 RAG 模型。然而，一項發現是目前的會議資料集時間跨度可能太短，無法有...(truncated)
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0422 | 2026-04-22 | L1-0422-020] type=decision importance=0.78 score=0.8162
+  content: 決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線...(truncated)
+  evidence: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較...(truncated)
+- [0429 | 2026-04-29 | L1-0429-038] type=proposal importance=0.64 score=0.8367
+  content: 提出一個包含三種類型問題的評估計畫：1) 短期問題（測試即時上下文準確性），2) 長期演變問題（追蹤主題在多次會議中的歷史），以及 3) 決策推理問題（解釋過去決策的理由）。
+  evidence: [SPEAKER_04]: 然後我們現在 evaluate 的 question 主要分三類，一個是 short-term，就是至少是要確定它短期的回答是正確的；然後 l...(truncated)
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.8191
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importanc...(truncated)
+- [0429 | 2026-04-29 | L1-0429-065] type=decision importance=0.73 score=0.8186
+  content: 團隊決定進行一項實驗，比較「動態分塊 (dynamic chunking)」與「固定分塊 (fixed-chunk)」兩種方法。動態方法將根據主題連貫性預測要讀取的對話輪...(truncated)
+  evidence: [SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後...(truncated)
+- [0429 | 2026-04-29 | L1-0429-048] type=decision importance=0.7 score=0.8176
+  content: 決定進行一項消融研究 (ablation study) 來評估系統。該研究將比較完整系統與幾個基準線：僅 RAG、僅短期記憶、僅長期記憶。在所有實驗條件下，工作記憶 (w...(truncated)
+  evidence: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其...(truncated)
+- [0429 | 2026-04-29 | L1-0429-039] type=decision importance=0.7 score=0.8029
+  content: 評分方法已確定，將使用一個預先定義的「標準答案」(ground truth)，並利用 LLM 來比較 agent 生成的答案與標準答案的正確性，從而進行評分。
+  evidence: [SPEAKER_04]: 所以在我們的 data 裡面，我們基本上就是要非常明確地知道說，我們裡面總共有哪一些 answer，而且哪些東西是不對的，就在 evaluat...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-evaluation-datasets-ground-truth] Evaluation Datasets & Ground Truth
+  parent L3: L3-memory-evaluation-strategy memory evaluation strategy
+  matched L1: L1-0429-038, L1-0429-039
+  topic_size=12 selected_event_count=8 omitted_event_count=4
+  current_state: This child L2 has 12 linked L1 evidence object(s) split from L2-memory-evaluation-strategy.
+  timeline_digest:
+    - [2026-03-07 L1-0307-023] 建議團隊應研究參考論文如何評估其模型性能，因為這是一個關鍵挑戰，且可能已有現成的資料集或標準化測試可供使用。
+    - [2026-03-18 L1-0318-001] LOCOMO 數據集包含一項測試，用於識別 agent 知識範圍之外無法回答的問題，但 MEMO 論文並未執行此測試。這引出了一個問題：我們的評估是否應該包含這種類型的測試。
+    - [2026-03-18 L1-0318-009] 團隊將「多跳推理 (multi-hop reasoning)」定義為需要解決中間子問題的任務，而非指涉多輪對話。例如，要找出某位導演的出生地，需要先確定導演是誰，再查找其出生地。
+    - [2026-03-18 L1-0318-011] 在評估中，定義了「single-hop」和「multi-hop」推理。「Single-hop」指直接的問答，而「multi-hop」則指一個複雜問題需要先解決中間的子問題。
+    - [2026-03-18 L1-0318-012] LOCOMO 論文的結果顯示其方法在 token 消耗上具有優勢，但在處理多跳（multi-hop）問題時，其表現不如 RAG。這揭示了效率與複雜查詢能力之間的權衡。
+    - [2026-03-18 L1-0318-013] 在評估方面，採用 LLM 作為裁判來對答案進行二元（正確/不正確）的判斷，是一種避免語義相似度分數問題的方法，LOCOMO 論文即採用此策略。
+    - [2026-04-29 L1-0429-038] 提出一個包含三種類型問題的評估計畫：1) 短期問題（測試即時上下文準確性），2) 長期演變問題（追蹤主題在多次會議中的歷史），以及 3) 決策推理問題（解釋過去決策的理由）。
+    - [2026-04-29 L1-0
+...(truncated)

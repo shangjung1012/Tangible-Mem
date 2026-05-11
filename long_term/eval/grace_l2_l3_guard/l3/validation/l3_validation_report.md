@@ -1,0 +1,15 @@
+# L3 Validation Report
+
+- Materialized L3 count: 3
+- Severe count: 0
+- Warning count: 3
+- Unassigned L1 count: 0
+- Duplicate assignment count: 0
+
+## Child Size Distribution
+- ideal: 19
+
+## Issues
+- [warning] needs_retrieval_slice: Child L2 full timeline exceeds prompt context threshold.
+- [warning] needs_retrieval_slice: Child L2 full timeline exceeds prompt context threshold.
+- [warning] needs_retrieval_slice: Child L2 full timeline exceeds prompt context threshold.

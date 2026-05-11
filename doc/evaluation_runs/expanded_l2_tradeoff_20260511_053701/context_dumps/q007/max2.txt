@@ -1,0 +1,62 @@
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0307 | 2026-03-07 | L1-0307-001] type=approach_change importance=0.72 score=0.5062
+  content: 系統採用了一種遺忘機制，如果一個記憶項目在特定次數的近期會議（例如三次）內未被再次討論，該項目將被刪除。
+  evidence: [SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個...(truncated)
+- [0325 | 2026-03-25 | L1-0325-086] type=argument importance=0.7 score=0.7872
+  content: 簡單的 RAG 方法不足以追蹤主題的演變，例如一個主題何時被放棄以及原因。RAG 只能找到所有相關的提及，但無法捕捉到關鍵的時間順序和最終決定。
+  evidence: [SPEAKER_02]: 就是如果有就是有有時間的話可以再就是再可能就是再找找看再想完的東西之後可以再可能一起講好啊好啊好啊嗯好謝謝謝謝今天聽起來應該是都蠻蠻好的但其實...(truncated)
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.5251
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可...(truncated)
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有...(truncated)
+- [0408 | 2026-04-08 | L1-0408-043] type=argument importance=0.67 score=0.5051
+  content: 反對一種將短期記憶在淡忘後才移入長期記憶的簡單模型。理由是，如果一個主題持續演進（例如從 A 到 D），而最新的討論（C、D）仍在短期記憶中，那麼長期記憶將會過時，無法反映專案的當前狀態。
+  evidence: [SPEAKER_04]: 但如果照你這樣說會有問題。假設一個題目的演進是 A 到 B 到 C，再多一個 D。假設上次討論了 C 跟 D，這時短期在 C、D 這裡，長期卻...(truncated)
+- [0408 | 2026-04-08 | L1-0408-055] type=argument importance=0.66 score=0.5031
+  content: 支持採用逐句處理並透過 function calling 進行記憶體更新的細粒度模型，理由是這種方法能實現更複雜的行為，例如在重新討論某個主題時，能將相關的 LTM 內容拉回 STM 中。
+  evidence: [SPEAKER_00]: 也就是要確定架構之間的關係和 update。還有 meeting transcription 的話，我覺得需要經過一個前處理，例如送一個句子、...(truncated)
+- [0408 | 2026-04-08 | L1-0408-044] type=argument importance=0.62 score=0.4951
+  content: 長期記憶的價值在於能夠追蹤專案主題隨時間的演變。例如，記錄一年中所有討論過的主題歷史，便能清晰地展示長期記憶的功用。
+  evidence: [SPEAKER_04]: 題目演進是我們那時候有在想的，什麼東西適合放進長期。隨便舉例，像題目演進：一開始的題目是什麼，後來換了什麼題目，整個脈絡方向怎麼變動。這一直都...(truncated)
+- [0408 | 2026-04-08 | L1-0408-048] type=proposal importance=0.64 score=0.4902
+  content: 提出一種逐句處理逐字稿的方法，讓模型透過 function calling 進行細粒度的記憶體更新決策。這將能實現複雜行為，例如在重新討論某個主題時，將相關的 LTM 內...(truncated)
+  evidence: [SPEAKER_00]: 也就是要確定架構之間的關係和 update。還有 meeting transcription 的話，我覺得需要經過一個前處理，例如送一個句子、...(truncated)
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.5289
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-lifecycle] memory lifecycle
+  matched L1: L1-0325-086, L1-0429-007, L1-0307-001, L1-0408-044
+  topic_size=28 selected_event_count=2 omitted_event_count=26
+  current_state: This L2 topic has 28 linked L1 evidence objects across 6 meeting(s). Latest evidence: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  timeline_digest:
+    - [2026-03-25 L1-0325-086] 簡單的 RAG 方法不足以追蹤主題的演變，例如一個主題何時被放棄以及原因。RAG 只能找到所有相關的提及，但無法捕捉到關鍵的時間順序和最終決定。
+    - [2026-04-29 L1-0429-007] 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函...(truncated)
+
+[L2-agentic-pipeline-control] agentic pipeline control
+  matched L1: L1-0408-055, L1-0408-048
+  topic_size=32 selected_event_count=2 omitted_event_count=30
+  current_state: This L2 topic has 32 linked L1 evidence objects across 6 meeting(s). Latest evidence: 支持單一 manager 方法的論點是，它可以根據前一步驟的結果動態修改提示，為每個階段提供不同的指令。此外，可以通過記錄完整的工具調用流程來解決調試困難的問題，使系統行為易於理解。
+  timeline_digest:
+    - [2026-04-08 L1-0408-048] 提出一種逐句處理逐字稿的方法，讓模型透過 function calling 進行細粒度的記憶體更新決策。這將能實現複雜行為，例如在重新討論某個主題時，將相關的 LTM 內...(truncated)
+    - [2026-04-29 L1-0429-082] 為了解決 LLM 自行決定讀取範圍時產生重疊（例如讀取 1-40 行後再讀取 31-80 行）的問題，有人提議從 LLM 驅動的彈性讀取，轉向由外部程式碼進行更嚴格的控制...(truncated)
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 376
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 56
+- retrieval_mode: lexical
+- selected_child_l2_count: 0
+- selected_l1_count: 8
+- selected_l2_count: 2

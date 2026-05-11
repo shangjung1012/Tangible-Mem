@@ -48,7 +48,7 @@ def retrieve_memory_context(
     api_key: str,
     model_name: str,
     planner_model_name: str | None = None,
-    max_context_chars: int = 4000,
+    max_context_chars: int = 6000,
 ) -> str:
     plan = plan_memory_retrieval(query)
     targets = [
@@ -104,7 +104,7 @@ def retrieve_memory_context(
 def retrieve_short_term_context_adapter(
     query: str,
     api_key: str,
-    max_context_chars: int = 4000,
+    max_context_chars: int = 6000,
     retrieval_mode: str = "hybrid",
     top_k: int = 6,
 ) -> str:
@@ -135,7 +135,7 @@ def retrieve_long_term_context(
     api_key: str,
     model_name: str,
     planner_model_name: str | None = None,
-    max_context_chars: int = 4000,
+    max_context_chars: int = 6000,
 ) -> str:
     tree = load_json_object(LONG_TERM_TREE_PATH)
     if not tree:

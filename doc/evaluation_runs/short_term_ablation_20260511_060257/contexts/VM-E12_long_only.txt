@@ -1,0 +1,54 @@
+=== Memory Router ===
+strategy: forced_long_only_ablation
+reason: short-term ablation variant
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-memory-update-semantics: memory update semantics
+
+=== L1 Evidence Seeds ===
+- [0307 | 2026-03-07 | L1-0307-024] type=approach_change importance=0.72 score=0.8175
+  content: 實作計畫是先建立三種記憶體類型的更新方法，然後再處理如何從中檢索。
+  evidence: [SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？...(truncated)
+- [0325 | 2026-03-25 | L1-0325-056] type=decision importance=0.72 score=0.8271
+  content: 專案決定將研究重點放在檢索（retrieval）問題上。核心挑戰在於 agent 應如何權衡與組合來自工作、短期和長期三種記憶體的資訊，以生成最佳輸出。
+  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01...(truncated)
+- [0408 | 2026-04-08 | L1-0408-036] type=decision importance=0.73 score=0.806
+  content: 團隊決定，短期記憶 (short-term memory) 和長期記憶 (long-term memory) 將獨立更新。此設計放棄了先前「短期記憶內容在淡忘或達到一定數...(truncated)
+  evidence: [SPEAKER_00]: 但是長期會存任何一個短期記憶嗎？短期記憶的東西會越來越不見，對不對？ [SPEAKER_00]: 應該會變成長期的。過一段時間之後，它會消失在...(truncated)
+- [0408 | 2026-04-08 | L1-0408-006] type=approach_change importance=0.73 score=0.7976
+  content: 檢索流程的設計是先將查詢與 L1 節點進行比對，然後取回匹配的 L1 及其對應的父層 L2 和 L3 摘要，以便同時提供具體細節和高層次的上下文。
+  evidence: [SPEAKER_03]: 我們第一層是每一次 meeting，四次 meeting 會整理成一個 L2。像這個 P001 經過四次之後，就進入階層式記憶。第一層所有的...(truncated)
+- [0422 | 2026-04-22 | L1-0422-001] type=approach_change importance=0.74 score=0.7989
+  content: 記憶體更新流程已改為採用以 Gemini Tool Calling 為核心的架構。此方法將由 WhisperX 產生的逐字稿視為一個資料庫，讓 Gemini 動態決定要讀...(truncated)
+  evidence: [SPEAKER_03]: 就是我們上次做的 Tool Calling 的意思就其實只是讓 Gemini 來可以決定他要怎麼用函數而不是一次全部喂他，就上次可能講得沒有很...(truncated)
+- [0429 | 2026-04-29 | L1-0429-133] type=approach_change importance=0.75 score=0.8037
+  content: 為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種...(truncated)
+  evidence: [SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是...(truncated)
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.813
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減...(truncated)
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他impor...(truncated)
+- [0506 | 2026-05-06 | L1-0506-016] type=approach_change importance=0.72 score=0.804
+  content: 記憶更新的基本單位被確立為 `idea unit`。一個 `idea unit` 經由 agent 標記後會成為一個 `candidate`，該 `candidate` 接著被用來更新一個記憶節點。
+  evidence: [SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candida...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-update-semantics] memory update semantics
+  matched L1: L1-0422-001
+  topic_size=12 selected_event_count=6 omitted_event_count=6
+  current_state: This L2 topic has 12 linked L1 evidence objects across 5 meeting(s). Latest evidence: 支持時間導向記憶體架構的論點是，為每次會議創建新的、獨立的節點可以保存一個清晰、不可變的時間軸，這對 LLM 來說更容易解讀。檢索時可以透過追蹤不同會議中的匹配想法單元，並上溯至其 L2/L3 父節點，來為 LLM 提供一個想法跨越多場會議的時序脈絡。
+  timeline_digest:
+    - [2026-03-07 L1-0307-005] 目前的記憶系統無法支援動態時間標籤（例如，將「本次會議」更新為「一週前」），因為其設計是透過會議 ID 而非相對時間來追蹤項目。
+    - [2026-03-07 L1-0307-006] 在 Demo 中如何清楚地識別被更新的記憶項目是一個問題，這點引起了與會者的疑問。
+    - [2026-03-07 L1-0307-007] 提出一項設計建議，讓時間標籤能夠動態更新。例如，在下次會議更新記憶時，將「本次會議」建立的項目時間標籤更新為「一週前」。
+    - [2026-04-08 L1-0408-019] 討論的範疇被釐清為 agent 在執行期間（例如回答查詢）的互動與使用結構，而非記憶體儲存的更新過程。
+    - [2026-04-22 L1-0422-001] 記憶體更新流程已改為採用以 Gemini Tool Calling 為核心的架構。此方法將由 WhisperX 產生的逐字稿視為一個資料庫，讓 Gemini 動態決定要讀取多少行，避免了固定的資料分塊。Gemini 被賦予 `Read` 和 `Write` 兩個主要函式：`Read` 用於存取原始逐字稿和現有的記憶體資料庫 (DB)，而 `Write`...
+    - [2026-04-22 L1-0422-0
+...(truncated)

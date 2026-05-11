@@ -1,0 +1,55 @@
+=== Memory Router ===
+strategy: forced_long_only_ablation
+reason: short-term ablation variant
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-project-demo-strategy: project demo strategy
+
+=== L1 Evidence Seeds ===
+- [0422 | 2026-04-22 | L1-0422-045] type=argument importance=0.7 score=0.8107
+  content: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0422 | 2026-04-22 | L1-0422-020] type=decision importance=0.78 score=0.7976
+  content: 決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線...(truncated)
+  evidence: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較...(truncated)
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.7922
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制...(truncated)
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以...(truncated)
+- [0429 | 2026-04-29 | L1-0429-016] type=argument importance=0.7 score=0.8067
+  content: 實現記憶「遺忘」有兩種途徑：基於 RAG 的數據刪除或修改模型基礎權重。由於後者被認為過於複雜且不切實際，目前的共識是採用基於 RAG 的方法。
+  evidence: [SPEAKER_02]: 因為我在想的是因為language model它在跟人的對話過程當中它其實就算你慢慢把external那個拔掉之後它已經慢慢的就被捲進它的la...(truncated)
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.7993
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importanc...(truncated)
+- [0429 | 2026-04-29 | L1-0429-008] type=approach_change importance=0.75 score=0.799
+  content: 團隊決定採用基於 RAG 的方法來實現記憶遺忘，即透過從外部資料庫中刪除資料來阻止其被檢索。目前將不考慮改變 LLM 內部權重的根本性模型修改方法，因為該方法被認為過於複雜。
+  evidence: [SPEAKER_04]: 應該就是直接在就是我們都會後面都是有資料庫還在資料庫裡面直接把它踢掉就像RAG它是會有那個向量建設它直接把那個資料就是刪掉這樣 [SPEAKE...(truncated)
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.7945
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就...(truncated)
+- [0429 | 2026-04-29 | L1-0429-019] type=argument importance=0.73 score=0.7925
+  content: 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次...(truncated)
+  evidence: [SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼 [SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-project-demo-strategy] project demo strategy
+  matched L1: L1-0422-045
+  topic_size=4 selected_event_count=4 omitted_event_count=0
+  current_state: This L2 topic has 4 linked L1 evidence objects across 2 meeting(s). Latest evidence: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  timeline_digest:
+    - [2026-03-07 L1-0307-020] 專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。
+    - [2026-03-07 L1-0307-026] 示範策略為並列比較，展示記憶體增強 agent 和基準 agent 在特定情境下產生不同結果，以凸顯長期記憶的價值。
+    - [2026-04-22 L1-0422-045] 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+    - [2026-04-22 L1-0422-043] 評估計畫是透過 demo 來展示 agent 因其遺忘機制而能正確忽略過時資訊，從而證明其優於標準 RAG 模型。然而，一項發現是目前的會議資料集時間跨度可能太短，無法有效展示此效果。因此，團隊將在現有資料中尋找特定案例，或合成更長的對話歷史，以創造一個清晰的展示。
+
+[L2-idea-unit-granularity-and-semantics] idea-unit granularity and semantics
+  parent L3: L3-transcript-segmentation
+...(truncated)

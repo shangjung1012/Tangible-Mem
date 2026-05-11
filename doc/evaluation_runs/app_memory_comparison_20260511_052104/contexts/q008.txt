@@ -1,0 +1,53 @@
+=== Memory Router ===
+strategy: long_term_only
+reason: query asks for history, rationale, method evolution, or cross-meeting context
+confidence: 0.8
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0422 | 2026-04-22 | L1-0422-001] type=approach_change importance=0.74 score=0.7978
+  content: 記憶體更新流程已改為採用以 Gemini Tool Calling 為核心的架構。此方法將由 WhisperX 產生的逐字稿視為一個資料庫，讓 Gemini 動態決定要讀...(truncated)
+  evidence: [SPEAKER_03]: 就是我們上次做的 Tool Calling 的意思就其實只是讓 Gemini 來可以決定他要怎麼用函數而不是一次全部喂他，就上次可能講得沒有很...(truncated)
+- [0422 | 2026-04-22 | L1-0422-006] type=approach_change importance=0.7 score=0.7934
+  content: 為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連...(truncated)
+  evidence: [SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [S...(truncated)
+- [0506 | 2026-05-06 | L1-0506-003] type=decision importance=0.68 score=0.8098
+  content: 過去一項使用自適應窗口（adaptive window）進行分段的實驗已被放棄，因為它導致結果惡化。失敗的原因是該方法缺乏精確定位邊界的能力，任何不準確都需要回退到邊界校...(truncated)
+  evidence: [SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段...(truncated)
+- [0506 | 2026-05-06 | L1-0506-012] type=argument importance=0.66 score=0.8077
+  content: 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。
+  evidence: [SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每...(truncated)
+- [0506 | 2026-05-06 | L1-0506-001] type=approach_change importance=0.72 score=0.8073
+  content: 團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，...(truncated)
+  evidence: [SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcrip...(truncated)
+- [0506 | 2026-05-06 | L1-0506-007] type=open_issue importance=0.6 score=0.8011
+  content: 關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一...(truncated)
+  evidence: [SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-window-and-boundary-selection] window and boundary selection
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0506-003, L1-0506-007
+  topic_size=9 selected_event_count=8 omitted_event_count=1
+  current_state: This child L2 has 9 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.
+  timeline_digest:
+    - [2026-04-08 L1-0408-016] 作為複雜分割 agent 的替代方案，有人提出採用更簡單的預處理方法，例如按句子或發言輪次（speaker turn）進行切分，這代表了一種在實作複雜度與效果之間的權衡。
+    - [2026-04-22 L1-0422-028] 系統在處理中英夾雜的內容時，其性能似乎未受負面影響。
+    - [2026-04-29 L1-0429-041] 團隊需要修正現有的5次會議（總計約180分鐘）的逐字稿，因為其品質不佳，並考慮使用 LLM 來協助校正。
+    - [2026-04-29 L1-0429-079] 決定讓 LLM (Gemini) 自主決定讀取逐字稿的參數（如起訖行號），而非由程式碼嚴格控制。目前的實作是透過提示（prompt）建議模型每次讀取 40 到 80 行，賦予其根據上下文需求決定讀取範圍的彈性，而非強制使用固定的窗口大小。
+    - [2026-04-29 L1-0429-122] 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+    - [2026-04-29 L1-0429-129] 需要調查並釐清記憶體更新機制的具體實作。目前不清楚在更新特定記憶節點時，系統是使用整個相關的文本區塊（text chunk），還是有辦法只隔離出直接相關的句子。這個問題在嘗試檢查程式碼後仍未解決。
+    - [2026-05-06 L1-0506-003] 過去一項使用自適應窗口（adaptive window）進行分段的實驗已被放棄，因為它導致結果惡化。失敗的原因是該方法缺乏精確定位邊界的能力，任何不準確都需要回退到邊界校正，從而抵消了自適應的好處，該實驗的程式碼已被覆蓋。
+    - [2026-05-06 L1-0506-007] 關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一種新的假設性自適應分段方法，但也有反對意見認為，下游的 LLM 有能力處理不完美的較大文本塊，因此追求完美分段的效益可能有限。目前的固定窗口方法主要是為了方便除錯，而整體由上而下（se...
+
+...(truncated)

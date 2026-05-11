@@ -1,0 +1,53 @@
+=== Memory Router ===
+strategy: long_term_only
+reason: query asks for history, rationale, method evolution, or cross-meeting context
+confidence: 0.8
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0422 | 2026-04-22 | L1-0422-006] type=approach_change importance=0.7 score=0.8296
+  content: 為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連...(truncated)
+  evidence: [SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [S...(truncated)
+- [0422 | 2026-04-22 | L1-0422-007] type=argument importance=0.67 score=0.808
+  content: 支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由...(truncated)
+  evidence: [SPEAKER_02]: 應該說是要怎麼做應該說讀幾句應該是給LLM去判斷就是不一定要三句三句他其實也可以讀五句八句 [SPEAKER_01]: 他會自己看他後面要再往...(truncated)
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.8147
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKE...(truncated)
+- [0429 | 2026-04-29 | L1-0429-133] type=approach_change importance=0.75 score=0.8084
+  content: 為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種...(truncated)
+  evidence: [SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是...(truncated)
+- [0429 | 2026-04-29 | L1-0429-019] type=argument importance=0.73 score=0.8046
+  content: 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次...(truncated)
+  evidence: [SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼 [SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它...(truncated)
+- [0429 | 2026-04-29 | L1-0429-125] type=argument importance=0.69 score=0.8038
+  content: 有一個論點指出，若不將文本細分為「idea units」而是用大文本區塊（例如 80 行）來更新多個相關的記憶節點，可能會導致這些節點的內容隨著時間推移而趨於同質化，失去各自的獨特性。
+  evidence: [SPEAKER_02]: 那你們有打算接下來先切ID units嗎還是沒有打算沒有打算的意思沒有打算的話也就是說呃這一個你們在處理Memory update的時候你是不...(truncated)
+- [0506 | 2026-05-06 | L1-0506-027] type=argument importance=0.63 score=0.8291
+  content: 即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。
+  evidence: [SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 s...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-idea-unit-granularity-and-semantics] idea-unit granularity and semantics
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0506-027, L1-0422-007, L1-0429-019
+  topic_size=12 selected_event_count=8 omitted_event_count=4
+  current_state: This child L2 has 12 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.
+  timeline_digest:
+    - [2026-04-08 L1-0408-013] 在逐字稿切分上存在一個設計挑戰：一個想法單元（idea unit）是否應假設只包含一種想法類型，或可允許多種類型，此問題尚未解決。
+    - [2026-04-08 L1-0408-014] 目前尚不清楚由哪個具體的腳本或 agent 負責為長期記憶聚合器尋找語義叢集（clusters）和想法單元（idea units）。
+    - [2026-04-22 L1-0422-007] 支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。
+    - [2026-04-29 L1-0429-019] 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次的結論層以提供更廣泛的上下文，並包含一個更詳細的 short-term memory 組件來追蹤近期的活動。
+    - [2026-04-29 L1-0429-124] 目前的記憶體寫入實作方法，並未將來源文本分割成細粒度的「idea units」。當 agent 在一個較大的文本區塊中識別出多個主題時，它會為每個主題發出獨立的 `write` 指令，但每次寫入的來源都是整個文本區塊，而非特定的文本子片段。這意味著系統接受了較低精度的更新方式。
+    - [2026-05-06 L1-0506-027] 即使是預先切分好的 `segment
+...(truncated)

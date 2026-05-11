@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .data_loader import ObservatoryDataLoader
-from .token_utils import context_token_metrics
+from .token_utils import context_token_metrics, estimate_tokens
 
 TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]{2,}", re.IGNORECASE)
 
@@ -46,12 +46,31 @@ def _line_chunks(lines: list[str], *, chunk_size_lines: int, overlap_lines: int)
     return chunks
 
 
+def _trim_to_token_budget(text: str, max_tokens: int) -> str:
+    if max_tokens <= 0 or estimate_tokens(text) <= max_tokens:
+        return text
+    lo = 0
+    hi = len(text)
+    best = ""
+    suffix = "\n...(token budget truncated)"
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        candidate = text[:mid].rstrip() + suffix
+        if estimate_tokens(candidate) <= max_tokens:
+            best = candidate
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best or suffix.strip()
+
+
 def build_full_context(
     *,
     repo_root: Path | str,
     meeting_ids: str | Sequence[str] = "",
     scope: str = "all",
     max_context_chars: int = 0,
+    max_context_tokens: int = 0,
     source: str = "transcripts",
 ) -> dict[str, Any]:
     started = time.perf_counter()
@@ -69,9 +88,14 @@ def build_full_context(
         parts.append(transcript.strip())
     context = "\n".join(parts)
     original_chars = len(context)
+    original_tokens = estimate_tokens(context)
     truncated = bool(max_context_chars and max_context_chars > 0 and len(context) > max_context_chars)
     if truncated:
         context = context[:max_context_chars] + "\n...(truncated)"
+    token_truncated = bool(max_context_tokens and max_context_tokens > 0 and estimate_tokens(context) > max_context_tokens)
+    if token_truncated:
+        context = _trim_to_token_budget(context, max_context_tokens)
+        truncated = True
     elapsed = (time.perf_counter() - started) * 1000
     metrics = context_token_metrics(context)
     metrics.update(
@@ -79,8 +103,11 @@ def build_full_context(
             "included_meeting_count": len(included),
             "included_file_count": len(included),
             "full_context_source": source,
+            "full_context_scope": scope,
             "truncated": truncated,
+            "token_truncated": token_truncated,
             "truncated_from_chars": original_chars if truncated else None,
+            "truncated_from_tokens": original_tokens if token_truncated else None,
             "retrieval_ms": 0.0,
             "context_build_ms": round(elapsed, 3),
             "total_ms": round(elapsed, 3),
@@ -92,9 +119,12 @@ def build_full_context(
         "included_meetings": included,
         "included_meeting_count": len(included),
         "included_file_count": len(included),
+        "full_context_scope": scope,
         "full_context_source": source,
         "truncated": truncated,
+        "token_truncated": token_truncated,
         "truncated_from_chars": original_chars if truncated else None,
+        "truncated_from_tokens": original_tokens if token_truncated else None,
         "metrics": metrics,
     }
 
@@ -107,6 +137,7 @@ def retrieve_lexical_rag(
     chunk_size_lines: int = 20,
     chunk_overlap_lines: int = 5,
     max_context_chars: int = 5000,
+    max_context_tokens: int = 0,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     loader = ObservatoryDataLoader(repo_root)
@@ -139,19 +170,45 @@ def retrieve_lexical_rag(
                 }
             )
     scored.sort(key=lambda row: (-float(row["score"]), str(row["meeting_id"]), int(row["start_line"])))
-    selected = scored[: max(1, int(top_k))]
+    candidate_limit = max(1, int(top_k))
+    candidate_chunks = scored[:candidate_limit]
+    selected: list[dict[str, Any]] = []
     context_parts = ["=== Traditional Lexical RAG ==="]
-    for chunk in selected:
-        context_parts.append(
+    token_truncated = False
+    for chunk in candidate_chunks:
+        chunk_parts = [
             f"\n[{chunk['chunk_id']}] meeting={chunk['meeting_id']} "
-            f"lines={chunk['start_line']}-{chunk['end_line']} score={chunk['score']}"
-        )
-        context_parts.append(str(chunk["text"]))
+            f"lines={chunk['start_line']}-{chunk['end_line']} score={chunk['score']}",
+            str(chunk["text"]),
+        ]
+        candidate_context = "\n".join(context_parts + chunk_parts)
+        if max_context_tokens and max_context_tokens > 0 and selected and estimate_tokens(candidate_context) > max_context_tokens:
+            token_truncated = True
+            break
+        selected.append(chunk)
+        context_parts.extend(chunk_parts)
     context = "\n".join(context_parts)
+    full_candidate_context = "\n".join(
+        ["=== Traditional Lexical RAG ==="]
+        + [
+            part
+            for chunk in candidate_chunks
+            for part in (
+                f"\n[{chunk['chunk_id']}] meeting={chunk['meeting_id']} "
+                f"lines={chunk['start_line']}-{chunk['end_line']} score={chunk['score']}",
+                str(chunk["text"]),
+            )
+        ]
+    )
     original_chars = len(context)
-    truncated = len(context) > max_context_chars
+    original_tokens = estimate_tokens(full_candidate_context)
+    if max_context_tokens and max_context_tokens > 0 and estimate_tokens(context) > max_context_tokens:
+        context = _trim_to_token_budget(context, max_context_tokens)
+        token_truncated = True
+    truncated = bool(max_context_chars and max_context_chars > 0 and len(context) > max_context_chars)
     if truncated:
         context = context[:max_context_chars] + "\n...(truncated)"
+    truncated = truncated or token_truncated
     elapsed = (time.perf_counter() - started) * 1000
     metrics = context_token_metrics(context)
     metrics.update(
@@ -161,7 +218,9 @@ def retrieve_lexical_rag(
             "context_build_ms": 0.0,
             "total_ms": round(elapsed, 3),
             "truncated": truncated,
+            "token_truncated": token_truncated,
             "truncated_from_chars": original_chars if truncated else None,
+            "truncated_from_tokens": original_tokens if token_truncated else None,
         }
     )
     return {
@@ -169,6 +228,9 @@ def retrieve_lexical_rag(
         "context": context,
         "retrieved_chunk_count": len(selected),
         "retrieved_chunks": selected,
+        "truncated": truncated,
+        "token_truncated": token_truncated,
+        "truncated_from_chars": original_chars if truncated else None,
+        "truncated_from_tokens": original_tokens if token_truncated else None,
         "metrics": metrics,
     }
-

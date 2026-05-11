@@ -1,0 +1,14 @@
+根據提供的 context，關於 transcript segmentation pipeline 的資訊如下：
+
+目前的文本處理流程採用由上而下（top-down）的架構。整個流程涵蓋在 L3 主題 `L3-transcript-segmentation-and-idea-unit-coverage` 之下，具體步驟如下：
+
+1.  **Context Planner**：此為流程的起點，它會將逐字稿以固定大小的窗口（例如 80 行）切分，並將這些窗口交給 `Segment Agent` 處理 (L1-0506-001)。
+2.  **Segment Agent**：接收到 `Context Planner` 傳來的窗口後，`Segment Agent` 的任務是識別出潛在的 `idea unit candidates` (L1-0506-001)。
+3.  **Idea Unit & L1 Memory**：這些 `idea unit candidates` 接著會被用來生成最終的 `L1 memory` (L1-0506-001)。在整體的記憶體階層結構中，「idea units」會構成「segments」和「topics」(S001)。
+
+這個流程也包含了一些輔助機制和待解決的問題：
+
+*   **Idea Unit 修復**：在 idea unit 的切分過程中，採用了一種修復機制來處理不完整的片段，確保資訊的完整性 (S001)。此議題對應到 L2 主題 `L2-repair-and-coarsening`。
+*   **待解決問題**：如何最有效地對逐字稿進行分段（segmentation）仍是一個待解決的問題。團隊過去曾嘗試過自適應窗口（adaptive window）的實驗，但因效果不佳而被放棄，目前採用的是固定窗口的方法 (L1-0506-007)。此議題對應到 L2 主題 `L2-fixed-vs-dynamic-chunking` 和 `L2-window-and-boundary-selection`。
+
+總結來說，目前的 pipeline 是由 `Context Planner` 將固定窗口的逐字稿交給 `Segment Agent`，後者再從中產生 `idea unit candidates` 以生成 `L1 memory` (L1-0506-001)。

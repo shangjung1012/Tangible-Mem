@@ -1,0 +1,59 @@
+=== Memory Router ===
+strategy: both
+reason: query has recent-status hints; include long-term context as background
+confidence: 0.85
+
+=== Short-Term Memory ===
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S001] LLM Memory: Hierarchical Structure, Idea Unit Segmentation Repair, Labeling, and Retrieval
+  score: 4.25
+  summary: The memory system utilizes a hierarchical data structure, with 'idea units' forming 'segments' and 'topics'. A repair mechanism has been adopted in the idea unit segmentation process to handle incomplete fragments by merging fragmented sentences with their most relevant context, ensuring information completeness and preventing omissions. To optimize retrieval, the system also uses a dual-labeling strategy (functional and theme labels) for each memory unit, with the optimal search priority still under discussion.
+  role: recent_change
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 30
+  historical_source_count: 200
+  total_source_count: 230
+  source_note: broad unit; source L1 preview is query-ranked
+  source_scope: active
+  source L1: L1-0506-030, L1-0506-029, L1-0506-033, L1-0506-002, L1-0506-015, L1-0429-188, L1-0429-189, L1-0429-190, L1-0429-191, L1-0429-192, L1-0506-001, L1-0506-003, L1-0506-005, L1-0506-007, L1-0506-008, L1-0506-009 ...
+
+[S006] Agent Evaluation Framework, Step Verification, and Benchmarking
+  score: 4.25
+  summary: The agent's evaluation
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-056] type=decision importance=0.72 score=0.8312
+  content: 專案決定將研究重點放在檢索（retrieval）問題上。核心挑戰在於 agent 應如何權衡與組合來自工作、短期和長期三種記憶體的資訊，以生成最佳輸出。
+  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01...(truncated)
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.8343
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可...(truncated)
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有...(truncated)
+- [0408 | 2026-04-08 | L1-0408-036] type=decision importance=0.73 score=0.8324
+  content: 團隊決定，短期記憶 (short-term memory) 和長期記憶 (long-term memory) 將獨立更新。此設計放棄了先前「短期記憶內容在淡忘或達到一定數...(truncated)
+  evidence: [SPEAKER_00]: 但是長期會存任何一個短期記憶嗎？短期記憶的東西會越來越不見，對不對？ [SPEAKER_00]: 應該會變成長期的。過一段時間之後，它會消失在...(truncated)
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.8566
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中...(truncated)
+- [0422 | 2026-04-22 | L1-0422-037] type=argument importance=0.67 score=0.8548
+  content: Long-term memory 檢索的設計理論上能提供一個時間線，讓 LLM 可以利用時間戳來識別相似的論點，觀察哪些被推翻，並採納最新的版本。
+  evidence: [SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM...(truncated)
+- [0422 | 2026-04-22 | L1-0422-031] type=argument importance=0.75 score=0.8474
+  content: Long-term memory 架構的一個關鍵優勢是其「遺忘」機制，資訊的相關性和重要性會隨時間衰減，這使其與 short-term memory 有所區別。
+  evidence: [SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM...(truncated)
+- [0422 | 2026-04-22 | L1-0422-036] type=argument importance=0.7 score=0.8323
+  content: 反對取消 short-term

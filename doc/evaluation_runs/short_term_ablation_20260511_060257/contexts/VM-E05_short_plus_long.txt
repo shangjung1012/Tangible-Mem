@@ -1,0 +1,57 @@
+=== Memory Router ===
+strategy: forced_short_plus_long_ablation
+reason: short-term ablation variant
+
+=== Short-Term Memory ===
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S021] LTM Node Attributes: Static Importance vs. Dynamic Activation/Decay, and Tunable Importance Design
+  score: 6.25
+  summary: The long-term memory model defines key node attributes: 'Importance' (a static score assigned at creation, now also tunable by users with system suggestions based on similarity search), 'Relevance' (dynamic, based on semantic similarity), and 'Recency' or 'Activation' (dynamic, decays over time). To preserve the historical significance of ideas, the static 'importance' score should be explicitly separated from the dynamic 'activation' parameter that handles decay. This separation ensures important but older ideas don't completely disappear by maintaining a 'baseline' value for high-importance items even as activation decays. The design of the human-in-the-loop system for tuning 'importance' remains an open issue, specifically regarding how users inspect/adjust scores and how the system proactively suggests related units for tuning.
+  role: active_decision
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 4
+  total_source_count: 4
+  source_scope: active
+  source L1: L1-0506-038, L1-0506-036, L1-0506-022, L1-0506-039
+
+[S020] Memory Merging Policy: Meeting
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-memory-lifecycle: memory lifecycle
+
+=== L1 Evidence Seeds ===
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.8286
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可...(truncated)
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有...(truncated)
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.8181
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分...(truncated)
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importanc...(truncated)
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.8609
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減...(truncated)
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他impor...(truncated)
+- [0506 | 2026-05-06 | L1-0506-038] type=finding importance=0.65 score=0.853
+  content: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  evidence: [SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 r...(truncated)
+- [0506 | 2026-05-06 | L1-0506-033] type=decision importance=0.65 score=0.8186
+  content: 決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最...(truncated)
+- [0506 | 2026-05-06 | L1-0506-037] type=argument importance=0.64 score=0.8038
+  content: 即使「重要性 (importance)」分數是靜態的，也應該捕獲用戶對 LLM 初始評分的修正。這樣做的理由是，這些回饋可用於個人化並改進 LLM 未來的預測能力。
+  evidence: [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importan...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-lifecycle] memory lifecycle
+  matched L1:

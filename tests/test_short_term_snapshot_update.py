@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import signal
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -67,6 +68,30 @@ def _write_snapshot(path: Path, meetings: list[dict[str, Any]]) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+def _msys_path(path: Path | str) -> str:
+    text = Path(path).resolve().as_posix()
+    if len(text) >= 3 and text[1] == ":" and text[2] == "/":
+        return f"/{text[0].lower()}{text[2:]}"
+    return text
+
+
+def _git_bash_executable() -> str | None:
+    candidates = [
+        Path(os.environ.get("ProgramFiles", "")) / "Git" / "usr" / "bin" / "bash.exe",
+        Path(os.environ.get("ProgramFiles(x86)", "")) / "Git" / "usr" / "bin" / "bash.exe",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    for folder in os.environ.get("PATH", "").split(os.pathsep):
+        if not folder:
+            continue
+        candidate = Path(folder) / "bash.exe"
+        if candidate.exists() and "git" in str(candidate).lower():
+            return str(candidate)
+    return None
 
 
 def _topic_decider(
@@ -514,13 +539,25 @@ class ShortTermBatchScriptTests(unittest.TestCase):
             )
             fake_uv.chmod(fake_uv.stat().st_mode | stat.S_IXUSR)
 
+            if os.name == "nt":
+                bash = _git_bash_executable()
+                if not bash:
+                    self.skipTest("Git Bash is required to exercise run_all_short_term_updates.sh on Windows")
+                env_path = f"{_msys_path(bin_dir)}:{_msys_path(Path(bash).parent)}:{os.environ['PATH']}"
+                command = [bash, str(script_path), _msys_path(snapshot_dir)]
+                calls_file_env = _msys_path(calls_file)
+            else:
+                env_path = f"{bin_dir}:{os.environ['PATH']}"
+                command = [str(script_path), str(snapshot_dir)]
+                calls_file_env = str(calls_file)
+
             env = {
                 **os.environ,
-                "PATH": f"{bin_dir}:{os.environ['PATH']}",
-                "CALLS_FILE": str(calls_file),
+                "PATH": env_path,
+                "CALLS_FILE": calls_file_env,
             }
             subprocess.run(
-                [str(script_path), str(snapshot_dir)],
+                command,
                 cwd=repo_root,
                 env=env,
                 check=True,

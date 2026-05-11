@@ -159,6 +159,7 @@ class L3PromotionTests(unittest.TestCase):
                 "L2-fixed-vs-dynamic-chunking",
                 "L2-window-and-boundary-selection",
                 "L2-tool-calling-transcript-reading",
+                "L2-transcript-segmentation-strategy-and-validation",
                 "L2-idea-unit-generation",
                 "L2-idea-unit-granularity-and-semantics",
                 "L2-idea-unit-generation-methods",
@@ -189,6 +190,297 @@ class L3PromotionTests(unittest.TestCase):
             ],
         )
         self.assertEqual(record["llm_usage"]["used"], False)
+
+    def test_retrieval_baseline_comparison_has_reviewed_child_candidates(self) -> None:
+        node = _l2_node(80, meeting_count=6)
+        node["l2_id"] = "L2-retrieval-baseline-comparison"
+        node["label"] = "retrieval baseline comparison"
+
+        sidecar = build_l3_promotion_sidecar({"l2_nodes": [node]}, total_l1_count=120)
+
+        record = sidecar["promotions"][0]
+        self.assertEqual(record["source_l2_id"], "L2-retrieval-baseline-comparison")
+        self.assertEqual(record["status"], "promotion_candidate")
+        self.assertEqual(
+            record["mapping"]["new_child_l2_ids"],
+            [
+                "L2-full-context-baseline",
+                "L2-traditional-rag-baseline",
+                "L2-layered-memory-comparison",
+                "L2-token-latency-and-cost",
+                "L2-answer-quality-and-traceability",
+            ],
+        )
+        self.assertEqual(record["llm_usage"]["used"], False)
+
+    def test_memory_lifecycle_has_reviewed_child_candidates(self) -> None:
+        node = _l2_node(80, meeting_count=6)
+        node["l2_id"] = "L2-memory-lifecycle"
+        node["label"] = "memory lifecycle"
+
+        sidecar = build_l3_promotion_sidecar({"l2_nodes": [node]}, total_l1_count=120)
+
+        record = sidecar["promotions"][0]
+        self.assertEqual(record["source_l2_id"], "L2-memory-lifecycle")
+        self.assertEqual(record["status"], "promotion_candidate")
+        self.assertEqual(
+            record["mapping"]["new_child_l2_ids"],
+            [
+                "L2-memory-retention-and-forgetting",
+                "L2-importance-activation-and-recency",
+                "L2-importance-feedback-and-editor",
+                "L2-topic-lifecycle-and-evolution",
+            ],
+        )
+
+    def test_memory_processing_architecture_has_reviewed_child_candidates(self) -> None:
+        node = _l2_node(80, meeting_count=6)
+        node["l2_id"] = "L2-memory-processing-architecture"
+        node["label"] = "memory processing architecture"
+
+        sidecar = build_l3_promotion_sidecar({"l2_nodes": [node]}, total_l1_count=120)
+
+        record = sidecar["promotions"][0]
+        self.assertEqual(record["source_l2_id"], "L2-memory-processing-architecture")
+        self.assertEqual(record["status"], "promotion_candidate")
+        self.assertEqual(
+            record["mapping"]["new_child_l2_ids"],
+            [
+                "L2-l1-evidence-and-object-schema",
+                "L2-evidence-first-layered-retrieval",
+                "L2-l2-l3-hierarchy-and-promotion",
+                "L2-memory-architecture-tradeoffs",
+                "L2-latency-token-budget-architecture",
+            ],
+        )
+
+    def test_operational_constraints_has_reviewed_child_candidates(self) -> None:
+        node = _l2_node(80, meeting_count=6)
+        node["l2_id"] = "L2-operational-constraints-and-resource-budget"
+        node["label"] = "operational constraints and resource budget"
+
+        sidecar = build_l3_promotion_sidecar({"l2_nodes": [node]}, total_l1_count=120)
+
+        record = sidecar["promotions"][0]
+        self.assertEqual(record["source_l2_id"], "L2-operational-constraints-and-resource-budget")
+        self.assertEqual(record["status"], "promotion_candidate")
+        self.assertEqual(
+            record["mapping"]["new_child_l2_ids"],
+            [
+                "L2-api-budget-and-cost",
+                "L2-token-latency-and-runtime-budget",
+                "L2-offline-eval-and-no-llm-mode",
+                "L2-scale-quota-and-budget-guardrails",
+            ],
+        )
+
+    def test_l2_topic_grouping_has_reviewed_child_candidates(self) -> None:
+        node = _l2_node(80, meeting_count=6)
+        node["l2_id"] = "L2-l2-topic-grouping"
+        node["label"] = "l2 topic grouping"
+
+        sidecar = build_l3_promotion_sidecar({"l2_nodes": [node]}, total_l1_count=120)
+
+        record = sidecar["promotions"][0]
+        self.assertEqual(record["source_l2_id"], "L2-l2-topic-grouping")
+        self.assertEqual(record["status"], "promotion_candidate")
+        self.assertEqual(
+            record["mapping"]["new_child_l2_ids"],
+            [
+                "L2-topic-labeling-and-grouping-rules",
+                "L2-evidence-timeline-and-linked-l1",
+                "L2-l3-promotion-and-child-splits",
+                "L2-importance-editor-and-feedback",
+                "L2-retrieval-demo-and-traceability",
+            ],
+        )
+
+    def test_reviewed_child_assignment_routes_representative_large_topic_entries(self) -> None:
+        node = {
+            "l2_id": "L2-memory-processing-architecture",
+            "label": "memory processing architecture",
+            "current_state": "Large memory architecture topic.",
+            "linked_obj_ids": [
+                "L1-evidence",
+                "L1-layered",
+                "L1-promotion",
+                "L1-latency",
+                "L1-tradeoff",
+            ],
+            "meeting_ids": ["SYN-001"],
+            "timeline_digest": [
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-evidence",
+                    "summary": "L1 memory objects must preserve concrete evidence lines before any topic abstraction.",
+                },
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-layered",
+                    "summary": "Evidence-first layered retrieval starts from L1 evidence seeds.",
+                },
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-promotion",
+                    "summary": "If an L2 is too large, L3 promotion should create child L2 navigation.",
+                },
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-latency",
+                    "summary": "Latency and token budget affect whether this architecture can fit the prompt.",
+                },
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-tradeoff",
+                    "summary": "The architecture discussion compares topic memory against ordinary RAG and full context.",
+                },
+            ],
+        }
+        promotions = build_l3_promotion_sidecar(
+            {"l2_nodes": [node]},
+            total_l1_count=10,
+            thresholds={"absolute_l1_threshold": 5},
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        materialized = build_l3_materialization_sidecar(
+            {"l2_nodes": [node]},
+            promotions,
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        index = materialized["l3_index"]
+        self.assertEqual(index["L1-evidence"]["child_l2_id"], "L2-l1-evidence-and-object-schema")
+        self.assertEqual(index["L1-layered"]["child_l2_id"], "L2-evidence-first-layered-retrieval")
+        self.assertEqual(index["L1-promotion"]["child_l2_id"], "L2-l2-l3-hierarchy-and-promotion")
+        self.assertEqual(index["L1-latency"]["child_l2_id"], "L2-latency-token-budget-architecture")
+        self.assertEqual(index["L1-tradeoff"]["child_l2_id"], "L2-memory-architecture-tradeoffs")
+
+    def test_materialized_l3_omits_zero_event_child_l2_nodes(self) -> None:
+        node = {
+            "l2_id": "L2-retrieval-baseline-comparison",
+            "label": "retrieval baseline comparison",
+            "current_state": "Baseline comparison topic.",
+            "linked_obj_ids": ["L1-full", "L1-layered"],
+            "meeting_ids": ["SYN-001"],
+            "timeline_digest": [
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-full",
+                    "summary": "Full context baseline includes all transcript context and may be truncated.",
+                },
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-layered",
+                    "summary": "Layered memory comparison uses L1 evidence, L2 context, and L3 navigation.",
+                },
+            ],
+        }
+        promotions = build_l3_promotion_sidecar(
+            {"l2_nodes": [node]},
+            total_l1_count=10,
+            thresholds={"absolute_l1_threshold": 2},
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        materialized = build_l3_materialization_sidecar(
+            {"l2_nodes": [node]},
+            promotions,
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        child_ids = {
+            child["l2_id"]
+            for child in materialized["l3_nodes"][0]["child_l2_nodes"]
+        }
+        self.assertIn("L2-full-context-baseline", child_ids)
+        self.assertIn("L2-layered-memory-comparison", child_ids)
+        self.assertNotIn("L2-traditional-rag-baseline", child_ids)
+        self.assertNotIn("L2-answer-quality-and-traceability", child_ids)
+        self.assertEqual(set(materialized["l3_index"]), {"L1-full", "L1-layered"})
+
+    def test_memory_evaluation_validation_metrics_route_to_metrics_child(self) -> None:
+        node = {
+            "l2_id": "L2-memory-evaluation-strategy",
+            "label": "memory evaluation strategy",
+            "current_state": "Memory evaluation topic.",
+            "linked_obj_ids": ["L1-metrics"],
+            "meeting_ids": ["SYN-001"],
+            "timeline_digest": [
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-metrics",
+                    "summary": (
+                        "The validation report should track L2 hit rate, L3 hit rate, "
+                        "context token count, unassigned L1 count, duplicate assignment "
+                        "count, and prompt budget pass rate."
+                    ),
+                }
+            ],
+        }
+        promotions = build_l3_promotion_sidecar(
+            {"l2_nodes": [node]},
+            total_l1_count=10,
+            thresholds={"absolute_l1_threshold": 1},
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        materialized = build_l3_materialization_sidecar(
+            {"l2_nodes": [node]},
+            promotions,
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        self.assertEqual(
+            materialized["l3_index"]["L1-metrics"]["child_l2_id"],
+            "L2-memory-mechanism-evaluation-metrics",
+        )
+
+    def test_transcript_segmentation_strategy_routes_away_from_tool_calling_child(self) -> None:
+        node = {
+            "l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+            "label": "transcript segmentation and idea-unit coverage",
+            "current_state": "Transcript segmentation topic.",
+            "linked_obj_ids": ["L1-strategy"],
+            "meeting_ids": ["SYN-001"],
+            "timeline_digest": [
+                {
+                    "meeting_id": "SYN-001",
+                    "meeting_date": "2026-06-01",
+                    "obj_id": "L1-strategy",
+                    "summary": (
+                        "The transcript segmentation strategy needs validation report "
+                        "checks for largest child L2 size, manual review count, and "
+                        "prompt budget pass rate."
+                    ),
+                }
+            ],
+        }
+        promotions = build_l3_promotion_sidecar(
+            {"l2_nodes": [node]},
+            total_l1_count=10,
+            thresholds={"absolute_l1_threshold": 1},
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        materialized = build_l3_materialization_sidecar(
+            {"l2_nodes": [node]},
+            promotions,
+            generated_at_utc="2026-05-11T00:00:00Z",
+        )
+
+        self.assertEqual(
+            materialized["l3_index"]["L1-strategy"]["child_l2_id"],
+            "L2-transcript-segmentation-strategy-and-validation",
+        )
 
     def test_llm_taxonomy_proposal_can_supply_child_l2_candidates(self) -> None:
         node = _l2_node(30, meeting_count=4)
@@ -613,7 +905,7 @@ class L3PromotionTests(unittest.TestCase):
 
         def assignment_proposer(l2_node: dict, child_l2_candidates: list[dict]) -> list[dict]:
             self.assertEqual(l2_node["l2_id"], node["l2_id"])
-            self.assertEqual(len(child_l2_candidates), 11)
+            self.assertEqual(len(child_l2_candidates), 12)
             return [
                 {
                     "obj_id": "L1-a",

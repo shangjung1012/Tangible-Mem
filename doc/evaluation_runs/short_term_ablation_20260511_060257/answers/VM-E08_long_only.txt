@@ -1,0 +1,21 @@
+根據提供的 context，關於 evaluation (評估)、baseline (基線) 和 metrics (指標) 的討論，從 0318 到 0429 有明顯的進展與具體化。
+
+這些討論主要圍繞在 L3 主題 `L3-memory-evaluation-strategy` (memory evaluation strategy) 及其子主題 `L2-memory-mechanism-evaluation-metrics` (Memory Mechanism Evaluation & Metrics) 下。
+
+**演進脈絡：**
+
+1.  **早期討論 (03月):**
+    *   在 03月18日的討論中，評估的定義相對初步。當時將「時間推理 (Temporal Reasoning)」定義為一項評估任務，即針對特定對話片段生成摘要或大綱 ([L1-0318-010])。此外，也提到了 LLM 的能源消耗可作為一個評估考量 ([L1-0318-023])。
+
+2.  **近期決策 (04月):**
+    *   到了 04月底，評估策略變得非常具體。團隊決定採用兩階段評估策略 ([L1-0422-020])，並明確了要比較的 **baseline** 方法。
+    *   **實驗與 Baseline**：決定進行實驗，比較「動態分塊 (dynamic chunking)」與 **baseline** 方法「固定分塊 (fixed-chunk)」([L1-0429-065], [L1-0429-033])。其他被提及的基線方法還包括「逐句 (sentence-by-sentence)」分塊 ([L1-0422-020])。
+    *   **評估 Metrics**：
+        *   針對分塊 (chunking) 實驗，將採用 `precision` 和 `recall` 作為指標，並以人類定義的「重要 idea units」作為 ground truth 進行比對 ([L1-0429-072])。
+        *   評估指標也包含計算成本（如 LLM 請求次數）和輸出品質 ([L1-0429-033])。
+    *   **評分方法**：確定將使用預先定義的「標準答案 (ground truth)」，並利用 LLM 來比較 agent 生成的答案與標準答案的正確性，以此進行評分 ([L1-0429-039])。
+    *   **評估問題類型**：提出了一個包含三種類型問題的評估計畫：短期正確性、長期主題演變追蹤、以及對過去決策原因的理解 ([L1-0429-010], [L1-0429-038])。
+
+**關於 Paper Review：**
+
+*   Context 中提到，04月29日規劃評估方法時，「有參考之前看的幾篇 paper」([L1-0429-042])。然而，context 並未提供這些 paper 的具體內容或名稱。

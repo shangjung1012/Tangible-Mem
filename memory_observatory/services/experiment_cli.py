@@ -35,7 +35,42 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
         help="Model used only for LLM recall planning. Answer generation still uses --model.",
     )
-    parser.add_argument("--max-context-chars", type=int, default=4000)
+    parser.add_argument(
+        "--max-context-chars",
+        type=int,
+        default=0,
+        help="Maximum context chars per strategy. Default 0 means unbounded for fair diagnostics.",
+    )
+    parser.add_argument("--rag-top-k", type=int, default=6)
+    parser.add_argument(
+        "--full-context-scope",
+        choices=("gold", "all"),
+        default="gold",
+        help="Full-context baseline scope. 'gold' preserves legacy oracle meeting IDs; 'all' uses chronological all-transcript context.",
+    )
+    parser.add_argument(
+        "--baseline-token-multiplier",
+        type=float,
+        default=0.0,
+        help="If >0, cap full-context and RAG contexts to this multiplier of the layered context tokens per query.",
+    )
+    parser.add_argument(
+        "--full-context-max-tokens",
+        type=int,
+        default=0,
+        help="Absolute token cap for full-context baseline. Overrides --baseline-token-multiplier for full-context when >0.",
+    )
+    parser.add_argument(
+        "--rag-max-context-tokens",
+        type=int,
+        default=0,
+        help="Absolute token cap for RAG baseline. Overrides --baseline-token-multiplier for RAG when >0.",
+    )
+    parser.add_argument(
+        "--budget-profile",
+        default="",
+        help="Optional layered-memory retrieval budget profile, e.g. large_corpus_tight.",
+    )
     return parser.parse_args(argv)
 
 
@@ -53,6 +88,12 @@ def main(argv: list[str] | None = None) -> None:
         model=args.model,
         planner_model=args.planner_model,
         max_context_chars=args.max_context_chars,
+        rag_top_k=args.rag_top_k,
+        budget_profile=args.budget_profile,
+        full_context_scope=args.full_context_scope,
+        baseline_token_multiplier=args.baseline_token_multiplier,
+        full_context_max_tokens=args.full_context_max_tokens,
+        rag_max_context_tokens=args.rag_max_context_tokens,
     )
     print(f"wrote Memory Observatory run: {Path(args.out) / result['run_id']}")
 

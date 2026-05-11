@@ -44,6 +44,78 @@ function card(title, body, tags = []) {
   ]);
 }
 
+const STRATEGY_LABELS = {
+  full_context: "Full context",
+  rag_baseline: "RAG",
+  layered_memory: "Layered memory",
+};
+
+function formatMetricValue(value, kind = "number") {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "0";
+  if (kind === "ms") {
+    return num >= 1000 ? `${(num / 1000).toFixed(2)}s` : `${Math.round(num)}ms`;
+  }
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(num);
+}
+
+function metricSummaryCard(title, values, kind = "number") {
+  const entries = Object.entries(values || {});
+  return el("div", { class: "card metric-card" }, [
+    el("div", { class: "label", text: title }),
+    el("div", { class: "metric-map" }, entries.map(([key, value]) =>
+      el("div", { class: "metric-row" }, [
+        el("span", { class: "metric-name", title: key, text: STRATEGY_LABELS[key] || key }),
+        el("span", { class: "metric-number", text: formatMetricValue(value, kind) }),
+      ])
+    )),
+  ]);
+}
+
+function keyValueRows(rows) {
+  const filtered = (rows || []).filter((row) => row && row.value !== undefined && row.value !== null && row.value !== "");
+  if (!filtered.length) return el("p", { class: "muted", text: "No data available." });
+  return el("div", { class: "kv-list" }, filtered.map((row) =>
+    el("div", { class: "kv-row" }, [
+      el("span", { class: "kv-key", text: row.label }),
+      el("span", { class: "kv-value", text: String(row.value) }),
+    ])
+  ));
+}
+
+function renderTopicLinkBlock(topicLink) {
+  const link = topicLink || {};
+  return el("div", { class: "subpanel" }, [
+    el("h3", { text: "Topic Links" }),
+    keyValueRows([
+      { label: "L2", value: link.l2_label || link.l2_id },
+      { label: "L2 ID", value: link.l2_id },
+      { label: "Child L2", value: link.child_l2_label || link.child_l2_id },
+      { label: "Parent L3", value: link.parent_l3_label || link.parent_l3_id },
+      { label: "Reason", value: link.assignment_reason },
+      { label: "Confidence", value: link.confidence !== undefined ? fmtNumber(link.confidence) : "" },
+    ]),
+  ]);
+}
+
+function renderFeedbackHistoryBlock(history) {
+  const rows = history || [];
+  if (!rows.length) {
+    return el("div", { class: "subpanel" }, [
+      el("h3", { text: "Feedback History" }),
+      el("p", { class: "muted", text: "No feedback has been saved for this object." }),
+    ]);
+  }
+  return el("div", { class: "subpanel" }, [
+    el("h3", { text: "Feedback History" }),
+    ...rows.map((item) => el("div", { class: "feedback-item" }, [
+      el("strong", { text: `${fmtNumber(item.canonical_importance)} -> ${fmtNumber(item.effective_importance)}` }),
+      el("div", { class: "label", text: `${item.reason_code || "reason not set"} | ${item.created_at_utc || ""}` }),
+      item.note ? el("p", { text: item.note }) : null,
+    ])),
+  ]);
+}
+
 function memoryCard(title, meta, body, tags = []) {
   return el("div", { class: "card memory-card" }, [
     el("strong", { text: title || "" }),
@@ -174,10 +246,8 @@ function renderObjectDetail(data) {
     el("p", { text: d.content || "" }),
     el("h3", { text: "Evidence" }),
     el("p", { class: "evidence", text: d.evidence || "" }),
-    el("h3", { text: "Topic Links" }),
-    el("pre", { text: JSON.stringify(data.topic_link || {}, null, 2) }),
-    el("h3", { text: "Feedback History" }),
-    el("pre", { text: JSON.stringify(data.feedback_history || [], null, 2) }),
+    renderTopicLinkBlock(data.topic_link || {}),
+    renderFeedbackHistoryBlock(data.feedback_history || []),
   ]);
 }
 
@@ -446,8 +516,8 @@ async function loadRun(runId) {
   const summary = data.summary || {};
   $("#runSummary").replaceChildren(
     card("queries", String(summary.query_count || 0)),
-    card("avg context tokens", JSON.stringify(summary.avg_context_tokens || {})),
-    card("avg total ms", JSON.stringify(summary.avg_total_ms || {})),
+    metricSummaryCard("avg context tokens", summary.avg_context_tokens || {}, "number"),
+    metricSummaryCard("avg total time", summary.avg_total_ms || {}, "ms"),
   );
   $("#queryTable").replaceChildren(...(data.queries || []).map((q) => {
     const node = memoryCard(q.query_id, q.query, "open details", []);
@@ -458,13 +528,95 @@ async function loadRun(runId) {
 
 function showQueryDetail(q) {
   const strategies = ["full_context", "rag_baseline", "layered_memory"];
-  $("#queryDetail").replaceChildren(...strategies.map((s) => {
-    const item = (q.strategies || {})[s] || {};
-    return el("div", { class: "panel" }, [
-      el("h2", { text: s }),
-      el("pre", { text: JSON.stringify({ metrics: item.metrics, scores: item.scores, retrieved_chunks: item.retrieved_chunks, l1: item.l1_evidence_seeds }, null, 2) }),
+  $("#queryDetail").replaceChildren(...strategies.map((s) => renderStrategyDetail(s, (q.strategies || {})[s] || {})));
+}
+
+function metricValue(metrics, key, kind = "number") {
+  const value = metrics ? metrics[key] : undefined;
+  if (value === undefined || value === null || value === "") return "0";
+  return formatMetricValue(value, kind);
+}
+
+function renderStrategyDetail(strategy, item) {
+  const metrics = item.metrics || {};
+  const scores = item.scores || {};
+  const answer = item.answer || "";
+  return el("div", { class: `panel strategy-detail ${strategy}` }, [
+    el("div", { class: "panel-header" }, [
+      el("h2", { text: STRATEGY_LABELS[strategy] || strategy }),
+      el("div", { class: "tag-row" }, [
+        item.truncated || metrics.truncated ? tag("truncated", "warn") : tag("not truncated", "feedback"),
+        strategy === "layered_memory" ? tag("L1 -> L2/L3", "l2") : null,
+        strategy === "rag_baseline" ? tag("chunks", "rag") : null,
+      ]),
+    ]),
+    el("div", { class: "strategy-metrics" }, [
+      keyValueRows([
+        { label: "Context", value: metricValue(metrics, "estimated_context_tokens") },
+        { label: "Total tok.", value: metricValue(metrics, "actual_total_tokens") },
+        { label: "Total time", value: metricValue(metrics, "total_ms", "ms") },
+        { label: "Generation", value: metricValue(metrics, "generation_ms", "ms") },
+      ]),
+      scores.expected_obj_recall_at_context !== undefined ? keyValueRows([
+        { label: "L1 recall", value: fmtNumber(scores.expected_obj_recall_at_context) },
+        { label: "L2 hit", value: scores.expected_l2_hit ? "yes" : "no" },
+        { label: "L3 hit", value: scores.expected_l3_hit ? "yes" : "no" },
+        { label: "Omitted events", value: metricValue(metrics, "omitted_event_count") },
+      ]) : null,
+    ]),
+    el("div", { class: "answer-box" }, [
+      el("h3", { text: "Answer" }),
+      el("p", { text: answer ? preview(answer, 900) : "No answer generated in this run." }),
+    ]),
+    renderStrategyEvidence(strategy, item),
+  ]);
+}
+
+function renderStrategyEvidence(strategy, item) {
+  if (strategy === "rag_baseline") {
+    const chunks = item.retrieved_chunks || [];
+    return el("div", { class: "subpanel" }, [
+      el("h3", { text: `Retrieved Chunks (${chunks.length})` }),
+      ...chunks.slice(0, 4).map((chunk) => el("div", { class: "evidence-card rag-evidence" }, [
+        el("strong", { text: chunk.chunk_id || "chunk" }),
+        el("div", { class: "label", text: `${chunk.meeting_id || ""} | lines ${chunk.start_line || "?"}-${chunk.end_line || "?"} | score ${fmtNumber(chunk.score)}` }),
+        el("p", { text: preview(chunk.text, 260) }),
+      ])),
+      chunks.length > 4 ? el("p", { class: "muted", text: `${chunks.length - 4} more chunks omitted from the demo panel.` }) : null,
     ]);
-  }));
+  }
+  if (strategy === "layered_memory") {
+    const l1 = item.l1_evidence_seeds || [];
+    const l2 = item.l2_evolution_context || [];
+    return el("div", { class: "subpanel" }, [
+      el("h3", { text: `L1 Evidence Seeds (${l1.length})` }),
+      ...l1.slice(0, 5).map((obj) => el("div", { class: "evidence-card l1-evidence" }, [
+        el("strong", { text: obj.obj_id || "" }),
+        el("div", { class: "label", text: `${obj.meeting_id || ""} | ${obj.type || ""} | score ${fmtNumber(obj.score)}` }),
+        el("p", { text: preview(obj.content, 240) }),
+      ])),
+      l1.length > 5 ? el("p", { class: "muted", text: `${l1.length - 5} more L1 seeds omitted from the demo panel.` }) : null,
+      el("h3", { text: `L2 / Child-L2 Context (${l2.length})` }),
+      ...l2.slice(0, 3).map((topic) => el("div", { class: "evidence-card l2-evidence" }, [
+        el("strong", { text: topic.label || topic.l2_id || "" }),
+        el("div", { class: "label", text: `${topic.l2_id || ""} | omitted ${topic.omitted_event_count || 0}` }),
+        el("p", { text: preview(topic.current_state || timelineText(topic.timeline_digest), 260) }),
+      ])),
+    ]);
+  }
+  return el("div", { class: "subpanel" }, [
+    el("h3", { text: "Included Context" }),
+    keyValueRows([
+      { label: "Meetings", value: item.included_meeting_count },
+      { label: "Files", value: item.included_file_count },
+      { label: "Source", value: item.full_context_source || item.source },
+    ]),
+  ]);
+}
+
+function timelineText(timeline) {
+  if (!Array.isArray(timeline)) return "";
+  return timeline.map((event) => `${event.meeting_id || ""} ${event.obj_id || ""}: ${event.summary || event.content || ""}`).join(" ");
 }
 
 $("#topicSearch").addEventListener("input", renderTopicTree);
@@ -480,7 +632,7 @@ $("#runExperiment").addEventListener("click", async () => {
       no_llm: true,
       generate_answers: false,
       planner_model: "gemini-2.5-flash",
-      max_context_chars: 4000,
+      max_context_chars: 0,
     }),
   });
   await loadRuns();

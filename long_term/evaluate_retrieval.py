@@ -19,10 +19,16 @@ if str(Path(__file__).resolve().parent) not in sys.path:
 from recall import format_recall_for_prompt, recall
 from recall_planner import plan_recall
 from embedder import EmbedCache
+from retrieval_profiles import (
+    get_retrieval_budget_profile,
+    profile_names,
+    profile_to_grid,
+)
 from share_mem.store import load_share_tree
 
 DEFAULT_QUERIES_PATH = Path(__file__).resolve().parent / "eval" / "long_term_retrieval_queries.jsonl"
 DEFAULT_OUT = Path(__file__).resolve().parent / "eval"
+DEFAULT_PROMPT_BUDGET_CHARS = 6000
 
 
 def _load_queries(path: Path) -> list[dict[str, Any]]:
@@ -109,6 +115,8 @@ def run_retrieval_once(
     embed_cache: EmbedCache | None = None,
     use_llm_planner: bool = True,
     retrieval_mode: str = "semantic",
+    l2_root: Path | str | None = None,
+    l3_root: Path | str | None = None,
 ) -> dict[str, Any]:
     effective_planner_model = planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
     plan = (
@@ -122,6 +130,16 @@ def run_retrieval_once(
         "max_relevant_l2_summaries",
         int(recall_params.get("max_expanded_l2_topics", 2) or 2),
     )
+    sidecar_paths: dict[str, Path] = {}
+    if l2_root is not None:
+        l2_path = Path(l2_root)
+        sidecar_paths["l2_index_path"] = l2_path / "l2_index.json"
+        sidecar_paths["l2_view_path"] = l2_path / "l2_view.json"
+    if l3_root is not None:
+        l3_path = Path(l3_root)
+        sidecar_paths["l3_promotions_path"] = l3_path / "l3_promotions.json"
+        sidecar_paths["l3_view_path"] = l3_path / "l3_view.json"
+        sidecar_paths["l3_index_path"] = l3_path / "l3_index.json"
     return recall(
         query=query,
         plan=plan,
@@ -131,6 +149,7 @@ def run_retrieval_once(
         include_retrieval_debug=True,
         embed_cache=embed_cache,
         retrieval_mode=retrieval_mode,
+        **sidecar_paths,
         **recall_params,
     )
 
@@ -187,7 +206,7 @@ def _score_query_result(query_row: dict[str, Any], result: dict[str, Any]) -> di
         "whether_large_l2_was_expanded_without_child_split": bool(
             debug.get("large_l2_expanded_without_child_split", False)
         ),
-        "prompt_budget_pass": len(prompt) <= 4000,
+        "prompt_budget_pass": len(prompt) <= DEFAULT_PROMPT_BUDGET_CHARS,
         "notes": query_row.get("notes", ""),
     }
 
@@ -211,6 +230,9 @@ def evaluate_retrieval_grid(
     grid: dict[str, list[Any]] | None = None,
     use_llm_planner: bool = True,
     retrieval_mode: str = "semantic",
+    l2_root: Path | str | None = None,
+    l3_root: Path | str | None = None,
+    budget_profile: str = "",
 ) -> dict[str, Any]:
     query_rows = _load_queries(Path(queries_path))
     tree = load_share_tree(Path(share_mem_root))
@@ -241,6 +263,8 @@ def evaluate_retrieval_grid(
                 embed_cache=embed_cache,
                 use_llm_planner=use_llm_planner,
                 retrieval_mode=retrieval_mode,
+                l2_root=l2_root,
+                l3_root=l3_root,
             )
             per_query.append(_score_query_result(query_row, result))
         runs.append(
@@ -296,6 +320,9 @@ def evaluate_retrieval_grid(
         "run_count": len(runs),
         "retrieval_mode": retrieval_mode,
         "use_llm_planner": use_llm_planner,
+        "budget_profile": budget_profile,
+        "l2_root": str(l2_root) if l2_root else "",
+        "l3_root": str(l3_root) if l3_root else "",
         "model": model_name,
         "planner_model": planner_model_name or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash"),
         "runs": runs,
@@ -338,6 +365,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--queries", default=str(DEFAULT_QUERIES_PATH))
     parser.add_argument("--out", default=str(DEFAULT_OUT))
     parser.add_argument("--share-mem-root", default=str(REPO_ROOT / "share_mem"))
+    parser.add_argument(
+        "--l2-root",
+        default="",
+        help="Optional L2 sidecar root. Defaults to active long_term/l2 through recall().",
+    )
+    parser.add_argument(
+        "--l3-root",
+        default="",
+        help="Optional L3 sidecar root. Defaults to active long_term/l3 through recall().",
+    )
     parser.add_argument("--model", default=os.getenv("GEMINI_MODEL", "gemini-2.5-pro"))
     parser.add_argument(
         "--planner-model",
@@ -353,6 +390,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-event-chars", default="100")
     parser.add_argument("--topic-size-penalty", default="0.05,0.10")
     parser.add_argument("--prefer-materialized-l3", default="true")
+    parser.add_argument(
+        "--budget-profile",
+        choices=["", *profile_names(), "tight", "large"],
+        default="",
+        help="Use one named retrieval budget profile as a single-run grid.",
+    )
     parser.add_argument("--retrieval-mode", choices=["lexical", "semantic"], default="lexical")
     parser.add_argument(
         "--no-llm",
@@ -369,26 +412,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    grid = {
-        "top_k_raw": _parse_csv_ints(args.top_k_raw),
-        "max_l1_seeds_for_prompt": _parse_csv_ints(args.max_l1_seeds_for_prompt),
-        "max_events_per_l2": _parse_csv_ints(args.max_events_per_l2),
-        "max_events_per_child_l2": _parse_csv_ints(args.max_events_per_child_l2),
-        "max_expanded_l2_topics": _parse_csv_ints(args.max_expanded_l2_topics),
-        "max_global_topic_map_chars": _parse_csv_ints(args.max_global_topic_map_chars),
-        "max_event_chars": _parse_csv_ints(args.max_event_chars),
-        "topic_size_penalty": _parse_csv_floats(args.topic_size_penalty),
-        "prefer_materialized_l3": _parse_csv_bools(args.prefer_materialized_l3),
-    }
+    if args.budget_profile:
+        grid = profile_to_grid(get_retrieval_budget_profile(args.budget_profile))
+    else:
+        grid = {
+            "top_k_raw": _parse_csv_ints(args.top_k_raw),
+            "max_l1_seeds_for_prompt": _parse_csv_ints(args.max_l1_seeds_for_prompt),
+            "max_events_per_l2": _parse_csv_ints(args.max_events_per_l2),
+            "max_events_per_child_l2": _parse_csv_ints(args.max_events_per_child_l2),
+            "max_expanded_l2_topics": _parse_csv_ints(args.max_expanded_l2_topics),
+            "max_global_topic_map_chars": _parse_csv_ints(args.max_global_topic_map_chars),
+            "max_event_chars": _parse_csv_ints(args.max_event_chars),
+            "topic_size_penalty": _parse_csv_floats(args.topic_size_penalty),
+            "prefer_materialized_l3": _parse_csv_bools(args.prefer_materialized_l3),
+        }
     report = evaluate_retrieval_grid(
         queries_path=args.queries,
         out=args.out,
         share_mem_root=args.share_mem_root,
+        l2_root=args.l2_root or None,
+        l3_root=args.l3_root or None,
         model_name=args.model,
         planner_model_name=args.planner_model,
         grid=grid,
         use_llm_planner=bool(args.use_llm_planner and not args.no_llm),
         retrieval_mode=args.retrieval_mode,
+        budget_profile=args.budget_profile,
     )
     print(
         "[long_term] retrieval eval complete: "

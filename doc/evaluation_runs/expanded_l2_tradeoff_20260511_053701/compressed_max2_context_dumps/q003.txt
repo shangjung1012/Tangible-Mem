@@ -1,0 +1,62 @@
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0422 | 2026-04-22 | L1-0422-006] type=approach_change importance=0.7 score=0.7017
+  content: 為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連...(truncated)
+  evidence: [SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [S...(truncated)
+- [0429 | 2026-04-29 | L1-0429-019] type=argument importance=0.73 score=0.5929
+  content: 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次...(truncated)
+  evidence: [SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼 [SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它...(truncated)
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.5929
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKE...(truncated)
+- [0429 | 2026-04-29 | L1-0429-048] type=decision importance=0.7 score=0.5869
+  content: 決定進行一項消融研究 (ablation study) 來評估系統。該研究將比較完整系統與幾個基準線：僅 RAG、僅短期記憶、僅長期記憶。在所有實驗條件下，工作記憶 (w...(truncated)
+  evidence: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其...(truncated)
+- [0506 | 2026-05-06 | L1-0506-001] type=approach_change importance=0.72 score=0.7096
+  content: 團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，...(truncated)
+  evidence: [SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcrip...(truncated)
+- [0506 | 2026-05-06 | L1-0506-005] type=open_issue importance=0.6 score=0.6844
+  content: 目前的處理流程存在一個已知問題，即在處理過程中會遺漏部分逐字稿內容。這些遺漏的「間隙」（gaps）目前是透過將其作為低品質的原始文本 idea unit 加回來進行修補。...(truncated)
+  evidence: [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segm...(truncated)
+- [0506 | 2026-05-06 | L1-0506-010] type=proposal importance=0.6 score=0.6844
+  content: 計劃在未來版本中加入一個修復機制，以處理因提示問題導致的逐字稿遺漏（gaps）。目前的做法是將遺漏的行作為原始文本、低品質的 idea unit 加回。
+  evidence: [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segm...(truncated)
+- [0506 | 2026-05-06 | L1-0506-040] type=decision importance=0.68 score=0.5849
+  content: 決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動...(truncated)
+  evidence: [SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-idea-unit-generation-methods] idea-unit generation methods
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0506-001, L1-0422-006
+  topic_size=20 selected_event_count=1 omitted_event_count=19
+  current_state: This child L2 has 20 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.
+  timeline_digest:
+    - [2026-04-22 L1-0422-006] 為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生...(truncated)
+
+[L2-idea-unit-granularity-and-semantics] idea-unit granularity and semantics
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0429-019
+  topic_size=12 selected_event_count=1 omitted_event_count=11
+  current_state: This child L2 has 12 linked L1 evidence object(s) split from L2-transcript-segmentation-and-idea-unit-coverage.
+  timeline_digest:
+    - [2026-04-29 L1-0429-019] 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整...(truncated)
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 376
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 30
+- retrieval_mode: lexical
+- selected_child_l2_count: 2
+- selected_l1_count: 8
+- selected_l2_count: 0

@@ -1,0 +1,23 @@
+根據提供的 context，關於 transcript segmentation 的相關討論如下：
+
+團隊在 `L3-transcript-segmentation-and-idea-unit-coverage` (transcript segmentation and idea-unit coverage) 的主題下，探討了多個相關議題。
+
+### Adaptive Segmentation (自適應分段)
+*   **狀態**：已放棄。
+*   **脈絡**：`L3-transcript-segmentation-and-idea-unit-coverage` -> `L2-window-and-boundary-selection`
+*   **說明**：根據 `L1-0506-003` 和 `L1-0506-007`，團隊過去曾進行一項使用「自適應窗口 (adaptive window)」進行分段的實驗，但因結果惡化而被放棄。失敗的原因是該方法缺乏精確定位邊界的能力，導致任何不準確都需要回退進行校正。目前，如何最有效地對逐字稿進行分段仍是一個待解決的問題 (`L1-0506-007`)。
+
+### Gap (間隙) & Coverage (覆蓋率)
+*   **狀態**：已知問題。
+*   **脈絡**：`L3-transcript-segmentation-and-idea-unit-coverage` -> `L2-missing-line-coverage`
+*   **說明**：根據 `L1-0506-005`，目前的處理流程存在一個已知問題，即在處理過程中會遺漏部分逐字稿內容，產生「間隙 (gaps)」。這是一個覆蓋率不足的問題。
+
+### Repair (修補)
+*   **狀態**：臨時解決方案。
+*   **脈絡**：`L3-transcript-segmentation-and-idea-unit-coverage` -> `L2-repair-and-coarsening`
+*   **說明**：針對上述的「間隙」問題，目前的修補方法是將這些遺漏的內容作為低品質的原始文本 idea unit 加回來 (`L1-0506-005`)。
+
+### 其他相關決策
+*   **目前架構**：團隊目前採用由上而下 (top-down) 的架構，由 `Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent` 進行處理 (`L1-0506-001`)。
+*   **評估方法**：為了客觀評估文本分割的性能，團隊決定建立一個「真實標記 (ground truth)」資料集，透過手動標記來計算性能指標 (`L1-0506-013`)。
+*   **動態分塊 (Dynamic Chunking)**：團隊曾決定探索一種「動態分塊」方法，預測主題相同的對話輪次並組合成可變大小的區塊 (`L1-0429-029`)。不過，根據 `L1-0506-003` 中放棄自適應窗口的決策，動態方法的實施狀況可能已改變，但 context 未提供明確的後續資訊。

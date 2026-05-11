@@ -1,0 +1,56 @@
+=== Memory Router ===
+strategy: forced_long_only_ablation
+reason: short-term ablation variant
+
+=== Long-Term Memory ===
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-transcript-segmentation-and-idea-unit-coverage: transcript segmentation and idea-unit coverage
+  - child L2 L2-fixed-vs-dynamic-chunking: fixed vs dynamic chunking
+  - child L2 L2-window-and-boundary-selection: window and boundary selection
+  - child L2 L2-tool-calling-transcript-reading: tool-calling transcript reading
+  - child L2 L2-idea-unit-generation: idea-unit core definition
+  - child L2 L2-idea-unit-granularity-and-semantics: idea-unit granularity and semantics
+  - child L2 L2-idea-unit-generation-methods: idea-unit generation methods
+  - child L2 L2-idea-unit-candidate-classification: idea-unit candidate classification
+  - child L2 L2-missing-line-coverage: missing-line coverage
+  - child L2 L2-repair-and-coarsening: repair and coarsening
+  - child L2 L2-cross-window-continuity: cross-window continuity
+  - child L2 L2-evidence-grounding-and-line-coverage: evidence grounding and line coverage
+- Unpromoted L2 topics:
+  - L2-agentic-pipeline-control: agentic pipeline control
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-036] type=approach_change importance=0.75 score=0.7866
+  content: 專案採用了三層式記憶體架構，包含處理即時對話上下文的 Working Memory、短期記憶 (Short-Term Memory) 和長期記憶 (Long-Term M...(truncated)
+  evidence: [SPEAKER_01]: 就是我們現在把東西主要分成兩部分去處理就是一個是記憶的部分,它是確保內容的正確記憶就是包括你之前會議的內容 [SPEAKER_01]: 然後就...(truncated)
+- [0408 | 2026-04-08 | L1-0408-036] type=decision importance=0.73 score=0.7982
+  content: 團隊決定，短期記憶 (short-term memory) 和長期記憶 (long-term memory) 將獨立更新。此設計放棄了先前「短期記憶內容在淡忘或達到一定數...(truncated)
+  evidence: [SPEAKER_00]: 但是長期會存任何一個短期記憶嗎？短期記憶的東西會越來越不見，對不對？ [SPEAKER_00]: 應該會變成長期的。過一段時間之後，它會消失在...(truncated)
+- [0422 | 2026-04-22 | L1-0422-010] type=decision importance=0.71 score=0.8235
+  content: 目前的系統架構決定，short-term memory 和 long-term memory 將分開獨立更新。每個記憶體處理過程都會接收完整的逐字稿，並在沒有互動的情況下各自進行更新。
+  evidence: [SPEAKER_02]: 因為我們現在是個別update就是他們不會通常跟 short term 在update的時候他們都會各自拿到完整的transcription在...(truncated)
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.8018
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中...(truncated)
+- [0422 | 2026-04-22 | L1-0422-036] type=argument importance=0.7 score=0.7981
+  content: 反對取消 short-term memory 的論點是，它能捕捉近期對話中的細微細節，而這些細節在更為摘要式的 long-term memory 中可能會遺失，這類似於人...(truncated)
+  evidence: [SPEAKER_00]: 然後所以短期跟長期的差異在哪裡？短期它最大的差異儲存的方式不一樣嘛 [SPEAKER_03]: 嗯 對 然後長期還是會比較精簡短期感覺會短期還...(truncated)
+- [0422 | 2026-04-22 | L1-0422-030] type=decision importance=0.68 score=0.7869
+  content: 團隊決定長期記憶 (long-term memory) 的當前設計目標是使其結構盡可能扁平化，而非採用可能允許與短期記憶合併的樹狀結構。
+  evidence: [SPEAKER_03]: 其實我覺得老實說那種方法也不是不行因為如果是樹狀的話其實說不定可以把長短期 [SPEAKER_01]: 但長期現在雖然它是樹狀但我們是想要盡量讓它扁平就是不要那麼多
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.7826
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKE...(truncated)
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.7942
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減...(truncated)
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他impor...(truncated)
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-idea-unit-generation] idea-unit core definition
+  parent L3: L3-transcript-segmentation-and-idea-unit-coverage transcript segmentation and idea-unit coverage
+  matched L1: L1-0422-010
+  topic_size=12 selected_event_count=8 omitted_event_count=4
+  current_state: This child L2 has 12 linked L1 evidence object(s) split from L2-transcript-segmentation-an
+...(truncated)

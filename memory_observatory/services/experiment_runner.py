@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import time
 from datetime import datetime, timezone
@@ -199,7 +200,13 @@ def run_experiment(
     generate_answers: bool = False,
     model: str = "gemini-2.5-pro",
     planner_model: str | None = None,
-    max_context_chars: int = 4000,
+    max_context_chars: int = 0,
+    rag_top_k: int = 6,
+    budget_profile: str = "",
+    full_context_scope: str = "gold",
+    baseline_token_multiplier: float = 0.0,
+    full_context_max_tokens: int = 0,
+    rag_max_context_tokens: int = 0,
 ) -> dict[str, Any]:
     repo = Path(repo_root)
     effective_planner_model = planner_model or os.getenv("GEMINI_PLANNER_MODEL", "gemini-2.5-flash")
@@ -218,6 +225,12 @@ def run_experiment(
         "model": model,
         "planner_model": effective_planner_model,
         "max_context_chars": max_context_chars,
+        "rag_top_k": rag_top_k,
+        "budget_profile": budget_profile,
+        "full_context_scope": full_context_scope,
+        "baseline_token_multiplier": baseline_token_multiplier,
+        "full_context_max_tokens": full_context_max_tokens,
+        "rag_max_context_tokens": rag_max_context_tokens,
     }
     report_store.write_json(run_dir / "run_config.json", config)
     report_store.write_text(
@@ -232,31 +245,25 @@ def run_experiment(
         query_result: dict[str, Any] = {
             "query_id": qid,
             "query": query,
+            "question_id": str(row.get("question_id") or qid),
+            "set": row.get("set", ""),
+            "demo_priority": row.get("demo_priority", ""),
+            "category": row.get("category", ""),
+            "expected_route": row.get("expected_route", ""),
+            "expected_winner": row.get("expected_winner", ""),
+            "expected_answer": row.get("expected_answer", ""),
             "strict_gold_obj_ids": _as_list(row.get("strict_gold_obj_ids")),
+            "acceptable_obj_ids": _as_list(row.get("acceptable_obj_ids")),
             "expected_obj_ids": _as_list(row.get("expected_obj_ids")),
             "expected_l2_ids": _as_list(row.get("expected_l2_ids")),
             "expected_l3_ids": _as_list(row.get("expected_l3_ids")),
+            "gold_meeting_ids": _as_list(row.get("gold_meeting_ids")),
             "notes": row.get("notes", ""),
             "strategies": {},
         }
-        if "full_context" in strategy_list:
-            full = build_full_context(
-                repo_root=repo,
-                meeting_ids=row.get("gold_meeting_ids", ""),
-                scope="gold" if row.get("gold_meeting_ids") else "all",
-                max_context_chars=max_context_chars,
-            )
-            query_result["strategies"]["full_context"] = full
-        if "rag_baseline" in strategy_list:
-            rag = retrieve_lexical_rag(
-                query,
-                repo_root=repo,
-                top_k=6,
-                max_context_chars=max_context_chars,
-            )
-            query_result["strategies"]["rag_baseline"] = rag
-        if "layered_memory" in strategy_list:
-            layered = trace_service.run_trace(
+
+        def run_layered_trace() -> dict[str, Any]:
+            layered_result = trace_service.run_trace(
                 query,
                 retrieval_mode=retrieval_mode,
                 no_llm=no_llm,
@@ -264,9 +271,52 @@ def run_experiment(
                 model_name=model,
                 planner_model_name=effective_planner_model,
                 max_context_chars=max_context_chars,
+                budget_profile=budget_profile,
             )
-            layered["scores"] = _score_layered(row, layered)
-            query_result["strategies"]["layered_memory"] = layered
+            layered_result["scores"] = _score_layered(row, layered_result)
+            return layered_result
+
+        if "layered_memory" in strategy_list and baseline_token_multiplier > 0:
+            query_result["strategies"]["layered_memory"] = run_layered_trace()
+
+        def baseline_token_budget(explicit_budget: int) -> int:
+            if explicit_budget and explicit_budget > 0:
+                return int(explicit_budget)
+            if baseline_token_multiplier <= 0:
+                return 0
+            layered = query_result["strategies"].get("layered_memory", {})
+            metrics = layered.get("metrics", {}) if isinstance(layered, dict) else {}
+            layered_tokens = int(metrics.get("estimated_context_tokens", 0) or 0)
+            if layered_tokens <= 0:
+                return 0
+            return max(1, int(math.ceil(layered_tokens * baseline_token_multiplier)))
+
+        if "full_context" in strategy_list:
+            if full_context_scope == "gold":
+                full_scope = "gold" if row.get("gold_meeting_ids") else "all"
+                full_meeting_ids = row.get("gold_meeting_ids", "")
+            else:
+                full_scope = full_context_scope
+                full_meeting_ids = ""
+            full = build_full_context(
+                repo_root=repo,
+                meeting_ids=full_meeting_ids,
+                scope=full_scope,
+                max_context_chars=max_context_chars,
+                max_context_tokens=baseline_token_budget(full_context_max_tokens),
+            )
+            query_result["strategies"]["full_context"] = full
+        if "rag_baseline" in strategy_list:
+            rag = retrieve_lexical_rag(
+                query,
+                repo_root=repo,
+                top_k=rag_top_k,
+                max_context_chars=max_context_chars,
+                max_context_tokens=baseline_token_budget(rag_max_context_tokens),
+            )
+            query_result["strategies"]["rag_baseline"] = rag
+        if "layered_memory" in strategy_list and "layered_memory" not in query_result["strategies"]:
+            query_result["strategies"]["layered_memory"] = run_layered_trace()
 
         for strategy, data in query_result["strategies"].items():
             context = str(data.get("context") or data.get("formatted_prompt_context") or "")

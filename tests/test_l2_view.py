@@ -278,6 +278,99 @@ class L2ViewTests(unittest.TestCase):
                 self.assertEqual("assign_l2", assignment["action"])
                 self.assertEqual(expected_label, assignment["l2_label"])
 
+    def test_operational_constraints_are_durable_when_about_retrieval_budget(self) -> None:
+        obj = _obj(
+            "L1-operational-budget",
+            "decision",
+            (
+                "The API budget and operational constraints topic is now treated as "
+                "a durable design constraint because offline eval, context token count, "
+                "p95 retrieval latency, and no-LLM runs determine whether the memory "
+                "retrieval system can scale."
+            ),
+            importance=0.77,
+            topics=[],
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual("assign_l2", assignment["action"])
+        self.assertEqual("operational constraints and resource budget", assignment["l2_label"])
+
+    def test_admin_api_budget_discussion_still_skips_l2(self) -> None:
+        obj = _obj(
+            "L1-admin-api-budget",
+            "finding",
+            "The team briefly discussed API usage reimbursement and lab administration billing details.",
+            importance=0.71,
+            topics=["lab_administration", "expense_reimbursement"],
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual("skip_l1", assignment["action"])
+        self.assertEqual("administrative_or_local_context", assignment["reason"])
+
+    def test_specific_concrete_topic_beats_cross_cutting_evidence_anchor(self) -> None:
+        obj = _obj(
+            "L1-specific-over-evidence-anchor",
+            "finding",
+            (
+                "Missing-line coverage repair should keep evidence anchors and line "
+                "coverage, but the durable topic is transcript segmentation rather "
+                "than the cross-cutting evidence anchor."
+            ),
+            importance=0.74,
+            topics=["source linkage", "missing-line coverage and repair"],
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual("assign_l2", assignment["action"])
+        self.assertEqual("transcript segmentation and idea-unit coverage", assignment["l2_label"])
+
+    def test_retrieval_baseline_comparison_is_a_durable_l2_topic(self) -> None:
+        obj = _obj(
+            "L1-baseline-comparison",
+            "argument",
+            (
+                "The team proposes comparing ordinary RAG with the layered memory "
+                "system and full-context baseline, including token cost and retrieved "
+                "evidence traceability."
+            ),
+            topics=[
+                "RAG and full-context baseline comparison",
+                "rag_baseline",
+                "traditional RAG",
+                "full context",
+                "retrieval evaluation",
+                "token cost",
+            ],
+            importance=0.7,
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual(assignment["action"], "assign_l2")
+        self.assertEqual(assignment["l2_label"], "retrieval baseline comparison")
+
+    def test_memo_rag_multihop_tradeoff_stays_memory_evaluation(self) -> None:
+        obj = _obj(
+            "L1-memo-rag",
+            "finding",
+            (
+                "MEMO did not outperform the RAG baseline on multi-hop questions, "
+                "so the team needs LLM-as-judge evaluation and ground-truth checks."
+            ),
+            topics=["rag_baseline", "MEMO", "multi-hop evaluation"],
+            importance=0.74,
+        )
+
+        assignment = choose_l2_assignment(obj)
+
+        self.assertEqual(assignment["action"], "assign_l2")
+        self.assertEqual(assignment["l2_label"], "memory evaluation strategy")
+
     def test_related_topic_seed_takes_priority_over_content_rule_when_specific(self) -> None:
         obj = _obj(
             "L1-topic-002",
@@ -292,6 +385,32 @@ class L2ViewTests(unittest.TestCase):
         self.assertEqual(assignment["action"], "assign_l2")
         self.assertEqual(assignment["l2_label"], "memory retrieval")
         self.assertEqual(assignment["reason"], "related_topic_seed")
+
+    def test_freeform_related_topics_are_opt_in_for_new_domains(self) -> None:
+        obj = _obj(
+            "L1-campus-energy-001",
+            "open_issue",
+            "The campus energy idea unit discussion focuses on meter calibration drift.",
+            importance=0.74,
+            topics=[
+                "meter calibration drift",
+                "energy data and sensor pipeline",
+                "電表校正漂移",
+                "open_issue",
+                "synthetic campus energy",
+            ],
+        )
+
+        default_assignment = choose_l2_assignment(obj)
+        freeform_assignment = choose_l2_assignment(
+            obj,
+            allow_freeform_related_topics=True,
+        )
+
+        self.assertNotEqual("meter calibration drift", default_assignment.get("l2_label"))
+        self.assertEqual("assign_l2", freeform_assignment["action"])
+        self.assertEqual("meter calibration drift", freeform_assignment["l2_label"])
+        self.assertEqual("related_topic_seed", freeform_assignment["reason"])
 
     def test_content_rule_refines_broad_related_topic_seed(self) -> None:
         obj = _obj(

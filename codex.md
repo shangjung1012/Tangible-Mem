@@ -338,11 +338,24 @@ Cross-device restore rule:
 
 ## Handoff Log
 
+### 2026-05-11 - Synthetic Diverse L2/L3 Generalization Guard
+
+- Added a reporting-only gold-topic mapping gate in `long_term/taxonomy_refinement.py` so synthetic expected-topic labels can be compared against generated L2/L3 sidecars without mutating raw L1 or Grace outputs.
+- Added deterministic handling for durable operational constraints (`API budget and operational constraints`, latency/token budget, offline/no-LLM eval). Grace guard rebuild remains stable: 16 L2 topics, 411 linked L1, 37 unlinked L1, 0 severe validation issues, and 0 assignment changes/losses/gains versus active Grace L2.
+- Rebuilt the diverse synthetic stress test under `long_term/eval/synthetic_longmeet_50_diverse_idea_units/`: 50 meetings, 3200 linked L1, 16 top-level L2, 7 materialized L3 parents, 0 unlinked gold objects, 0 severe L2/L3 issues, 0 unassigned/duplicate/invalid L3 assignments, and 0 zero-event child L2 nodes.
+- Synthetic remaining warnings are prompt-slice diagnostics for coherent large child L2 nodes; the only low-purity gold topic is `RAG and full-context baseline comparison` because several rows are legitimately operational-cost or evidence-anchoring side topics.
+
+### 2026-05-11 - Add Scale-Aware L3 Validation For Large Synthetic Corpora
+
+- Added scale-aware L3 validation so large child L2 nodes are not automatically treated as taxonomy failures. Validation now records `scale_assessment`: coherent large child L2 nodes become `large_coherent_needs_retrieval_slice`, while low-coherence large child L2 nodes remain `large_low_coherence_needs_split_review` and stay in manual review.
+- Side-by-side taxonomy refinement artifacts live under `long_term/eval/taxonomy_refinement_20260511_02/`. Grace remains stable: 0 severe L3 issues, 3 prompt-slice warnings, and 0 assignment changes/losses/gains versus the active Grace L2 view.
+- Synthetic LongMeet-50 remains a stress test, not a promoted canonical artifact. The latest candidate has 9 top-level L2 nodes, 6 materialized L3 parents, 33 child L2 nodes, 0 severe L3 issues, 0 unassigned/duplicate/invalid L3 assignments, 38 L3 warnings, and 8 manual L3 review items. The remaining manual items are 5 low-coherence oversized child L2 nodes and 3 tiny child L2 nodes.
+
 ### 2026-05-10 - Rerun Grace L1 With Chinese Content Policy
 
 - Rebuilt canonical Grace `share_mem/` from all 7 transcripts with v2 memory roles and `legacy_type`: 448 L1 objects. The current language contract is Traditional Chinese `content`, English `related_topics`, and source-faithful `evidence`.
 - L1 comparison against the checked-in pre-rerun baseline reports 492 matched baseline objects, 0 high-importance unmatched, and no global count gate failure. The matcher was tightened for English-to-Chinese rewrites without accepting broad anchor-only false positives.
-- Rebuilt active L2/L3 sidecars from the new `share_mem`: 15 L2 topics, 411 linked L1 objects, 37 unlinked L1 objects, 2 materialized L3 parents, 14 child L2 topics, and 169 L3-assigned L1 objects.
+- Rebuilt active L2/L3 sidecars from the new `share_mem`: 16 L2 topics, 411 linked L1 objects, 37 unlinked L1 objects, 2 materialized L3 parents, 14 child L2 topics, and 169 L3-assigned L1 objects.
 - Validation state: L2 0 severe / 3 warnings, L3 0 severe / 3 warnings, L3 coverage 0 unassigned L1, 0 duplicate assignments, and 0 invalid `l3_index` references. Remaining warnings are review/slice diagnostics, not schema blockers.
 - The transcript segmentation L3 split now has 11 deterministic child L2 topics after adding idea-unit granularity, generation-method, and candidate-classification children. No child L2 is in `needs_split_review`.
 - Retrieval eval was regenerated from current Chinese L1 gold ids: 8 demo-safe queries, 32 offline lexical runs, best strict/acceptable L1 recall 1.0, L2 hit rate 1.0, L3 hit rate 1.0, and prompt-budget pass rate 1.0.
