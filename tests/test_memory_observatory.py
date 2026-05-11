@@ -326,7 +326,8 @@ class MemoryObservatoryTests(unittest.TestCase):
                 )
 
         self.assertFalse(result["truncated"])
-        self.assertEqual(result["context"], full_context)
+        self.assertIn("=== Memory Router ===", result["context"])
+        self.assertIn(full_context, result["context"])
         self.assertNotIn("...(truncated)", result["formatted_prompt_context"])
 
     def test_layered_trace_default_limit_allows_six_thousand_chars(self) -> None:
@@ -357,7 +358,8 @@ class MemoryObservatoryTests(unittest.TestCase):
                 )
 
         self.assertFalse(result["truncated"])
-        self.assertEqual(result["context"], full_context)
+        self.assertIn("=== Memory Router ===", result["context"])
+        self.assertIn(full_context, result["context"])
 
     def test_feedback_store_writes_sidecars_without_modifying_raw_tree(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -916,6 +918,38 @@ class MemoryObservatoryTests(unittest.TestCase):
             result["formatted_prompt_context"].index("=== Current Implementation State ==="),
             result["formatted_prompt_context"].index("=== L1 Evidence Seeds ==="),
         )
+
+    def test_layered_trace_exposes_router_and_short_term_context_for_current_queries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            with patch(
+                "recall.recall",
+                return_value={
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-0307-001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1},
+                },
+            ), patch(
+                "recall.format_recall_for_prompt",
+                return_value="=== L1 Evidence Seeds ===\nL1-0307-001",
+            ), patch(
+                "memory_observatory.services.retrieval_trace._retrieve_short_term_trace_context",
+                return_value="=== Short-Term Memory Retrieval ===\nactive transcript segmentation state",
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root).run_trace(
+                    "current transcript segmentation status and why we designed it this way",
+                    max_context_chars=0,
+                )
+
+        self.assertEqual(result["router_result"]["targets"], ["short_term", "long_term"])
+        self.assertIn("active transcript segmentation state", result["short_term_context"])
+        self.assertIn("=== Memory Router ===", result["formatted_prompt_context"])
+        self.assertIn("=== Short-Term Memory ===", result["formatted_prompt_context"])
 
     def test_layered_trace_context_truncation_marker_uses_plain_ellipsis(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

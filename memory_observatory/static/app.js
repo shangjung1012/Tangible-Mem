@@ -161,6 +161,39 @@ function traceModeLabel(mode) {
   return "L1 search: lexical (offline)";
 }
 
+function renderTraceRouter(data) {
+  const router = data.router_result || {};
+  const targets = Array.isArray(router.targets) ? router.targets : [];
+  const hasShort = targets.includes("short_term");
+  const hasLong = targets.includes("long_term");
+  return el("div", { class: "panel trace-router" }, [
+    el("h2", { text: "Router / Memory Layers" }),
+    el("div", { class: "cards mini-cards" }, [
+      card("Short-term memory", hasShort ? "ON" : "OFF", [
+        { text: hasShort ? "current state" : "not needed", class: hasShort ? "feedback" : "" },
+      ]),
+      card("Long-term memory", hasLong ? "ON" : "OFF", [
+        { text: hasLong ? "evidence + topic context" : "not needed", class: hasLong ? "l2" : "" },
+      ]),
+    ]),
+    keyValueRows([
+      { label: "strategy", value: router.strategy },
+      { label: "reason", value: router.reason },
+      { label: "confidence", value: router.confidence },
+    ]),
+  ]);
+}
+
+function renderTraceShortTerm(data) {
+  const context = data.short_term_context || "";
+  if (!context) return null;
+  return el("div", { class: "panel trace-short-term" }, [
+    el("h2", { text: "Short-Term Memory" }),
+    el("p", { class: "muted", text: "Current active-state context selected before long-term topic expansion." }),
+    el("pre", { text: context }),
+  ]);
+}
+
 function syncTracePlannerControl() {
   const noLlm = $("#traceNoLlm").checked;
   const tracePlannerModel = $("#tracePlannerModel");
@@ -343,6 +376,8 @@ async function runTrace() {
     card("Query / Plan", `${data.metrics.selected_l1_count} L1, ${data.metrics.selected_l2_count} L2, ${data.metrics.selected_child_l2_count} child L2`, [
       ...planTags,
     ]),
+    renderTraceRouter(data),
+    renderTraceShortTerm(data),
     listSection("L1 Evidence Seeds", data.l1_evidence_seeds, (item) =>
       memoryCard(item.obj_id, `${item.meeting_id} | ${item.type} | score ${item.score}`, item.content, ["l1"])),
     listSection("L2 / Child-L2 Evolution Context", data.l2_evolution_context, (item) =>
@@ -819,6 +854,12 @@ $("#runExperiment").addEventListener("click", async () => {
   $("#runSelect").value = result.run_id;
 });
 $("#runTrace").addEventListener("click", runTrace);
+document.querySelectorAll("[data-demo-query]").forEach((button) => {
+  button.addEventListener("click", () => {
+    $("#traceQuery").value = button.dataset.demoQuery || "";
+    runTrace();
+  });
+});
 $("#traceNoLlm").addEventListener("change", syncTracePlannerControl);
 syncTracePlannerControl();
 

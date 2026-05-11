@@ -40,6 +40,57 @@ def _heuristic_plan(query: str) -> dict[str, Any]:
     }
 
 
+def _plan_memory_layers(query: str) -> dict[str, Any]:
+    try:
+        from app.memory_router import plan_memory_retrieval
+    except Exception:
+        return {
+            "targets": ["long_term"],
+            "strategy": "long_term_only",
+            "reason": "Memory router unavailable; defaulting to long-term trace.",
+            "confidence": 0.5,
+        }
+    return plan_memory_retrieval(query)
+
+
+def _retrieve_short_term_trace_context(
+    repo_root: Path,
+    *,
+    query: str,
+    api_key: str | list[str],
+    retrieval_mode: str,
+    max_context_chars: int = 2400,
+) -> str:
+    try:
+        from short_term.retrieval.short_term_context import retrieve_short_term_context
+    except Exception as exc:
+        return f"Short-term retrieval unavailable: {exc}"
+    return retrieve_short_term_context(
+        query=query,
+        api_key=api_key,
+        retrieval_mode=retrieval_mode,
+        top_k=4,
+        max_context_chars=max_context_chars,
+        memory_path=repo_root / "short_term" / "short_term_memory.json",
+        l1_index_path=repo_root / "share_mem" / "l1_index.json",
+        source_preview_limit=12,
+    )
+
+
+def _format_router_context(router_result: dict[str, Any]) -> str:
+    targets = router_result.get("targets", [])
+    target_text = ", ".join(str(target) for target in targets) if isinstance(targets, list) else str(targets)
+    return "\n".join(
+        [
+            "=== Memory Router ===",
+            f"strategy: {router_result.get('strategy', '')}",
+            f"targets: {target_text}",
+            f"reason: {router_result.get('reason', '')}",
+            f"confidence: {router_result.get('confidence', '')}",
+        ]
+    )
+
+
 class RetrievalTraceService:
     def __init__(self, repo_root: Path | str) -> None:
         self.repo_root = Path(repo_root)
@@ -99,6 +150,20 @@ class RetrievalTraceService:
         else:
             plan = plan_recall(query=query, api_key=api_key, model_name=effective_planner_model)
             plan["search_targets"] = ["long_term_l1", "long_term_l2", "long_term_l3"]
+        router_result = _plan_memory_layers(query)
+        router_targets = [
+            str(target)
+            for target in router_result.get("targets", [])
+            if target in {"short_term", "long_term"}
+        ]
+        short_term_context = ""
+        if "short_term" in router_targets:
+            short_term_context = _retrieve_short_term_trace_context(
+                self.repo_root,
+                query=query,
+                api_key=api_key,
+                retrieval_mode=retrieval_mode,
+            )
         params = self._recall_params(budget_profile)
         result = recall(
             query=query,
@@ -123,8 +188,14 @@ class RetrievalTraceService:
             l1_evidence_chars=420,
         )
         current_state_context = current_state_context_for_query(query, self.repo_root)
+        router_context = _format_router_context(router_result)
+        prelude_parts = [router_context]
+        if short_term_context:
+            prelude_parts.append(f"=== Short-Term Memory ===\n{short_term_context}")
         if current_state_context:
-            formatted = f"{current_state_context}\n\n{formatted}"
+            prelude_parts.append(current_state_context)
+        if prelude_parts:
+            formatted = "\n\n".join(prelude_parts + [formatted])
         original_chars = len(formatted)
         truncated = bool(max_context_chars and max_context_chars > 0 and original_chars > max_context_chars)
         if truncated:
@@ -158,6 +229,8 @@ class RetrievalTraceService:
             "planner_model": effective_planner_model if not no_llm else "heuristic",
             "answer_model": model_name,
             "budget_profile": budget_profile or "generous_layered",
+            "router_result": router_result,
+            "short_term_context": short_term_context,
             "plan": plan,
             "global_topic_map": result.get("global_topic_map", {}),
             "l1_evidence_seeds": result.get("long_term_l1", []),
