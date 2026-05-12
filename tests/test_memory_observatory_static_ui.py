@@ -79,8 +79,17 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("show debug panel", html)
         self.assertIn('const budgetProfile = "observatory_trace"', js)
         self.assertIn("budget_profile=${budgetProfile}", js)
+        self.assertIn("max_context_chars=0", js)
         self.assertIn("include_debug=false", js)
         self.assertIn("budget profile: ${budgetProfile}", js)
+
+    def test_retrieval_trace_full_prompt_context_is_screenshot_ready(self) -> None:
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "memory_observatory" / "static" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn('section("Formatted Prompt Context", data.formatted_prompt_context, "formatted-prompt-context")', js)
+        self.assertIn(".formatted-prompt-context pre", css)
+        self.assertIn("max-height: none", css)
 
     def test_readme_documents_current_trace_and_experiment_defaults(self) -> None:
         readme = (REPO_ROOT / "memory_observatory" / "README.md").read_text(encoding="utf-8")

@@ -137,6 +137,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
         include_debug: bool = True,
         planner_model: str | None = None,
         budget_profile: str = "",
+        max_context_chars: int = Query(16000, ge=0),
     ) -> dict[str, Any]:
         return RetrievalTraceService(root).run_trace(
             query=query,
@@ -145,6 +146,7 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
             include_debug=include_debug,
             planner_model_name=planner_model,
             budget_profile=budget_profile,
+            max_context_chars=max_context_chars,
         )
 
     @app.get("/api/feedback/importance")
