@@ -125,8 +125,8 @@ function memoryCard(title, meta, body, tags = []) {
   ]);
 }
 
-function section(title, text) {
-  return el("div", { class: "panel" }, [el("h2", { text: title }), el("pre", { text })]);
+function section(title, text, className = "") {
+  return el("div", { class: `panel ${className}`.trim() }, [el("h2", { text: title }), el("pre", { text })]);
 }
 
 function listSection(title, items, render) {
@@ -359,7 +359,7 @@ async function runTrace() {
   const debug = $("#traceDebug").checked;
   const plannerModel = encodeURIComponent(noLlm ? "" : ($("#tracePlannerModel").value || ""));
   const budgetProfile = "observatory_trace";
-  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=false&planner_model=${plannerModel}&budget_profile=${budgetProfile}`);
+  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=false&planner_model=${plannerModel}&budget_profile=${budgetProfile}&max_context_chars=0`);
   const out = $("#traceOutput");
   const planTags = [
     { text: traceModeLabel(data.retrieval_mode) },
@@ -388,7 +388,7 @@ async function runTrace() {
       el("h2", { text: "L2 Detail" }),
       el("p", { class: "muted", text: "Click an L2 / child-L2 card above to see what this trace selected and what the full L2 contains." }),
     ]),
-    section("Formatted Prompt Context", data.formatted_prompt_context),
+    section("Formatted Prompt Context", data.formatted_prompt_context, "formatted-prompt-context"),
     debug ? renderTraceDebugPanel(data) : null,
   ].filter(Boolean);
   out.replaceChildren(...traceSections);
