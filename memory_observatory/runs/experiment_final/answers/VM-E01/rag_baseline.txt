@@ -1,0 +1,35 @@
+好的，這是一個會議記憶問答助手。根據您提供的 context，目前的 transcript segmentation pipeline 整理如下：
+
+目前的 transcript segmentation pipeline 從原始逐字稿（transcript）到最終的 L1 記憶節點，主要包含以下幾個按順序執行的步驟：
+
+### 1. Context Planner 劃分處理視窗 (Windowing)
+這是流程的第一步。系統會先透過一個名為 `Context Planner` 的程式碼模組來讀取逐字稿。它會將逐字稿以固定的行數切分成數個處理視窗（window），目前的設定是一次處理 80 行。這個做法是為了將處理範圍縮小，讓後續的語言模型（LLM）能更精準地分析，並減少產生幻覺的可能性。
+*   **來源**: `meeting=0506`, `lines=1-20` (SPEAKER_01, SPEAKER_02)
+*   **演進**: 這個分段處理的設計是基於過去的經驗，直接將長篇逐字稿丟給 LLM 處理的效果不佳，容易產生不準確或幻覺的標記。因此，採用先切分小單位再處理的策略。(`meeting=0408`, `lines=46-65`, SPEAKER_00)
+
+### 2. Segment Agent 進行語意分段 (Segmentation)
+`Context Planner` 切分出的 80 行文字會被傳送給 `Segment Agent`。這個 agent 的任務是在這 80 行的範圍內，找出由數個句子組成的、討論同一個話題的語意段落，這些段落被稱為 `Segment`。一個 `Segment` 代表一個較大的討論主題，並且可以橫跨不同的發言者（speaker）。
+*   **來源**: `meeting=0506`, `lines=1-20` (SPEAKER_01, SPEAKER_04)
+*   **定義**: `Segment` 被想像是「一個相關的段落，都在討論同一件事情」，而 `Idea Unit` 則是段落中更細節的觀點。(`meeting=0506`, `lines=16-35`, SPEAKER_01)
+
+### 3. 抽取 Idea Units
+在每個 `Segment` 內部，系統會進一步抽取更細粒度的 `Idea Units`。`Idea Unit` 是構成對話的最小語意單位，可以是一個觀點、一個待辦事項（to-do）或一個決策。例如，一個 17 行的 `Segment` 可能會被抽取出 9 個 `Idea Units`。
+*   **來源**: `meeting=0506`, `lines=1-20` (SPEAKER_01, SPEAKER_04)
+*   **定義**: `Idea Units` 是會議中講的「每一件事情」，有些是可執行的（actionable），有些只是解釋或討論。(`meeting=0506`, `lines=16-35`, SPEAKER_02)
+
+### 4. 驗證與修復 (Verification & Repair)
+抽取完 `Idea Units` 後，系統會進行驗證，確保 `Segment` 內的所有句子都被涵蓋。
+*   **Fallback 機制**: 如果有句子被遺漏（covered the gap），系統會直接將該句的原始逐字稿作為一個獨立的 `Idea Unit` 補上，並標記為品質較低。(`meeting=0506`, `lines=1-20`, SPEAKER_01, SPEAKER_04)
+*   **邊界修復 (Batch)**: 如果一個 `Segment` 因為 80 行的視窗邊界而被切斷，系統會標記其為「未結束」。在處理下一個視窗時，會將這個被切斷的 `Segment` 與後續的部分合併，形成一個完整的、上下文連貫的 `Segment`。這個合併後的完整單元曾被稱為 `Batch`，其目的是確保後續 agent 處理的內容是連貫且完整的對話。(`meeting=0506`, `lines=16-35`, SPEAKER_04, SPEAKER_01)
+
+### 5. 產生候選節點 (Candidate Generation) 與分類
+完整的 `Idea Units` 會被送到六個平行的 `Type Agent` 進行分類。這些 agent 會根據預設的類別（如 `Decision`, `To-Do`, `Method Change`, `Result`, `Open Question`, `Argument`）來抓取符合條件的 `Idea Units`。
+*   一個 `Idea Unit` 可能被多個 agent 抓取，因此會產生重複的候選者（candidates）。
+*   系統接著會對這些 `candidates` 進行比對與整合，以確定其最終歸屬的類別（label），並盡量確保一個 `Idea Unit` 不超過兩個 `type`。
+*   **來源**: `meeting=0506`, `lines=16-35` (SPEAKER_01); `meeting=0506`, `lines=31-50` (SPEAKER_04, SPEAKER_00)
+
+### 6. 寫入 L1 記憶節點
+最終整理好的 `candidates` 會被更新至長期記憶（Long-Term Memory）中，成為 L1 層級的節點。
+*   在單次會議的處理流程中，如果新的 `candidate` 與已存在的 L1 節點內容高度相關，系統會選擇合併（update）至現有節點，而不是創建一個全新的節點。
+*   當一個 `candidate` 被確定要存成一個 L1 節點後，LLM 會根據其內容賦予一個 `importance` 分數。
+*   **來源**: `meeting=0506`, `lines=31-50` (SPEAKER_01, SPEAKER_02); `meeting=0506`, `lines=46-65` (SPEAKER_04)

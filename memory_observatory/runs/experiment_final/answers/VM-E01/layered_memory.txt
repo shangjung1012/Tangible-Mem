@@ -1,0 +1,42 @@
+根據提供的會議記錄，目前（latest retrieved stage: 2026-05-06）的逐字稿分割（transcript segmentation）流程是一個由上而下（top-down）的架構，其主要步驟如下：
+
+### 目前主要處理步驟
+
+1.  **Context Planner 啟動**:
+    流程由 `Context Planner` 開始，它會從逐字稿中讀取一個固定大小的窗口（例如 80 行）作為處理批次。
+    (來源: `meeting_id: 0506`, `obj_id: L1-0506-001`)
+
+2.  **Segment Agent 切割**:
+    `Context Planner` 將這 80 行的文本交給 `Segment Agent`。`Segment Agent` 的任務是將這段文本分割成數個 `segments`，每一個 `segment` 代表一個較廣泛的相關主題。
+    (來源: `meeting_id: 0506`, `obj_id: L1-0506-001`)
+
+3.  **細分為 Idea Units**:
+    接著，`Segment Agent` 會在每個 `segment` 內部進一步抽取出更具體的 `idea units`。`idea unit` 是構成記憶的基本單位，代表一個具體的觀點，例如待辦事項（To-Do）或決策（Decision）。
+    (來源: `meeting_id: 0506`, `obj_id: L1-0506-001`, `L1-0506-016`)
+
+4.  **分類與 Candidate 生成**:
+    生成的 `idea units` 會被分派給六個並行運行的特定類型 agent 進行分類標記。這些 agent 分別對應六種預設類別：`Method Change`、`To-Do`、`Result`、`Argument`、`Open Question` 和 `Decision`。一個 `idea unit` 經過 agent 標記後，會成為一個 `candidate`。
+    (來源: `meeting_id: 0506`, `obj_id: L1-0506-015`, `L1-0506-016`, `L1-0506-017`)
+
+5.  **整合與記憶更新 (L1 Node)**:
+    由於是並行處理，多個 agent 的輸出（`candidates`）可能存在重複。系統會對這些 `candidates` 進行整合（reconcile）。最後，這些經過整合的 `candidates` 會被用來尋找並更新記憶節點（L1 Node）。值得注意的是，相似的 `idea units` 可以在**單次會議**中合併成一個 L1 節點，但**不能跨會議合併**。
+    (來源: `meeting_id: 0506`, `obj_id: L1-0506-015`, `L1-0506-031`)
+
+---
+
+### 演進與設計背景
+
+目前的流程是經過多次討論與迭代後的結果：
+
+*   **早期方法與挑戰**: 專案最初嘗試將完整逐字稿一次性交給模型處理，但因上下文長度過大且難以生成所需的 JSON 格式而放棄 (來源: `meeting_id: 0429`, `obj_id: L1-0429-122`)。這確立了分塊處理的必要性。
+
+*   **動態分塊 vs. 固定分塊**:
+    *   團隊曾大力提倡「動態分塊」（dynamic chunking），讓 LLM 根據語義完整性自行決定區塊大小，以避免固定大小區塊破壞語義（如將問題與答案分開）(來源: `meeting_id: 0422`, `obj_id: L1-0422-007`)。當時也探討了讓模型在文本中「來回移動」以捕捉遠距離關聯的迭代方法 (來源: `meeting_id: 0422`, `obj_id: L1-0422-017`)。
+    *   然而，過去一次使用「自適應窗口」（adaptive window）的實驗因效果不佳而被放棄 (來源: `meeting_id: 0506`, `obj_id: L1-0506-007`)。
+
+*   **當前的策略與反思**:
+    *   **目前的固定窗口**：目前採用的固定窗口（80行）主要是為了方便除錯 (來源: `meeting_id: 0506`, `obj_id: L1-0506-007`)。
+    *   **由上而下的批評**：當前 `segment` -> `idea unit` 的由上而下策略被認為不自然，有意見認為由下而上（`idea unit` -> `theme`）可能更合理 (來源: `meeting_id: 0506`, `obj_id: L1-0506-012`)。
+    *   **評估標準的建立**：為了客觀評估不同分割方法的優劣，團隊決定手動標記樣本以建立一個「基準真相」（ground truth）資料集，用來計算精確率和召回率 (來源: `meeting_id: 0506`, `obj_id: L1-0506-004`, `L1-0506-013`)。
+
+總結來說，目前的 pipeline 是一個為了應對早期挑戰而建立的務實框架，但團隊也意識到其局限性，並正在透過建立評估基準來探索更理想的分割策略。

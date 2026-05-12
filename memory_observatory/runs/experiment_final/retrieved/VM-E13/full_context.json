@@ -1,0 +1,41 @@
+{
+  "strategy": "full_context",
+  "included_meetings": [
+    "0307",
+    "0318",
+    "0325",
+    "0408",
+    "0422",
+    "0429",
+    "0506"
+  ],
+  "included_meeting_count": 7,
+  "included_file_count": 7,
+  "full_context_scope": "all",
+  "full_context_source": "transcripts",
+  "truncated": false,
+  "token_truncated": false,
+  "truncated_from_chars": null,
+  "truncated_from_tokens": null,
+  "metrics": {
+    "context_char_count": 145790,
+    "estimated_context_tokens": 98531,
+    "actual_input_tokens": 77557,
+    "actual_output_tokens": 712,
+    "actual_total_tokens": 80449,
+    "token_source": "actual_usage_metadata",
+    "included_meeting_count": 7,
+    "included_file_count": 7,
+    "full_context_source": "transcripts",
+    "full_context_scope": "all",
+    "truncated": false,
+    "token_truncated": false,
+    "truncated_from_chars": null,
+    "truncated_from_tokens": null,
+    "retrieval_ms": 0.0,
+    "context_build_ms": 33.629,
+    "total_ms": 40384.18,
+    "generation_ms": 40350.551
+  },
+  "answer": "根據提供的會議內容，關於 speaker diarization（說話者辨識）的處理方式與假設如下：\n\n### Speaker Diarization 的處理與演進\n\nSpeaker diarization 在專案初期就被認為是一個困難的問題，特別是在實體會議場景中。團隊的處理方式隨著專案演進，從簡化問題到利用資料集特性來解決。\n\n1.  **初期討論與簡化策略 (L1 Evidence Seed)**\n    在專案初期，團隊就意識到在實體會議中要讓模型正確分辨是誰發言的困難度。因此，曾討論過可以先簡化這個情境，例如假設是使用 Zoom 或 Google Meet 等線上會議工具，因為這些工具的逐字稿會直接標示發言者。這個策略是為了讓團隊能先專注在核心的記憶架構上，暫時省略處理說話者辨識這個步驟。\n    *   **來源**: `meeting_0307` / `[SPEAKER_00]` / lines 1-10\n\n2.  **工具的考量與使用 (L2 Evolution Context)**\n    團隊考慮使用如 WhisperX 這樣的工具來自動處理說話者辨識。然而，他們也認知到工具的準確性是個關鍵因素。在後續的實作中，當他們使用 WhisperX 產生逐字稿時，會搭配人工聆聽錄音檔來修正 speaker turn 的錯誤，以確保資料的品質。\n    *   **來源**: `meeting_0307` / `[SPEAKER_00]` / lines 8-10\n    *   **來源**: `meeting_0422` / `[SPEAKER_02]` / lines 10-12\n    *   **來源**: `meeting_0422` / `[SPEAKER_01]` / lines 14-17\n    *   **來源**: `meeting_0506` / `[SPEAKER_01]` / lines 294-297\n\n### 為什麼可以先假設 Speaker Identity 已知\n\n目前專案可以假設說話者身份已知，主要是因為他們選用了**已經包含說話者資訊的現成資料集**。\n\n*   **使用 ICSI 資料集 (Latest Retrieved Stage)**: 團隊目前採用的主要資料集是 ICSI Meeting Corpus。這個資料集提供了 MRT 格式的檔案，其中已經包含了非常準確的「**時間戳、文字，也有誰說的**」資訊。這相當於一份已經處理好說話者辨識的「答案」，其準確度高於任何自動化工具。\n    *   **來源**: `meeting_0408` / `[SPEAKER_02]` / lines 19-22\n\n*   **符合初期簡化策略**: 採用這個資料集，讓團隊可以延續初期的簡化策略。透過使用這份高品質的逐字稿，他們可以直接跳過 speaker diarization 的技術挑戰，將開發重心放在更核心的長期與短期記憶架構的設計與實作上。\n    *   **來源**: `meeting_0408` / `[SPEAKER_00]` / lines 23-27"
+}

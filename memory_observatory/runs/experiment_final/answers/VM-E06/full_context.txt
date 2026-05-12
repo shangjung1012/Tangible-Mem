@@ -1,0 +1,58 @@
+好的，這是在提供的 Context 中，關於 forgetting / fade-out 機制的設計演進：
+
+我們的 forgetting / fade-out 設計經歷了從簡單的刪除規則到更細緻的加權與狀態分離的演進過程。
+
+### **第一階段 (0307)：基於會議次數的短期記憶刪除規則**
+
+在最初的討論中，遺忘機制被設計為一個簡單的規則，主要應用於短期記憶：
+
+*   **設計概念**：如果一個記憶中的項目（item）在連續三次會議中都沒有再被討論到，系統就會將其刪除。
+*   **目的**：這個設計的重點是讓 Agent 記得「三次內的重要事情」(meeting 0307, line 105)。
+*   **討論與不明確處**：當時對於「刪除」的定義尚不明確，不確定是指完全移除，還是移到一個長期記憶中較少存取的區域 (meeting 0307, lines 102-104)。此階段的 long term 與 short term 結合方式也還未確定。
+
+> **L1 Evidence Seeds:**
+> *   `[SPEAKER_01]`：「如果這個點在三次內都沒有被討論，它應該就會把它刪掉。」(meeting 0307, lines 100-101)
+> *   `[SPEAKER_00]`：「所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？」(meeting 0307, lines 102-103)
+> *   `[SPEAKER_01]`：「我們想強調它記得的是三次內的重要事情。」(meeting 0307, line 105)
+
+### **第二階段 (0325 / 0408)：引入 Recency、Importance 與 Floor 機制**
+
+隨著對長期記憶結構的深入，遺忘機制從「直接刪除」演變為一個更動態的分數衰退系統，並引入了「floor」（下限）的概念來保護重要記憶：
+
+*   **設計概念**：記憶的提取（retrieval）分數會由多個因素決定，其中 `recency`（近期性）會隨著時間推移而衰退。然而，如果一個項目在建立時被賦予了很高的 `importance`（重要性），它的 `recency` 分數會有一個「floor」下限，確保它不會因為時間久遠而完全消失。
+*   **目的**：這個機制旨在模擬人類記憶，即使是很久以前但很重要的事，也不會完全忘記，在被重新提及時，仍有機會被成功檢索出來。
+*   **演進**：這標誌著從一個硬性的「三次會議後刪除」規則，轉向一個基於權重和分數的、更柔性的衰退模型。
+
+> **L1 Evidence Seeds & L2 Evolution Context:**
+> *   `[SPEAKER_04]`：「...會有Residency的分數然後這個就是我們希望可以做到的關於時間衰退的重要性的那個權重但是如果有一些保障就是像如果你是很重要的資訊的話那你的那個Residency會有個Flow就是你不會降到最低...你如果沒有這個floor的話它會變成說它就會消失...」(meeting 0325, lines 504-509)
+> *   `[SPEAKER_03]`：「它的 recency 會變低，但如果當初賦予的 importance 夠高，recency 會有一個 floor 的下限，所以不會 decay 成 0。」(meeting 0408, lines 205-207)
+> *   `[SPEAKER_03]`：「Recency 因為有 floor，應該也不會變太低。它還是能成功進到前 30 個，讓 LLM 判斷...」(meeting 0408, lines 209-211)
+
+### **第三階段 (0429)：明確 Fade-out 與 Inactive 狀態**
+
+此階段將「遺忘」的概念具體化為「fade-out」和「inactive」狀態，並探討其在即時對話中的行為表現：
+
+*   **設計概念**：根據 `importance` 和 `relevance`（此處應指 recency 或權重）計算出的綜合分數，當分數低於某個閾值時，該記憶項目就會進入「fade-out」或「inactive」狀態。
+*   **行為定義**：處於 `inactive` 狀態的項目，在一般的即時對話中**不應該**被 Agent 主動提及。但它並未被真正刪除，依然存在於記憶庫中，可以透過特定的指令（如明確要求列出 inactive ideas）或在後續會議中被反覆提及後，重新被「activate」。
+*   **演進**：這個階段將遺忘機制從一個純粹的內部計分系統，擴展到定義 Agent 的外部行為。目標是讓 Agent 在對話中能避免輸出那些雖然存在但已不合時宜的舊資訊，使其行為更像人類。
+
+> **L1 Evidence Seeds & L2 Evolution Context:**
+> *   `[SPEAKER_02]`：「...fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說，某一件東西他不應該在 short term...dialogue 的時候不應該要出現但是他知道他忘記了...」(meeting 0429, lines 46-50)
+> *   `[SPEAKER_02]`：「...它被有點像是 inactive 的某一些 idea 在那個地方就是太久又太不重要的都會被丟到那個地方去。」(meeting 0429, lines 55-57)
+> *   `[SPEAKER_04]`：「...我们会去算他的weight会算他的importance我们应该会从这个地方去切一个就是几分以下他是在一般的对话中不会出现...」(meeting 0429, lines 62-64)
+
+### **最新階段 (0506)：Importance 與 Activation 參數分離**
+
+這是目前最精細的設計，明確區分了記憶的內在價值和其當前的活躍程度：
+
+*   **設計概念**：
+    1.  **Importance (重要性)**：這是一個**靜態**參數。它在記憶節點（node）被創建的當下，由 LLM 根據其內容判斷並賦予。它代表了這個想法在「當時」的內在價值與指標，**不會**隨著時間而衰退。
+    2.  **Activation (活躍度)**：這是一個**動態**參數，相當於之前的 `recency`。它會隨著時間（例如每次新會議結束後）而衰退（decay），用來判斷這個記憶當前的活躍程度。`fade-out` 指的就是 `activation` 分數的降低。
+*   **兩者關係**：`Importance` 仍然扮演著關鍵角色，它會為 `activation` 的衰退提供一個「floor」（下限），確保重要的記憶即使長時間未被提及，其活躍度也不會降至零。
+*   **演進與優勢**：這個分離的設計，使得系統既能保留一個想法最初的重要性作為參考指標，又能模擬記憶隨時間變得不活躍的過程。它解決了如果 `importance` 本身會衰退，就失去了其作為「當時觀點重要性」參考價值的問題。
+
+> **L1 Evidence Seeds & L2 Evolution Context:**
+> *   `[SPEAKER_04]`：「我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標」(meeting 0506, lines 304-307)
+> *   `[SPEAKER_04]`：「...importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很...那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了」(meeting 0506, lines 308-312)
+> *   `[SPEAKER_02]`：「...importance 這件事情它是 static 的...」(meeting 0506, line 313)
+> *   `[SPEAKER_04]`：「...relevancy 會越來越降低對不對...你說 recency。recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子...可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低」(meeting 0506, lines 318-324)

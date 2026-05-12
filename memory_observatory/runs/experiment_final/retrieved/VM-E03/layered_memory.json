@@ -1,0 +1,3359 @@
+{
+  "strategy": "layered_memory",
+  "query": "我們對 transcript segmentation / idea unit 切分策略的設計方向是怎麼演進的？從 0408 到 0506 的主要轉折是什麼？",
+  "retrieval_mode": "hybrid",
+  "use_llm_planner": false,
+  "planner_model": "heuristic",
+  "answer_model": "gemini-2.5-pro",
+  "budget_profile": "generous_layered",
+  "router_result": {
+    "targets": [
+      "long_term"
+    ],
+    "strategy": "long_term_only",
+    "reason": "query asks for history, rationale, method evolution, or cross-meeting context",
+    "confidence": 0.8
+  },
+  "short_term_context": "",
+  "plan": {
+    "complexity": "simple",
+    "reasoning": "Memory Observatory no-LLM heuristic plan.",
+    "search_targets": [
+      "long_term_l1",
+      "long_term_l2",
+      "long_term_l3"
+    ],
+    "keywords": [
+      "我們對",
+      "transcript",
+      "segmentation",
+      "idea",
+      "unit",
+      "切分策略的設計方向是怎麼演進的",
+      "0408",
+      "0506",
+      "的主要轉折是什麼"
+    ],
+    "time_range_hint": ""
+  },
+  "global_topic_map": {
+    "source": "long_term_global_topic_map",
+    "note": "Navigation context only; do not use as standalone factual evidence.",
+    "l3_families": [
+      {
+        "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+        "label": "transcript segmentation and idea-unit coverage",
+        "child_l2": [
+          {
+            "l2_id": "L2-fixed-vs-dynamic-chunking",
+            "label": "fixed vs dynamic chunking",
+            "event_count": 23
+          },
+          {
+            "l2_id": "L2-window-and-boundary-selection",
+            "label": "window and boundary selection",
+            "event_count": 8
+          },
+          {
+            "l2_id": "L2-tool-calling-transcript-reading",
+            "label": "tool-calling transcript reading",
+            "event_count": 7
+          },
+          {
+            "l2_id": "L2-transcript-segmentation-strategy-and-validation",
+            "label": "transcript segmentation strategy and validation",
+            "event_count": 7
+          },
+          {
+            "l2_id": "L2-idea-unit-generation",
+            "label": "idea-unit core definition",
+            "event_count": 11
+          },
+          {
+            "l2_id": "L2-idea-unit-granularity-and-semantics",
+            "label": "idea-unit granularity and semantics",
+            "event_count": 12
+          },
+          {
+            "l2_id": "L2-idea-unit-generation-methods",
+            "label": "idea-unit generation methods",
+            "event_count": 20
+          },
+          {
+            "l2_id": "L2-idea-unit-candidate-classification",
+            "label": "idea-unit candidate classification",
+            "event_count": 16
+          },
+          {
+            "l2_id": "L2-missing-line-coverage",
+            "label": "missing-line coverage",
+            "event_count": 8
+          }
+        ],
+        "query_score": 0.3636,
+        "focused": false
+      }
+    ],
+    "l2_topics": [
+      {
+        "l2_id": "L2-memory-retrieval",
+        "label": "memory retrieval",
+        "event_count": 47
+      }
+    ],
+    "char_count": 847
+  },
+  "l1_evidence_seeds": [
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0422",
+      "timestamp": "2026-05-10T02:26:14Z",
+      "meeting_date": "2026-04-22",
+      "phase_id": "",
+      "obj_id": "L1-0422-006",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [SPEAKER_00]: 什麼樣有沒有一個例子說，我如果假設說好現在我要我們現在今天的meeting完了我得到一個今天的逐字稿那我現在就要回去update我的memory對不對好那我現在逐字稿拿來然後假設其實剛剛講的是前端可能會可能不能用turn因為可能我們好幾個turn都在講同一件事情都是某一個idea某一個主題，那當然那個地方很簡單就是直接去判斷說下一句跟前一句是不是同一件事下一句跟前一句是不是同一件事，如果這一串都是同一件事情的話那就包成一個說好這是一個要update的節點 [SPEAKER_02]: Long-term 跟 Short-...",
+      "related_topics": [
+        "idea unit segmentation",
+        "data processing",
+        "agent architecture",
+        "transcript analysis",
+        "memory update",
+        "architecture design",
+        "llm",
+        "topic segmentation",
+        "design philosophy",
+        "feasibility"
+      ],
+      "score": 0.9604,
+      "s_sem": 0.2222,
+      "s_recency": 0.9444,
+      "s_importance": 0.7,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.39,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8404
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-001",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。",
+      "importance": 0.72,
+      "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+      "related_topics": [
+        "data structure",
+        "architecture design",
+        "segmentation",
+        "idea unit",
+        "top-down approach",
+        "chunking",
+        "data pipeline",
+        "agent architecture",
+        "context planner",
+        "data quality",
+        "data correctness",
+        "error handling",
+        "prompt engineering",
+        "failure mode",
+        "data coverage",
+        "chunking strategy",
+        "bottom-up processing",
+        "top-down processing",
+        "segment agent",
+        "data processing"
+      ],
+      "score": 0.9592,
+      "s_sem": 0.2222,
+      "s_recency": 0.9833,
+      "s_importance": 0.72,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3979,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8392
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-012",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+      "importance": 0.66,
+      "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+      "related_topics": [
+        "segmentation",
+        "agent architecture",
+        "bottom-up processing",
+        "top-down approach",
+        "chunking",
+        "debugging",
+        "context window"
+      ],
+      "score": 0.9568,
+      "s_sem": 0.1837,
+      "s_recency": 0.9833,
+      "s_importance": 0.66,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3589,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8368
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-027",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+      "importance": 0.63,
+      "evidence": "[SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他 [SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後...",
+      "related_topics": [
+        "data processing",
+        "idea unit",
+        "agent architecture",
+        "content selection"
+      ],
+      "score": 0.9546,
+      "s_sem": 0.1111,
+      "s_recency": 0.9833,
+      "s_importance": 0.63,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3021,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8346
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0422",
+      "timestamp": "2026-05-10T02:26:14Z",
+      "meeting_date": "2026-04-22",
+      "phase_id": "",
+      "obj_id": "L1-0422-019",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "迭代式 idea unit 生成方法的主要優勢在於能處理非線性的關係。相較於單次循序合併的方法，迭代法可以來回檢視文本，捕捉並連結文本中相距較遠的關聯概念，而單次循序法則可能會錯過這些跨越節點的重疊上下文。",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_00]: 所以這個其實聽起來蠻像是前處理的部分對不對?對所以你這個 tool calling 指的是來講說前處理的部分， [SPEAKER_01]: 因為我們就因為像之前的paper還蠻多他們都是切一個trunk一個trunk一個trunk丟進去，那我們是讓他做可以iterate的他可以往上找他可以往下找 [SPEAKER_00]: 那這個的好處跟他我們剛剛講的一個parts下去可能會有什麼? [SPEAKER_01]: 我現在想的是就是節點跟節點之間它可能會overlap如果你直接這樣下去好從這裡切一個節點再往下套那它上面可能一樣它有提到的地方它上面的句子它就不一定會抓得到 [SPEAKER_00]: 哦 所以妳也就是說像現在以現在這樣來看因為我們原本的方式的話會是它是一個sequenti...",
+      "related_topics": [
+        "idea unit segmentation",
+        "data processing",
+        "architecture design",
+        "context retrieval"
+      ],
+      "score": 0.9538,
+      "s_sem": 0.1837,
+      "s_recency": 0.9444,
+      "s_importance": 0.64,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.351,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8338
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-017",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。",
+      "importance": 0.74,
+      "evidence": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+      "related_topics": [
+        "agent architecture",
+        "l1 memory generation",
+        "classification schema",
+        "data structure",
+        "content selection",
+        "idea unit"
+      ],
+      "score": 0.9517,
+      "s_sem": 0.1667,
+      "s_recency": 0.9833,
+      "s_importance": 0.74,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.363,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8317
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0422",
+      "timestamp": "2026-05-10T02:26:14Z",
+      "meeting_date": "2026-04-22",
+      "phase_id": "",
+      "obj_id": "L1-0422-017",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "在將逐字稿預處理為 idea unit 的階段，專案採用了一種迭代方法，取代了先前論文中常見的固定區塊切割法。此迭代方法允許模型在文本中「來回移動」，動態調整句子分組的大小，以捕捉非連續或距離較遠的相關概念，進而合併成更高層次的摘要。",
+      "importance": 0.69,
+      "evidence": "[SPEAKER_00]: 然後你們是有點像 iteratively 去做這些事情，然後這樣子它的那個花費的時間會不會很長啊 [SPEAKER_03]: 但這是 update 所以就是時間比較沒有關係 [SPEAKER_00]: 我的意思是說它這樣消耗的，我在想的是說像比如以季敏來說它是一句一句看，然後就看說如果我是同一句我就把它合在同一個就是我是一個 pass 下去就結束了，那現在這個方式的話它有點像說我是三個然後 merge 完這樣嘛三個去 merge merge merge [SPEAKER_02]: 他就會一直來回調動一直來回調動調動到最後調到最後一行，然後就會結束 [SPEAKER_00]: 來回調動是什麼意思也 [SPEAKER_02]: 就是來回調動就是他會從上到下然後如果他要往回看他就可以往回...",
+      "related_topics": [
+        "idea unit segmentation",
+        "data processing",
+        "text chunking",
+        "pre-processing",
+        "architecture design",
+        "context retrieval",
+        "alternative approach",
+        "function calling",
+        "llm",
+        "gemini",
+        "semantic completeness",
+        "context",
+        "long-distance dependencies",
+        "agent architecture",
+        "llm capabilities"
+      ],
+      "score": 0.9509,
+      "s_sem": 0.1667,
+      "s_recency": 0.9444,
+      "s_importance": 0.69,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3491,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8309
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-020",
+      "type": "decision",
+      "legacy_type": "decision",
+      "content": "決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_02]: 然後剛剛講到剛剛講到label label都是什麼都是theme的label theme的label因為現在你先講一下現在的label現在的label就是是針對idea units就是最小的單位是idea units對然後它會是屬於某一個segment 這樣嗎 它會是屬於某個segment會對它會屬於所以它會它中間是有relationship的所以每一個segment ID它會對應它應該你應該是可以你去到某一串的idea units對就是一樣這樣就是這個 segment然後會看到這是segments然後會看到很多idea unit這些idea unit都是在這個 segment裡面然後會有對應得好的數字這個 segment 它是針對它是針對錄音 檔的segment對不對?組織稿這都...",
+      "related_topics": [
+        "data processing",
+        "asr",
+        "chunking"
+      ],
+      "score": 0.9457,
+      "s_sem": 0.1224,
+      "s_recency": 0.9833,
+      "s_importance": 0.64,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.312,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8257
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0429",
+      "timestamp": "2026-05-10T03:07:25Z",
+      "meeting_date": "2026-04-29",
+      "phase_id": "",
+      "obj_id": "L1-0429-122",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。",
+      "importance": 0.73,
+      "evidence": "[SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情",
+      "related_topics": [
+        "context length",
+        "data processing",
+        "chunking",
+        "memory update",
+        "json format",
+        "context window",
+        "agent architecture",
+        "chunking strategy",
+        "experimental design",
+        "failure mode"
+      ],
+      "score": 0.9442,
+      "s_sem": 0.1667,
+      "s_recency": 0.9639,
+      "s_importance": 0.73,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3591,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8242
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-002",
+      "type": "decision",
+      "legacy_type": "decision",
+      "content": "團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit` 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。",
+      "importance": 0.62,
+      "evidence": "[SPEAKER_01]: 因為我們想像可能是說segment會是一個相關的段落就是他都在討論這件事情那idea unit可能是裡面有講到裡面可能to-do是什麼什麼decision是什麼就是比較細節的東西所以可能是idea [SPEAKER_02]: 應該說它的最小的單位都是idea units我們在meeting 的時候我們講的東西其實每一件事情就是都是一個一個的idea units那有些idea units 它是actionable的它是有一個to-do的有些可能不是有些就只是explain或是說討論所以我現在想像應該是比較是因為我覺得segment跟idea units目前我還是沒有很清楚知道 [SPEAKER_03]: 它的切分的區分點是在什麼地方然後以prompt來說的話好像也有點難去解釋因為我本...",
+      "related_topics": [
+        "data model",
+        "data structure",
+        "segmentation",
+        "idea unit",
+        "agent architecture",
+        "terminology"
+      ],
+      "score": 0.944,
+      "s_sem": 0.2222,
+      "s_recency": 0.9833,
+      "s_importance": 0.62,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3779,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.824
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-009",
+      "type": "proposal",
+      "legacy_type": "method_change",
+      "content": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。",
+      "importance": 0.65,
+      "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+      "related_topics": [
+        "agent architecture",
+        "bottom-up processing",
+        "top-down processing",
+        "segmentation",
+        "idea unit"
+      ],
+      "score": 0.9438,
+      "s_sem": 0.1667,
+      "s_recency": 0.9667,
+      "s_importance": 0.65,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3433,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8238
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0429",
+      "timestamp": "2026-05-10T03:07:25Z",
+      "meeting_date": "2026-04-29",
+      "phase_id": "",
+      "obj_id": "L1-0429-057",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。",
+      "importance": 0.68,
+      "evidence": "[SPEAKER_00]: 因為我的短期也是差不多的方法。我想就是益心的意思大概是說，因為其實你不用太糾結 LLM 到底會讀幾行，因為 LLM 它自己可以。因為老師您剛剛說就是希望它讀幾行，那一行就是一個 object。但是其實 LLM 就算它真的讀太多行，它其實也知道這邊結束，就沒有什麼關係。 [SPEAKER_00]: 所以它其實比如說讀了 0 到 40 行，假設裡面有兩個 object，不是只有一個 object，它其實也沒關係，它就會處理，就是把這兩個存進去。所以它下一次還是會讀什麼 41 到 80。所以就是對它來說，它只要能處理哪些 object，它就沒有什麼，它就不會有一次剛好就讀一個 object 會比較好，因為這些東西在存成這個形式之前，它都會是一個 candidate。",
+      "related_topics": [
+        "chunking strategy",
+        "data processing",
+        "top-down processing"
+      ],
+      "score": 0.942,
+      "s_sem": 0.1111,
+      "s_recency": 0.9639,
+      "s_importance": 0.68,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3102,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.822
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0307",
+      "timestamp": "2026-05-10T00:43:55Z",
+      "meeting_date": "2026-03-07",
+      "phase_id": "",
+      "obj_id": "L1-0307-020",
+      "type": "approach_change",
+      "legacy_type": "decision",
+      "content": "專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。",
+      "importance": 0.74,
+      "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+      "related_topics": [
+        "project goal",
+        "evaluation strategy",
+        "behavioral difference",
+        "user study",
+        "evaluation criteria",
+        "scope",
+        "human-agent interaction",
+        "project goals"
+      ],
+      "score": 0.3154,
+      "s_sem": 0.1224,
+      "s_recency": 0.8167,
+      "s_importance": 0.74,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3154,
+      "hybrid_sources": [
+        "lexical"
+      ]
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0408",
+      "timestamp": "2026-05-10T01:54:47Z",
+      "meeting_date": "2026-04-08",
+      "phase_id": "",
+      "obj_id": "L1-0408-009",
+      "type": "approach_change",
+      "legacy_type": "decision",
+      "content": "長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。",
+      "importance": 0.7,
+      "evidence": "[SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。 [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？ [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。 [SPEAKER_00]: 我們也不知道它是不是真的一句一句分析。因為我發現之前季敏在分析影片主持稿時，一開始...",
+      "related_topics": [
+        "long-term memory",
+        "data structure",
+        "schema",
+        "information screening",
+        "data processing",
+        "llm",
+        "idea unit",
+        "segmentation",
+        "architecture design",
+        "data quality"
+      ],
+      "score": 0.9358,
+      "s_sem": 0.2778,
+      "s_recency": 0.9056,
+      "s_importance": 0.7,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.425,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8158
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-007",
+      "type": "open_issue",
+      "legacy_type": "open_question",
+      "content": "關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一種新的假設性自適應分段方法，但也有反對意見認為，下游的 LLM 有能力處理不完美的較大文本塊，因此追求完美分段的效益可能有限。目前的固定窗口方法主要是為了方便除錯，而整體由上而下（segment -> idea unit）的策略被認為不自然。",
+      "importance": 0.6,
+      "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+      "related_topics": [
+        "segmentation",
+        "chunking",
+        "data processing",
+        "agent architecture",
+        "adaptive window"
+      ],
+      "score": 0.9415,
+      "s_sem": 0.2222,
+      "s_recency": 0.9667,
+      "s_importance": 0.6,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3722,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8215
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0422",
+      "timestamp": "2026-05-10T02:26:14Z",
+      "meeting_date": "2026-04-22",
+      "phase_id": "",
+      "obj_id": "L1-0422-007",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。",
+      "importance": 0.67,
+      "evidence": "[SPEAKER_02]: 應該說是要怎麼做應該說讀幾句應該是給LLM去判斷就是不一定要三句三句他其實也可以讀五句八句 [SPEAKER_01]: 他會自己看他後面要再往後讀幾句 [SPEAKER_00]: 所以說如果我讀了五句然後呢，我再讀下面五句 [SPEAKER_01]: 不一定他可能他可以讀五句，然後五句不夠可能再往後讀五句後面的三句 [SPEAKER_02]: 如果他這一句現在五句完假設你已經問了一個問題然後這個答案顯然還沒到一個就是完整回答的地方他就可以 [SPEAKER_03]: 這會讓 Gemini 自己決定，就是 Gemini 可以自己決定說 [SPEAKER_01]: 他現在五句他切在一個問題，就是可能像老師剛問我們說現在什麼意思是這個東西什麼意思然後他五句切在這裡，那 Gemini 就會...",
+      "related_topics": [
+        "idea unit segmentation",
+        "data processing",
+        "context",
+        "llm capabilities",
+        "agent architecture",
+        "design philosophy",
+        "architecture design",
+        "llm",
+        "text chunking",
+        "function calling",
+        "chunking strategy",
+        "baseline comparison",
+        "llm efficiency",
+        "context window"
+      ],
+      "score": 0.9412,
+      "s_sem": 0.2222,
+      "s_recency": 0.9444,
+      "s_importance": 0.67,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.384,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8212
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-021",
+      "type": "finding",
+      "legacy_type": "todo",
+      "content": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。",
+      "importance": 0.59,
+      "evidence": "[SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的話譬如說這一個他本身他可能譬如說會是一個可能這一行他是個idea unit對然後這行可能是個idea unit嗯 或者是說這一行跟這一行他發現他會合併嘛說這兩個是 idea units還是 idea units 還是一定只有在一行...",
+      "related_topics": [
+        "data quality",
+        "chunking",
+        "prompt engineering",
+        "agent evaluation",
+        "idea unit",
+        "segmentation",
+        "quality assurance"
+      ],
+      "score": 0.9397,
+      "s_sem": 0.1667,
+      "s_recency": 0.9667,
+      "s_importance": 0.59,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3313,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8197
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0422",
+      "timestamp": "2026-05-10T02:26:14Z",
+      "meeting_date": "2026-04-22",
+      "phase_id": "",
+      "obj_id": "L1-0422-018",
+      "type": "open_issue",
+      "legacy_type": "open_question",
+      "content": "關於動態文本分塊 (dynamic transcript chunking) 機制的具體實作方式尚不清楚。問題在於，該過程是先將整個逐字稿以固定大小（例如每次三行）進行處理然後再合併，還是採用其他不同的運作方式。",
+      "importance": 0.57,
+      "evidence": "[SPEAKER_00]: 所以有一些有一些譬如說某十分鐘他可能三句三句它就可以了，但是某個十分鐘可能要五句五句之類的，然後它是在每一個時刻它都動態的在一直在換說是三句還是五句還是七句 [SPEAKER_02]: 那你的十分鐘的意思是什麼十分鐘是之類的 [SPEAKER_00]: 我只是講說譬如說我們的Meeting過程當中它在分析這個Meeting Transcript的時候在可能在也許某一些主題像剛剛講五月十三號那個其實可能很短就是兩句它其實就是一個一個 unit 對 [SPEAKER_02]: 那它就會繼續往下更新 [SPEAKER_00]: 這地方的話感覺上你們是要去就是有點像是要去explore說我先看，我其實還是沒有很懂你說一句來啊你說我先三句三句，那我是要整個transcription都變三句三...",
+      "related_topics": [
+        "idea unit segmentation",
+        "text chunking",
+        "implementation plan"
+      ],
+      "score": 0.9396,
+      "s_sem": 0.2222,
+      "s_recency": 0.8889,
+      "s_importance": 0.57,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3584,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8196
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0429",
+      "timestamp": "2026-05-10T03:07:25Z",
+      "meeting_date": "2026-04-29",
+      "phase_id": "",
+      "obj_id": "L1-0429-029",
+      "type": "decision",
+      "legacy_type": "method_change",
+      "content": "團隊決定探索一種「動態分塊 (dynamic chunking)」方法。系統將不再使用固定大小的區塊，而是預測接下來有多少對話輪次屬於同一主題，並將它們組合成一個可變大小的區塊進行處理。此方法將與固定分塊方法進行比較。",
+      "importance": 0.76,
+      "evidence": "[SPEAKER_02]: 然後我一直去merge merge merge但那個就是非常的compute時間要非常的大對然後對折衷的方式可能是說也許我看到這一句話我大概就知道說就是我們把那個fix拿掉它是dynamic它不要都是三都不要都是三個turn三個turn三個turn但是我現在看到這一句話我大概預估應該會是幾個turn都是在講這件事情我就往前跳然後把它變成一個block [SPEAKER_02]: 對 然後去把它弄起來就是我本來想的是我們是要用比較bottom up的方法那我們可能可以然後就那種動態去切就是我要怎麼去丟那個丟那個最小的單位去給language model去產生小summary然後去iterate產生一個比較high level的high level的summary [SPEAKER_0...",
+      "related_topics": [
+        "chunking",
+        "dynamic chunking",
+        "data processing",
+        "evaluation strategy",
+        "chunking strategy",
+        "top-down processing",
+        "bottom-up processing",
+        "failure mode",
+        "computational cost",
+        "alternative approach",
+        "tradeoff"
+      ],
+      "score": 0.9393,
+      "s_sem": 0.0816,
+      "s_recency": 0.9639,
+      "s_importance": 0.76,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3055,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8193
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0429",
+      "timestamp": "2026-05-10T03:07:25Z",
+      "meeting_date": "2026-04-29",
+      "phase_id": "",
+      "obj_id": "L1-0429-133",
+      "type": "approach_change",
+      "legacy_type": "method_change",
+      "content": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱含地、選擇性地提取相關資訊來更新特定節點。",
+      "importance": 0.75,
+      "evidence": "[SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就呃因為現在這個方法其實跟如果你把先把80行直接去切就是你去再丟個一個另外一個agen...",
+      "related_topics": [
+        "memory update",
+        "architecture design",
+        "node convergence",
+        "idea units",
+        "chunking strategy",
+        "data processing",
+        "idea unit",
+        "agent architecture",
+        "topic blending",
+        "information flow"
+      ],
+      "score": 0.9387,
+      "s_sem": 0.1224,
+      "s_recency": 0.9639,
+      "s_importance": 0.75,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3321,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8187
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0422",
+      "timestamp": "2026-05-10T02:26:14Z",
+      "meeting_date": "2026-04-22",
+      "phase_id": "",
+      "obj_id": "L1-0422-020",
+      "type": "decision",
+      "legacy_type": "decision",
+      "content": "決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。",
+      "importance": 0.78,
+      "evidence": "[SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個 [SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般...",
+      "related_topics": [
+        "evaluation strategy",
+        "benchmarking",
+        "baseline comparison",
+        "rag",
+        "chunking",
+        "chunking strategy"
+      ],
+      "score": 0.9378,
+      "s_sem": 0.1224,
+      "s_recency": 0.9444,
+      "s_importance": 0.78,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3362,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8178
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0429",
+      "timestamp": "2026-05-10T03:07:25Z",
+      "meeting_date": "2026-04-29",
+      "phase_id": "",
+      "obj_id": "L1-0429-085",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。",
+      "importance": 0.66,
+      "evidence": "[SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_02]: 不然就是這個任務的流程可能要再更specific。比如說下一段的逐字稿看起來它就沒有照著我們 follow 的做啊，對不對？因為它剛剛 1 到 40 句，它下一段根本不該從 31 開始啊。而且 1 到 40 裡面，其實我不知道裡面的 idea units 有幾個。在那個情況裡...",
+      "related_topics": [
+        "failure mode",
+        "data processing",
+        "chunking strategy",
+        "agent robustness",
+        "observability"
+      ],
+      "score": 0.9378,
+      "s_sem": 0.1667,
+      "s_recency": 0.9639,
+      "s_importance": 0.66,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3451,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8178
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0506",
+      "timestamp": "2026-05-10T04:32:14Z",
+      "meeting_date": "2026-05-06",
+      "phase_id": "",
+      "obj_id": "L1-0506-025",
+      "type": "argument",
+      "legacy_type": "argument",
+      "content": "採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。",
+      "importance": 0.64,
+      "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
+      "related_topics": [
+        "bottom-up approach",
+        "chunking",
+        "data processing",
+        "idea unit",
+        "tradeoff",
+        "chunking strategy",
+        "data quality"
+      ],
+      "score": 0.9376,
+      "s_sem": 0.1224,
+      "s_recency": 0.9833,
+      "s_importance": 0.64,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.312,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8176
+    },
+    {
+      "source": "long_term_l1",
+      "meeting_id": "0429",
+      "timestamp": "2026-05-10T03:07:25Z",
+      "meeting_date": "2026-04-29",
+      "phase_id": "",
+      "obj_id": "L1-0429-065",
+      "type": "decision",
+      "legacy_type": "decision",
+      "content": "團隊決定進行一項實驗，比較「動態分塊 (dynamic chunking)」與「固定分塊 (fixed-chunk)」兩種方法。動態方法將根據主題連貫性預測要讀取的對話輪次數。為求公平比較，固定分塊的大小將設定為動態方法產生的平均分塊大小。評估將比較計算成本（以請求數量為代理指標）和輸出品質。品質將透過與人工標註的「重要想法單元」(important idea units) 地面實況進行精確率 (precision) 和召回率 (recall) 的比較來衡量。",
+      "importance": 0.73,
+      "evidence": "[SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。 [SPEAKER_02]: 對，然後我們...",
+      "related_topics": [
+        "experiment design",
+        "chunking",
+        "dynamic chunking",
+        "evaluation",
+        "precision",
+        "recall",
+        "computational cost",
+        "baseline comparison",
+        "benchmarking",
+        "evaluation strategy"
+      ],
+      "score": 0.9359,
+      "s_sem": 0.1111,
+      "s_recency": 0.9639,
+      "s_importance": 0.73,
+      "s_activation": null,
+      "activity_state": "unknown",
+      "retrieval_mode": "hybrid",
+      "lexical_score": 0.3202,
+      "hybrid_sources": [
+        "lexical",
+        "semantic"
+      ],
+      "semantic_score": 0.8159
+    }
+  ],
+  "l2_evolution_context": [
+    {
+      "source": "long_term_child_l2",
+      "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "parent_l3_label": "transcript segmentation and idea-unit coverage",
+      "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l2_id": "L2-idea-unit-generation-methods",
+      "label": "idea-unit generation methods",
+      "current_state": "idea-unit generation methods: latest state from 2026-05-06 L1-0506-012 is 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。 Earlier evidence began with 在文獻回顧中發現，有多篇論文專注於長期會議記錄的摘要，其中一篇較新且以應用為導向的 IEEE 論文特別受到關注。",
+      "evolution_summary": "idea-unit generation methods evolved from 2026-03-25 L1-0325-033: 在文獻回顧中發現，有多篇論文專注於長期會議記錄的摘要，其中一篇較新且以應用為導向的 IEEE 論文特別受到關注。 to 2026-05-06 L1-0506-012: 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+      "latest_position": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+      "key_rationale": "Assignment criteria: recipe; prompt engineering; generation method",
+      "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+      "matched_l1_ids": [
+        "L1-0422-006",
+        "L1-0506-001",
+        "L1-0506-012",
+        "L1-0422-019",
+        "L1-0422-017",
+        "L1-0506-009",
+        "L1-0429-057"
+      ],
+      "topic_size": 20,
+      "selected_event_count": 8,
+      "omitted_event_count": 12,
+      "timeline_digest": [
+        {
+          "meeting_id": "0408",
+          "meeting_date": "2026-04-08",
+          "obj_id": "L1-0408-011",
+          "summary": "應取得另一個團隊已開發的「idea unit」分割方法（recipe），並評估其是否能應用於處理會議記錄的中文文本。該方法是透過提示工程（prompt engineering）實現的。"
+        },
+        {
+          "meeting_id": "0422",
+          "meeting_date": "2026-04-22",
+          "obj_id": "L1-0422-006",
+          "summary": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。"
+        },
+        {
+          "meeting_id": "0422",
+          "meeting_date": "2026-04-22",
+          "obj_id": "L1-0422-017",
+          "summary": "在將逐字稿預處理為 idea unit 的階段，專案採用了一種迭代方法，取代了先前論文中常見的固定區塊切割法。此迭代方法允許模型在文本中「來回移動」，動態調整句子分組的大小，以捕捉非連續或距離較遠的相關概念，進而合併成更高層次的摘要。"
+        },
+        {
+          "meeting_id": "0422",
+          "meeting_date": "2026-04-22",
+          "obj_id": "L1-0422-019",
+          "summary": "迭代式 idea unit 生成方法的主要優勢在於能處理非線性的關係。相較於單次循序合併的方法，迭代法可以來回檢視文本，捕捉並連結文本中相距較遠的關聯概念，而單次循序法則可能會錯過這些跨越節點的重疊上下文。"
+        },
+        {
+          "meeting_id": "0429",
+          "meeting_date": "2026-04-29",
+          "obj_id": "L1-0429-057",
+          "summary": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-009",
+          "summary": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-001",
+          "summary": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-012",
+          "summary": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。"
+        }
+      ],
+      "selection_score": 0.4961
+    },
+    {
+      "source": "long_term_child_l2",
+      "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "parent_l3_label": "transcript segmentation and idea-unit coverage",
+      "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l2_id": "L2-idea-unit-generation",
+      "label": "idea-unit core definition",
+      "current_state": "idea-unit core definition: latest state from 2026-05-06 L1-0506-040 is 決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。 Earlier evidence began with 使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。",
+      "evolution_summary": "idea-unit core definition evolved from 2026-03-25 L1-0325-017: 使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。 to 2026-05-06 L1-0506-040: 決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。",
+      "latest_position": "決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。",
+      "key_rationale": "Assignment criteria: atomic unit; single utterance; granular viewpoint",
+      "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+      "matched_l1_ids": [
+        "L1-0506-021",
+        "L1-0429-133"
+      ],
+      "topic_size": 11,
+      "selected_event_count": 8,
+      "omitted_event_count": 3,
+      "timeline_digest": [
+        {
+          "meeting_id": "0325",
+          "meeting_date": "2026-03-25",
+          "obj_id": "L1-0325-017",
+          "summary": "使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。"
+        },
+        {
+          "meeting_id": "0422",
+          "meeting_date": "2026-04-22",
+          "obj_id": "L1-0422-016",
+          "summary": "有觀點認為，讓每個傳入的 idea unit 同時更新短期和長期記憶是更合理的作法。"
+        },
+        {
+          "meeting_id": "0429",
+          "meeting_date": "2026-04-29",
+          "obj_id": "L1-0429-133",
+          "summary": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱..."
+        },
+        {
+          "meeting_id": "0429",
+          "meeting_date": "2026-04-29",
+          "obj_id": "L1-0429-059",
+          "summary": "當前系統的一個假設性優勢是，與較簡單的方法不同，它能夠過濾並避免儲存無關的對話填充詞 (conversational filler)。"
+        },
+        {
+          "meeting_id": "0429",
+          "meeting_date": "2026-04-29",
+          "obj_id": "L1-0429-137",
+          "summary": "一項觀察發現，Gemini 在識別較大文本中不同「想法單元」(idea units) 的能力被認為相當強。此觀察是影響是否需要明確進行想法單元切分步驟此一設計決策的關鍵因素。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-021",
+          "summary": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-033",
+          "summary": "決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-040",
+          "summary": "決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。"
+        }
+      ],
+      "selection_score": 0.4748
+    },
+    {
+      "source": "long_term_sibling_child_l2",
+      "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "parent_l3_label": "transcript segmentation and idea-unit coverage",
+      "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l2_id": "L2-idea-unit-granularity-and-semantics",
+      "label": "idea-unit granularity and semantics",
+      "current_state": "idea-unit granularity and semantics: latest state from 2026-05-06 L1-0506-027 is 即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。 Earlier evidence began with 提出一個使用 LLM 處理會議記錄的短期記憶 (Short-Term Memory) 更新機制。該機制會根據相似性更新現有記憶項目、附加新項目，並根據最後更新時間戳驅逐未被參考的舊項目。",
+      "evolution_summary": "idea-unit granularity and semantics evolved from 2026-03-25 L1-0325-041: 提出一個使用 LLM 處理會議記錄的短期記憶 (Short-Term Memory) 更新機制。該機制會根據相似性更新現有記憶項目、附加新項目，並根據最後更新時間戳驅逐未被參考的舊項目。 to 2026-05-06 L1-0506-027: 即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+      "latest_position": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+      "key_rationale": "Assignment criteria: idea unit definition; granularity; granular",
+      "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+      "matched_l1_ids": [],
+      "primary_child_l2_ids": [
+        "L2-idea-unit-generation-methods",
+        "L2-idea-unit-generation"
+      ],
+      "sibling_expansion_reason": "same_parent_l3_rationale_context",
+      "topic_size": 12,
+      "selected_event_count": 3,
+      "omitted_event_count": 9,
+      "timeline_digest": [
+        {
+          "meeting_id": "0408",
+          "meeting_date": "2026-04-08",
+          "obj_id": "L1-0408-013",
+          "summary": "在逐字稿切分上存在一個設計挑戰：一個想法單元（idea unit）是否應假設只包含一種想法類型，或可允許多種類型，此問題尚未解決。"
+        },
+        {
+          "meeting_id": "0422",
+          "meeting_date": "2026-04-22",
+          "obj_id": "L1-0422-007",
+          "summary": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。"
+        },
+        {
+          "meeting_id": "0506",
+          "meeting_date": "2026-05-06",
+          "obj_id": "L1-0506-025",
+          "summary": "採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。"
+        }
+      ],
+      "selection_score": 0.615
+    },
+    {
+      "source": "long_term_sibling_child_l2",
+      "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "parent_l3_label": "transcript segmentation and idea-unit coverage",
+      "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+      "l2_id": "L2-fixed-vs-dynamic-chunking",
+      "label": "fixed vs dynamic chunking",
+      "current_state": "fixed vs dynamic chunking: latest state from 2026-04-29 L1-0429-083 is 在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。 Earlier evidence began with 系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。",
+      "evolution_summary": "fixed vs dynamic chunking evolved from 2026-03-25 L1-0325-007: 系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。 to 2026-04-29 L1-0429-083: 在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。",
+      "latest_position": "在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。",
+      "key_rationale": "Assignment criteria: fixed chunk; fixed-size; fixed size",
+      "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+      "matched_l1_ids": [],
+      "primary_child_l2_ids": [
+        "L2-idea-unit-generation-methods",
+        "L2-idea-unit-generation"
+      ],
+      "sibling_expansion_reason": "same_parent_l3_rationale_context",
+      "topic_size": 23,
+      "selected_event_count": 3,
+      "omitted_event_count": 20,
+      "timeline_digest": [
+        {
+          "meeting_id": "0325",
+          "meeting_date": "2026-03-25",
+          "obj_id": "L1-0325-007",
+          "summary": "系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。"
+        },
+        {
+          "meeting_id": "0422",
+          "meeting_date": "2026-04-22",
+          "obj_id": "L1-0422-020",
+          "summary": "決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。"
+        },
+        {
+          "meeting_id": "0429",
+          "meeting_date": "2026-04-29",
+          "obj_id": "L1-0429-023",
+          "summary": "團隊決定推遲原定比較三種文本分塊（chunking）策略的實驗。在報告截止日期（5月12日）之前，團隊將繼續使用當前方法，並暫時假定其有效，不進行正式的基準比較。"
+        }
+      ],
+      "selection_score": 0.4839
+    }
+  ],
+  "l3_navigation": [
+    {
+      "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+      "label": "transcript segmentation and idea-unit coverage",
+      "source": "long_term_l3_topic_family"
+    }
+  ],
+  "current_implementation_state": "",
+  "retrieval_debug": {
+    "selected_l1_count": 24,
+    "selected_l2_count": 0,
+    "selected_child_l2_count": 2,
+    "selected_secondary_l2_count": 0,
+    "selected_sibling_child_l2_count": 2,
+    "sibling_candidate_count": 9,
+    "global_topic_map_chars": 847,
+    "expanded_context_chars": 0,
+    "omitted_event_count": 44,
+    "large_l2_expanded_without_child_split": false,
+    "retrieval_mode": "hybrid",
+    "hybrid_lexical_count": 120,
+    "hybrid_semantic_count": 120,
+    "hybrid_semantic_used": true,
+    "hybrid_fallback": ""
+  },
+  "truncated": false,
+  "truncated_from_chars": null,
+  "metrics": {
+    "context_char_count": 22170,
+    "estimated_context_tokens": 11446,
+    "actual_input_tokens": null,
+    "actual_output_tokens": null,
+    "actual_total_tokens": null,
+    "token_source": "generation_error",
+    "selected_l1_count": 24,
+    "selected_l2_count": 0,
+    "selected_child_l2_count": 2,
+    "selected_l3_count": 1,
+    "omitted_event_count": 44,
+    "whether_large_l2_was_expanded_without_child_split": false,
+    "prompt_budget_pass": true,
+    "retrieval_ms": 913.811,
+    "context_build_ms": 0.0,
+    "generation_ms": 0.0,
+    "total_ms": 913.811
+  },
+  "raw_recall_result": {
+    "complexity": "simple",
+    "short_term_results": [],
+    "long_term_results": [
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-006",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。",
+        "importance": 0.7,
+        "evidence": "[SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [SPEAKER_00]: 什麼樣有沒有一個例子說，我如果假設說好現在我要我們現在今天的meeting完了我得到一個今天的逐字稿那我現在就要回去update我的memory對不對好那我現在逐字稿拿來然後假設其實剛剛講的是前端可能會可能不能用turn因為可能我們好幾個turn都在講同一件事情都是某一個idea某一個主題，那當然那個地方很簡單就是直接去判斷說下一句跟前一句是不是同一件事下一句跟前一句是不是同一件事，如果這一串都是同一件事情的話那就包成一個說好這是一個要update的節點 [SPEAKER_02]: Long-term 跟 Short-...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "agent architecture",
+          "transcript analysis",
+          "memory update",
+          "architecture design",
+          "llm",
+          "topic segmentation",
+          "design philosophy",
+          "feasibility"
+        ],
+        "score": 0.9604,
+        "s_sem": 0.2222,
+        "s_recency": 0.9444,
+        "s_importance": 0.7,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.39,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8404
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-001",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。",
+        "importance": 0.72,
+        "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+        "related_topics": [
+          "data structure",
+          "architecture design",
+          "segmentation",
+          "idea unit",
+          "top-down approach",
+          "chunking",
+          "data pipeline",
+          "agent architecture",
+          "context planner",
+          "data quality",
+          "data correctness",
+          "error handling",
+          "prompt engineering",
+          "failure mode",
+          "data coverage",
+          "chunking strategy",
+          "bottom-up processing",
+          "top-down processing",
+          "segment agent",
+          "data processing"
+        ],
+        "score": 0.9592,
+        "s_sem": 0.2222,
+        "s_recency": 0.9833,
+        "s_importance": 0.72,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3979,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8392
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-012",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+        "importance": 0.66,
+        "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+        "related_topics": [
+          "segmentation",
+          "agent architecture",
+          "bottom-up processing",
+          "top-down approach",
+          "chunking",
+          "debugging",
+          "context window"
+        ],
+        "score": 0.9568,
+        "s_sem": 0.1837,
+        "s_recency": 0.9833,
+        "s_importance": 0.66,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3589,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8368
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-027",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+        "importance": 0.63,
+        "evidence": "[SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他 [SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後...",
+        "related_topics": [
+          "data processing",
+          "idea unit",
+          "agent architecture",
+          "content selection"
+        ],
+        "score": 0.9546,
+        "s_sem": 0.1111,
+        "s_recency": 0.9833,
+        "s_importance": 0.63,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3021,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8346
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-019",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "迭代式 idea unit 生成方法的主要優勢在於能處理非線性的關係。相較於單次循序合併的方法，迭代法可以來回檢視文本，捕捉並連結文本中相距較遠的關聯概念，而單次循序法則可能會錯過這些跨越節點的重疊上下文。",
+        "importance": 0.64,
+        "evidence": "[SPEAKER_00]: 所以這個其實聽起來蠻像是前處理的部分對不對?對所以你這個 tool calling 指的是來講說前處理的部分， [SPEAKER_01]: 因為我們就因為像之前的paper還蠻多他們都是切一個trunk一個trunk一個trunk丟進去，那我們是讓他做可以iterate的他可以往上找他可以往下找 [SPEAKER_00]: 那這個的好處跟他我們剛剛講的一個parts下去可能會有什麼? [SPEAKER_01]: 我現在想的是就是節點跟節點之間它可能會overlap如果你直接這樣下去好從這裡切一個節點再往下套那它上面可能一樣它有提到的地方它上面的句子它就不一定會抓得到 [SPEAKER_00]: 哦 所以妳也就是說像現在以現在這樣來看因為我們原本的方式的話會是它是一個sequenti...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "architecture design",
+          "context retrieval"
+        ],
+        "score": 0.9538,
+        "s_sem": 0.1837,
+        "s_recency": 0.9444,
+        "s_importance": 0.64,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.351,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8338
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-017",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。",
+        "importance": 0.74,
+        "evidence": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+        "related_topics": [
+          "agent architecture",
+          "l1 memory generation",
+          "classification schema",
+          "data structure",
+          "content selection",
+          "idea unit"
+        ],
+        "score": 0.9517,
+        "s_sem": 0.1667,
+        "s_recency": 0.9833,
+        "s_importance": 0.74,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.363,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8317
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-017",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "在將逐字稿預處理為 idea unit 的階段，專案採用了一種迭代方法，取代了先前論文中常見的固定區塊切割法。此迭代方法允許模型在文本中「來回移動」，動態調整句子分組的大小，以捕捉非連續或距離較遠的相關概念，進而合併成更高層次的摘要。",
+        "importance": 0.69,
+        "evidence": "[SPEAKER_00]: 然後你們是有點像 iteratively 去做這些事情，然後這樣子它的那個花費的時間會不會很長啊 [SPEAKER_03]: 但這是 update 所以就是時間比較沒有關係 [SPEAKER_00]: 我的意思是說它這樣消耗的，我在想的是說像比如以季敏來說它是一句一句看，然後就看說如果我是同一句我就把它合在同一個就是我是一個 pass 下去就結束了，那現在這個方式的話它有點像說我是三個然後 merge 完這樣嘛三個去 merge merge merge [SPEAKER_02]: 他就會一直來回調動一直來回調動調動到最後調到最後一行，然後就會結束 [SPEAKER_00]: 來回調動是什麼意思也 [SPEAKER_02]: 就是來回調動就是他會從上到下然後如果他要往回看他就可以往回...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "text chunking",
+          "pre-processing",
+          "architecture design",
+          "context retrieval",
+          "alternative approach",
+          "function calling",
+          "llm",
+          "gemini",
+          "semantic completeness",
+          "context",
+          "long-distance dependencies",
+          "agent architecture",
+          "llm capabilities"
+        ],
+        "score": 0.9509,
+        "s_sem": 0.1667,
+        "s_recency": 0.9444,
+        "s_importance": 0.69,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3491,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8309
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-020",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。",
+        "importance": 0.64,
+        "evidence": "[SPEAKER_02]: 然後剛剛講到剛剛講到label label都是什麼都是theme的label theme的label因為現在你先講一下現在的label現在的label就是是針對idea units就是最小的單位是idea units對然後它會是屬於某一個segment 這樣嗎 它會是屬於某個segment會對它會屬於所以它會它中間是有relationship的所以每一個segment ID它會對應它應該你應該是可以你去到某一串的idea units對就是一樣這樣就是這個 segment然後會看到這是segments然後會看到很多idea unit這些idea unit都是在這個 segment裡面然後會有對應得好的數字這個 segment 它是針對它是針對錄音 檔的segment對不對?組織稿這都...",
+        "related_topics": [
+          "data processing",
+          "asr",
+          "chunking"
+        ],
+        "score": 0.9457,
+        "s_sem": 0.1224,
+        "s_recency": 0.9833,
+        "s_importance": 0.64,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.312,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8257
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-122",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。",
+        "importance": 0.73,
+        "evidence": "[SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情",
+        "related_topics": [
+          "context length",
+          "data processing",
+          "chunking",
+          "memory update",
+          "json format",
+          "context window",
+          "agent architecture",
+          "chunking strategy",
+          "experimental design",
+          "failure mode"
+        ],
+        "score": 0.9442,
+        "s_sem": 0.1667,
+        "s_recency": 0.9639,
+        "s_importance": 0.73,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3591,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8242
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-002",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit` 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。",
+        "importance": 0.62,
+        "evidence": "[SPEAKER_01]: 因為我們想像可能是說segment會是一個相關的段落就是他都在討論這件事情那idea unit可能是裡面有講到裡面可能to-do是什麼什麼decision是什麼就是比較細節的東西所以可能是idea [SPEAKER_02]: 應該說它的最小的單位都是idea units我們在meeting 的時候我們講的東西其實每一件事情就是都是一個一個的idea units那有些idea units 它是actionable的它是有一個to-do的有些可能不是有些就只是explain或是說討論所以我現在想像應該是比較是因為我覺得segment跟idea units目前我還是沒有很清楚知道 [SPEAKER_03]: 它的切分的區分點是在什麼地方然後以prompt來說的話好像也有點難去解釋因為我本...",
+        "related_topics": [
+          "data model",
+          "data structure",
+          "segmentation",
+          "idea unit",
+          "agent architecture",
+          "terminology"
+        ],
+        "score": 0.944,
+        "s_sem": 0.2222,
+        "s_recency": 0.9833,
+        "s_importance": 0.62,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3779,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.824
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-009",
+        "type": "proposal",
+        "legacy_type": "method_change",
+        "content": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。",
+        "importance": 0.65,
+        "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+        "related_topics": [
+          "agent architecture",
+          "bottom-up processing",
+          "top-down processing",
+          "segmentation",
+          "idea unit"
+        ],
+        "score": 0.9438,
+        "s_sem": 0.1667,
+        "s_recency": 0.9667,
+        "s_importance": 0.65,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3433,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8238
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-057",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。",
+        "importance": 0.68,
+        "evidence": "[SPEAKER_00]: 因為我的短期也是差不多的方法。我想就是益心的意思大概是說，因為其實你不用太糾結 LLM 到底會讀幾行，因為 LLM 它自己可以。因為老師您剛剛說就是希望它讀幾行，那一行就是一個 object。但是其實 LLM 就算它真的讀太多行，它其實也知道這邊結束，就沒有什麼關係。 [SPEAKER_00]: 所以它其實比如說讀了 0 到 40 行，假設裡面有兩個 object，不是只有一個 object，它其實也沒關係，它就會處理，就是把這兩個存進去。所以它下一次還是會讀什麼 41 到 80。所以就是對它來說，它只要能處理哪些 object，它就沒有什麼，它就不會有一次剛好就讀一個 object 會比較好，因為這些東西在存成這個形式之前，它都會是一個 candidate。",
+        "related_topics": [
+          "chunking strategy",
+          "data processing",
+          "top-down processing"
+        ],
+        "score": 0.942,
+        "s_sem": 0.1111,
+        "s_recency": 0.9639,
+        "s_importance": 0.68,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3102,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.822
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0307",
+        "timestamp": "2026-05-10T00:43:55Z",
+        "meeting_date": "2026-03-07",
+        "phase_id": "",
+        "obj_id": "L1-0307-020",
+        "type": "approach_change",
+        "legacy_type": "decision",
+        "content": "專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。",
+        "importance": 0.74,
+        "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+        "related_topics": [
+          "project goal",
+          "evaluation strategy",
+          "behavioral difference",
+          "user study",
+          "evaluation criteria",
+          "scope",
+          "human-agent interaction",
+          "project goals"
+        ],
+        "score": 0.3154,
+        "s_sem": 0.1224,
+        "s_recency": 0.8167,
+        "s_importance": 0.74,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3154,
+        "hybrid_sources": [
+          "lexical"
+        ]
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0408",
+        "timestamp": "2026-05-10T01:54:47Z",
+        "meeting_date": "2026-04-08",
+        "phase_id": "",
+        "obj_id": "L1-0408-009",
+        "type": "approach_change",
+        "legacy_type": "decision",
+        "content": "長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。",
+        "importance": 0.7,
+        "evidence": "[SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。 [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？ [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。 [SPEAKER_00]: 我們也不知道它是不是真的一句一句分析。因為我發現之前季敏在分析影片主持稿時，一開始...",
+        "related_topics": [
+          "long-term memory",
+          "data structure",
+          "schema",
+          "information screening",
+          "data processing",
+          "llm",
+          "idea unit",
+          "segmentation",
+          "architecture design",
+          "data quality"
+        ],
+        "score": 0.9358,
+        "s_sem": 0.2778,
+        "s_recency": 0.9056,
+        "s_importance": 0.7,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.425,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8158
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-007",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一種新的假設性自適應分段方法，但也有反對意見認為，下游的 LLM 有能力處理不完美的較大文本塊，因此追求完美分段的效益可能有限。目前的固定窗口方法主要是為了方便除錯，而整體由上而下（segment -> idea unit）的策略被認為不自然。",
+        "importance": 0.6,
+        "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+        "related_topics": [
+          "segmentation",
+          "chunking",
+          "data processing",
+          "agent architecture",
+          "adaptive window"
+        ],
+        "score": 0.9415,
+        "s_sem": 0.2222,
+        "s_recency": 0.9667,
+        "s_importance": 0.6,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3722,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8215
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-007",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。",
+        "importance": 0.67,
+        "evidence": "[SPEAKER_02]: 應該說是要怎麼做應該說讀幾句應該是給LLM去判斷就是不一定要三句三句他其實也可以讀五句八句 [SPEAKER_01]: 他會自己看他後面要再往後讀幾句 [SPEAKER_00]: 所以說如果我讀了五句然後呢，我再讀下面五句 [SPEAKER_01]: 不一定他可能他可以讀五句，然後五句不夠可能再往後讀五句後面的三句 [SPEAKER_02]: 如果他這一句現在五句完假設你已經問了一個問題然後這個答案顯然還沒到一個就是完整回答的地方他就可以 [SPEAKER_03]: 這會讓 Gemini 自己決定，就是 Gemini 可以自己決定說 [SPEAKER_01]: 他現在五句他切在一個問題，就是可能像老師剛問我們說現在什麼意思是這個東西什麼意思然後他五句切在這裡，那 Gemini 就會...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "context",
+          "llm capabilities",
+          "agent architecture",
+          "design philosophy",
+          "architecture design",
+          "llm",
+          "text chunking",
+          "function calling",
+          "chunking strategy",
+          "baseline comparison",
+          "llm efficiency",
+          "context window"
+        ],
+        "score": 0.9412,
+        "s_sem": 0.2222,
+        "s_recency": 0.9444,
+        "s_importance": 0.67,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.384,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8212
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-021",
+        "type": "finding",
+        "legacy_type": "todo",
+        "content": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。",
+        "importance": 0.59,
+        "evidence": "[SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的話譬如說這一個他本身他可能譬如說會是一個可能這一行他是個idea unit對然後這行可能是個idea unit嗯 或者是說這一行跟這一行他發現他會合併嘛說這兩個是 idea units還是 idea units 還是一定只有在一行...",
+        "related_topics": [
+          "data quality",
+          "chunking",
+          "prompt engineering",
+          "agent evaluation",
+          "idea unit",
+          "segmentation",
+          "quality assurance"
+        ],
+        "score": 0.9397,
+        "s_sem": 0.1667,
+        "s_recency": 0.9667,
+        "s_importance": 0.59,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3313,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8197
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-018",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "關於動態文本分塊 (dynamic transcript chunking) 機制的具體實作方式尚不清楚。問題在於，該過程是先將整個逐字稿以固定大小（例如每次三行）進行處理然後再合併，還是採用其他不同的運作方式。",
+        "importance": 0.57,
+        "evidence": "[SPEAKER_00]: 所以有一些有一些譬如說某十分鐘他可能三句三句它就可以了，但是某個十分鐘可能要五句五句之類的，然後它是在每一個時刻它都動態的在一直在換說是三句還是五句還是七句 [SPEAKER_02]: 那你的十分鐘的意思是什麼十分鐘是之類的 [SPEAKER_00]: 我只是講說譬如說我們的Meeting過程當中它在分析這個Meeting Transcript的時候在可能在也許某一些主題像剛剛講五月十三號那個其實可能很短就是兩句它其實就是一個一個 unit 對 [SPEAKER_02]: 那它就會繼續往下更新 [SPEAKER_00]: 這地方的話感覺上你們是要去就是有點像是要去explore說我先看，我其實還是沒有很懂你說一句來啊你說我先三句三句，那我是要整個transcription都變三句三...",
+        "related_topics": [
+          "idea unit segmentation",
+          "text chunking",
+          "implementation plan"
+        ],
+        "score": 0.9396,
+        "s_sem": 0.2222,
+        "s_recency": 0.8889,
+        "s_importance": 0.57,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3584,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8196
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-029",
+        "type": "decision",
+        "legacy_type": "method_change",
+        "content": "團隊決定探索一種「動態分塊 (dynamic chunking)」方法。系統將不再使用固定大小的區塊，而是預測接下來有多少對話輪次屬於同一主題，並將它們組合成一個可變大小的區塊進行處理。此方法將與固定分塊方法進行比較。",
+        "importance": 0.76,
+        "evidence": "[SPEAKER_02]: 然後我一直去merge merge merge但那個就是非常的compute時間要非常的大對然後對折衷的方式可能是說也許我看到這一句話我大概就知道說就是我們把那個fix拿掉它是dynamic它不要都是三都不要都是三個turn三個turn三個turn但是我現在看到這一句話我大概預估應該會是幾個turn都是在講這件事情我就往前跳然後把它變成一個block [SPEAKER_02]: 對 然後去把它弄起來就是我本來想的是我們是要用比較bottom up的方法那我們可能可以然後就那種動態去切就是我要怎麼去丟那個丟那個最小的單位去給language model去產生小summary然後去iterate產生一個比較high level的high level的summary [SPEAKER_0...",
+        "related_topics": [
+          "chunking",
+          "dynamic chunking",
+          "data processing",
+          "evaluation strategy",
+          "chunking strategy",
+          "top-down processing",
+          "bottom-up processing",
+          "failure mode",
+          "computational cost",
+          "alternative approach",
+          "tradeoff"
+        ],
+        "score": 0.9393,
+        "s_sem": 0.0816,
+        "s_recency": 0.9639,
+        "s_importance": 0.76,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3055,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8193
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-133",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱含地、選擇性地提取相關資訊來更新特定節點。",
+        "importance": 0.75,
+        "evidence": "[SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就呃因為現在這個方法其實跟如果你把先把80行直接去切就是你去再丟個一個另外一個agen...",
+        "related_topics": [
+          "memory update",
+          "architecture design",
+          "node convergence",
+          "idea units",
+          "chunking strategy",
+          "data processing",
+          "idea unit",
+          "agent architecture",
+          "topic blending",
+          "information flow"
+        ],
+        "score": 0.9387,
+        "s_sem": 0.1224,
+        "s_recency": 0.9639,
+        "s_importance": 0.75,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3321,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8187
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-020",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。",
+        "importance": 0.78,
+        "evidence": "[SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個 [SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般...",
+        "related_topics": [
+          "evaluation strategy",
+          "benchmarking",
+          "baseline comparison",
+          "rag",
+          "chunking",
+          "chunking strategy"
+        ],
+        "score": 0.9378,
+        "s_sem": 0.1224,
+        "s_recency": 0.9444,
+        "s_importance": 0.78,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3362,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8178
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-085",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。",
+        "importance": 0.66,
+        "evidence": "[SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_02]: 不然就是這個任務的流程可能要再更specific。比如說下一段的逐字稿看起來它就沒有照著我們 follow 的做啊，對不對？因為它剛剛 1 到 40 句，它下一段根本不該從 31 開始啊。而且 1 到 40 裡面，其實我不知道裡面的 idea units 有幾個。在那個情況裡...",
+        "related_topics": [
+          "failure mode",
+          "data processing",
+          "chunking strategy",
+          "agent robustness",
+          "observability"
+        ],
+        "score": 0.9378,
+        "s_sem": 0.1667,
+        "s_recency": 0.9639,
+        "s_importance": 0.66,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3451,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8178
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-025",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。",
+        "importance": 0.64,
+        "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
+        "related_topics": [
+          "bottom-up approach",
+          "chunking",
+          "data processing",
+          "idea unit",
+          "tradeoff",
+          "chunking strategy",
+          "data quality"
+        ],
+        "score": 0.9376,
+        "s_sem": 0.1224,
+        "s_recency": 0.9833,
+        "s_importance": 0.64,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.312,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8176
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-065",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "團隊決定進行一項實驗，比較「動態分塊 (dynamic chunking)」與「固定分塊 (fixed-chunk)」兩種方法。動態方法將根據主題連貫性預測要讀取的對話輪次數。為求公平比較，固定分塊的大小將設定為動態方法產生的平均分塊大小。評估將比較計算成本（以請求數量為代理指標）和輸出品質。品質將透過與人工標註的「重要想法單元」(important idea units) 地面實況進行精確率 (precision) 和召回率 (recall) 的比較來衡量。",
+        "importance": 0.73,
+        "evidence": "[SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。 [SPEAKER_02]: 對，然後我們...",
+        "related_topics": [
+          "experiment design",
+          "chunking",
+          "dynamic chunking",
+          "evaluation",
+          "precision",
+          "recall",
+          "computational cost",
+          "baseline comparison",
+          "benchmarking",
+          "evaluation strategy"
+        ],
+        "score": 0.9359,
+        "s_sem": 0.1111,
+        "s_recency": 0.9639,
+        "s_importance": 0.73,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3202,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8159
+      }
+    ],
+    "long_term_l1": [
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-006",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。",
+        "importance": 0.7,
+        "evidence": "[SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [SPEAKER_00]: 什麼樣有沒有一個例子說，我如果假設說好現在我要我們現在今天的meeting完了我得到一個今天的逐字稿那我現在就要回去update我的memory對不對好那我現在逐字稿拿來然後假設其實剛剛講的是前端可能會可能不能用turn因為可能我們好幾個turn都在講同一件事情都是某一個idea某一個主題，那當然那個地方很簡單就是直接去判斷說下一句跟前一句是不是同一件事下一句跟前一句是不是同一件事，如果這一串都是同一件事情的話那就包成一個說好這是一個要update的節點 [SPEAKER_02]: Long-term 跟 Short-...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "agent architecture",
+          "transcript analysis",
+          "memory update",
+          "architecture design",
+          "llm",
+          "topic segmentation",
+          "design philosophy",
+          "feasibility"
+        ],
+        "score": 0.9604,
+        "s_sem": 0.2222,
+        "s_recency": 0.9444,
+        "s_importance": 0.7,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.39,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8404
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-001",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。",
+        "importance": 0.72,
+        "evidence": "[SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、idea 的複合對對對 所以現在你說你先抓一段反正你就先抓一段下來然後你就讓它去找裡面你先你就是規定他一...",
+        "related_topics": [
+          "data structure",
+          "architecture design",
+          "segmentation",
+          "idea unit",
+          "top-down approach",
+          "chunking",
+          "data pipeline",
+          "agent architecture",
+          "context planner",
+          "data quality",
+          "data correctness",
+          "error handling",
+          "prompt engineering",
+          "failure mode",
+          "data coverage",
+          "chunking strategy",
+          "bottom-up processing",
+          "top-down processing",
+          "segment agent",
+          "data processing"
+        ],
+        "score": 0.9592,
+        "s_sem": 0.2222,
+        "s_recency": 0.9833,
+        "s_importance": 0.72,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3979,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8392
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-012",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+        "importance": 0.66,
+        "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+        "related_topics": [
+          "segmentation",
+          "agent architecture",
+          "bottom-up processing",
+          "top-down approach",
+          "chunking",
+          "debugging",
+          "context window"
+        ],
+        "score": 0.9568,
+        "s_sem": 0.1837,
+        "s_recency": 0.9833,
+        "s_importance": 0.66,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3589,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8368
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-027",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+        "importance": 0.63,
+        "evidence": "[SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他 [SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea units 後面它會變成寫進去的 candidate就是它會先是 candidate然後...",
+        "related_topics": [
+          "data processing",
+          "idea unit",
+          "agent architecture",
+          "content selection"
+        ],
+        "score": 0.9546,
+        "s_sem": 0.1111,
+        "s_recency": 0.9833,
+        "s_importance": 0.63,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3021,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8346
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-019",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "迭代式 idea unit 生成方法的主要優勢在於能處理非線性的關係。相較於單次循序合併的方法，迭代法可以來回檢視文本，捕捉並連結文本中相距較遠的關聯概念，而單次循序法則可能會錯過這些跨越節點的重疊上下文。",
+        "importance": 0.64,
+        "evidence": "[SPEAKER_00]: 所以這個其實聽起來蠻像是前處理的部分對不對?對所以你這個 tool calling 指的是來講說前處理的部分， [SPEAKER_01]: 因為我們就因為像之前的paper還蠻多他們都是切一個trunk一個trunk一個trunk丟進去，那我們是讓他做可以iterate的他可以往上找他可以往下找 [SPEAKER_00]: 那這個的好處跟他我們剛剛講的一個parts下去可能會有什麼? [SPEAKER_01]: 我現在想的是就是節點跟節點之間它可能會overlap如果你直接這樣下去好從這裡切一個節點再往下套那它上面可能一樣它有提到的地方它上面的句子它就不一定會抓得到 [SPEAKER_00]: 哦 所以妳也就是說像現在以現在這樣來看因為我們原本的方式的話會是它是一個sequenti...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "architecture design",
+          "context retrieval"
+        ],
+        "score": 0.9538,
+        "s_sem": 0.1837,
+        "s_recency": 0.9444,
+        "s_importance": 0.64,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.351,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8338
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-017",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。",
+        "importance": 0.74,
+        "evidence": "[SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼",
+        "related_topics": [
+          "agent architecture",
+          "l1 memory generation",
+          "classification schema",
+          "data structure",
+          "content selection",
+          "idea unit"
+        ],
+        "score": 0.9517,
+        "s_sem": 0.1667,
+        "s_recency": 0.9833,
+        "s_importance": 0.74,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.363,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8317
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-017",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "在將逐字稿預處理為 idea unit 的階段，專案採用了一種迭代方法，取代了先前論文中常見的固定區塊切割法。此迭代方法允許模型在文本中「來回移動」，動態調整句子分組的大小，以捕捉非連續或距離較遠的相關概念，進而合併成更高層次的摘要。",
+        "importance": 0.69,
+        "evidence": "[SPEAKER_00]: 然後你們是有點像 iteratively 去做這些事情，然後這樣子它的那個花費的時間會不會很長啊 [SPEAKER_03]: 但這是 update 所以就是時間比較沒有關係 [SPEAKER_00]: 我的意思是說它這樣消耗的，我在想的是說像比如以季敏來說它是一句一句看，然後就看說如果我是同一句我就把它合在同一個就是我是一個 pass 下去就結束了，那現在這個方式的話它有點像說我是三個然後 merge 完這樣嘛三個去 merge merge merge [SPEAKER_02]: 他就會一直來回調動一直來回調動調動到最後調到最後一行，然後就會結束 [SPEAKER_00]: 來回調動是什麼意思也 [SPEAKER_02]: 就是來回調動就是他會從上到下然後如果他要往回看他就可以往回...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "text chunking",
+          "pre-processing",
+          "architecture design",
+          "context retrieval",
+          "alternative approach",
+          "function calling",
+          "llm",
+          "gemini",
+          "semantic completeness",
+          "context",
+          "long-distance dependencies",
+          "agent architecture",
+          "llm capabilities"
+        ],
+        "score": 0.9509,
+        "s_sem": 0.1667,
+        "s_recency": 0.9444,
+        "s_importance": 0.69,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3491,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8309
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-020",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。",
+        "importance": 0.64,
+        "evidence": "[SPEAKER_02]: 然後剛剛講到剛剛講到label label都是什麼都是theme的label theme的label因為現在你先講一下現在的label現在的label就是是針對idea units就是最小的單位是idea units對然後它會是屬於某一個segment 這樣嗎 它會是屬於某個segment會對它會屬於所以它會它中間是有relationship的所以每一個segment ID它會對應它應該你應該是可以你去到某一串的idea units對就是一樣這樣就是這個 segment然後會看到這是segments然後會看到很多idea unit這些idea unit都是在這個 segment裡面然後會有對應得好的數字這個 segment 它是針對它是針對錄音 檔的segment對不對?組織稿這都...",
+        "related_topics": [
+          "data processing",
+          "asr",
+          "chunking"
+        ],
+        "score": 0.9457,
+        "s_sem": 0.1224,
+        "s_recency": 0.9833,
+        "s_importance": 0.64,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.312,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8257
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-122",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。",
+        "importance": 0.73,
+        "evidence": "[SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情",
+        "related_topics": [
+          "context length",
+          "data processing",
+          "chunking",
+          "memory update",
+          "json format",
+          "context window",
+          "agent architecture",
+          "chunking strategy",
+          "experimental design",
+          "failure mode"
+        ],
+        "score": 0.9442,
+        "s_sem": 0.1667,
+        "s_recency": 0.9639,
+        "s_importance": 0.73,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3591,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8242
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-002",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit` 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。",
+        "importance": 0.62,
+        "evidence": "[SPEAKER_01]: 因為我們想像可能是說segment會是一個相關的段落就是他都在討論這件事情那idea unit可能是裡面有講到裡面可能to-do是什麼什麼decision是什麼就是比較細節的東西所以可能是idea [SPEAKER_02]: 應該說它的最小的單位都是idea units我們在meeting 的時候我們講的東西其實每一件事情就是都是一個一個的idea units那有些idea units 它是actionable的它是有一個to-do的有些可能不是有些就只是explain或是說討論所以我現在想像應該是比較是因為我覺得segment跟idea units目前我還是沒有很清楚知道 [SPEAKER_03]: 它的切分的區分點是在什麼地方然後以prompt來說的話好像也有點難去解釋因為我本...",
+        "related_topics": [
+          "data model",
+          "data structure",
+          "segmentation",
+          "idea unit",
+          "agent architecture",
+          "terminology"
+        ],
+        "score": 0.944,
+        "s_sem": 0.2222,
+        "s_recency": 0.9833,
+        "s_importance": 0.62,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3779,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.824
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-009",
+        "type": "proposal",
+        "legacy_type": "method_change",
+        "content": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。",
+        "importance": 0.65,
+        "evidence": "[SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個inductive coding的話他是從idea units然後他找到一個有點像他是比較像是c...",
+        "related_topics": [
+          "agent architecture",
+          "bottom-up processing",
+          "top-down processing",
+          "segmentation",
+          "idea unit"
+        ],
+        "score": 0.9438,
+        "s_sem": 0.1667,
+        "s_recency": 0.9667,
+        "s_importance": 0.65,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3433,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8238
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-057",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。",
+        "importance": 0.68,
+        "evidence": "[SPEAKER_00]: 因為我的短期也是差不多的方法。我想就是益心的意思大概是說，因為其實你不用太糾結 LLM 到底會讀幾行，因為 LLM 它自己可以。因為老師您剛剛說就是希望它讀幾行，那一行就是一個 object。但是其實 LLM 就算它真的讀太多行，它其實也知道這邊結束，就沒有什麼關係。 [SPEAKER_00]: 所以它其實比如說讀了 0 到 40 行，假設裡面有兩個 object，不是只有一個 object，它其實也沒關係，它就會處理，就是把這兩個存進去。所以它下一次還是會讀什麼 41 到 80。所以就是對它來說，它只要能處理哪些 object，它就沒有什麼，它就不會有一次剛好就讀一個 object 會比較好，因為這些東西在存成這個形式之前，它都會是一個 candidate。",
+        "related_topics": [
+          "chunking strategy",
+          "data processing",
+          "top-down processing"
+        ],
+        "score": 0.942,
+        "s_sem": 0.1111,
+        "s_recency": 0.9639,
+        "s_importance": 0.68,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3102,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.822
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0307",
+        "timestamp": "2026-05-10T00:43:55Z",
+        "meeting_date": "2026-03-07",
+        "phase_id": "",
+        "obj_id": "L1-0307-020",
+        "type": "approach_change",
+        "legacy_type": "decision",
+        "content": "專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。",
+        "importance": 0.74,
+        "evidence": "[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。 [SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。",
+        "related_topics": [
+          "project goal",
+          "evaluation strategy",
+          "behavioral difference",
+          "user study",
+          "evaluation criteria",
+          "scope",
+          "human-agent interaction",
+          "project goals"
+        ],
+        "score": 0.3154,
+        "s_sem": 0.1224,
+        "s_recency": 0.8167,
+        "s_importance": 0.74,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3154,
+        "hybrid_sources": [
+          "lexical"
+        ]
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0408",
+        "timestamp": "2026-05-10T01:54:47Z",
+        "meeting_date": "2026-04-08",
+        "phase_id": "",
+        "obj_id": "L1-0408-009",
+        "type": "approach_change",
+        "legacy_type": "decision",
+        "content": "長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。",
+        "importance": 0.7,
+        "evidence": "[SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。 [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？ [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。 [SPEAKER_00]: 我們也不知道它是不是真的一句一句分析。因為我發現之前季敏在分析影片主持稿時，一開始...",
+        "related_topics": [
+          "long-term memory",
+          "data structure",
+          "schema",
+          "information screening",
+          "data processing",
+          "llm",
+          "idea unit",
+          "segmentation",
+          "architecture design",
+          "data quality"
+        ],
+        "score": 0.9358,
+        "s_sem": 0.2778,
+        "s_recency": 0.9056,
+        "s_importance": 0.7,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.425,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8158
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-007",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一種新的假設性自適應分段方法，但也有反對意見認為，下游的 LLM 有能力處理不完美的較大文本塊，因此追求完美分段的效益可能有限。目前的固定窗口方法主要是為了方便除錯，而整體由上而下（segment -> idea unit）的策略被認為不自然。",
+        "importance": 0.6,
+        "evidence": "[SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...",
+        "related_topics": [
+          "segmentation",
+          "chunking",
+          "data processing",
+          "agent architecture",
+          "adaptive window"
+        ],
+        "score": 0.9415,
+        "s_sem": 0.2222,
+        "s_recency": 0.9667,
+        "s_importance": 0.6,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3722,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8215
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-007",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。",
+        "importance": 0.67,
+        "evidence": "[SPEAKER_02]: 應該說是要怎麼做應該說讀幾句應該是給LLM去判斷就是不一定要三句三句他其實也可以讀五句八句 [SPEAKER_01]: 他會自己看他後面要再往後讀幾句 [SPEAKER_00]: 所以說如果我讀了五句然後呢，我再讀下面五句 [SPEAKER_01]: 不一定他可能他可以讀五句，然後五句不夠可能再往後讀五句後面的三句 [SPEAKER_02]: 如果他這一句現在五句完假設你已經問了一個問題然後這個答案顯然還沒到一個就是完整回答的地方他就可以 [SPEAKER_03]: 這會讓 Gemini 自己決定，就是 Gemini 可以自己決定說 [SPEAKER_01]: 他現在五句他切在一個問題，就是可能像老師剛問我們說現在什麼意思是這個東西什麼意思然後他五句切在這裡，那 Gemini 就會...",
+        "related_topics": [
+          "idea unit segmentation",
+          "data processing",
+          "context",
+          "llm capabilities",
+          "agent architecture",
+          "design philosophy",
+          "architecture design",
+          "llm",
+          "text chunking",
+          "function calling",
+          "chunking strategy",
+          "baseline comparison",
+          "llm efficiency",
+          "context window"
+        ],
+        "score": 0.9412,
+        "s_sem": 0.2222,
+        "s_recency": 0.9444,
+        "s_importance": 0.67,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.384,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8212
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-021",
+        "type": "finding",
+        "legacy_type": "todo",
+        "content": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。",
+        "importance": 0.59,
+        "evidence": "[SPEAKER_02]: 就是你要有辦法去verify說這個步驟現在我們吃進來了多少的input那它 output長這個樣子然後我們可以去check說這一步驟的這個agent的這個步驟是合理的足夠然後我們再到下一個步驟去做下一個事情然後剛剛那個UI就是在check idea unit也是切割的那個地方 就像譬如說這個鈴鈴連續講了三個話通常都是因為就是現在的鈴鈴是老師通常是老師會頓通常就是會頓一下頓一陣子之後他才會換一行不然通常他會一直一直講一直連下去所以他如果以剛剛的那個結構來說的話譬如說這一個他本身他可能譬如說會是一個可能這一行他是個idea unit對然後這行可能是個idea unit嗯 或者是說這一行跟這一行他發現他會合併嘛說這兩個是 idea units還是 idea units 還是一定只有在一行...",
+        "related_topics": [
+          "data quality",
+          "chunking",
+          "prompt engineering",
+          "agent evaluation",
+          "idea unit",
+          "segmentation",
+          "quality assurance"
+        ],
+        "score": 0.9397,
+        "s_sem": 0.1667,
+        "s_recency": 0.9667,
+        "s_importance": 0.59,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3313,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8197
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-018",
+        "type": "open_issue",
+        "legacy_type": "open_question",
+        "content": "關於動態文本分塊 (dynamic transcript chunking) 機制的具體實作方式尚不清楚。問題在於，該過程是先將整個逐字稿以固定大小（例如每次三行）進行處理然後再合併，還是採用其他不同的運作方式。",
+        "importance": 0.57,
+        "evidence": "[SPEAKER_00]: 所以有一些有一些譬如說某十分鐘他可能三句三句它就可以了，但是某個十分鐘可能要五句五句之類的，然後它是在每一個時刻它都動態的在一直在換說是三句還是五句還是七句 [SPEAKER_02]: 那你的十分鐘的意思是什麼十分鐘是之類的 [SPEAKER_00]: 我只是講說譬如說我們的Meeting過程當中它在分析這個Meeting Transcript的時候在可能在也許某一些主題像剛剛講五月十三號那個其實可能很短就是兩句它其實就是一個一個 unit 對 [SPEAKER_02]: 那它就會繼續往下更新 [SPEAKER_00]: 這地方的話感覺上你們是要去就是有點像是要去explore說我先看，我其實還是沒有很懂你說一句來啊你說我先三句三句，那我是要整個transcription都變三句三...",
+        "related_topics": [
+          "idea unit segmentation",
+          "text chunking",
+          "implementation plan"
+        ],
+        "score": 0.9396,
+        "s_sem": 0.2222,
+        "s_recency": 0.8889,
+        "s_importance": 0.57,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3584,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8196
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-029",
+        "type": "decision",
+        "legacy_type": "method_change",
+        "content": "團隊決定探索一種「動態分塊 (dynamic chunking)」方法。系統將不再使用固定大小的區塊，而是預測接下來有多少對話輪次屬於同一主題，並將它們組合成一個可變大小的區塊進行處理。此方法將與固定分塊方法進行比較。",
+        "importance": 0.76,
+        "evidence": "[SPEAKER_02]: 然後我一直去merge merge merge但那個就是非常的compute時間要非常的大對然後對折衷的方式可能是說也許我看到這一句話我大概就知道說就是我們把那個fix拿掉它是dynamic它不要都是三都不要都是三個turn三個turn三個turn但是我現在看到這一句話我大概預估應該會是幾個turn都是在講這件事情我就往前跳然後把它變成一個block [SPEAKER_02]: 對 然後去把它弄起來就是我本來想的是我們是要用比較bottom up的方法那我們可能可以然後就那種動態去切就是我要怎麼去丟那個丟那個最小的單位去給language model去產生小summary然後去iterate產生一個比較high level的high level的summary [SPEAKER_0...",
+        "related_topics": [
+          "chunking",
+          "dynamic chunking",
+          "data processing",
+          "evaluation strategy",
+          "chunking strategy",
+          "top-down processing",
+          "bottom-up processing",
+          "failure mode",
+          "computational cost",
+          "alternative approach",
+          "tradeoff"
+        ],
+        "score": 0.9393,
+        "s_sem": 0.0816,
+        "s_recency": 0.9639,
+        "s_importance": 0.76,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3055,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8193
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-133",
+        "type": "approach_change",
+        "legacy_type": "method_change",
+        "content": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱含地、選擇性地提取相關資訊來更新特定節點。",
+        "importance": 0.75,
+        "evidence": "[SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就呃因為現在這個方法其實跟如果你把先把80行直接去切就是你去再丟個一個另外一個agen...",
+        "related_topics": [
+          "memory update",
+          "architecture design",
+          "node convergence",
+          "idea units",
+          "chunking strategy",
+          "data processing",
+          "idea unit",
+          "agent architecture",
+          "topic blending",
+          "information flow"
+        ],
+        "score": 0.9387,
+        "s_sem": 0.1224,
+        "s_recency": 0.9639,
+        "s_importance": 0.75,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3321,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8187
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0422",
+        "timestamp": "2026-05-10T02:26:14Z",
+        "meeting_date": "2026-04-22",
+        "phase_id": "",
+        "obj_id": "L1-0422-020",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。",
+        "importance": 0.78,
+        "evidence": "[SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個 [SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般...",
+        "related_topics": [
+          "evaluation strategy",
+          "benchmarking",
+          "baseline comparison",
+          "rag",
+          "chunking",
+          "chunking strategy"
+        ],
+        "score": 0.9378,
+        "s_sem": 0.1224,
+        "s_recency": 0.9444,
+        "s_importance": 0.78,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3362,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8178
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-085",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。",
+        "importance": 0.66,
+        "evidence": "[SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_02]: 不然就是這個任務的流程可能要再更specific。比如說下一段的逐字稿看起來它就沒有照著我們 follow 的做啊，對不對？因為它剛剛 1 到 40 句，它下一段根本不該從 31 開始啊。而且 1 到 40 裡面，其實我不知道裡面的 idea units 有幾個。在那個情況裡...",
+        "related_topics": [
+          "failure mode",
+          "data processing",
+          "chunking strategy",
+          "agent robustness",
+          "observability"
+        ],
+        "score": 0.9378,
+        "s_sem": 0.1667,
+        "s_recency": 0.9639,
+        "s_importance": 0.66,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3451,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8178
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0506",
+        "timestamp": "2026-05-10T04:32:14Z",
+        "meeting_date": "2026-05-06",
+        "phase_id": "",
+        "obj_id": "L1-0506-025",
+        "type": "argument",
+        "legacy_type": "argument",
+        "content": "採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。",
+        "importance": 0.64,
+        "evidence": "[SPEAKER_02]: 我剛剛在說 我想剛剛為什麼討論這個是在講那個fallback的地方因為如果你是從底層去切idea units的話你會遇到的問題就只有說一些不重要的資訊它會被切成一個idea units譬如說 嗯啊 好它可能自己切成一個idea unit但它可能沒什麼意義但其實 但就比較不會漏掉因為你就是每一句它都會被包在一個idea units裡面 因為idea units比較小它不會有對那個比較會是說要去除因為可能要counter要一些不具意義的semantically它不具意義的一些內容",
+        "related_topics": [
+          "bottom-up approach",
+          "chunking",
+          "data processing",
+          "idea unit",
+          "tradeoff",
+          "chunking strategy",
+          "data quality"
+        ],
+        "score": 0.9376,
+        "s_sem": 0.1224,
+        "s_recency": 0.9833,
+        "s_importance": 0.64,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.312,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8176
+      },
+      {
+        "source": "long_term_l1",
+        "meeting_id": "0429",
+        "timestamp": "2026-05-10T03:07:25Z",
+        "meeting_date": "2026-04-29",
+        "phase_id": "",
+        "obj_id": "L1-0429-065",
+        "type": "decision",
+        "legacy_type": "decision",
+        "content": "團隊決定進行一項實驗，比較「動態分塊 (dynamic chunking)」與「固定分塊 (fixed-chunk)」兩種方法。動態方法將根據主題連貫性預測要讀取的對話輪次數。為求公平比較，固定分塊的大小將設定為動態方法產生的平均分塊大小。評估將比較計算成本（以請求數量為代理指標）和輸出品質。品質將透過與人工標註的「重要想法單元」(important idea units) 地面實況進行精確率 (precision) 和召回率 (recall) 的比較來衡量。",
+        "importance": 0.73,
+        "evidence": "[SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。 [SPEAKER_02]: 對，然後我們...",
+        "related_topics": [
+          "experiment design",
+          "chunking",
+          "dynamic chunking",
+          "evaluation",
+          "precision",
+          "recall",
+          "computational cost",
+          "baseline comparison",
+          "benchmarking",
+          "evaluation strategy"
+        ],
+        "score": 0.9359,
+        "s_sem": 0.1111,
+        "s_recency": 0.9639,
+        "s_importance": 0.73,
+        "s_activation": null,
+        "activity_state": "unknown",
+        "retrieval_mode": "hybrid",
+        "lexical_score": 0.3202,
+        "hybrid_sources": [
+          "lexical",
+          "semantic"
+        ],
+        "semantic_score": 0.8159
+      }
+    ],
+    "long_term_l2": [
+      {
+        "source": "long_term_child_l2",
+        "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+        "parent_l3_label": "transcript segmentation and idea-unit coverage",
+        "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+        "l2_id": "L2-idea-unit-generation-methods",
+        "label": "idea-unit generation methods",
+        "current_state": "idea-unit generation methods: latest state from 2026-05-06 L1-0506-012 is 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。 Earlier evidence began with 在文獻回顧中發現，有多篇論文專注於長期會議記錄的摘要，其中一篇較新且以應用為導向的 IEEE 論文特別受到關注。",
+        "evolution_summary": "idea-unit generation methods evolved from 2026-03-25 L1-0325-033: 在文獻回顧中發現，有多篇論文專注於長期會議記錄的摘要，其中一篇較新且以應用為導向的 IEEE 論文特別受到關注。 to 2026-05-06 L1-0506-012: 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+        "latest_position": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。",
+        "key_rationale": "Assignment criteria: recipe; prompt engineering; generation method",
+        "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+        "matched_l1_ids": [
+          "L1-0422-006",
+          "L1-0506-001",
+          "L1-0506-012",
+          "L1-0422-019",
+          "L1-0422-017",
+          "L1-0506-009",
+          "L1-0429-057"
+        ],
+        "topic_size": 20,
+        "selected_event_count": 8,
+        "omitted_event_count": 12,
+        "timeline_digest": [
+          {
+            "meeting_id": "0408",
+            "meeting_date": "2026-04-08",
+            "obj_id": "L1-0408-011",
+            "summary": "應取得另一個團隊已開發的「idea unit」分割方法（recipe），並評估其是否能應用於處理會議記錄的中文文本。該方法是透過提示工程（prompt engineering）實現的。"
+          },
+          {
+            "meeting_id": "0422",
+            "meeting_date": "2026-04-22",
+            "obj_id": "L1-0422-006",
+            "summary": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。"
+          },
+          {
+            "meeting_id": "0422",
+            "meeting_date": "2026-04-22",
+            "obj_id": "L1-0422-017",
+            "summary": "在將逐字稿預處理為 idea unit 的階段，專案採用了一種迭代方法，取代了先前論文中常見的固定區塊切割法。此迭代方法允許模型在文本中「來回移動」，動態調整句子分組的大小，以捕捉非連續或距離較遠的相關概念，進而合併成更高層次的摘要。"
+          },
+          {
+            "meeting_id": "0422",
+            "meeting_date": "2026-04-22",
+            "obj_id": "L1-0422-019",
+            "summary": "迭代式 idea unit 生成方法的主要優勢在於能處理非線性的關係。相較於單次循序合併的方法，迭代法可以來回檢視文本，捕捉並連結文本中相距較遠的關聯概念，而單次循序法則可能會錯過這些跨越節點的重疊上下文。"
+          },
+          {
+            "meeting_id": "0429",
+            "meeting_date": "2026-04-29",
+            "obj_id": "L1-0429-057",
+            "summary": "在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-009",
+            "summary": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-001",
+            "summary": "團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-012",
+            "summary": "有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。"
+          }
+        ],
+        "selection_score": 0.4961
+      },
+      {
+        "source": "long_term_child_l2",
+        "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+        "parent_l3_label": "transcript segmentation and idea-unit coverage",
+        "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+        "l2_id": "L2-idea-unit-generation",
+        "label": "idea-unit core definition",
+        "current_state": "idea-unit core definition: latest state from 2026-05-06 L1-0506-040 is 決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。 Earlier evidence began with 使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。",
+        "evolution_summary": "idea-unit core definition evolved from 2026-03-25 L1-0325-017: 使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。 to 2026-05-06 L1-0506-040: 決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。",
+        "latest_position": "決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。",
+        "key_rationale": "Assignment criteria: atomic unit; single utterance; granular viewpoint",
+        "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+        "matched_l1_ids": [
+          "L1-0506-021",
+          "L1-0429-133"
+        ],
+        "topic_size": 11,
+        "selected_event_count": 8,
+        "omitted_event_count": 3,
+        "timeline_digest": [
+          {
+            "meeting_id": "0325",
+            "meeting_date": "2026-03-25",
+            "obj_id": "L1-0325-017",
+            "summary": "使用真實會議數據的主要挑戰在於驗證 AI 記憶的準確性。過去的實驗曾產生「混亂」的結果，這表明驗證過程可能需要手動回溯並審查原始會議片段，增加了評估的複雜度和成本。"
+          },
+          {
+            "meeting_id": "0422",
+            "meeting_date": "2026-04-22",
+            "obj_id": "L1-0422-016",
+            "summary": "有觀點認為，讓每個傳入的 idea unit 同時更新短期和長期記憶是更合理的作法。"
+          },
+          {
+            "meeting_id": "0429",
+            "meeting_date": "2026-04-29",
+            "obj_id": "L1-0429-133",
+            "summary": "為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱..."
+          },
+          {
+            "meeting_id": "0429",
+            "meeting_date": "2026-04-29",
+            "obj_id": "L1-0429-059",
+            "summary": "當前系統的一個假設性優勢是，與較簡單的方法不同，它能夠過濾並避免儲存無關的對話填充詞 (conversational filler)。"
+          },
+          {
+            "meeting_id": "0429",
+            "meeting_date": "2026-04-29",
+            "obj_id": "L1-0429-137",
+            "summary": "一項觀察發現，Gemini 在識別較大文本中不同「想法單元」(idea units) 的能力被認為相當強。此觀察是影響是否需要明確進行想法單元切分步驟此一設計決策的關鍵因素。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-021",
+            "summary": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-033",
+            "summary": "決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-040",
+            "summary": "決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。"
+          }
+        ],
+        "selection_score": 0.4748
+      },
+      {
+        "source": "long_term_sibling_child_l2",
+        "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+        "parent_l3_label": "transcript segmentation and idea-unit coverage",
+        "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+        "l2_id": "L2-idea-unit-granularity-and-semantics",
+        "label": "idea-unit granularity and semantics",
+        "current_state": "idea-unit granularity and semantics: latest state from 2026-05-06 L1-0506-027 is 即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。 Earlier evidence began with 提出一個使用 LLM 處理會議記錄的短期記憶 (Short-Term Memory) 更新機制。該機制會根據相似性更新現有記憶項目、附加新項目，並根據最後更新時間戳驅逐未被參考的舊項目。",
+        "evolution_summary": "idea-unit granularity and semantics evolved from 2026-03-25 L1-0325-041: 提出一個使用 LLM 處理會議記錄的短期記憶 (Short-Term Memory) 更新機制。該機制會根據相似性更新現有記憶項目、附加新項目，並根據最後更新時間戳驅逐未被參考的舊項目。 to 2026-05-06 L1-0506-027: 即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+        "latest_position": "即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。",
+        "key_rationale": "Assignment criteria: idea unit definition; granularity; granular",
+        "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+        "matched_l1_ids": [],
+        "primary_child_l2_ids": [
+          "L2-idea-unit-generation-methods",
+          "L2-idea-unit-generation"
+        ],
+        "sibling_expansion_reason": "same_parent_l3_rationale_context",
+        "topic_size": 12,
+        "selected_event_count": 3,
+        "omitted_event_count": 9,
+        "timeline_digest": [
+          {
+            "meeting_id": "0408",
+            "meeting_date": "2026-04-08",
+            "obj_id": "L1-0408-013",
+            "summary": "在逐字稿切分上存在一個設計挑戰：一個想法單元（idea unit）是否應假設只包含一種想法類型，或可允許多種類型，此問題尚未解決。"
+          },
+          {
+            "meeting_id": "0422",
+            "meeting_date": "2026-04-22",
+            "obj_id": "L1-0422-007",
+            "summary": "支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。"
+          },
+          {
+            "meeting_id": "0506",
+            "meeting_date": "2026-05-06",
+            "obj_id": "L1-0506-025",
+            "summary": "採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。"
+          }
+        ],
+        "selection_score": 0.615
+      },
+      {
+        "source": "long_term_sibling_child_l2",
+        "parent_l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+        "parent_l3_label": "transcript segmentation and idea-unit coverage",
+        "promoted_from_l2_id": "L2-transcript-segmentation-and-idea-unit-coverage",
+        "l2_id": "L2-fixed-vs-dynamic-chunking",
+        "label": "fixed vs dynamic chunking",
+        "current_state": "fixed vs dynamic chunking: latest state from 2026-04-29 L1-0429-083 is 在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。 Earlier evidence began with 系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。",
+        "evolution_summary": "fixed vs dynamic chunking evolved from 2026-03-25 L1-0325-007: 系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。 to 2026-04-29 L1-0429-083: 在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。",
+        "latest_position": "在處理逐字稿時，agent 出現讀取重疊片段的問題（例如，先讀 1-40 行，再讀 31-80 行）。原因是讀取的起訖行數由 LLM 自行決定，而非由外部程式碼控制。這引發了一個設計爭論：應該為了可預測性而透過程式碼強制執行嚴格、不重疊的區塊，還是繼續讓 LLM 靈活決定其所需的上下文範圍。逐字稿分塊 (chunking) 的管理方式仍是個待解決的問題。",
+        "key_rationale": "Assignment criteria: fixed chunk; fixed-size; fixed size",
+        "open_tensions": "No explicit unresolved tension is visible in the selected L1 evidence.",
+        "matched_l1_ids": [],
+        "primary_child_l2_ids": [
+          "L2-idea-unit-generation-methods",
+          "L2-idea-unit-generation"
+        ],
+        "sibling_expansion_reason": "same_parent_l3_rationale_context",
+        "topic_size": 23,
+        "selected_event_count": 3,
+        "omitted_event_count": 20,
+        "timeline_digest": [
+          {
+            "meeting_id": "0325",
+            "meeting_date": "2026-03-25",
+            "obj_id": "L1-0325-007",
+            "summary": "系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。"
+          },
+          {
+            "meeting_id": "0422",
+            "meeting_date": "2026-04-22",
+            "obj_id": "L1-0422-020",
+            "summary": "決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。"
+          },
+          {
+            "meeting_id": "0429",
+            "meeting_date": "2026-04-29",
+            "obj_id": "L1-0429-023",
+            "summary": "團隊決定推遲原定比較三種文本分塊（chunking）策略的實驗。在報告截止日期（5月12日）之前，團隊將繼續使用當前方法，並暫時假定其有效，不進行正式的基準比較。"
+          }
+        ],
+        "selection_score": 0.4839
+      }
+    ],
+    "long_term_l3": [
+      {
+        "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+        "label": "transcript segmentation and idea-unit coverage",
+        "source": "long_term_l3_topic_family"
+      }
+    ],
+    "global_topic_map": {
+      "source": "long_term_global_topic_map",
+      "note": "Navigation context only; do not use as standalone factual evidence.",
+      "l3_families": [
+        {
+          "l3_id": "L3-transcript-segmentation-and-idea-unit-coverage",
+          "label": "transcript segmentation and idea-unit coverage",
+          "child_l2": [
+            {
+              "l2_id": "L2-fixed-vs-dynamic-chunking",
+              "label": "fixed vs dynamic chunking",
+              "event_count": 23
+            },
+            {
+              "l2_id": "L2-window-and-boundary-selection",
+              "label": "window and boundary selection",
+              "event_count": 8
+            },
+            {
+              "l2_id": "L2-tool-calling-transcript-reading",
+              "label": "tool-calling transcript reading",
+              "event_count": 7
+            },
+            {
+              "l2_id": "L2-transcript-segmentation-strategy-and-validation",
+              "label": "transcript segmentation strategy and validation",
+              "event_count": 7
+            },
+            {
+              "l2_id": "L2-idea-unit-generation",
+              "label": "idea-unit core definition",
+              "event_count": 11
+            },
+            {
+              "l2_id": "L2-idea-unit-granularity-and-semantics",
+              "label": "idea-unit granularity and semantics",
+              "event_count": 12
+            },
+            {
+              "l2_id": "L2-idea-unit-generation-methods",
+              "label": "idea-unit generation methods",
+              "event_count": 20
+            },
+            {
+              "l2_id": "L2-idea-unit-candidate-classification",
+              "label": "idea-unit candidate classification",
+              "event_count": 16
+            },
+            {
+              "l2_id": "L2-missing-line-coverage",
+              "label": "missing-line coverage",
+              "event_count": 8
+            }
+          ],
+          "query_score": 0.3636,
+          "focused": false
+        }
+      ],
+      "l2_topics": [
+        {
+          "l2_id": "L2-memory-retrieval",
+          "label": "memory retrieval",
+          "event_count": 47
+        }
+      ],
+      "char_count": 847
+    },
+    "retrieval_debug": {
+      "selected_l1_count": 24,
+      "selected_l2_count": 0,
+      "selected_child_l2_count": 2,
+      "selected_secondary_l2_count": 0,
+      "selected_sibling_child_l2_count": 2,
+      "sibling_candidate_count": 9,
+      "global_topic_map_chars": 847,
+      "expanded_context_chars": 0,
+      "omitted_event_count": 44,
+      "large_l2_expanded_without_child_split": false,
+      "retrieval_mode": "hybrid",
+      "hybrid_lexical_count": 120,
+      "hybrid_semantic_count": 120,
+      "hybrid_semantic_used": true,
+      "hybrid_fallback": ""
+    },
+    "project_profile": null
+  },
+  "scores": {
+    "expected_obj_recall_at_context": 0.2857,
+    "strict_obj_recall_at_context": 1.0,
+    "acceptable_obj_recall_at_context": null,
+    "expected_l2_hit": true,
+    "expected_l3_hit": true,
+    "selected_obj_ids": [
+      "L1-0307-020",
+      "L1-0325-007",
+      "L1-0325-017",
+      "L1-0408-009",
+      "L1-0408-011",
+      "L1-0408-013",
+      "L1-0422-006",
+      "L1-0422-007",
+      "L1-0422-016",
+      "L1-0422-017",
+      "L1-0422-018",
+      "L1-0422-019",
+      "L1-0422-020",
+      "L1-0429-023",
+      "L1-0429-029",
+      "L1-0429-057",
+      "L1-0429-059",
+      "L1-0429-065",
+      "L1-0429-085",
+      "L1-0429-122",
+      "L1-0429-133",
+      "L1-0429-137",
+      "L1-0506-001",
+      "L1-0506-002",
+      "L1-0506-007",
+      "L1-0506-009",
+      "L1-0506-012",
+      "L1-0506-017",
+      "L1-0506-020",
+      "L1-0506-021",
+      "L1-0506-025",
+      "L1-0506-027",
+      "L1-0506-033",
+      "L1-0506-040"
+    ],
+    "selected_l2_ids": [
+      "L2-fixed-vs-dynamic-chunking",
+      "L2-idea-unit-generation",
+      "L2-idea-unit-generation-methods",
+      "L2-idea-unit-granularity-and-semantics",
+      "L2-transcript-segmentation-and-idea-unit-coverage"
+    ],
+    "selected_l3_ids": [
+      "L3-transcript-segmentation-and-idea-unit-coverage"
+    ]
+  },
+  "answer": "Answer generation failed: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', 'status': 'RESOURCE_EXHAUSTED'}}",
+  "answer_error": {
+    "type": "ClientError",
+    "message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', 'status': 'RESOURCE_EXHAUSTED'}}"
+  }
+}

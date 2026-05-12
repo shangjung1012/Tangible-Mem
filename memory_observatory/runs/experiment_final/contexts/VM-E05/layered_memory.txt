@@ -1,0 +1,217 @@
+=== Memory Router ===
+strategy: both
+targets: short_term, long_term
+reason: query has recent-status hints; include long-term context as background
+confidence: 0.85
+
+=== Short-Term Memory ===
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S021] LTM Node Attributes: Static Importance vs. Dynamic Activation/Decay, and Tunable Importance Design
+  score: 6.25
+  summary: The long-term memory model defines key node attributes: 'Importance' (a static score assigned at creation, now also tunable by users with system suggestions based on similarity search), 'Relevance' (dynamic, based on semantic similarity), and 'Recency' or 'Activation' (dynamic, decays over time). To preserve the historical significance of ideas, the static 'importance' score should be explicitly separated from the dynamic 'activation' parameter that handles decay. This separation ensures important but older ideas don't completely disappear by maintaining a 'baseline' value for high-importance items even as activation decays. The design of the human-in-the-loop system for tuning 'importance' remains an open issue, specifically regarding how users inspect/adjust scores and how the system proactively suggests related units for tuning.
+  role: active_decision
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 4
+  total_source_count: 4
+  source_scope: active
+  source L1: L1-0506-038, L1-0506-036, L1-0506-022, L1-0506-039
+
+[S020] Memory Merging Policy: Meeting-Specific Scope
+  score: 2.25
+  summary: Memory node updates and merges are strictly limited to within a single meeting. The system is designed not to merge memories across different meetings, treating each meeting as an independent, self-contained processing unit for memory management.
+  role: recent_change
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 2
+  total_source_count: 2
+  source_scope: active
+  source L1: L1-0506-031, L1-0506-021
+
+[S022] Dynamic Visualization Tool for Memory System
+  score: 2.25
+  summary: A dynamic visualization tool will be created to demonstrate the memory system's behavior. This tool will animate the construction and updating of the memory graph over time, making abstract concepts like node creation, updates, and decay tangible for development and presentation purposes.
+  role: recent_change
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 1
+  total_source_count: 1
+  source_scope: active
+  source L1: L1-0506-035
+
+[S023] LT
+...(truncated)
+
+=== Current Implementation State ===
+This section describes the current repo implementation / canonical handoff.
+For current-state questions, use this section over older meeting discussion when they conflict.
+- L1 source: share_mem/tree.json and share_mem/meetings/*.json are immutable meeting evidence.
+- L2 active view: long_term/l2/l2_view.json and long_term/l2/l2_index.json. The active L2 grouping is topic-based over immutable L1 objects, not four-meeting temporal batching and not one meeting per L2.
+- L3 promotion: long_term/l3/l3_view.json and long_term/l3/l3_index.json are sidecars that promote oversized L2 topic families and materialize child L2 nodes.
+- Retrieval: evidence-first layered retrieval starts from L1 seeds, then expands to relevant L2 / child-L2 / L3 navigation context.
+- Current counts: meetings=7, L1_objects=448, L2_topics=16, linked_L1=411, L3_families=3, child_L2=19, retrieval_budget_profile=generous_layered.
+
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-lifecycle: memory lifecycle
+  - child L2 L2-memory-retention-and-forgetting: memory retention and forgetting
+  - child L2 L2-importance-activation-and-recency: importance, activation, and recency
+  - child L2 L2-importance-feedback-and-editor: importance feedback and editor
+  - child L2 L2-topic-lifecycle-and-evolution: topic lifecycle and evolution
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- Unpromoted L2 topics:
+  - L2-memory-update-semantics: memory update semantics
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-049] type=argument importance=0.73 score=0.9238
+  content: 樹狀結構的記憶體架構被認為不適用於長期記憶，因為它們會打散記憶、喪失時間維度，從而無法實施基於時間的權重衰減（time-based weight decay）。
+  evidence: [SPEAKER_03]: 我們在想如果像可能他20場30場看剛剛我們用多長的話那他到底第一場他到第25場的時候他第一場他到底應該要記得多少就是他可能其實不需要像以現在大部分他們在做記憶架構上面那麼的詳細就他們比較像是說 [SPEAKER_02]: 就long term上可能某些東西就可以fade out了這樣因為現在的結構 [SPEAKER_04]: 就是大部分的樹狀結構因為你把記憶打散所以你的時間就沒有辦法放進你的每一個區塊裡面所以變成說你不會有時間造成權重的衰退的結構在這個樹狀結構裡面
+- [0325 | 2026-03-25 | L1-0325-056] type=decision importance=0.72 score=0.9238
+  content: 專案決定將研究重點放在檢索（retrieval）問題上。核心挑戰在於 agent 應如何權衡與組合來自工作、短期和長期三種記憶體的資訊，以生成最佳輸出。
+  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果
+- [0325 | 2026-03-25 | L1-0325-036] type=approach_change importance=0.75 score=0.9228
+  content: 專案採用了三層式記憶體架構，包含處理即時對話上下文的 Working Memory、短期記憶 (Short-Term Memory) 和長期記憶 (Long-Term Memory)，以確保內容準確性並支援特定角色的生成風格。
+  evidence: [SPEAKER_01]: 就是我們現在把東西主要分成兩部分去處理就是一個是記憶的部分,它是確保內容的正確記憶就是包括你之前會議的內容 [SPEAKER_01]: 然後就是我們一開始他可能有分三個是就是working short term跟long term然後之後講出的話就是我們第一個部分memory出來的話是正確之後然後待會第二個部分是會把它調整成像是老師會說的話 [SPEAKER_01]: 那那個Memory的話假設就是有三個一個是Working一個是Short-term一個是Long-term那Working它就有點像是我們當下的就比如說現在我們在講話的內容那就是一定要記得說可能上前10秒我剛說了什麼
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.9684
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可以防止重要的舊記憶完全消失，並在相關主題再次被提及時能夠被重新檢索。
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有一個 type 是 open question，它會取那些當初未解的問題。 [SPEAKER_00]: 未解是怎麼定義？例如在 1 到 31 的錄音檔裡，第一次大家提出某個方法。透過這個流程，它某方面會變成一個 L1 節點，對嗎？針對那個 meeting 檔，它會是一個 L1 節點。假設接下來五次這個主題都沒有被提到，這個節點會怎麼變？ [SPEAKER_03]: 那它在我們的記憶結構裡會有什麼變動？它的 recency 會變低，但如果當初賦予的 importance 夠高，recency 會有一個 floor 的下限，所以不會 decay...
+- [0408 | 2026-04-08 | L1-0408-037] type=decision importance=0.67 score=0.9474
+  content: 團隊決定，判斷資訊是否進入長期記憶 (LTM) 的標準將不僅僅是時間或簡單的重複頻率，而是更細緻的「討論密度」（discussion density）。這意味著近期討論的內容不會自動存入 LTM，而是會考慮其在一段時間內的持續討論程度。
+  evidence: [SPEAKER_00]: 我覺得什麼東西要進長期，可能是一個問題。有一種是重複很多次後會進去；另一種是時間久遠，而且又重複很多次，會進入長期。當時我們有點想從時間點來算，但也不只是時間。 [SPEAKER_00]: 有些題目最終可能可以消失在我們的記憶中，但有些題目當時密度很高。所以假設一年前總共有五個題目被提過，其中一個題目連續五週被提到，一個題目每隔三週或每個月出現一次，另一個題目出現一次後就消失。 [SPEAKER_00]: 這五個題目在長期記憶裡面的狀態也許會不一樣。這可能就是你們很特別的地方：同樣是資訊，如果只用 frequency 去看，過去可能有人會根據 frequency 來看 importance，也會根據時間長短算 relevance。但我們比較像是用人類長期記憶作 inspiratio...
+- [0408 | 2026-04-08 | L1-0408-054] type=argument importance=0.69 score=0.9432
+  content: 主張記憶項目的重要性（可由討論密度或檢索頻率決定）應使其能留存在長期記憶 (LTM) 中，即使它已不在短期記憶 (STM) 的近期範圍內。這確保了關鍵的舊記憶不會僅因時間流逝而遺失。
+  evidence: [SPEAKER_00]: 如果它持續被討論，你可以繼續記著；今天問的時候直接從 B 裡看，就可以看到這五次。另一個東西可能是最近的記憶區塊。假設這個東西進到 B 裡，然後到第 4 次開始討論另一個主題。 [SPEAKER_00]: 進去之後，這個地方也許就可以刪掉，因為它已經到 B 了。但如果問題是「上次討論的 B 是什麼情況？」這句話照理來說應該由短期記憶負責，不會由長期記憶負責。我還沒有很仔細想過過程，但我現在想的是，短期記憶可能會一直累積近期做了哪些事。 [SPEAKER_00]: 到某個時刻足夠強之後，它可能會變成長期記憶。就算接下來兩個月都沒有提到這個東西，因為當時連續密度非常高，所以印象很深，會儲存在長期記憶裡。至於某些題目可能只講到一下，之後再也沒提過；以我們的記憶來說，它確實被講過沒錯。 [...
+- [0408 | 2026-04-08 | L1-0408-036] type=decision importance=0.73 score=0.9412
+  content: 團隊決定，短期記憶 (short-term memory) 和長期記憶 (long-term memory) 將獨立更新。此設計放棄了先前「短期記憶內容在淡忘或達到一定數量後會被整合進長期記憶」的假設，因為該模型會導致長期記憶無法反映專案的最新狀態。
+  evidence: [SPEAKER_00]: 但是長期會存任何一個短期記憶嗎？短期記憶的東西會越來越不見，對不對？ [SPEAKER_00]: 應該會變成長期的。過一段時間之後，它會消失在短期記憶裡，變成長期記憶的一部分。也不是變成長期，因為長期和短期是分開更新的。長期更新長期自己，短期更新短期自己。我原本也以為短期裡的東西消失後會塞進長期，但現在不是。因為如果它是同一層 agent，就像人類大腦一樣，長期、短期和工作記憶其實都是我的記憶。 [SPEAKER_00]: 記憶慢慢消失這件事，是指有些東西進到長期記憶，有些東西沒有被 long term catch 住，所以完全忘記。這樣很難判斷哪些東西被忘記。我原本以為是短期到一定節點數量後，全部匯成長期。 [SPEAKER_04]: 但如果照你這樣說會有問題。假設一個題目的演進...
+- [0408 | 2026-04-08 | L1-0408-006] type=approach_change importance=0.73 score=0.9384
+  content: 檢索流程的設計是先將查詢與 L1 節點進行比對，然後取回匹配的 L1 及其對應的父層 L2 和 L3 摘要，以便同時提供具體細節和高層次的上下文。
+  evidence: [SPEAKER_03]: 我們第一層是每一次 meeting，四次 meeting 會整理成一個 L2。像這個 P001 經過四次之後，就進入階層式記憶。第一層所有的 leaf notes 是每一次 meeting 各自一個，四個往上會整理出一個 L2，所有 L2 再往上整理。 [SPEAKER_00]: 也就是 L2、L3 會隨著 L1 一起帶進來。它們都是在處理長期記憶。應該說，在長期記憶裡面有不同精細程度。L3 是最 high level 的。剛剛看 31 的話，以這個 agent 的大腦來說，它現在知道有五個大重點在這裡。再往下是 L2。 [SPEAKER_00]: L2 是月度的總結，也就是以月為單位的總結。現在是切四個 meeting 算。L1 是最精細的，所以 L1 基本上可以對應到 segm...
+- [0408 | 2026-04-08 | L1-0408-043] type=argument importance=0.67 score=0.9271
+  content: 反對一種將短期記憶在淡忘後才移入長期記憶的簡單模型。理由是，如果一個主題持續演進（例如從 A 到 D），而最新的討論（C、D）仍在短期記憶中，那麼長期記憶將會過時，無法反映專案的當前狀態。
+  evidence: [SPEAKER_04]: 但如果照你這樣說會有問題。假設一個題目的演進是 A 到 B 到 C，再多一個 D。假設上次討論了 C 跟 D，這時短期在 C、D 這裡，長期卻還停在前面的狀態。 [SPEAKER_04]: 如果照你說短期消失才進長期，那假設我們上禮拜討論了 C 跟 D，這時候長期記憶就會跟不上最新狀態。
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.9819
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的 [SPEAKER_00]: 譬如說長期就是短期這件事情我們不會去考慮飛到這件事情，短期的話我們就是 capture 我們現在的最重要的事情但是長期的話可能就是你那部分，我們進長期的話我們可能會有一個很不一樣的機構是我們會隨著時間的 [SPEAKER_00]: 我們可能長期的話可能就是會它跟短期機制不一樣就是...
+- [0422 | 2026-04-22 | L1-0422-031] type=argument importance=0.75 score=0.9724
+  content: Long-term memory 架構的一個關鍵優勢是其「遺忘」機制，資訊的相關性和重要性會隨時間衰減，這使其與 short-term memory 有所區別。
+  evidence: [SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM的時候他看到同樣的時間點然後有類似的論點然後可能這裡被推翻，他應該就可以靠這個新的時間點知道說它是就是要採用的那個東西 [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的 [SPEAKER_...
+- [0422 | 2026-04-22 | L1-0422-040] type=argument importance=0.74 score=0.9591
+  content: 針對系統可能遺忘重要資訊的疑慮，其設計的辯護是：遺忘並非隨機發生。記憶只有在與當前上下文無關時才被視為「遺忘」，且其重要性會隨時間更新。如果一個舊主題再次變得相關，它可以被重新喚醒。
+  evidence: [SPEAKER_01]: 我们那个时候调的时候我们会有一个公司去看它的importance跟relevance [SPEAKER_00]: 所以是不是可以去argue说for可以去比较就是时序性的去调动资讯会比较快速吗 [SPEAKER_00]: 有可能比較快速嗎就是我不需要去比對說還有哪一些就是某一些節點其實他已經forget了應該是某一個threshold，比如說我們用threshold到多少比如0.2以下那些節點我們就是assume他是目前已經被forget的東西。 [SPEAKER_02]: 但速度應該都蠻快的因為那個relevancy是靠語意跟關鍵字去找那個有技術就不用靠LLM他是有一個模型在跑，那個速度理論上應該就蠻快的 [SPEAKER_00]: 我意思是說最後我們在 real time 的去...
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.9525
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制：重要性分數高於特定閾值的記憶將永遠不會淡出。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西 [SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。但它現在重要性已經非常低那在我們的 memory 裡面它已經 fade out [SPEAKER_00]...
+- [0422 | 2026-04-22 | L1-0422-030] type=decision importance=0.68 score=0.9227
+  content: 團隊決定長期記憶 (long-term memory) 的當前設計目標是使其結構盡可能扁平化，而非採用可能允許與短期記憶合併的樹狀結構。
+  evidence: [SPEAKER_03]: 其實我覺得老實說那種方法也不是不行因為如果是樹狀的話其實說不定可以把長短期 [SPEAKER_01]: 但長期現在雖然它是樹狀但我們是想要盡量讓它扁平就是不要那麼多
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.9581
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函數調用來存取。如果重複提及使其分數增加，這些記憶可以被重新激活。
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說某一件東西他不應該在 short term在我不知道這是 dialogue 的時候不應該要出現但是他知道他忘記了就是他知道他有這個東西他是不記得但是他在對話的時候他不會突出這個東西 [SPEAKER_04]: 嗯嗯嗯好 [SPEAKER_02]: 然後呃因為我覺得這是一個還蠻特別的一個地方因為過去的agent應該從來沒有人在測這件事情就是有點像說language model在in turn在real time 跟你回答的時候它會避免輸出一些它其實long term但應該要被fade out的東西但是但...
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.9503
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分數可能回升而被重新激活。此舉旨在測試 agent 在保留長期資訊的同時，抑制過時或較不相關資訊的能力。
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。 [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但...
+- [0429 | 2026-04-29 | L1-0429-133] type=approach_change importance=0.75 score=0.9472
+  content: 為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱含地、選擇性地提取相關資訊來更新特定節點。
+  evidence: [SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就呃因為現在這個方法其實跟如果你把先把80行直接去切就是你去再丟個一個另外一個agen...
+- [0429 | 2026-04-29 | L1-0429-022] type=decision importance=0.71 score=0.9431
+  content: 系統已決定使用兩種主要的資料結構：「物件」(Objects) 和更細粒度的「議題」(Issues)。一個「物件」可以關聯多個「議題」，當相關「議題」被反覆提及時，「物件」的重要性會隨之增加。
+  evidence: [SPEAKER_01]: 就是它最主要的几个function然后retranscript就是读我们transcript的第几行然后update issue issue是一个issue跟我们的object是不一样issue是这个object有提到的某一些issue issue算是一个算是我们用来处理重复提到会增加它的importance的一个工具 [SPEAKER_01]: 算是比Object再更...算更細一點的東西然後它會跟Object連到就可能一個Object會連到兩個issue這樣然後issue會去看它有沒有反覆出現issue如果這個issue反覆提高它又連到這個Object那這個Object的importance就會提高
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.9913
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減下限（floor），以防止其值降得過低。
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...
+- [0506 | 2026-05-06 | L1-0506-038] type=finding importance=0.65 score=0.9803
+  content: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  evidence: [SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差...
+- [0506 | 2026-05-06 | L1-0506-031] type=approach_change importance=0.74 score=0.962
+  content: 每個會議都會生成新的 L1 節點。相似的想法可以在單次會議的節點內合併，但不能跨會議合併，因為每個會議都被視為一個獨立的組織單位。
+  evidence: [SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units
+- [0506 | 2026-05-06 | L1-0506-033] type=decision importance=0.65 score=0.9509
+  content: 決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這...
+- [0506 | 2026-05-06 | L1-0506-016] type=approach_change importance=0.72 score=0.946
+  content: 記憶更新的基本單位被確立為 `idea unit`。一個 `idea unit` 經由 agent 標記後會成為一個 `candidate`，該 `candidate` 接著被用來更新一個記憶節點。
+  evidence: [SPEAKER_01]: 對我們最後的單位是idea units只是我們會過那個agent讓它去判斷就是加label這樣然後他會變成candidates，candidates是說你要去這個idea units你要去更新你裡面的node還有candidate跟candidate之間agent吐出來他有沒有一些資訊要先去做明顯的區隔像老師說可能怕node跟node最後更新會更新到太像
+- [0506 | 2026-05-06 | L1-0506-045] type=argument importance=0.67 score=0.9417
+  content: 支持主題導向記憶體架構的論點是，它允許在單一 L1 節點內追蹤一個想法的完整演變歷史。當一個相似的想法被重新討論時，系統會更新現有的 L1 節點（而非創建新節點），並添加新的時間戳和內容版本，從而實現對想法演變的「回放」功能。
+  evidence: [SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦...
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-importance-activation-and-recency] importance, activation, and recency
+  parent L3: L3-memory-lifecycle memory lifecycle
+  matched L1: L1-0506-030, L1-0506-038, L1-0429-037
+  topic_size=10 selected_event_count=8 omitted_event_count=2
+  current_state: importance, activation, and recency: latest state from 2026-05-06 L1-0506-038 is 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。...
+  evolution_summary: importance, activation, and recency evolved from 2026-03-07 L1-0307-001: 系統採用了一種遺忘機制，如果一個記憶項目在特定次數的近期會議（例如三次）內未被再次討論，該項目將被刪除。 to 2026-05-06 L1-0506-038: 每個 L1 節點由一組參數描述，...
+  latest_position: 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+  key_rationale: Assignment criteria: importance; activation; relevance
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-07 L1-0307-001] 系統採用了一種遺忘機制，如果一個記憶項目在特定次數的近期會議（例如三次）內未被再次討論，該項目將被刪除。
+    - [2026-03-25 L1-0325-045] 團隊決定放棄樹狀結構的長期記憶體設計，因為它無法有效實現基於時間的權重衰減。取而代之的是，將採用一個按時間排序的線性結構。檢索機制將結合語義相似度和一個「Residency」分數來實現時間衰減，該分數會設定一個下限（floor），以防止關鍵的舊記憶完全消失。這個設計目標是在資訊淡忘與保留重要舊記憶之間取得平衡。
+    - [2026-04-08 L1-0408-044] 長期記憶的價值在於能夠追蹤專案主題隨時間的演變。例如，記錄一年中所有討論過的主題歷史，便能清晰地展示長期記憶的功用。
+    - [2026-04-29 L1-0429-013] 團隊提出了一種可逆的「淡出」(fade out) 機制作為新的評估標準。低於某個重要性閾值的記憶會變為「非活躍」狀態，不會在一般對話中浮現，但可透過特殊函數呼叫來列出，並可能因後續提及而重新激活。
+    - [2026-04-29 L1-0429-037] 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分數可能回升而被重新激活。此舉旨在測試 agent 在保留長期資訊的同時，抑制過時或較不相關資訊的能力。
+    - [2026-05-06 L1-0506-030] 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減下限（floor），以防止其值降得過低。
+    - [2026-05-06 L1-0506-038] 每個 L1 節點由一組參數描述，包括「importance」、「activation」、「relevance」（用於檢索的語義相似度）和「recency」（一個會隨時間衰減的值）。
+    - [2026-05-06 L1-0506-035] 關於 L1 節點的生成過程，存在一些尚未完全理解或記錄的實作細節。具體來說，「捨棄為 L1」(discard as L1) 的確切含義以及重要性分數 (importance score) 的計算方式需要進一步釐清。
+
+[L2-memory-retention-and-forgetting] memory retention and forgetting
+  parent L3: L3-memory-lifecycle memory lifecycle
+  matched L1: L1-0422-039, L1-0422-031, L1-0408-037
+  topic_size=7 selected_event_count=7 omitted_event_count=0
+  current_state: memory retention and forgetting: latest state from 2026-04-22 L1-0422-047 is 提出一個選擇性遺忘（selective forgetting）的機制，讓大型語言模型（LLM）能夠忘記特定敏感資訊（如真實姓名或電話號碼），但同時保留相關事件的整體記憶結構。...
+  evolution_summary: memory retention and forgetting evolved from 2026-03-07 L1-0307-008: 記憶系統具有跨會議更新機制。它會使用新會議的內容來更新先前會議的記憶。如果一個主題被再次提及，系統會更新相應的記憶項目，例如，一個在會議16中為「TODO」的任務，在會議17後可以更新為已完成並附帶新的觀察結果。...
+  latest_position: 提出一個選擇性遺忘（selective forgetting）的機制，讓大型語言模型（LLM）能夠忘記特定敏感資訊（如真實姓名或電話號碼），但同時保留相關事件的整體記憶結構。
+  key_rationale: Assignment criteria: forgetting; selective forgetting; forget
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-07 L1-0307-008] 記憶系統具有跨會議更新機制。它會使用新會議的內容來更新先前會議的記憶。如果一個主題被再次提及，系統會更新相應的記憶項目，例如，一個在會議16中為「TODO」的任務，在會議17後可以更新為已完成並附帶新的觀察結果。
+    - [2026-04-08 L1-0408-037] 團隊決定，判斷資訊是否進入長期記憶 (LTM) 的標準將不僅僅是時間或簡單的重複頻率，而是更細緻的「討論密度」（discussion density）。這意味著近期討論的內容不會自動存入 LTM，而是會考慮其在一段時間內的持續討論程度。
+    - [2026-04-08 L1-0408-053] 探索另一種模型，其中項目在達到特定頻率閾值（例如被提及 3 次）後，會從 short-term memory (STM) 轉移到 long-term memory (LTM)。為了解決 LTM 可能過載的問題，建議設立一個「遺忘」區或回收桶，用於存放可檢索但非活躍的已丟棄項目。
+    - [2026-04-22 L1-0422-039] 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+    - [2026-04-22 L1-0422-031] Long-term memory 架構的一個關鍵優勢是其「遺忘」機制，資訊的相關性和重要性會隨時間衰減，這使其與 short-term memory 有所區別。
+    - [2026-04-22 L1-0422-046] 在大型語言模型中實現選擇性遺忘（selective forgetting）時，其核心論點是模型必須能夠精確地遺忘特定敏感資訊（如真實姓名或電話號碼），同時保留相關事件的整體記憶結構，以避免完全失去上下文。
+    - [2026-04-22 L1-0422-047] 提出一個選擇性遺忘（selective forgetting）的機制，讓大型語言模型（LLM）能夠忘記特定敏感資訊（如真實姓名或電話號碼），但同時保留相關事件的整體記憶結構。
+
+[L2-topic-lifecycle-and-evolution] topic lifecycle and evolution
+  parent L3: L3-memory-lifecycle memory lifecycle
+  source: sibling child L2
+  why included: same_parent_l3_rationale_context
+  topic_size=5 selected_event_count=3 omitted_event_count=2
+  current_state: topic lifecycle and evolution: latest state from 2026-04-29 L1-0429-061 is 系統利用與「objects」相關聯的「issues」來追蹤主題的重要性。如果一個 object 相關的 issues 被反覆提及，該 object 的重要性就會增加，從而使系統能夠追蹤重複出現主題的顯著性。...
+  evolution_summary: topic lifecycle and evolution evolved from 2026-03-25 L1-0325-047: 如何設計一個長期記憶系統，既能實現基於時間的衰減，又能防止重要的舊資訊完全遺失？目前的提案是採用時間排序的線性結構，並結合語意相似度和「Residency」分數的檢索機制，但此設計仍待驗證與最終確定。...
+  latest_position: 系統利用與「objects」相關聯的「issues」來追蹤主題的重要性。如果一個 object 相關的 issues 被反覆提及，該 object 的重要性就會增加，從而使系統能夠追蹤重複出現主題的顯著性。
+  key_rationale: Assignment criteria: topic lifecycle; topic evolution; evolution
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-25 L1-0325-047] 如何設計一個長期記憶系統，既能實現基於時間的衰減，又能防止重要的舊資訊完全遺失？目前的提案是採用時間排序的線性結構，並結合語意相似度和「Residency」分數的檢索機制，但此設計仍待驗證與最終確定。
+    - [2026-04-08 L1-0408-042] 提案將專案主題隨時間的演變過程，作為長期記憶體（LTM）的理想儲存內容，認為這能明確展現 LTM 的價值。
+    - [2026-04-29 L1-0429-007] 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函數調用來存取。如果重複提及使其分數增加，這些記憶可以被重新激活。
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 674
+- hybrid_fallback:
+- hybrid_lexical_count: 120
+- hybrid_semantic_count: 120
+- hybrid_semantic_used: True
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 4
+- retrieval_mode: hybrid
+- selected_child_l2_count: 2
+- selected_l1_count: 24
+- selected_l2_count: 0
+- selected_secondary_l2_count: 0
+- selected_sibling_child_l2_count: 1
+- sibling_candidate_count: 1

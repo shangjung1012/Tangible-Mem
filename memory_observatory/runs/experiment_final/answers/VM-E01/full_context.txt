@@ -1,0 +1,44 @@
+好的，這是在會議記憶問答助手。根據您提供的 context，目前 transcript segmentation 的 pipeline 整理如下：
+
+這個 pipeline 的主要目標是將原始的會議逐字稿（transcript）轉換為結構化的長期記憶（Long-Term Memory）節點（L1 Object）。最新的設計（Latest Retrieved Stage）是採用一個多層次的 Agent 架構來處理，從一個固定的窗口大小開始，逐步切分出語意單元，並最終生成帶有特定類型的記憶物件。
+
+以下是主要的處理步驟，按時間順序排列：
+
+### 1. Context Planner：固定窗口切分
+流程的第一步是由 `Context Planner` 處理。這是一個程式碼模組，它會將完整的逐字稿以一個固定的窗口大小（目前設定為 80 行）進行初步切分，並將這個窗口的內容傳遞給下一個 Agent 進行處理。如果逐字稿本身不足 80 行，則會直接傳送全部內容。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後..."
+
+### 2. Segment Agent：切分語意段落 (Segment)
+`Segment Agent` 接收到 80 行的窗口後，會將其進一步切分成數個 `Segment`。一個 `Segment` 代表一個較大的、連貫的討論話題，並且可能會跨越多個發言者。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "進了segment agent以後它就會看1到17這是一個segment..."
+*   **來源**: `meeting_0506` / `SPEAKER_04` / "segment 是一開始 transcript 進去第一個切成 segment然後它是比較像是一個討論的話題這樣..."
+
+### 3. Idea Unit 提取
+在每個 `Segment` 內部，系統會再提取出更細緻的 `Idea Unit`。`Idea Unit` 代表一個獨立的觀點或資訊點，可能由單一句或多句對話組成。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "在這個 segment裡面它就會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個..."
+
+### 4. 驗證與修復 (Verification & Repair)
+為了確保沒有遺漏任何資訊，系統會進行驗證。如果發現有逐字稿中的句子沒有被任何 `Idea Unit` 包含，這個被遺漏的句子會被當作一個「fallback」的 `Idea Unit` 直接補上，並標記為較低的品質。這個機制確保了所有逐字稿內容都被涵蓋。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered the gap..."
+*   **來源**: `meeting_0506` / `SPEAKER_04` / "這個被cover的 transcript它會有一個比較低的品質的一個像是一個tag..."
+
+### 5. Batching：處理不完整 Segment
+由於 `Context Planner` 是以固定行數（80行）切分，可能會導致一個 `Segment` 被從中間截斷。系統會標記這些不完整的 `Segment`，並在處理下一個窗口時，將前一個窗口的結尾與下一個窗口的開頭合併，形成一個完整的 `Batch`。這個 `Batch` 確保了送交給後續 Agent 處理的內容是語意連貫且完整的。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "他會是他跟下面那個先合成一個 batch 才一起去送"
+*   **來源**: `meeting_0506` / `SPEAKER_04` / "batch比較像是再多一層保障就是確保說你這次給他的內容是一段連貫的對話..."
+
+### 6. Type Agent 與 Candidate 生成
+處理好的 `Idea Unit` 會被平行送往六個專門的 `Type Agent`。每個 Agent 負責識別一種特定的資訊類型，包括：`Decision` (決策)、`TODO` (待辦事項)、`Method Change` (方法變更)、`Result` (結果)、`Argument` (論點) 和 `Open Question` (未解問題)。
+當一個 Agent 認為某個 `Idea Unit` 符合其負責的類型時，就會生成一個 `Candidate`。這意味著同一個 `Idea Unit` 可能會被多個 Agent 標記，從而產生多個重疊的 `Candidate`。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "idea units 會先去送六個 agent然後去分辨說他們各自是什麼...decision也抓到這個idea units然後我的to-do也抓到這個idea units然後candidate的部分就是把所有他們抓的東西都列出來..."
+
+### 7. 衝突解決與 L1 節點生成
+最後，系統會檢視所有生成的 `Candidate`，進行「衝突決策 (conflict decision)」，判斷哪個類型最適合，或如何整合這些資訊。處理完畢後，就會生成最終的 `L1 node`（長期記憶物件），並存入記憶庫中。
+*   **來源**: `meeting_0506` / `SPEAKER_01` / "這個conflict decision就是我們就是agent他會去看說他到底他會先看符不符合我們的rule...他會有一個最後我們final更新出來的node"
+
+---
+**設計演進補充**:
+
+在早期的討論中，團隊曾考慮過使用 `Tool Calling` 搭配動態窗口（adaptive window）來取代固定窗口切分，讓 LLM 自行判斷每次要讀取幾行。然而，實驗後發現 LLM 難以精準預測語意單元的邊界，導致效果不佳，因此在目前的版本中採用了上述較為結構化的固定窗口搭配多層次 Agent 的方法。
+*   **來源**: `meeting_0422` / `SPEAKER_03` / "就是我們上次做的 Tool Calling 的意思就其實只是讓 Gemini 來可以決定他要怎麼用函數..."
+*   **來源**: `meeting_0506` / `SPEAKER_04` / "如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高..."

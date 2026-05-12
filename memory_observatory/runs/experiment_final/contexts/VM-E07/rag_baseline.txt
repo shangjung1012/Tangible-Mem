@@ -1,0 +1,253 @@
+=== Traditional Lexical RAG ===
+
+[rag-0429-L121-L140] meeting=0429 lines=121-140 score=0.6667
+[SPEAKER_02]: 因為我在想的是，因為 language model 它在跟人的對話過程當中，它其實就算你慢慢把 external 那個拔掉之後，它已經慢慢地就被捲進它的 language model 裡面了，對不對？所以它如果真的要，我不知道它那邊所謂的去。所以我本來想像中的是，我要去除這個 language model 裡面的記憶的話，就是你就必須要想辦法把，比如說 A 跟 B 曾經有連接，我想你忘記 A 跟 B 的連接。
+[SPEAKER_02]: 我就是必須要用某種 negate 的方法，我要把 A 跟 B 直接的關聯直接去掉，讓你的 language model 裡面它就不存在它們的關聯性。我不知道過去的遺忘是這種 model 本身 fundamentally 去動它的 model，還是是 RAG 上面的說我在 external 裡面不存在這一個資料。聽起來是 external database。目前我們看到沒有人去處理說，就是 language model 整個 fundamentally 把這一個 knowledge 解掉、拆解掉這樣。OK。
+[SPEAKER_02]: 那個應該蠻數學的，應該蠻數學的。我覺得這可能就是，沒關係，我們就先不。那以 literature 的部分，就是也把最相關的這些 work 都把它列出來。然後再來是會做 ablation study，就是我們會有做 baseline，是只有 RAG，然後。
+[SPEAKER_02]: 只有 short-term 的機制跟只有 long-term 的機制，然後後面是整個 full system，就是要 prove 我們為什麼要 short term 加 long term 這樣。欸，那在 working memory 的話，應該也是要。working 的話是你們的 session 跟 testing 的狀態是嗎？就是應該是說你去比較不同的 memory 架構，去看它在 working memory，working memory 可能會是一樣的是嗎？
+[SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。
+[SPEAKER_02]: 拆成那個，轉換成像那樣的資料。我們是做，我們會先抓它裡面的 idea unit。對對，idea unit。嗯，OK，我現在，所以 RAG 跟 full system 的差別是在於，RAG 有什麼，呃，RAG、full system。
+[SPEAKER_01]: RAG 感覺就只是它是最簡單的處理方式啦，它就只是切塊，然後用語意去找相似度的那一塊是什麼。然後我們是除了有切 idea unit 之外，我們 idea unit 上面還會有更 high-level 的結論，它可以帶出那個上層的脈絡。然後我們還有 short-term 的部分，會比較仔細地告訴它我們最近在做什麼之類的。OK，好。
+[SPEAKER_01]: 好，我們先往後。後面是那個 long-term 的部分，就是這個 incremental，就是指我們用 tool calling 之後，它會一部分一部分地往下讀這樣。然後上次講了說，我們這邊有要去做實驗嗎？就是我們那時候說三種的 trade-off。
+[SPEAKER_02]: 一種是 fixed 切的話會有一定的 trade-off，然後如果是一句一句一句看，iterative 地去 merge，跟這個應該是我們之前講的那個嘛，然後再。
+[SPEAKER_02]: 但因為我們好像離那個報告只剩 13 天，所以感覺就是可能 5 月 12 日之後可以做的實驗。所以這段我就是假定我就是這麼做了，我去不去 prove，我們可能會有些 hypothesis，說這個會比別的東西好。對，那之後呢？
+[SPEAKER_01]: 其實如果稍微比一下，我覺得它會抓的東西會比較少那種很不必要的閒聊資訊。就像我們有時候講到什麼司機什麼，就是一些，或是什麼誰還沒來這種資訊。如果不是用這個的話，它會存那些蠻不必要的資訊。我覺得。你是說譬如說因為它 forward scan。我先聽一下這個流程是什麼好了，流程。那還是你的下一頁。
+[SPEAKER_01]: 就是它最主要的幾個 function，然後 read transcript 就是讀我們 transcript 的第幾行，然後 update issue。issue 跟我們的 object 是不一樣，issue 是這個 object 有提到的某一些 issue。issue 算是一個我們用來處理重複提到、會增加它 importance 的一個工具。
+[SPEAKER_01]: 算是比 object 再更細一點的東西，然後它會跟 object 連到。就可能一個 object 會連到兩個 issue 這樣。然後 issue 會去看它有沒有反覆出現，issue 如果反覆提高，它又連到這個 object，那這個 object 的 importance 就會提高。
+[SPEAKER_01]: 然後 create object 就是建立一個，它會先存成一個 candidate，然後在你後面再去讀到的時候，它會去看我現在這個 candidate 跟我後面的內容是不是相關。如果是相關的，它就合併在一起一起處理。它現在這邊的後面指的是多後面？就是後面一句話嗎？還是。
+[SPEAKER_02]: 後面要看它每一次 read transcript 的時候會。我看一下這個 read transcript 是只有讀，就是 assuming 它會是一個不斷一直讀的狀態。read transcript 的話它有一個 input，它的 input 就會是你現在要往前跳幾行的那個。我看我之前跑的紀錄，一次會先跑大概 20 幾行左右。那那個 20 幾行是怎麼決定的？
+[SPEAKER_01]: 20 幾行是算是怎麼講，算是我們初始隨便給它一個值吧。但是我們看它效果跑出來還 OK 就定，然後我們看它後面會讀幾行，後面會讀大概每次都是 20 行左右。所以這邊是沒有那個動態地去讀幾行這樣。
+[SPEAKER_02]: 動態去讀幾行。我們上次講過說，我現在讀進去這一句話，譬如說我們現在講現在有少一個人什麼之類的，我會預期這個對話大概就是兩句就結束了。然後跟如果說這一句話講的是說，喔，那接下來是 incremental bridge 這件事情，那它就判定說接下來可能五句或是十句應該都會是在講這個內容，我就會直接先跳到十句，把它變成一個 block 來分析。
+[SPEAKER_01]: 應該說這跟讀幾行應該沒關係，因為它會知道它的斷點在哪裡。就它會知道說你是第幾行跟第幾行是這個東西。就你一次讀 24 行，然後它 24 行可以分開處理，24 行可以前兩行是純純像你剛剛說的這是誰還沒到，這可能只有兩行，然後後面的 20 行可能其中 10 行是一個 object，後面 10 行是一個 object。就是你讀幾行都沒關係，它的 object，它的 structure 是長什麼樣子。
+[SPEAKER_02]: object 的 structure，我可以看 code 嗎？就是看它處理的。我分享一下畫面好了。
+[SPEAKER_00]: 因為我的短期也是差不多的方法。我想就是益心的意思大概是說，因為其實你不用太糾結 LLM 到底會讀幾行，因為 LLM 它自己可以。因為老師您剛剛說就是希望它讀幾行，那一行就是一個 object。但是其實 LLM 就算它真的讀太多行，它其實也知道這邊結束，就沒有什麼關係。
+
+[rag-0318-L46-L65] meeting=0318 lines=46-65 score=0.5
+[SPEAKER_01]: 這是哪個學校的啊？是 Stanford 嗎？
+[SPEAKER_02]: UCSD。
+[SPEAKER_01]: 但是它是感覺是一個小公司，
+[SPEAKER_02]: 我不知道
+[SPEAKER_01]: 看起來是一個公司。因為張永儒老師他們就是在做 screenshots 啊，然後他們就是在外面。為什麼這兩個名字都非常的熟悉？我看一下喔，所以這是一個公司嗎？還是
+[SPEAKER_02]: 他好像是他是一個開源套件，你可以直接查這個，
+[SPEAKER_01]: 有查得到他是誰啊？他是一個學生嗎？UCSD。
+[SPEAKER_01]: 王昱。他這個教授 Google Scholar，對，你看 Google Scholar，他是誰？是這個嗎？應該很多人叫王昱。你打 UCSD 下面紅方，UCSD。
+[SPEAKER_01]: 對，應該是這裡。所以它應該是一個比如說 Robinson 或是 Sorensen 之類的。所以它最近的，最近的看一下這個？By year。Memory, not changing reasoning, for listening to memory, a mechanism for motivation. 它就一直要做 memory, a second age. 好。
+[SPEAKER_01]: OK，不過這都是 arXiv paper。這是他 UCSD，對，UCSD。那個他的名字看起來像有點年紀，他應該是那個啦，這應該是他的碩論，還是說你開這個看看，這個這個這個，對。
+[SPEAKER_01]: 這應該是，你打開看，他應該是剛畢業的這個 XAI。
+[SPEAKER_01]: 因為講到 screenshots，我也想到說 Stanford 他們有一個 team，他們就專門在做 screenshot 的那個延續動作的分析，他們在做影片的分析。
+[SPEAKER_02]: 所以它比就比兩個，一個比 screenshot，一個比 task-based，然後它兩個用的模型不一樣。Screenshot 它一個是用 Gemini，因為 Gemini 可以直接吃圖片，然後還有用 visual 的 RAG，這個是圖片的 RAG。所以它並沒有把圖片轉文字，它是直接餵圖片。
+[SPEAKER_02]: 然後 task-based 的話，就是之前有看到的一些一樣的模型。然後他一樣是跟在裡面，他用 LLM 去當 judge。然後我不是很知道為什麼他其他的 baseline 跑一次，然後 MIRIX 跟 full-context 跑三次，然後選 average。
+[SPEAKER_02]: 這個我沒有很，就是我不太知道為什麼，它也沒有什麼解釋。
+[SPEAKER_01]: 其實它這裡是一個 arXiv paper，它可能就是它做完之後就放上去一下這樣。
+[SPEAKER_02]: 然後對，它還有算它的 storage size 這樣。
+[SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。
+[SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。
+[SPEAKER_01]: 然後同一件事情，你用 Google search 跟用 GPT 問它的耗電量會差非常多。但其實成果上，你現在我看 Google 會一直弄成是變 GPT，我就覺得很沒有必要。就有時候我就只問一個簡單到不行的問題，它就一直要把它變成 GPT。但其實有時候那個也有點好處，那個我覺得還蠻好，有的時候是有好處的，但是有的時候其實是沒有必要的，對。然後我們就在講說，因為現在一直在講節能嘛，因為現在越來越多東西被丟到 general model 裡面去。
+
+[rag-0429-L31-L50] meeting=0429 lines=31-50 score=0.5
+[SPEAKER_04]: 我有看過 我記得Time Memory還是哪一篇 它是有模仿它是有做遺忘的機制喔
+[SPEAKER_02]: 你可以把那一篇 等一下貼到那個chat
+[SPEAKER_04]: 但我還要找一下
+[SPEAKER_02]: 好好就是 對我覺得他們的遺忘都是直接全部忘掉就是不可能再retrieve回來就是它不會因為你一直提到再出現這樣他們的遺忘是怎麼樣他們是他們的遺忘是如何遺忘
+[SPEAKER_02]: 是在某種方式把他probability上面直接把它就是negate這樣回去讓他不記得這個連結嗎還是他們那邊的遺忘是怎麼樣的遺忘還是他用prompt的方式說你不記得這件事情就是他們的話遺忘的方式是怎麼樣的遺忘
+[SPEAKER_04]: 應該就是直接在就是我們都會後面都是有資料庫還在資料庫裡面直接把它踢掉就像RAG它是會有那個向量建設它直接把那個資料就是刪掉這樣
+[SPEAKER_04]: 所以他就不会再找到所以他比较像是在RAG上面的时候就像因为就像我们也会拆很多的我们会逐字稿送进来我们会记to do什么什么啊如果这个to do一直都没有被提到他们可能就是会把这一笔就是删掉这样那他下次在找的时候他不会找到这个
+[SPEAKER_02]: 因為我在想的是因為language model它在跟人的對話過程當中它其實就算你慢慢把external那個拔掉之後它已經慢慢的就被捲進它的language model裡面了對不對所以它如果真的要我不知道它那邊所謂的去所以我本來想像中的時候我要去除這個language model裡面的記憶的話就是你就必須要想辦法把比如說A跟B曾經有連接我想你忘記A跟B的連接
+[SPEAKER_02]: 我就是必須要用反正某種Nigate的方法我要把A跟B直接的關聯直接去掉讓你的Language Model裡面它就不存在他們的觀聯性我不知道過去的遺忘是這種Model本身Fundamentally的去動它的Model還是是RAG上面的說我在External裡面不存在這一個資料聽起來是External的Database目前我們看到沒有人去處理說就是Language Model整個Fundamentally把這一個Knowledge就是解掉拆解掉這樣OK
+[SPEAKER_04]: 那個應該蠻數學的應該蠻數學的
+[SPEAKER_02]: 我覺得這可能就是沒關係我們就先不我們就先以一個那以 literature 的部分就是也把最相關的這些 work就都把它列出來
+[SPEAKER_04]: 然後再來是會做 ablation study就是我們會有做就是 baseline 是只有 RAG然後只有short term的機制跟只有long term的機制然後後面是整個full system就是要prove就是我們為什麼要short term加long term這樣
+[SPEAKER_02]: 誒那在working memory的話應該是也是要working的話是你們的session跟testing的狀態是嗎就是應該是說你去比較不同的memory的架構去看它在working memory使用working memory可能會是一樣的是嗎
+[SPEAKER_04]: 對 因為Working Memory是不管是怎麼樣就是你在對話的時候一直我們會模仿他一直進來進來進來這樣
+[SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼
+[SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它分就是我們逐字搞進來我們不是一句一句一句然後就讓它拆成那個轉換成像那樣的資料我們是做我們會先抓它裡面的idea unit對對idea unit
+[SPEAKER_02]: 嗯ok然後現在所以RAG跟Full System的差別是在於RAG有什麼
+[SPEAKER_01]: 呃RAG Full System Track 感覺就只是它是最簡單的處理方式啦它就只是切塊然後用語意去找相似度的那一塊是什麼然後我們是除了有切 idea unit 之外我們 idea unit 上面還會有更高 level 的結論就它可以帶出那個上層的脈絡然後我們還有 short term 的部分會比較仔細的告訴它我們最近在做什麼之類的
+[SPEAKER_02]: 嗯好
+[SPEAKER_01]: 好我們先往後後面是那個long term的部分就是這個incremental就是指我們用拖calling之後它會就是一部分一部分的往下堵這樣然後上次講了說
+
+[rag-0429-L46-L65] meeting=0429 lines=46-65 score=0.5
+[SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它分就是我們逐字搞進來我們不是一句一句一句然後就讓它拆成那個轉換成像那樣的資料我們是做我們會先抓它裡面的idea unit對對idea unit
+[SPEAKER_02]: 嗯ok然後現在所以RAG跟Full System的差別是在於RAG有什麼
+[SPEAKER_01]: 呃RAG Full System Track 感覺就只是它是最簡單的處理方式啦它就只是切塊然後用語意去找相似度的那一塊是什麼然後我們是除了有切 idea unit 之外我們 idea unit 上面還會有更高 level 的結論就它可以帶出那個上層的脈絡然後我們還有 short term 的部分會比較仔細的告訴它我們最近在做什麼之類的
+[SPEAKER_02]: 嗯好
+[SPEAKER_01]: 好我們先往後後面是那個long term的部分就是這個incremental就是指我們用拖calling之後它會就是一部分一部分的往下堵這樣然後上次講了說
+[SPEAKER_02]: 我們要這邊有要去做實驗嗎就是我們那時候說三種的trade off
+[SPEAKER_02]: 一種是fix切的話會有一定的trade off然後如果是一句一句一句看iterative的去merge跟這個應該是我們之前講的那個嘛然後再
+[SPEAKER_04]: 但因為我們好像離那個報告只剩13天所以感覺是就是可能5月12日之後可以做的實驗
+[SPEAKER_02]: 所以這段我就是假定我就是這麼做了我去不去proof我們可能會有些hypothesis說這個會比別的東西好對那之後呢
+[SPEAKER_01]: 其實如果稍微比一下就是我覺得他會抓的東西會比較比較少那種沒有就是那種很不必要的閒聊的資訊就像我們有時候講到什麼司機什麼就是一些或是什麼誰還沒來這種資訊如果你是如果不是用這個的話他會存那些蠻不必要的資訊
+[SPEAKER_02]: 我覺得你是說譬如說因為他forward scan我先聽一下這個流程是什麼好了流程那你還是你的下一頁
+[SPEAKER_01]: 就是它最主要的几个function然后retranscript就是读我们transcript的第几行然后update issue issue是一个issue跟我们的object是不一样issue是这个object有提到的某一些issue issue算是一个算是我们用来处理重复提到会增加它的importance的一个工具
+[SPEAKER_01]: 算是比Object再更...算更細一點的東西然後它會跟Object連到就可能一個Object會連到兩個issue這樣然後issue會去看它有沒有反覆出現issue如果這個issue反覆提高它又連到這個Object那這個Object的importance就會提高
+[SPEAKER_01]: 然後create object就是建立一個他會先存成一個candidate然後在你後面再去讀到的時候他會去看我現在這個candidate跟我後面的內容是不是相關如果是相關的他就合併在一起一起處理
+[SPEAKER_02]: 他現在這邊的後面指的是多後面就是後面一句話嗎還是
+[SPEAKER_04]: 後面要看他每一次re-transcribe的時候會我看一下這個re-transcribe是只有讀
+[SPEAKER_02]: 就是assuming他會是一個不斷一直讀的狀態
+[SPEAKER_04]: re-transcribe的話他有一個input他的input就會是你現在要往前跳幾行的那個我看我之前跑的紀錄一次會先跑大概20幾行左右
+[SPEAKER_02]: 那那個20幾行是怎麼決定的
+[SPEAKER_01]: 20幾行20幾行20幾行是算是怎麼講算是我們初始算隨便給他一個值吧但是我們看他效果跑出來還ok就定然後我們看他後面會讀幾行後面會讀大概每次都是20行左右所以這邊是沒有那個動態的那個去讀幾行這樣
+
+[rag-0429-L106-L125] meeting=0429 lines=106-125 score=0.5
+[SPEAKER_02]: 然後你們想要來跟我去討論一些事情，那這樣就會存在說，譬如說我跟碩二的同學，我們大概有兩年的 meeting，對，然後就會有很長，就是我對於每個人，我們都有一些脈絡，然後一定有些東西曾經討論過，然後被丟棄。這些錄音都在嗎？應該是都在。對，我知道真盈，因為真盈她也是在弄會議分析，所以她的檔案一定是都在。
+[SPEAKER_02]: OK，所以可以去跟學姊拿。對對對，可以跟她要。然後我在想的是，以這樣來說，其實應該是說，你可能下次就要先確定一下，最就是 long context 的那個中值是多少，然後用那個方式去比較。因為這 180 分鐘感覺不是 agent 他們在定義 long 的那個中值，就沒有分鐘的概念。對，用那個方式我們大概會知道說，所以我們的資料的大小大概是多大這樣。嗯。
+[SPEAKER_04]: 然後我們現在 evaluate 的 question 主要分三類，一個是 short-term，就是至少是要確定它短期的回答是正確的；然後 long-term 的 evolution，就是可能會問它說，我們這整個某一件事情的研究方法，從過去到現在完整的演進是什麼。
+[SPEAKER_04]: 然後還有一個是 decision reasoning，就是會問它說，我們為什麼現在是做這個決定，當初是什麼討論讓我們今天做這件事情的決定。這樣子嘛。所以這個 evaluation 的意思是說，第二個的話，它的重點是正確率嗎？對。
+[SPEAKER_04]: 就是它不能漏掉 context，它不能漏掉其中某個 meeting 講過的東西。就可能我們在三個 meeting 提過這件事情，然後三個 meeting 都有不同討論的點，但它只講到了其中兩場 meeting，或者是它自己胡亂地湊了一些我們 meeting 裡面並沒有講到的事情。嗯。
+[SPEAKER_04]: 所以在我們的 data 裡面，我們基本上就是要非常明確地知道說，我們裡面總共有哪一些 answer，而且哪些東西是不對的，就在 evaluate 的時候。所以那就是評分的方式，參考也是之前前面的 paper，就是我們會給它我們的答案，還有我們這個 agent 生出來的答案，然後請它去比對大概的正確率。
+[SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。
+[SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但是你刻意地去挖它那個 lost 的裡面的話，它是存在的。
+[SPEAKER_02]: 對，然後它就是在等著某一期，就是它因為我們不是說它被有點像是 inactive 的某一些 idea 在那個地方，就是太久又太不重要的都會被丟到那個地方去。那所以說，我們要怎麼去處理，就是在一般對話的時候不應該觸發，然後在講某一句話的時候，它應該要去觸發、把這個記憶調起來。
+[SPEAKER_02]: 對，應該是說我們在一般對話的時候它不會出現，然後但是你用某一種 function call 去叫它列出你的 long-term memory 裡面現在有哪些是 inactive 的 idea，那它會列在那個地方，但是它會刻意地不出現在現在正在進行的對話裡。那它要在被 activate 的情況下，就是譬如說它必須要出現在 short-term meeting 裡面，出現到了幾次之後，它的那個會慢慢地從那個地方又再慢慢地浮掉。那應該就是我們之前有做。
+[SPEAKER_04]: 就是我們做，我們會去算它的 weight，會算它的 importance。我們應該會從這個地方去切一個，就是幾分以下它是在一般的對話中不會出現。然後我們在每一次，如果像老師說 short term 一直提到它的話，那它那個分數應該會往上，所以它就會再重新被 LLM 在對話中提到這樣。
+[SPEAKER_02]: 這個東西有 agent 的遺忘這件事情，現在有人在開始做，應該蠻多人做的。可是他們做的應該都是以人類的遺忘曲線，就是可能多久這樣子。但是如果是，他們有人在做嗎？因為 Large Language Model 已經自己很會遺忘啦。他們現在是怎麼樣的人類遺忘曲線？我感覺 Large Language Model 的遺忘，感覺是 sensitive 資料的去除嗎，那一種類型的遺忘。
+[SPEAKER_02]: 我有看過，我記得 Time Memory 還是哪一篇，它是有模仿，它是有做遺忘的機制喔。你可以把那一篇等一下貼到那個 chat，但我還要找我這個長相。好好好。就是，對，我覺得他們的遺忘都是直接全部忘掉，就是不可能再 retrieve 回來，就是它不會因為你一直提到再出現這樣。他們的遺忘是怎麼樣，他們是如何遺忘。
+[SPEAKER_02]: 是在某種方式把它 probability 上面直接 negate 這樣回去，讓它不記得這個連結嗎？還是他們那邊的遺忘是怎麼樣的遺忘？還是它用 prompt 的方式說你不記得這件事情？就是他們的遺忘方式是怎麼樣。遺忘應該就是直接在資料庫裡面把它踢掉，就像 RAG 它是會有那個向量建設，它直接把那個資料刪掉這樣。
+[SPEAKER_04]: 所以它就不會再找到。所以它比較像是在 RAG 上面的時候，就像因為我們也會拆很多的，我們會逐字稿送進來，我們會記 TODO 什麼什麼。如果這個 TODO 一直都沒有被提到，他們可能就是會把這一筆刪掉，這樣它下次在找的時候它不會找到這個。
+[SPEAKER_02]: 因為我在想的是，因為 language model 它在跟人的對話過程當中，它其實就算你慢慢把 external 那個拔掉之後，它已經慢慢地就被捲進它的 language model 裡面了，對不對？所以它如果真的要，我不知道它那邊所謂的去。所以我本來想像中的是，我要去除這個 language model 裡面的記憶的話，就是你就必須要想辦法把，比如說 A 跟 B 曾經有連接，我想你忘記 A 跟 B 的連接。
+[SPEAKER_02]: 我就是必須要用某種 negate 的方法，我要把 A 跟 B 直接的關聯直接去掉，讓你的 language model 裡面它就不存在它們的關聯性。我不知道過去的遺忘是這種 model 本身 fundamentally 去動它的 model，還是是 RAG 上面的說我在 external 裡面不存在這一個資料。聽起來是 external database。目前我們看到沒有人去處理說，就是 language model 整個 fundamentally 把這一個 knowledge 解掉、拆解掉這樣。OK。
+[SPEAKER_02]: 那個應該蠻數學的，應該蠻數學的。我覺得這可能就是，沒關係，我們就先不。那以 literature 的部分，就是也把最相關的這些 work 都把它列出來。然後再來是會做 ablation study，就是我們會有做 baseline，是只有 RAG，然後。
+[SPEAKER_02]: 只有 short-term 的機制跟只有 long-term 的機制，然後後面是整個 full system，就是要 prove 我們為什麼要 short term 加 long term 這樣。欸，那在 working memory 的話，應該也是要。working 的話是你們的 session 跟 testing 的狀態是嗎？就是應該是說你去比較不同的 memory 架構，去看它在 working memory，working memory 可能會是一樣的是嗎？
+[SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。
+
+[rag-0318-L31-L50] meeting=0318 lines=31-50 score=0.3333
+[SPEAKER_02]: 應該不是幾次對答，是你那個問題的問題本身。就比如說有個問題是，我們這邊會議的 mentor 是誰，就是你們；或者是他有個問題是，我們這個會議的 mentor 的的什麼兒子是誰這種。所以我們之前有討論到老師的兒子是誰，他會找 mentor 是你，然後他會說找到你之後，他再問你是那個兒子。
+[SPEAKER_01]: 那這個部分是他自己本身，他的 model 裡面的 reasoning 這件事情，他們要跳幾個 hop 這樣，對不對？你不是說他會問說你的 mentor 是誰，然後他回答說是 Grace，他說那 Grace 的小孩是誰。他這邊的 hop 只是說背後的 reasoning 裡面有。
+[SPEAKER_01]: 但你問出去的答案就代表他要去抓幾次那個答案。那 Temporal Reasoning 跟 multi-hop 的 Temporal Reasoning 是什麼意思？
+[SPEAKER_02]: Temporal Reasoning 是我覺得是階段性的總結，就是這個 session 你要去給 summary。
+[SPEAKER_01]: Temporal Reasoning 就是問 summary，就是我這段對話的大綱是什麼，都是這樣嗎？
+[SPEAKER_02]: 對
+[SPEAKER_01]: Temporal Reasoning。然後 open domain 是就開放性問題。所以它的 scale，它是，所以它的這個 dataset 基本上就是有這一些對話的內容，然後它的 question types 就是說，這些內容裡面包含這一種類型的 questions。所以他們在比什麼？
+[SPEAKER_02]: 然後就是它有從 full context，就是完全 raw 的逐字稿，餵進 LLM 回答；或是它有比有做 RAG 的，然後它還有比本來 LOCOMO 它自己就有去測市面上的 LLM 的 benchmark，就 LOCOMO 自己提供的測完的結果。
+[SPEAKER_01]: LOCOMO 是哪一年啊？
+[SPEAKER_02]: 2024
+[SPEAKER_01]: 所以那時候應該只有到 GPT-4 吧？
+[SPEAKER_02]: 它是用 3.0 Turbo，然後 open source 就是 GitHub 上面開源的。然後 memory provider 是平台提供的是有一個做圖像的 Zep 的，就是它們這些都有 GitHub 的版本，跟它有包好的套件的版本，所以它這個用的是套件的版本。然後 proprietary model 是 GPT 內建，GPT 有一個嵌入式的記憶可以用。對，GPT 自家記憶加 GPT 自家記憶。
+[SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，然後請 LLM 去評說今天她給的回答對或是錯，但它只有對或錯，它沒有分數的差別這樣。然後它所有的 model 都跑了十次去得到平均的分數，就是可能二十個問題，那她答對了幾個，它跑了十次這樣。
+[SPEAKER_02]: 然後它後面還有比一些 latency 跟它花的 token 這樣。它跟其他花的 token，因為這一篇主要它要主打一個就是它 token 花比較少。對，就它的 highlight 比較是在它 token 比較少。因為它在 multi-hop 的問題上就沒有贏 RAG 跟其他的方式。OK，然後下一篇是 MIRIX，就是 MEM 0 之後的。
+[SPEAKER_02]: 然後它有比一個比較特別，是它有比圖像的記憶，就是它截了，它請三個學生去截大概五千到兩萬張的螢幕截圖，大概使用週期有一週的，然後有十五天，然後有一個月的。
+[SPEAKER_01]: 這是哪個學校的啊？是 Stanford 嗎？
+[SPEAKER_02]: UCSD。
+[SPEAKER_01]: 但是它是感覺是一個小公司，
+[SPEAKER_02]: 我不知道
+[SPEAKER_01]: 看起來是一個公司。因為張永儒老師他們就是在做 screenshots 啊，然後他們就是在外面。為什麼這兩個名字都非常的熟悉？我看一下喔，所以這是一個公司嗎？還是
+
+[rag-0408-L31-L50] meeting=0408 lines=31-50 score=0.3333
+[SPEAKER_03]: 我們第一層是每一次 meeting，四次 meeting 會整理成一個 L2。像這個 P001 經過四次之後，就進入階層式記憶。第一層所有的 leaf notes 是每一次 meeting 各自一個，四個往上會整理出一個 L2，所有 L2 再往上整理。
+[SPEAKER_00]: 先看 slides 吧，我現在大概知道這個 dataset，我們來看 slides。
+[SPEAKER_03]: 我們的想像是，先用 LE 去做 match。Match 完之後，你可能得到像這樣的 8 筆 L1 資料，再把 L1 連到的 L2、L3 一起帶進來。這樣就可以同時擁有你想要的細節資訊，也不會錯失上面比較 high level 的整體研究架構。
+[SPEAKER_00]: 也就是 L2、L3 會隨著 L1 一起帶進來。它們都是在處理長期記憶。應該說，在長期記憶裡面有不同精細程度。L3 是最 high level 的。剛剛看 31 的話，以這個 agent 的大腦來說，它現在知道有五個大重點在這裡。再往下是 L2。
+[SPEAKER_00]: L2 是月度的總結，也就是以月為單位的總結。現在是切四個 meeting 算。L1 是最精細的，所以 L1 基本上可以對應到 segment 嗎？Segment 是指真正的 dataset？對。所以 L1 裡面的每一個物件都可以追到更底層的資料。
+[SPEAKER_03]: 它都可以 map 到。L1 的內容也是經過處理的，它會先把 meeting 處理成右下角那樣。每一次 meeting 裡會有很多 object，每個 object 都是我們用 prompt 取出的特定 type。
+[SPEAKER_00]: 也就是摘要這次的內容，取出這些物件，然後生成很多 object。它同時會給 importance。Importance 是後面判斷 score 時一個滿重要的指標。這聽起來滿像 recursively 產生 summary。以前有一個 work，甚至在 NLP 之前，就在討論怎麼總結 Wikipedia。
+[SPEAKER_00]: Wikipedia 的例子可能是：請 worker 來做，有一些 L1 worker，每個 worker 讀一個段落，幫忙寫兩句摘要。到 L2 的人來看兩個 worker 各自讀的一段 paragraph，再寫一個比較 high level 的摘要。一直 high level 上去，就得到最高 level 的摘要，但它也可以往下追到最低層。
+[SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有一個 type 是 open question，它會取那些當初未解的問題。
+[SPEAKER_00]: 未解是怎麼定義？例如在 1 到 31 的錄音檔裡，第一次大家提出某個方法。透過這個流程，它某方面會變成一個 L1 節點，對嗎？針對那個 meeting 檔，它會是一個 L1 節點。假設接下來五次這個主題都沒有被提到，這個節點會怎麼變？
+[SPEAKER_03]: 那它在我們的記憶結構裡會有什麼變動？它的 recency 會變低，但如果當初賦予的 importance 夠高，recency 會有一個 floor 的下限，所以不會 decay 成 0。
+[SPEAKER_03]: 到時候又提到時，semantic 相似度理論上會滿高，所以分數會很高。Recency 因為有 floor，應該也不會變太低。它還是能成功進到前 30 個，讓 LLM 判斷這前 30 個是不是真的高度相關，是否跟這次問到的問題有連結。
+[SPEAKER_00]: OK，這些 weight 是怎麼給的？像這個 score 的 weight 是怎麼設定？目前應該只是先有一個算式，之後可能還要評估怎麼樣比較好。OK，這邊是從 list 或 dynamic query 來處理。
+[SPEAKER_00]: 這邊都是在講長期記憶。所以如果照剛剛講的，你們可以試著用圖畫給我看嗎？例如我們現在要建構它的長期記憶。假設現在有 week 1，最後透過某種處理出現五個題目、五個重點 idea。
+[SPEAKER_00]: 它最後 L1 的結構是什麼？L1 有一個錄音檔 transcription，對。那現在的處理是什麼？我們會先一樣讓 LLM 做這個地方。那我們怎麼 partition？這邊的 prompt 怎麼做？應該是下 prompt 叫它輸出 JSON。
+[SPEAKER_00]: 我真的在想，我們怎麼讓它找到 cluster、找到 idea unit？長期記憶彙整器。這邊我們是請它做嗎？好像不是，這是哪一支？
+[SPEAKER_02]: 這個應該是在前面那個，轉過一下吧。不對，這應該是轉成 UK 那個。我記得應該在 build tree。還是在別的地方？Skimmer。
+[SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。
+[SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？
+[SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。
+
+[rag-0422-L91-L110] meeting=0422 lines=91-110 score=0.3333
+[SPEAKER_00]: 那就這個題目下去他有可能接下來還會有十句都是在講這件事情那我一次先去挑十句，那我把這十句全部弄起來之後我去看說前面原本的這三句跟我加進來十句之後這十三句我們的 topic 的 diversity
+[SPEAKER_00]: 如果沒有變動就代表說這十句都在講這件事情，我就把它預設它是同一件事情對。那但如果十句就像剛剛講如果十句加進去之後我們開始突然又開始在講然後就是專題展我們要怎麼做海報它可能topic突然變一個很新的東西，就那十句可能掛太多了那我就要往裡面去往裡面去切，這樣就是動態的去切那個那個size
+[SPEAKER_00]: 不過那個部分的話就是你的運算會變得比較大，因為本來fix切的話是你不需要任何Compute你就是切切切，對那有一些Limitation但是它就很快但這的話就變成是我在切的時候我要去一個Compute我去計算我要往後看多少
+[SPEAKER_03]: 但這部分就是 Gemini 能給出一個數字來
+[SPEAKER_00]: 對我的意思是它還是個 compute就是你要算的那個你需要的算力的資源就比較大或是時間可能會比較久因為你要去計算對，所以它可能會有個 trade-off對
+[SPEAKER_00]: 不過我覺得這個還蠻有趣就是說根據我現在講的主題然後我去預估我可以多快往前看多少句應該都是在講同一個主題它有可能是一個我不知道這可能要去看一下有沒有Literature在講這件事情好
+[SPEAKER_00]: 但是最終這個結果就是會是會是把一個Transcription它會變成一個有點像是Dictionary這樣嗎，就是有講怎麼主題然後裡面有幾個Unit，比如說unit的ID這樣
+[SPEAKER_01]: 會回到我們有在long term裡面定義我們要的object會變成很多的memory object
+[SPEAKER_00]: 欸那個memory object的結構是什麼是long term的嗎
+[SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長
+[SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個
+[SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般的普通的那個RAG相比如果把所有的Transcription就是用某種方式變成就是記憶起來，然後等你們有去分Long-term Short-term的話，它不然它比我跑的方式會有什麼樣不一樣然後有什麼樣的有什麼樣的好處對
+[SPEAKER_02]: long term 的一個Outjet大概就是這樣像這樣，會有你的Type是什麼然後內容是什麼Evidence就是他從哪裡去找出這個然後還有一些Related Topics，就是讓他後面在Retrieve的時候關鍵字可能可以找到
+[SPEAKER_00]: 這些Evidence是他的內容嗎對
+[SPEAKER_02]: 就是原本逐字稿的內容
+[SPEAKER_00]: 然後 Content跟Evidence有差別嗎
+[SPEAKER_02]: Content 應該是已經總結過了，就是它已經它是根據那個 evidence 去總結出來比較精簡
+[SPEAKER_00]: 這個中英文都不會影響它的 performance 嗎?
+[SPEAKER_02]: 現在看起來是還好
+[SPEAKER_00]: 所以這個是 long term 的 memory，所以我可以透過 object id 去找到那個錄音檔里面那个段落是吗
+
+[rag-0307-L1-L20] meeting=0307 lines=1-20 score=0.1667
+[SPEAKER_00]: 像我現在是收麥克風，但其實現在的 speaker 可能只有一、二、三而已。反正它會自己去判斷這部分。如果到時候我們自己要做，其實可以簡化成：如果是 online，像 Zoom 或 Google Meet，它會直接假設大家都在線上會議裡，誰講話就直接 attach 到對應的框。
+[SPEAKER_00]: 看起來我們應該比較常是實體面對面。也就是說，你們這個情境其實是在處理更困難的情況：如果在實體場域，model 要正確分辨這句話是誰講的。我的意思是，如果你們在實驗上想簡化一點，可以先省略這個步驟。當然，如果 WhisperX 超準、超強，那也 OK。但你也可以先做一些假設來簡化情境。
+[SPEAKER_00]: 我的 data、我的 meeting 來源是怎麼來的？像我們現在如果是 Zoom，你拿到 transcript 時，它會直接標出這段聲音是我這邊進來的，也就是我講的；維希講話就會標成維希。它會直接標好。可是我們現在的來源不是這樣。
+[SPEAKER_01]: 跑了一次之後，它會產生一個 Memory。這個 Memory 的樣子我還沒有仔細設計過。大概來說，首先它會為每一次 meeting 建一個 summary。
+[SPEAKER_01]: 像我剛剛跑了 16 跟 17 這兩次。原本是 16，現在是 17，它會更新這一邊，把它變成 2。meeting window 就是這一次的 summary。你會發現它會直接加一個 17 出來，接下來還有幾個 action items。
+[SPEAKER_01]: 這個 action items 主要是它會自己判斷哪一個事件需要記起來。比如說我們之前有一些持續性的內容，像是要調查 GPU 的東西。它還有一個特點，就是如果今天又講到上次提到的東西，它會把相關記憶更新。
+[SPEAKER_00]: 左邊是只有 16，右邊是跑完 17 之後的結果。它會去更新。你說哪一個是 16？左邊是 16，右邊是 17 嗎？左邊沒有 16 嗎？還是 16 是第一個？所以左邊這個 16，就是一次 meeting 完之後它建構出來的記憶架構。
+[SPEAKER_01]: 右邊現在等於是這個 model。
+[SPEAKER_00]: 你是說把 16、17 都當成 input 嗎？還是跑 17？
+[SPEAKER_01]: 第一次是 16，因為一開始什麼都沒有，所以 16 跑完之後會產生一個 memory。17 則是根據 16 去 update，它會判斷這個要不要更新。
+[SPEAKER_00]: 如果是第一次使用，它會從零生出一個吧。第二次使用時，它會根據現有的記憶體去更新。所以你現在想展現的是它怎麼更新，對不對？在 17 那邊，舊的節點都還在，然後像剛剛那樣長出一條線，因為某些東西是 16 所不存在的 item。
+[SPEAKER_01]: 對。現在這個 demo 是：如果 16 已經討論過某個東西，17 又再提到，它就會更新。其實如果 16 講過，17 又提到，它會把這個 item 的 meeting ID 加一，並補上一些內容。
+[SPEAKER_00]: 這邊要怎麼看出它是又被講過一次？那邊看起來好像是一樣的對話。
+[SPEAKER_01]: 以這個點來說，代表我們在下一次 meeting 的時候沒有解決它，也可能根本沒有提到它。
+[SPEAKER_00]: 那有沒有例子是某一件事情在兩次 meeting 都被提到？
+[SPEAKER_01]: 像這個 item 可能是標註的部分。原本 16 可能有提到你們先去標註什麼；在 17 裡，SPEAKER_02 會說它已經經過標註，並且觀察到一些問題之類的。
+[SPEAKER_00]: 所以同一件事情在 16 的時候有點像是 TODO，但 17 的時候有一些進展狀態。
+[SPEAKER_01]: 對。現在是這樣：它會有一個 item，這個 item 之後可以再設計，但目前會記錄這是什麼東西，有 title 跟一些記錄。16 這邊可能只是簡單說某件事要去做，17 就會更新相關進度。
+[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。
+[SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。
+
+[rag-0307-L61-L80] meeting=0307 lines=61-80 score=0.1667
+[SPEAKER_00]: 這些都是你要寫的檔案，對不對？那就好好寫。
+[SPEAKER_00]: 如果你們確定的話，我也許可以問問一些老師，就是中研院那邊的人。不過你們三個人最終應該不會都在同一個人那邊。
+[SPEAKER_00]: 他們應該不太可能一次收三位。我猜他們通常會說可以收幾個大學部、幾個研究生之類的。所以你們先把這些東西都寫好，盡量展現誠意。因為如果我聯絡他們，他們就會打開你們的東西來看。
+[SPEAKER_00]: OK，那就這樣。你研究一下我的 deadline 是什麼時候。是 3 月 7 號嗎？我覺得是你們丟出去之後，我才會收到信，對不對？
+[SPEAKER_01]: 我看起來它沒有說，只說資料繳交時間。我看一下，它有一個 FAQ。
+[SPEAKER_01]: 他沒有說，只說申請時間是這樣，然後就沒了。那上下班時間是比照全職專任研究人員嗎？它有開放大學部嗎？有，有大學生。暑假要是在學學生。OK。
+[SPEAKER_02]: 她說推薦信沒有截止日期，但是會在 3 月 16 日開始審查，因為我們的截止日是 3 月 15 日。
+[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？
+[SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。
+[SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。
+[SPEAKER_00]: 好，那就先這樣，掰掰。
+[SPEAKER_01]: 欸，那個誰，陳佑貞在幹嘛？你的格式要不要來跟我對一下？什麼格式？你說。
+[SPEAKER_01]: 我現在在 app 同層建 short term，short term 裡面吃的是 meeting_recording 裡 transcript 的東西。我的也是吃這個啊，我的也是吃 transcript。我的意思是整個資料夾的格式，如果你知道要怎麼推，我們才不會有兩份 meeting transcript 之類的。我看一下，我現在只有一個檔案，就是一個 Python 檔而已。
+[SPEAKER_02]: 那我只要把我的 Python 檔改成讀你的那個就沒事？對，它就是一個 Python 檔，你應該可以直接 pull 下來。好，我跟你講，我現在原本用的是 Python 版的 Membrane，現在應該會直接從 open source 開始改。我把那個 GitHub pull 下來，看你要不要一起做。可以啊，我覺得我們可以一起做。
+[SPEAKER_04]: 雖然我單純就只是一來一回而已，但我覺得 long term 要改得比較多。感覺可以。若文的內容好像還有滿多在講類似的東西。我覺得 Memory 產出的資料好簡陋。你說它抓出來的那些東西嗎？對，就是它抓出來之後很瑣碎。不過我覺得有一部分也是因為我們的對話紀錄頗瑣碎。
+[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。
+[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。
+[SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。
+[SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還好，所以我一開始也是報一堆錯。那我們前面有錄音嗎？我從中間開始錄，這樣有點尷尬。
+[SPEAKER_01]: 太好了，中間有滿多東西。我是從開始講那個的時候錄。你剛剛今天會議有錄嗎？對，我剛剛有一部錄影。那可以，謝謝。不過是從你們講中研院之後開始。OK，時間不太久。
+
+[rag-0318-L61-L68] meeting=0318 lines=61-68 score=0.1667
+[SPEAKER_01]: 其實它這裡是一個 arXiv paper，它可能就是它做完之後就放上去一下這樣。
+[SPEAKER_02]: 然後對，它還有算它的 storage size 這樣。
+[SPEAKER_01]: 所以就是我跟吳俊峰老師介紹我們要合作一個題目，記憶，對。
+[SPEAKER_01]: 對，我們現在有一個題目，其實就是我們想要去算那個用 GPT 的 token 的消耗跟 compute 的量。我們要做那個 Sustainable AI，就單說永續。然後就是說有沒有辦法去計算你的那個可能的，就是其實之前有人講說最輕量的 GPT request，它大概什麼 0.03 瓦，然後可能比什麼 LLM 可能還低一點。但是最 max input 的話，它會超過多少的，就是它非常耗電。
+[SPEAKER_01]: 然後同一件事情，你用 Google search 跟用 GPT 問它的耗電量會差非常多。但其實成果上，你現在我看 Google 會一直弄成是變 GPT，我就覺得很沒有必要。就有時候我就只問一個簡單到不行的問題，它就一直要把它變成 GPT。但其實有時候那個也有點好處，那個我覺得還蠻好，有的時候是有好處的，但是有的時候其實是沒有必要的，對。然後我們就在講說，因為現在一直在講節能嘛，因為現在越來越多東西被丟到 general model 裡面去。
+[SPEAKER_01]: 那現在以 sustainability，大家有人在說用 hardware 或是 software 來去降低它的節能這件事情。那但是還沒有人 explore 的是說，你可不可以用 human 的角度來說，就是當今天這件事情其實你真的用 Google search 就可以了，我可不可以去讓人開始慢慢去知道說我關掉那個 GPT，就在某些需要的時候關掉；或是在用 ChatGPT 的時候，它現在其實是 auto 嘛，對不對，你可以選擇它自動幫你選怎麼 think longer or think shorter。
+[SPEAKER_01]: 那但是有些問題其實你是可以變成，你可以開節能的模式，它可能可以用比較爛的版本就可以幫你回答一個很好的問題。那某些東西是不需要最高最高的 model。那其實像這方面的時候也是在 compute 這個它需要的。那因為它是做晶體的，所以它就說好，我們要回去計算預估那個。你們記得錄影喔，你們有錄嗎？我這邊有錄到，因為我後面記得繼續錄。
+[SPEAKER_01]: 對，反正也以為就是現在我們有一個那個題，我們看到這個現在其實很多記憶體。
+
+[rag-0325-L1-L20] meeting=0325 lines=1-20 score=0.1667
+[SPEAKER_04]:	不用到那麼複雜的樹狀結構所出來的那種完整的完全不遺漏因為長期記憶裡面不遺漏不是它最重要的原來最重要的是整個會議的脈絡所以我想說我們就每個日期的Meeting就抓很多個這樣的Object出來
+[SPEAKER_02]:	我想一下喔你說前面上面用LLM去 Process Transcript
+[SPEAKER_04]:	就是去讓它去擷取出這樣的物件
+[SPEAKER_02]:	所以這是你們長期記憶的structure然後所以
+[SPEAKER_03]:	其中一次單一次的structure
+[SPEAKER_02]:	OK然後所以
+[SPEAKER_04]:	進來他會他會就是他會去抓就先看那個type 就是他會去抓看是有decision to do然後method change result就是這個還可以討論就是這是就決定說你要取出這次meeting的哪些內容的具體的細節
+[SPEAKER_01]:	主要就是跟之前的不一樣就是我們原本短期跟長期是長期是樹狀 然後我們後來討論了一下就覺得長期好像
+[SPEAKER_02]:	欸我先問一下喔你覺得在長期就是在我們這個agent底下他我們的recording
+[SPEAKER_02]:	它是某方面它是會存著的對不對
+[SPEAKER_04]:	對阿
+[SPEAKER_02]:	就它的raw data其實是會在的然後所以這個它的這個object它基本上它只是說好我可能有些summary對然後但是最終它會去調閱哪一天假設如果真的要它可以指到說
+[SPEAKER_01]:	嗯嗯他可以指到那個文本
+[SPEAKER_02]:	指到說那一個影片裡面的第幾分幾秒存取?
+[SPEAKER_01]:	或是Transcript的那個Chunk
+[SPEAKER_02]:	我覺得如果聲音會比較好因為大家不喜歡看字而且
+[SPEAKER_01]:	可是不是丟給你說是丟給LLM的部分嗎
+[SPEAKER_02]:	就是應該說最後的存取的地方就譬如說喔喔你這個是只有講agent的部分我還想的是前面的部分我很想的是說最終你這個後面的agent的部分他當然是去存取所有的相關的transcription的那個那一段的文字對只是說最後在output出譬如說我想說那時候那個發生了什麼事情可能是一個月前
+[SPEAKER_03]:	如果你可能要掉那一段音檔應該是調得到的
+[SPEAKER_02]:	只要空間夠嘛如果只要有一個很大的空間存著那個錄音

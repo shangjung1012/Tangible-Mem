@@ -1,0 +1,201 @@
+{
+  "strategy": "rag_baseline",
+  "retrieved_chunk_count": 12,
+  "retrieved_chunks": [
+    {
+      "chunk_id": "rag-0506-L46-L65",
+      "meeting_id": "0506",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0506.txt",
+      "start_line": 46,
+      "end_line": 65,
+      "text": "[SPEAKER_02]: 那那個memory上面現在的話是有會分成short term跟long term的嗎?\n[SPEAKER_01]: 對 這個是long term的系統這是分開的然後現在這個是在做long term的系統所以L1是long term然後short term是什麼 L2嗎因為它的L1是long term的Long term的每一個unit就是這個然後我們會我們上次說大概四個 四場會議會抓出一個L2就是這四場他比較大的脈絡會在這裡然後L3會是現在所有的脈絡再抓一個出來所以這邊他只會去\n[SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去表現是說我如果怎麼樣我的 meeting 的 transcript 假設我現在多了這譬如說 20 行進來對 然後你進來然後它就一定一件事情它會在這個地方 這個地方可能後續,因為說那誰進來之後那這一句他會譬如說某種visualization他就會發現說這件事情如果你可以動態展說他會發現這個L1的節點亮了那他現在就加了一個node上去對然後這時候他L2他一加上去的時候L2他裡面會覺得update 它會有個 summary 在 L2 的節點裡面它會 summarize 下面的 L1 相關的東西所以我每加上一個 L1 的節點的時候L2 會改變然後 L2 改變之後最終L1 可能不會改變的因為 L1 是最 high level 的東西應該微小的改變所以 L1 你可能覺得說那像這時候 L1 它其實不會改變那你可以展示說當某一種情況譬如說本來在做這件事你決定不做了 對這件事情那可能譬如說超過幾天L1這件事情可能會在某一件事情譬如說決定decide這件事情我們放掉就是我們不做這件事情然後那你可能說喔那L2的話它也會改變那在這個時候L1的某一個東西可能會開始有一點點修正就是比較可視化它的那個感覺對對對然後這樣大家就有點像是說我是用視覺化去展示這個agent的memory裡面的狀態就是它現在existing的結構節點有長這樣子 那你假設說今天我real time有一個新的 transcript進來我process完它一個一個丟進去的時候我的memory的長相節點會長這個樣子 然後那 importance 跟那個的部分現在是怎麼算啊?importance 跟 relevance 啊?relevance 就是用那個 semantic 的...這裡好像都沒有就是...importance 也是靠 prompt 讓它去想在...那時候我們有講過說他被講過幾次會是一個 Indication 對不對?被講過...就有我們有一個算是一個...一個公式譬如說這一件事情\n[SPEAKER_04]: 它會有一個viewpoint的table如果它頻繁地提到的話那它之後的evolve會有一點點的加權頻繁指的是說同一次meeting不是跨meeting同一次meeting裡面它被講到了比較多次那所有有這個viewpoint的idea units 它都會增加它的就譬如說它可能不屬於同一個idea units對然後它都有提到就是你每次的update的時候你會去看所有目前有的idea units 然後如果它們有重複被提到那可能這三個idea unit它的importance都會加成一點點那它會有個default importance的值嗎?譬如說我今天第一個idea unit進來了它的importance的...那個importance都是在...importance在L2還是在L3?在最底下,其實最底下是L1然後對上面是L3對對對,L1就有importance了嘛 L1就會,就是你在...importance是跟著每一個unit, idea unit?importance是在你那個candidate出現之後他才會最後去去assign importance。importance算是你確定要存成node之後他才會給你然後,那在那個generate成一個node的當下他的importance的預設值是多少? 預設值 應該不會有預設值 因為是給LLM去判斷的所以就是LLM直接照我們給他importance的準則然後它去但我在想是importance這件事情可是它是一個相對的嗎還是就它應該是有兩個值的 一個importance 一個relevance 是嗎relevance是後面retrieve的時候算semantic的相似度\n[SPEAKER_02]: 對啊 等等應該是大概在五分鐘吧好好好 拜拜你要走了嗎 OK importance 跟...這是 importance 這是他的 prompt。importance 都是由 LLM 直接去判斷 什麼叫discard as L1啊我以為它都是L1為什麼會discard as L1\n[SPEAKER_04]: 不太確定,就我還沒仔細程式importance的那個部分之後看它最後出來的importance是不是正常就是它最後給出來的結果的importance怎麼用我確定有沒有列出來好像還沒寫出來你這邊可能到時候,因為是inspection嘛你可能那個這個不行,看錯了這個還沒有寫在這裡\n[SPEAKER_02]: importance 的話我會覺得這地方你可能可以用其實最重的這個搞不好會是你們另外一個 by-product 的一個 contribution就是說讓未來大家在做 data在做 data 這種 transcription 的的 parsing 跟 inspection 的時候可以做的事情那像這件事情的話你們可以譬如說如果有 importance 跟 如果有 importance 的話你可能這個地方可能就可以 visualize 不同的 importance 的 level把顏色譬如說最深的覺得是最重要那所以到時候我想想另外一個是你 user 可以自己去 tune 那個 importance就譬如說我覺得這件事情其實非常重要但你判定成一點都不重要我要 increase 這個 weight那我如果 increase 某一個 idea unit 之後你這時候可以算 similarity所以如果我覺得這句話非常 important增強它的 importance 的話其他 relevant 的 idea units 我都直接跟你 confirm所以這些也是相關的你要不要把它全部都勾成是要 increase 它的 importance所以這個地方你就可以帶進來說我們 human 跟 AI共同的去 model就是我過去 Meeting 資料我怎麼去設定它的 importance level你一開始的初始值是由 LLM 設定但是它過程當中 user 可以自己一直去給動那個 weight 然後LLM會去也是會去知道就是human現在比較這個對這個來說他其實是要improve對然後最後他的考量點可能所以到最後可能不能就只有LLM最後可能會變這個如果要變得比較personalized的話他就會知道說喔這個人應該說這支agent對他在處理的時候哪一個類型的哪一個類型的資料我們可能不會是看literal說喔這句話講你可能要說他底層 在講什麼類型相關的東西的時候好像都會被標成會被這個user去重新再把它tune成importance變成比較高的對另外一個就是今天user 如果自己去調高或者是調低它的importance的時候它到那個因為long term的時候它不是會fade嗎對那如果是user曾經把它調成importance的時候 它在對抗那個越來越久 越來越久 我們有聽到它的importance可能必須要 它的decay的速度要比較慢因為它曾經被有所提高 說這件事情是重要的所以你終於可以 你們想要強調的可能就是說過去的這種 譬如說不管是哪一種方式去long term的記憶或者是fade out 它都是system 自己的logic 都去 去做那但是我們是提供一個human跟AI可以合作的那我們今天每個 transcription進來的時候我的user是可以去tune它裡面每一個memory節每一個Potential L1節點它的Impact level那但是我一個一個去標的太困難了所以我會先有一個Default的一個值對然後那那我可以去改那我改了之後我可以譬如剛剛講的我改了某一個我提高了我用similarity去看所有其他idea units類似的 類似的concept它不一定要是文字一模一樣但如果是類似的講法的東西我直接問你說這些你要不要調高如果不要的話就不要那如果要的話就調高那調高之後這件事情我們會去調整在最後long term的時候它fade out的時候我們會去考量如果user有tune過它曾經是很重要的話它decay的速度會比別的從來都沒有被調過的還要慢\n[SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很\n[SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如說你判定錯了這個其實很重要我還是可以那我未來再判定你不是有那個0到幾0到幾那個那未來可以根據你過去的判定 predict 它的 importance level 的時候它可以變更個人化一點好 那個部分可以從剛剛那個介面的那個 Interaction 做到那接下來說 importance 這件事情它是 static 的對 那但是 long term 之後會變成是\n[SPEAKER_04]: relevancy 會越來越降低對不對relevancy 應該不會因為它就只是語意相似度就是你我的relevancy 是時間的相似度喔你說 recency。relevancy、recency 它是譬如說每個一次的 meeting它就 decay 多少這樣子對它會降一點值可是它會有一個如果是 importance 很高的話它會有一個 floor 就不會降到太低嗯 嗯?什麼意思?就是如果這個東西很重要不會隨時間消失所以它的公式會長什麼樣子?它的公式咧?應該在前幾次簡報我記得有我記得有一個你是說比如importance的 每一個node它會有一個importance的值嗎然後會有一個recency的值recency就是你這一次Meeting所有的node的recency的分數理論上都會差不多但是隨著時間的推移你當時在memory裡面的你是說其他場會議嗎\n[SPEAKER_02]: 還是說那一場因為那一場會議的那一場會議的時間軸是共用它就是同一個日期我想的是說在我們現在在我們的memory system裡面其實就是最底層是一堆的L1對不對就是L1 L1 L1假設說L1 L1起來變成L2然後這樣變L2然後最後他們假設說有L3的最高的節點這樣現在是這個每一個idea unit它有一個importance的 還是是在這裡是L1就有了嗎L1有是在L1然後它每一個節點裡面它有個importance然後有一個 還有什麼?activation嗎?activation然後還有relevance 跟 recency。relevance 跟 recency然後跟activation。那你說的是importance 在當時建立node的當下就會有好那我們現在假設現在memory系統已經長這樣子了 好那假設我們現在假設這是其實就是這個禮拜的Meeting的結果假設我們這是第一次Meeting到下一次Meeting來的時候假設我一個新的node過來了L1的node過來了那他L1他過來他怎麼決定他要去加在哪個L2裡面L1他會因為他是順時間順序就應該說這個L1裡面應該是很多很多個這個很多很多個Object然後每個Object都有一個這個東西 就是它這個代表的是一場會議然後裡面會有很多的這個東西欸 好 那等一下我就慢慢把它畫清楚一點好了可以說嗎 我們先講一下我們上禮拜是第一次的Meeting然後經過了這些Process之後你的memory系統裡面假設我們現在就是有L3它會長什麼樣子如果只有一個L1它就是只有L3，L3最高假設我們就只有L3我們就寫L3然後假設它就是只有L3然後它有三個L2好了三個L2 OK\n[SPEAKER_04]: 我先問一下一次的Meeting的內容就可以產生三個階層的東西 可是這是一次好了這是可能是0307好了那這個0307裡面其實就會有很多很多個Object這樣然後每個Object都有各自的importance等一下你就畫它的結構長什麼樣子它的結構譬如說它就會所以它L2接下來的會是不同的日期嗎嗯就是那一場Meeting那一場Meeting然後裡面那一場Meeting裡面會有很多個Object這樣是我們剛剛更新的那個一場Meeting裡面的那些那種\n[SPEAKER_02]: 應該是說他的L2內容會是像什麼樣 我們舉個例L2會是類似 假設我們來說我們現在在講party Planning好了我們在說我們在討論我們上一次的Meeting在討論今年的暑假工營我們要辦的活動晚會要是做什麼事情然後是這個Meeting好了對好那現在譬如說那L1 L2 L3他可能是一個什麼樣的內容 L2，L2可能就會是我們先以L1來說它最底層的一個node它的內容會是長什麼樣子一個node裡面會是很多很多個我們就舉例我們剛剛在討論譬如說我們在討論是暑假資工營可能晚會暑假資工營然後晚會什麼時候小隊員有幾個這樣\n[SPEAKER_01]: 就是它是很細的資訊那L2就會說好L2會說我們這次03、07是在討論討論晚會的部分這樣然後可能什麼03、14在討論什麼然後可能這一個月都在討論什麼東西\n[SPEAKER_03]: 就這一個月討論的晚會那這個節點會是什麼這個節點還不存在如果他還沒進來的話他不存在他現在可能是這個可能就是14然後他應該他們是有四個嘛所以可能就是2128那這邊就會是零點四零點四然後就像這樣子所以這個就是剛剛那邊的一次的Meeting就這邊是一個日期的一次的Meeting一次的Meeting一次的Meeting一次的Meeting\n[SPEAKER_02]: 我現在有點疑惑欸所以現在這個是所以這就是每一次所以其實只是在\n[SPEAKER_04]: summarize不一樣每一次meeting他這個節點跟這個節點之間中間會有關係嗎現在是沒有關係你要說的話就在這邊你現在如果只有這個那這些東西都不存在然後再加這個然後再加這個然後再加這個然後等到醫師進來的時候這個L2才會出現就是他是這樣隨著增生他的L2才會慢慢出現\n[SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議之後我們切了各種idea unit然後有一個很小的idea unit是在討論說如果辦在六月底 就是好像可能會有個在說就是六月底的時間點六月底的時間這件事情那可能有一些 trade-off off 等等那同時六月底的話剛學生有些學生沒有開學有些還沒放假等等的對那當然說六月底可是七月初很多人出國等等好那那譬如說有些六月底的 reason然後這個東西切成一個 idea unit然後反正它會成為一個 L1 的 unit它是講六月底如果出國對然後討論到一些比如 pros and cons 等等的對 那可能說在當下有人說還是要辦在八月底那開學前大家都回國了等等所以在這一次meeting裡面可能會有另外一個說那如果是八月底的話所以這是L1的第一個節點我講的這些都是最最底層的 好那這是另外一個L1的節點那當然這個是在講六月就是說在六月底辦八月底辦這樣對那當然可能在討論討論到最後再說那要辦晚會還是要辦hiking好了對那可能說喔那有一個idea 因為我們是切那個東西來有一個是在討論的是event type event type 反正一看所以它有一點像我切那個 idea unit 的時候我切一個是時間有關的然後有人在講八月時間有關的那接下來 event 是跟譬如說是是去 hiking或者是我去辦什麼我不知道游泳啊那這些都是跟 event 的 type 有關係那接下來說要找大一的同學來幫忙的話那就是譬如說人好 people 好了 要不要找大一的同學,就是比較閒的那我拆完之後,我有一個idea unit,最低是time，它有一個最底層的更小的level 在這個地方,但最後我的結構會說這兩個都是屬於一個比較high level的,他們在討論time這件事情 所以這裡可能這些就是以主題為單位嗎對就以我們的memory架構來說有一些很像是說我現在記得我們總共有討論就是這個這個Meeting結束之後我現在知道也許因為還沒有很多Meeting所以我現在只有一大堆的L1我切了好多的L1出來目前我可能或者是說在什麼樣的情況我會先propagate 上去說喔就是他們兩個是有一個L2的什麼樣的結構或者說 在討論時間的時候會要考量到開學與否同學的什麼相關力就是現在有點像是你們現在怎麼回事現在有點像話現在就是你們現在這個現場互動因為一開始你不是有跑一個專案然後它會有很多離散的圖對就應該長得像那個樣子對然後我可以我本來想像是像這樣子嘛對不對那接下來它會開始長出一個這樣 好然後我這一次 meeting 結束我到下一次 meeting 來的時候那我們說那我們來確定一下好了要是 6 月還是 8 月好那這時候呢就有人說好那剛一進去的時候譬如 recency 一定就是都是 1 嘛所以是最相信的 好那接下來那可能會討論某些事情也許被提到可是其他也許沒有那麼重要啦我不知道會有一大堆L1那到第二次meeting 的時候假設時間又講到說那我們去看了一下別的學校台大他們也是六月那我們就不要跟他撞期等等的所以我們要在什麼樣之前所以我們決定那我們就辦在六月好了 好然後這時候這個一樣我們是 plus 這個東西耶節點我就有找到說欸這是屬於時間 time然後而且我去觀察就譬如說喔它是嗯它是跟譬如說時間的也許說這個是時間是說開學考量那但是其實我們可能是另外一個現在考量跟其他學校的競爭之類的所以它因為不存在目前已經有的 L2所以我就開了一個新的新的 node 在這個地方然後它產生了一個 他把L1 這個東西把它加進去那因為這個禮拜我們討論的是這件事情所以上個禮拜討論的這兩個節點他的recency就decay Decay 的某一些程度因為現在這個節點在時間底下它是最 recent就是 recency 的那你可以想像一下開第三次會也許到第三次會的時候說就是還是要考量就是我們試了在七月但是後來發現就是同學在七月真的都會出國對所以七月真的很不行所以我們就還是要到六月然後那個理由那你在譬如說下一次會的時候發現說它的內容其實跟 L1 其實很像 對那這個地方其實我就不用create一個新的L1節點然後我去update這個L1這件事情然後它我的日期加了一個就本來有一個是3月28號create的節點那但是在幾月幾號的時候它又被提及了一次它又微微的update一下對那它的recency又突然又變高了對我本來想要是它是一個有點像 可以像是說它的node會慢慢的展開那如果我找不到相關類似的東西的話我會create一個新節點要不然就是我去update原本已經有的節點 那這個三個 level 的話是比較像是more fine-grained最下面L1 的話是很細緻的那個很細緻的description然後到這邊到L2 的話它是比較是一個下面細緻description上面的一個summary對然後在最上面的話是最大的一個像一個主題\n[SPEAKER_04]: 我還想說不用去update前幾個是因為你新的幾個進去你之後再要retrieve這個主題的時候它跟它都會被拉出來然後第一個是這裡因為recency比較近所以它的分數一定比較高然後再來是你再假設它最後兩邊都被拉出來然後被餵給LLM好了那它會有時間軸所以它可以看得到什麼0307說要6月還是8月然後\n[SPEAKER_02]: 可能看到0314說還是8月好了什麼因為什麼很多人出國之類就是它是可以看得到哪個時間軸對同樣一件事情的不同決定因為它有時間的對但這個地方它裡面也是會有時間的就譬如我create每個節點的時候它都有它create這個節點的日期那如果說我下一次找到一個其實我有講類似的事情的時候我有類似的我就不用create一個新的小節點我就是update這個L1的節點在下面",
+      "score": 0.4,
+      "matched_terms": [
+        "0307",
+        "activation",
+        "fade",
+        "floor",
+        "out",
+        "我們的"
+      ]
+    },
+    {
+      "chunk_id": "rag-0325-L121-L140",
+      "meeting_id": "0325",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0325.txt",
+      "start_line": 121,
+      "end_line": 140,
+      "text": "[SPEAKER_01]:\t近期都沒有提到過他那他會把他就踢掉這樣子\n[SPEAKER_02]:\t我覺得你總地來講說應該是剛剛講的working memory就是現在正在進行然後short term我記得我們上次是說就是上一次就好那short term的話就是說他比較重視在直接會impact這個禮拜要找的事情因為他會直接是變to do那beyond上一次的話我們就當成是一個比較long term的一個東西\n[SPEAKER_02]:\t那我覺得我們的Memory有個比較重要的點是因為我們討論的是在研究的情境底下然後所以有很多東西它其實會一直開枝然後在某些時刻它可能它不是線性的對 然後所以有些東西它其實在某個時刻它存在但是其實在某個時刻我們已經否決掉不要做這件事情了\n[SPEAKER_02]:\t那如果是我們想像說一般的像比方說rag或什麼東西我知道說這個事情比如說本來覺得要做這個東西對他是在記憶裡的但是在某個時刻他其實已經變成是不要再做它了那所以那也許然後不同的事情比如說像我們一開始有一些不一樣的goal那現在說好我們聚焦到說memory這件事情那也不代表說personality或什麼東西不管對那當然那個東西會現在目前會丟在就是比較longterm的那個記憶裡面去\n[SPEAKER_02]:\t對,然後,所以就有點像是這種,譬如說我要怎麼去在Long Term上的話,我要怎麼去Structure這種可能開枝散葉或是Iterative然後中間可能有些Dependency,那某些東西其實它雖然曾經被講過但是它是不應該再被執行等等的,這些Temporal的一些Formation對,就比較,然後這部分就是Long Term的地方嗯,\n[SPEAKER_04]:\tLong Term這現在應該不是Dependency,現在比較像是靠retrieval去那個\n[SPEAKER_02]:\t不知道顏老師對於我們現在這樣子的架構有沒有什麼想法 然後最近同學們就一直在看一些處理memory架構的paper\n[SPEAKER_01]:\t我們最近主要是在看就很多Memory主要是解決的問題是在 context太大的時候然後很多人我們會把它去處理成一些樹狀的結構我們昨天有自己討論就是我們到底要怎麼去區分我們的short term 我們現在在想short term的形式搞不好可以改因為昨天測試下來之後short term會變得很龐大\n[SPEAKER_00]:\t就是近一次跟近兩次可能要看他的就是有沒有很明顯的差別\n[SPEAKER_03]:\t我們在想如果像可能他20場30場看剛剛我們用多長的話那他到底第一場他到第25場的時候他第一場他到底應該要記得多少就是他可能其實不需要像以現在大部分他們在做記憶架構上面那麼的詳細就他們比較像是說\n[SPEAKER_02]:\t就long term上可能某些東西就可以fade out了這樣因為現在的結構\n[SPEAKER_04]:\t就是大部分的樹狀結構因為你把記憶打散所以你的時間就沒有辦法放進你的每一個區塊裡面所以變成說你不會有時間造成權重的衰退的結構在這個樹狀結構裡面\n[SPEAKER_04]:\t所以我在想是不是長期可以不一定要用這種樹狀結構就是用時間的方式讓它順著下來然後靠Retrieval的方式去抓住你想要的東西就是我們Retrieval後面你在算語意相似度\n[SPEAKER_04]:\t你會得到這個語意相似度之後你後面有個分數是Retrieval的部分就是會有Residency的分數然後這個就是我們希望可以做到的關於時間衰退的重要性的那個權重但是如果有一些保障就是像如果你是很重要的資訊的話那你的那個Residency會有個Flow就是你不會降到最低不然它其實很重要但如果它在很久之前\n[SPEAKER_04]:\t你如果沒有這個floor的話它會變成說它就會消失所以你可以設定這個然後就是Retrieval的公式主要是長這樣子\n[SPEAKER_02]:\t這個是你們自己現在目前的想像就有點像是說現在好像大部分在處於那個longterm在說就是比如超過他的那個target記憶線度的時候會開始hallucinate然後大部分好像都是在說我要精準的抓住所有過去發生的事情\n[SPEAKER_02]:\t然後在這邊我們會有點像是說我們要去有一個weight有一個trade off就是某些講太久的事情他其實就是他基本上就不要再被retrieve出來那但是很久之前但是其實還是蠻重要的事情然後他在某個時刻他可能還是可以跳出來而且大家知道說在那個時候發生了什麼事情類似這種\n[SPEAKER_05]:\t現在還蠻make sense的然後如果是這個架構可能也許可以參考看看那個可不可以幫我開網頁搜尋什麼因為大家什麼the web對 然後 web c-a-g\n[SPEAKER_03]:\t是這樣的嗎?我已經忘記那一篇是一篇論文嗎?對對對,這個嗎?有嗎?有像嗎?這個沒有像這些是搜尋作者中\n[SPEAKER_02]:\t像這種比如說那種Decay就是比較早之前的這種Retrieval是有類似的model或類似的範文就是考慮它的重要性跟時間的長度然後去看就好就有這種類型的然後對Agent裡面的記憶",
+      "score": 0.2667,
+      "matched_terms": [
+        "fade",
+        "floor",
+        "out",
+        "我們的"
+      ]
+    },
+    {
+      "chunk_id": "rag-0422-L166-L183",
+      "meeting_id": "0422",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0422.txt",
+      "start_line": 166,
+      "end_line": 183,
+      "text": "[SPEAKER_02]: 應該有一些被否決的東西只是就是\n[SPEAKER_01]: 因為我想說我們因為我們原本目的是做比較長時間跨度然後怕五場可能數量不夠\n[SPEAKER_00]: 你可以看五場因為五場我覺得還是比較靠近短期\n[SPEAKER_00]: 那你去看真的那種譬如說二十場Meeting之外的我們之前Meeting沒有講一個東西\n[SPEAKER_02]: 我們應該沒有十場沒有\n[SPEAKER_00]: 你去抓到某一件事情然後你如果可以展示出你一般的 Language Model你用RAG的方法，那我們去提到說這件事情的話那它的結果會有怎麼樣不一樣\n[SPEAKER_00]: 對然後所以這是其中一個然後另外一個是另外一個就是這個跳躍就是去打包那個idea unit這個東西。那我覺得以這樣來說的話如果說兩件事情的話以五月專題展有可能會夠吧\n[SPEAKER_01]: 嗯嗯應該可以吧是要夠都來得及嗎\n[SPEAKER_00]: 但我覺得這就叫一個很好的故事，那我覺得以這個故事來說我覺得還蠻我跟很多人講每個人都蠻有興趣的。對那就是說這件事情應該說我們把這個做好之後在上面可以蓋上去的東西有很多\n[SPEAKER_00]: 對那什麼樣的情況非常非常的重要。那當然也可以想到說那有些人會說啊怎麼可是搞不好一年前我講的東西很重要啊那你不就忘記了嗎，什麼什麼因為那所以我們的機制有要講說說我們在real time中\n[SPEAKER_00]: 我們可以在就是在抓取重要的 memory 的時候我們會根據它當前重要的那種 relevancy 去抓對那但是就會後之後我們會慢慢 update就如果某一個題某一個主題一年前講過對，那今天又被講起來那個當下它其實並不會影響我現在的 interaction 它有一些假設它是忘記的\n[SPEAKER_01]: 我們有說如果 importance 多高它是永遠不會 fade out\n[SPEAKER_02]: 他有個 flow\n[SPEAKER_00]: 我最近有聽到一個就是我UIUC學弟他在講一個他在Berkeley的老闆他在做一個蠻有趣的事。他在做遺忘Large Language Model的遺忘，然後他在講的是說譬如說像現在有些重要的個資，譬如說誰的誰說他讀到了某一些資訊對，那他希望的是這個Memory這個Large Language Model他最後忘記這個人真實的名字或電話，可是他記得這件事情\n[SPEAKER_00]: 所以就是說我記得有一個人他有在做一個什麼事情或是我記得有一個人他當時發生一件什麼事情他記得這件事，可是他刻意讓他遺忘\n[SPEAKER_01]: 他選擇性的遺忘\n[SPEAKER_00]: 對，你要記得那個架構但是他忘他必須要忘記一些sensitive information，所以他不能全部遺忘他不能不記得這件事情他要記得這件事情可是他忘記那個那個sensitive的內容\n[SPEAKER_00]: 好那就先這樣",
+      "score": 0.2667,
+      "matched_terms": [
+        "fade",
+        "out",
+        "我們的",
+        "機制"
+      ]
+    },
+    {
+      "chunk_id": "rag-0429-L16-L35",
+      "meeting_id": "0429",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0429.txt",
+      "start_line": 16,
+      "end_line": 35,
+      "text": "[SPEAKER_04]: OK 所以可以去跟學姊拿\n[SPEAKER_02]: 對對對對可以跟她要然後我在想的是以這樣來說就是其實應該是說我們要你可能下次就要先確定一下說最就是long contaxt的那個準確指的是多少然後用那個方式去比較因為這180分鐘感覺不是agent他們在定義long的那個就沒有分鐘的概念對 用那個方式我們大概會知道說所以我們的資料的大小是大概是多大這樣嗯\n[SPEAKER_04]: 然后我们现在evaluate的question主要分三类一个是short term就是至少是要确定他短期短期的回答是正确的然后long term的evolution就是可能会问他说我们这整个某一件事情的研究的方法从过去到现在完整的演进是什么\n[SPEAKER_04]: 然後還有一個是decision reasoning就是很會問他說我們為什麼現在是做這個決定當初是什麼討論讓我們今天這件事情決定這樣子嘛\n[SPEAKER_02]: 所以這個evaluation的意思是說第二個的話它的重點是正確率嗎\n[SPEAKER_04]: 對就是他不能漏掉context他不能漏掉其中某個meeting講過的東西就可能我們在三個meeting講提過這件事情然後三個meeting都有不同討論的點但他只講到了其中兩場meeting或者是他自己胡亂的生了一些就是我們meeting裡面並沒有講到的事情嗯\n[SPEAKER_04]: 所以在我们的data里面我们基本上就是要非常明确的知道说我们里面总共有哪一些answer而且哪些东西是不对的就在evaluate的时候所以那就是评分的方式参考就是也是之前前面的paper就是我们会给他我们的答案还有我们的这个agent生出来的答案然后请他去比对大概的正确率\n[SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說某一件東西他不應該在 short term在我不知道這是 dialogue 的時候不應該要出現但是他知道他忘記了就是他知道他有這個東西他是不記得但是他在對話的時候他不會突出這個東西\n[SPEAKER_04]: 嗯嗯嗯好\n[SPEAKER_02]: 然後呃因為我覺得這是一個還蠻特別的一個地方因為過去的agent應該從來沒有人在測這件事情就是有點像說language model在in turn在real time 跟你回答的時候它會避免輸出一些它其實long term但應該要被fade out的東西但是但是你刻意的去挖它那個挖它的那個丟失裡面的話它是存在的\n[SPEAKER_02]: 對然後他就是在等著某一期就是他因為我們不是說他被有點像是inactive的某一些idea在那個地方就是太久又太不重要的都會被丟到那個地方去那所以說我們要怎麼去處就是在一般對話的時候不應該觸發然後在講某一句話的時候他應該要去觸發他調起來這個記憶\n[SPEAKER_02]: 對 應該是說我們在一般對話的時候它不會出現然後但是你用某一種 function code去叫它列出你的 long term memory 裡面現在有哪些是 inactive 的 idea那它會 它是列在那個地方的但是它會刻意的不出現在現在正在進行的對話裡那那它要在被 activate 的情況下就是譬如說它必須要出現在short term meeting 裡面出現到了幾次之後它的那個它會慢慢的會從那個地方又再慢慢的fade out\n[SPEAKER_04]: 那應該就是我們之前有做就是我们做我们会去算他的weight会算他的importance我们应该会从这个地方去切一个就是几分以下他是在一般的对话中不会出现然后我们在每一次如果像老师说short term一直提到他的话那他那个分数应该会往上所以他就会再重新所以被LLM会在对话中提到这样\n[SPEAKER_02]: 這個東西有記的遺忘這件事情現在有人在開始在做應該蠻多人做的可是他們做的應該都是以就是人類的遺忘曲線就是可能多久這樣子但是如果是\n[SPEAKER_02]: 他們有人在做嗎因為Large Language Model已經自己很會遺忘啦他們現在他們是怎麼樣子的人類遺忘的曲線我感覺Large Language Model的遺忘感覺是是Sensitive資料的去除嗎那一種類型的遺忘\n[SPEAKER_04]: 我有看過 我記得Time Memory還是哪一篇 它是有模仿它是有做遺忘的機制喔 \n[SPEAKER_02]: 你可以把那一篇 等一下貼到那個chat\n[SPEAKER_04]: 但我還要找一下 \n[SPEAKER_02]: 好好就是 對我覺得他們的遺忘都是直接全部忘掉就是不可能再retrieve回來就是它不會因為你一直提到再出現這樣他們的遺忘是怎麼樣他們是他們的遺忘是如何遺忘\n[SPEAKER_02]: 是在某種方式把他probability上面直接把它就是negate這樣回去讓他不記得這個連結嗎還是他們那邊的遺忘是怎麼樣的遺忘還是他用prompt的方式說你不記得這件事情就是他們的話遺忘的方式是怎麼樣的遺忘",
+      "score": 0.2667,
+      "matched_terms": [
+        "fade",
+        "out",
+        "我們的",
+        "機制"
+      ]
+    },
+    {
+      "chunk_id": "rag-0429-L106-L125",
+      "meeting_id": "0429",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0429.txt",
+      "start_line": 106,
+      "end_line": 125,
+      "text": "[SPEAKER_02]: 然後你們想要來跟我去討論一些事情，那這樣就會存在說，譬如說我跟碩二的同學，我們大概有兩年的 meeting，對，然後就會有很長，就是我對於每個人，我們都有一些脈絡，然後一定有些東西曾經討論過，然後被丟棄。這些錄音都在嗎？應該是都在。對，我知道真盈，因為真盈她也是在弄會議分析，所以她的檔案一定是都在。\n[SPEAKER_02]: OK，所以可以去跟學姊拿。對對對，可以跟她要。然後我在想的是，以這樣來說，其實應該是說，你可能下次就要先確定一下，最就是 long context 的那個中值是多少，然後用那個方式去比較。因為這 180 分鐘感覺不是 agent 他們在定義 long 的那個中值，就沒有分鐘的概念。對，用那個方式我們大概會知道說，所以我們的資料的大小大概是多大這樣。嗯。\n[SPEAKER_04]: 然後我們現在 evaluate 的 question 主要分三類，一個是 short-term，就是至少是要確定它短期的回答是正確的；然後 long-term 的 evolution，就是可能會問它說，我們這整個某一件事情的研究方法，從過去到現在完整的演進是什麼。\n[SPEAKER_04]: 然後還有一個是 decision reasoning，就是會問它說，我們為什麼現在是做這個決定，當初是什麼討論讓我們今天做這件事情的決定。這樣子嘛。所以這個 evaluation 的意思是說，第二個的話，它的重點是正確率嗎？對。\n[SPEAKER_04]: 就是它不能漏掉 context，它不能漏掉其中某個 meeting 講過的東西。就可能我們在三個 meeting 提過這件事情，然後三個 meeting 都有不同討論的點，但它只講到了其中兩場 meeting，或者是它自己胡亂地湊了一些我們 meeting 裡面並沒有講到的事情。嗯。\n[SPEAKER_04]: 所以在我們的 data 裡面，我們基本上就是要非常明確地知道說，我們裡面總共有哪一些 answer，而且哪些東西是不對的，就在 evaluate 的時候。所以那就是評分的方式，參考也是之前前面的 paper，就是我們會給它我們的答案，還有我們這個 agent 生出來的答案，然後請它去比對大概的正確率。\n[SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。\n[SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但是你刻意地去挖它那個 lost 的裡面的話，它是存在的。\n[SPEAKER_02]: 對，然後它就是在等著某一期，就是它因為我們不是說它被有點像是 inactive 的某一些 idea 在那個地方，就是太久又太不重要的都會被丟到那個地方去。那所以說，我們要怎麼去處理，就是在一般對話的時候不應該觸發，然後在講某一句話的時候，它應該要去觸發、把這個記憶調起來。\n[SPEAKER_02]: 對，應該是說我們在一般對話的時候它不會出現，然後但是你用某一種 function call 去叫它列出你的 long-term memory 裡面現在有哪些是 inactive 的 idea，那它會列在那個地方，但是它會刻意地不出現在現在正在進行的對話裡。那它要在被 activate 的情況下，就是譬如說它必須要出現在 short-term meeting 裡面，出現到了幾次之後，它的那個會慢慢地從那個地方又再慢慢地浮掉。那應該就是我們之前有做。\n[SPEAKER_04]: 就是我們做，我們會去算它的 weight，會算它的 importance。我們應該會從這個地方去切一個，就是幾分以下它是在一般的對話中不會出現。然後我們在每一次，如果像老師說 short term 一直提到它的話，那它那個分數應該會往上，所以它就會再重新被 LLM 在對話中提到這樣。\n[SPEAKER_02]: 這個東西有 agent 的遺忘這件事情，現在有人在開始做，應該蠻多人做的。可是他們做的應該都是以人類的遺忘曲線，就是可能多久這樣子。但是如果是，他們有人在做嗎？因為 Large Language Model 已經自己很會遺忘啦。他們現在是怎麼樣的人類遺忘曲線？我感覺 Large Language Model 的遺忘，感覺是 sensitive 資料的去除嗎，那一種類型的遺忘。\n[SPEAKER_02]: 我有看過，我記得 Time Memory 還是哪一篇，它是有模仿，它是有做遺忘的機制喔。你可以把那一篇等一下貼到那個 chat，但我還要找我這個長相。好好好。就是，對，我覺得他們的遺忘都是直接全部忘掉，就是不可能再 retrieve 回來，就是它不會因為你一直提到再出現這樣。他們的遺忘是怎麼樣，他們是如何遺忘。\n[SPEAKER_02]: 是在某種方式把它 probability 上面直接 negate 這樣回去，讓它不記得這個連結嗎？還是他們那邊的遺忘是怎麼樣的遺忘？還是它用 prompt 的方式說你不記得這件事情？就是他們的遺忘方式是怎麼樣。遺忘應該就是直接在資料庫裡面把它踢掉，就像 RAG 它是會有那個向量建設，它直接把那個資料刪掉這樣。\n[SPEAKER_04]: 所以它就不會再找到。所以它比較像是在 RAG 上面的時候，就像因為我們也會拆很多的，我們會逐字稿送進來，我們會記 TODO 什麼什麼。如果這個 TODO 一直都沒有被提到，他們可能就是會把這一筆刪掉，這樣它下次在找的時候它不會找到這個。\n[SPEAKER_02]: 因為我在想的是，因為 language model 它在跟人的對話過程當中，它其實就算你慢慢把 external 那個拔掉之後，它已經慢慢地就被捲進它的 language model 裡面了，對不對？所以它如果真的要，我不知道它那邊所謂的去。所以我本來想像中的是，我要去除這個 language model 裡面的記憶的話，就是你就必須要想辦法把，比如說 A 跟 B 曾經有連接，我想你忘記 A 跟 B 的連接。\n[SPEAKER_02]: 我就是必須要用某種 negate 的方法，我要把 A 跟 B 直接的關聯直接去掉，讓你的 language model 裡面它就不存在它們的關聯性。我不知道過去的遺忘是這種 model 本身 fundamentally 去動它的 model，還是是 RAG 上面的說我在 external 裡面不存在這一個資料。聽起來是 external database。目前我們看到沒有人去處理說，就是 language model 整個 fundamentally 把這一個 knowledge 解掉、拆解掉這樣。OK。\n[SPEAKER_02]: 那個應該蠻數學的，應該蠻數學的。我覺得這可能就是，沒關係，我們就先不。那以 literature 的部分，就是也把最相關的這些 work 都把它列出來。然後再來是會做 ablation study，就是我們會有做 baseline，是只有 RAG，然後。\n[SPEAKER_02]: 只有 short-term 的機制跟只有 long-term 的機制，然後後面是整個 full system，就是要 prove 我們為什麼要 short term 加 long term 這樣。欸，那在 working memory 的話，應該也是要。working 的話是你們的 session 跟 testing 的狀態是嗎？就是應該是說你去比較不同的 memory 架構，去看它在 working memory，working memory 可能會是一樣的是嗎？\n[SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。",
+      "score": 0.2667,
+      "matched_terms": [
+        "fade",
+        "out",
+        "我們的",
+        "機制"
+      ]
+    },
+    {
+      "chunk_id": "rag-0422-L151-L170",
+      "meeting_id": "0422",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0422.txt",
+      "start_line": 151,
+      "end_line": 170,
+      "text": "[SPEAKER_00]: 我意思是說最後我們在 real time 的去要給 conversation 的時候。那今天假如說 meeting 的內容假設一年內容會超級龐大的那我們平常如果是真的在 real time 最終就是真的在對話的時候我要去抓過去的 memory 的話，他是不是他要 traverse 他要去抓到的記憶的那個東西時間會比較長\n[SPEAKER_00]: 如果以我們的情況下說過去的一年然後我們的long term memory裡面雖然說假設有100個不同的節點但是它有不同的它的那個forgiveness它的那個level不一樣relevancy跟importance可能不一樣，對好那在這樣的情況下我們在real time中我們假設說我們只看重要的東西\n[SPEAKER_00]: 那有些東西其實雖然可能就是你會後再去update的時候他會update到那些被forget的節點可是在那個當下的時候你就會快速很多，你可能只會看就是最就long term memory現在還是還是還存在一定重要性的，然後你會想要在短期記憶裡面的內容那些long 飛到的那些東西你可能就又坦承你完全不會去處理它\n[SPEAKER_02]: 嗯 是可以 \n[SPEAKER_00]: 就可以設定可能可以用這種方式去 argue 他們對，那當然可以說我們這個是在 real time 的 interaction 的話可能 potentially the advantage就是我把過去的譬如一年的 meeting 裡面內容我現在只需要去抓跟我的現在討論的東西有相關的那些節點對，那但是會後之後這些的內容還是會一直就 update 所有的節點。那那些本來已經到 forget 的那些節點它可能會根據因為好像又被提起來\n[SPEAKER_00]: 他的 weight 會慢慢增加然後某個時刻他會再跑回來到是重要的節點。這部分可能可以想一下是說就是譬如說是以 Efficiency 來說對那以 Efficiency 來說呢還有可能是以譬如說以 Practicality 好像就是某些主題因為我們有 Importance 的那個嘛，那 Importance 啊可以怎麼去計算這樣對\n[SPEAKER_01]: 好我們有一個問題是我們不知道就是那個evaluate我們是要用我們自己的dataset嗎，因為我們dataset的話看起來真的有比較是在討論這個東西，然後有method change的表示可能從這學期開始的四次包含這次第五次那我們就你們可以看\n[SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到\n[SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西\n[SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。但它現在重要性已經非常低那在我們的 memory 裡面它已經 fade out\n[SPEAKER_01]: 那我們又要去做其他的 dataset 了嗎還是就只做我們 dataset\n[SPEAKER_00]: 如果說這個 dataset 夠用的話其實也是可以但你們可能就要找到裡面的某一個可以 demo 的環節\n[SPEAKER_00]: 其實你們可以自己去組自己去生成那個可以自己去生成那個對話環節，譬如說你可以在我們在Meeting的內容裡面多塞一些就是假設譬如說那個那你就可以講說Long term memory。假設我們總共有譬如說30場的會議然後也許你說每一場用半小時左右就好了那你可以把我們一開始的Meeting的時候\n[SPEAKER_00]: 我覺得一定有那種我們那時候講到但是後來再也沒有提到的東西應該是有\n[SPEAKER_01]: 應該近五次就已經有了就是我們就這五次裡面就已經有一些method change\n[SPEAKER_02]: 應該有一些被否決的東西只是就是\n[SPEAKER_01]: 因為我想說我們因為我們原本目的是做比較長時間跨度然後怕五場可能數量不夠\n[SPEAKER_00]: 你可以看五場因為五場我覺得還是比較靠近短期\n[SPEAKER_00]: 那你去看真的那種譬如說二十場Meeting之外的我們之前Meeting沒有講一個東西\n[SPEAKER_02]: 我們應該沒有十場沒有",
+      "score": 0.2,
+      "matched_terms": [
+        "fade",
+        "out",
+        "我們的"
+      ]
+    },
+    {
+      "chunk_id": "rag-0307-L16-L35",
+      "meeting_id": "0307",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0307.txt",
+      "start_line": 16,
+      "end_line": 35,
+      "text": "[SPEAKER_01]: 像這個 item 可能是標註的部分。原本 16 可能有提到你們先去標註什麼；在 17 裡，SPEAKER_02 會說它已經經過標註，並且觀察到一些問題之類的。\n[SPEAKER_00]: 所以同一件事情在 16 的時候有點像是 TODO，但 17 的時候有一些進展狀態。\n[SPEAKER_01]: 對。現在是這樣：它會有一個 item，這個 item 之後可以再設計，但目前會記錄這是什麼東西，有 title 跟一些記錄。16 這邊可能只是簡單說某件事要去做，17 就會更新相關進度。\n[SPEAKER_00]: 在第二次 version 的時候，這個組織或任務發生了什麼事情，然後更新上去。你可以想像這個例子可以改成「本次會議」。如果是當次 item create，可能就是這個日期，會顯示這一次會議。到下一次會議時，如果同一個 item 又被提到，就要更新它在時間軸上的狀態。\n[SPEAKER_00]: 那個「本次會議」到了你的時間軸下週時，就會更新成「一週前的東西」。在下週，如果一個 item 被 update，它會順便更新時間順序。或者說，每次下一次 meeting 的 memory 要加進去時，所有相關時間都要一起更新。\n[SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。\n[SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。\n[SPEAKER_00]: 所謂刪掉，是指它可能會移到 long term 裡某個比較少 access 的區域嗎？你這邊講的是 short term 嗎？\n[SPEAKER_01]: Long term 的結合還不一定，因為現在我們還沒有做結合的部分。我們想強調它記得的是三次內的重要事情。\n[SPEAKER_00]: 三次內的重要事情，這是 short term。Long term 是陳佑貞那邊主要負責。我覺得如果是這樣，佑貞剛剛看的那篇所謂 long term，應該不是我們一般想像中大腦裡的 long term，對不對？\n[SPEAKER_02]: 對，所以我們才想說要挑戰它。我們現在會覺得它抓得很瑣碎、很知識點，是因為它本身的設定比較沒有 focus 在跨時間軸要抓什麼。\n[SPEAKER_00]: 它抓的是時間問題嗎？它比較像是抓今天這個資訊本身，或是資訊有沒有被推翻。我們在看那一篇時，我猜它比較是從 large language model 相關 work 延伸出來的。所以他們講 long term 的時候，跟我們講的 long term 應該會滿不一樣。\n[SPEAKER_00]: 我覺得還是有一點相近。相近的是概念，但情境跟做法不一樣。看起來那篇的情境其實也是在處理短期記憶，只是不是 real time。\n[SPEAKER_01]: 因為我自己覺得那篇的問題是，如果上下文太長，model 會忘記前面的內容。但我們目前的架構在 short term 的部分只會記得三次；如果超過三次，它會覺得不重要就刪掉。可是如果今天我們曾經提過某些東西，我現在有點不知道距離怎麼定義。\n[SPEAKER_00]: 因為你現在做的東西，某方面對我來說就像 long term memory 了，已經超過這一次 session 的記憶。你說 session 是什麼意思？16 是上週五的 meeting，17 是現在的 meeting。你可以想像我們今天講三次 meeting，就是 17、16、15。這個機制其實某方面已經比剛才佑貞那篇還要長，因為你的歷史更長。\n[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。\n[SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。\n[SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所以到最後，long term 跟 short term 應該會需要結合。\n[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。\n[SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用到最多的資訊。",
+      "score": 0.1333,
+      "matched_terms": [
+        "我們的",
+        "機制"
+      ]
+    },
+    {
+      "chunk_id": "rag-0307-L31-L50",
+      "meeting_id": "0307",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0307.txt",
+      "start_line": 31,
+      "end_line": 50,
+      "text": "[SPEAKER_02]: 因為它討論三次 meeting 的內容。但我們現在想的 long term，是因為 research meeting 會持續一年，所以不可能把一整年份的 meeting 都記錄得這麼詳細。可能要用另一個架構，比較粗略地抓整個研究脈絡。所以 long term 的部分應該是那個機制。\n[SPEAKER_02]: 它是可以延展到 short term 的東西，然後變成 long term 的架構嗎？應該是分開的。我們的 long term 應該主要會是整個研究從頭到尾的架構變化、研究目標，以及整個主題。我覺得會比較像。\n[SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所以到最後，long term 跟 short term 應該會需要結合。\n[SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。\n[SPEAKER_00]: 所以這邊的 short term 比較像近期三次 meeting 裡最重要、最目前、記憶量最大的資訊。以人腦來說，就是我們講話時會用到最多的資訊。\n[SPEAKER_00]: 所以這塊 Memory 是這樣。但當時間拉長之後，例如現在是 17、16、15 三次，之後會開始 18、19、20、21、22、23，這些 short term 的 Memory 就會需要轉成另一種架構。\n[SPEAKER_00]: 之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。在做 update 時，我們現在的 Short Term Memory 會做快速 update；但是 Long Term Memory 在適時的時候，應該要可以調一些東西出來，然後改變我們 real time 要講的內容。像我們現在的 Long Term 應該是從 script 調出來。\n[SPEAKER_01]: Short term 的 memory 說不定也可以，但現在 long term 是直接讀每一次的組織稿。那 working 呢？Working 真的只有 real time，對不對？對，因為是 real time，所以我們的想法就是單純記錄現在講了什麼。\n[SPEAKER_00]: 我等一下可能 11 點要離開。那接下來是，你們現在先從 long term、short term 這個地方做起來嗎？你們現在打算的做法是什麼？\n[SPEAKER_01]: 我現在的打算是先分別建立這三個 memory 的 update 方式。雖然現在已經大概建立起來，之後要做的應該就是如何取用它。\n[SPEAKER_00]: 我覺得取用反而是比較麻煩的部分，因為架構上可能需要再想一下，例如記憶的結構。另外，你們可能要看一下他們怎麼 evaluate。也許已經有 dataset 在那裡。既然這已經是發表的 paper，他們應該可以直接跑起來，這些 work 應該會證明他們的 memory 比較好。\n[SPEAKER_00]: 除了提出架構之外，他們是怎麼證明 model performance 的？這件事情你們可以去看一下。也許會有一些 standardized test。\n[SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起來很 make sense，也很 reasonable。\n[SPEAKER_00]: 但要怎麼證明我們後面的確需要這些架構？別人可能會說搞不好用一般的 LLM 就好，你怎麼確定這個比較好？他們是怎麼證明的？我的想像是應該會有 history in dataset，也應該會有 benchmarking，但我不是很確定。\n[SPEAKER_00]: 可以去看一下。然後再看能不能用同樣方式，搭配我們自己的 dataset 做那種類型的測試。我覺得最後的 demo 可以是：原本 vanilla agent 對話會是這樣；用了這個架構之後會變成那樣。你可以設計幾個問題直接問下去，看到它的答案不同。\n[SPEAKER_00]: 某些東西是 signal，表示它有 short term memory；某些問題則用來展現它有 long term memory。也就是要怎麼證明這件事情的存在。他們的 paper 裡應該會有吧？我記得他們可能就是拿過去的問題來測。\n[SPEAKER_00]: 對，你們下次可以講一下：像他們這些 work 是怎麼證明他們 model 的表現。\n[SPEAKER_00]: 以我們來說，我覺得不需要做得那麼完整。其實我們更想知道的是 agent 跟人之間的互動會怎麼影響人。所以至少要做到：你們現在已經把我們的架構，以及每個部分可以 implement 的方式都找到了。最 basic 的做法，是先用 paper 的方式 implement 出來，然後發現我們的 agent 的表現有不一樣。\n[SPEAKER_00]: 然後你們就可以看人跟這個 agent 互動時，會有什麼不一樣的 perception。\n[SPEAKER_01]: 我們想問一下 API key 的使用，因為我們跑 Memory 之類的會需要用到 API key。這個部分有辦法報帳，還是要怎麼處理？",
+      "score": 0.1333,
+      "matched_terms": [
+        "我們的",
+        "機制"
+      ]
+    },
+    {
+      "chunk_id": "rag-0307-L61-L80",
+      "meeting_id": "0307",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0307.txt",
+      "start_line": 61,
+      "end_line": 80,
+      "text": "[SPEAKER_00]: 這些都是你要寫的檔案，對不對？那就好好寫。\n[SPEAKER_00]: 如果你們確定的話，我也許可以問問一些老師，就是中研院那邊的人。不過你們三個人最終應該不會都在同一個人那邊。\n[SPEAKER_00]: 他們應該不太可能一次收三位。我猜他們通常會說可以收幾個大學部、幾個研究生之類的。所以你們先把這些東西都寫好，盡量展現誠意。因為如果我聯絡他們，他們就會打開你們的東西來看。\n[SPEAKER_00]: OK，那就這樣。你研究一下我的 deadline 是什麼時候。是 3 月 7 號嗎？我覺得是你們丟出去之後，我才會收到信，對不對？\n[SPEAKER_01]: 我看起來它沒有說，只說資料繳交時間。我看一下，它有一個 FAQ。\n[SPEAKER_01]: 他沒有說，只說申請時間是這樣，然後就沒了。那上下班時間是比照全職專任研究人員嗎？它有開放大學部嗎？有，有大學生。暑假要是在學學生。OK。\n[SPEAKER_02]: 她說推薦信沒有截止日期，但是會在 3 月 16 日開始審查，因為我們的截止日是 3 月 15 日。\n[SPEAKER_00]: 好，那我知道了。那就加油。維希，你再把那些要買的東西整理一下，還有 API key 要申請一個實驗室的。上次申請 Google 網路中心的時候，先抽一個 Google 帳號，看要不要選用那個。最後那個就好了。到時候最後應該是我要把一張信用卡放進去付錢，對不對？\n[SPEAKER_00]: 台灣就是沒有那種實驗室信用卡。\n[SPEAKER_00]: 變成要綁我自己的信用卡就很奇怪。以前在美國通常老師會有一張 lab 的信用卡，大家要買什麼就直接刷那張信用卡，帳也可以直接報計畫。我們現在經費滿充足，所以這些帳要報都可以。\n[SPEAKER_00]: 好，那就先這樣，掰掰。\n[SPEAKER_01]: 欸，那個誰，陳佑貞在幹嘛？你的格式要不要來跟我對一下？什麼格式？你說。\n[SPEAKER_01]: 我現在在 app 同層建 short term，short term 裡面吃的是 meeting_recording 裡 transcript 的東西。我的也是吃這個啊，我的也是吃 transcript。我的意思是整個資料夾的格式，如果你知道要怎麼推，我們才不會有兩份 meeting transcript 之類的。我看一下，我現在只有一個檔案，就是一個 Python 檔而已。\n[SPEAKER_02]: 那我只要把我的 Python 檔改成讀你的那個就沒事？對，它就是一個 Python 檔，你應該可以直接 pull 下來。好，我跟你講，我現在原本用的是 Python 版的 Membrane，現在應該會直接從 open source 開始改。我把那個 GitHub pull 下來，看你要不要一起做。可以啊，我覺得我們可以一起做。\n[SPEAKER_04]: 雖然我單純就只是一來一回而已，但我覺得 long term 要改得比較多。感覺可以。若文的內容好像還有滿多在講類似的東西。我覺得 Memory 產出的資料好簡陋。你說它抓出來的那些東西嗎？對，就是它抓出來之後很瑣碎。不過我覺得有一部分也是因為我們的對話紀錄頗瑣碎。\n[SPEAKER_02]: 而且只要它找不出關係，就不會有記錄，所以很多資訊我覺得它已經漏掉。我剛剛在想一個問題：我們一定要用現有的 dataset 嗎？我在想他們做這麼多記憶機制，一定有比較完整的 dataset，因為我們的有點不連貫。我覺得他們的 dataset 應該有可能可以用。\n[SPEAKER_02]: 還是我們先好好看一下 paper？或者寫信問那些論文作者，可不可以借我們用、給我們用。沒有啦，我記得有些是用開源資料，有些應該是借來的。不管是連貫性的對話或什麼，他應該會用。我覺得我們先把 paper 看熟。欸，林俊，你跑 WhisperX 的時候會噴錯嗎？也不是錯啦。\n[SPEAKER_04]: 我只有一些小 warning 而已。我也是 warning，希望是可以跑，好像沒有什麼差。是嗎？我不知道有什麼差，我問 GPT。你是跑什麼？我的好像還好。我現在是這樣跑，用 large-v3，跟我差不多。然後你 batch 沒有設定？我沒有特別設。\n[SPEAKER_04]: 那應該沒什麼所謂。batch 只是影響速度，不會影響結果。我想到了，沒事，你先講。我覺得只要結果時間很短應該就還好，所以我一開始也是報一堆錯。那我們前面有錄音嗎？我從中間開始錄，這樣有點尷尬。\n[SPEAKER_01]: 太好了，中間有滿多東西。我是從開始講那個的時候錄。你剛剛今天會議有錄嗎？對，我剛剛有一部錄影。那可以，謝謝。不過是從你們講中研院之後開始。OK，時間不太久。",
+      "score": 0.1333,
+      "matched_terms": [
+        "我們的",
+        "機制"
+      ]
+    },
+    {
+      "chunk_id": "rag-0325-L1-L20",
+      "meeting_id": "0325",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0325.txt",
+      "start_line": 1,
+      "end_line": 20,
+      "text": "[SPEAKER_04]:\t不用到那麼複雜的樹狀結構所出來的那種完整的完全不遺漏因為長期記憶裡面不遺漏不是它最重要的原來最重要的是整個會議的脈絡所以我想說我們就每個日期的Meeting就抓很多個這樣的Object出來\n[SPEAKER_02]:\t我想一下喔你說前面上面用LLM去 Process Transcript\n[SPEAKER_04]:\t就是去讓它去擷取出這樣的物件\n[SPEAKER_02]:\t所以這是你們長期記憶的structure然後所以\n[SPEAKER_03]:\t其中一次單一次的structure\n[SPEAKER_02]:\tOK然後所以\n[SPEAKER_04]:\t進來他會他會就是他會去抓就先看那個type 就是他會去抓看是有decision to do然後method change result就是這個還可以討論就是這是就決定說你要取出這次meeting的哪些內容的具體的細節\n[SPEAKER_01]:\t主要就是跟之前的不一樣就是我們原本短期跟長期是長期是樹狀 然後我們後來討論了一下就覺得長期好像\n[SPEAKER_02]:\t欸我先問一下喔你覺得在長期就是在我們這個agent底下他我們的recording\n[SPEAKER_02]:\t它是某方面它是會存著的對不對\n[SPEAKER_04]:\t對阿\n[SPEAKER_02]:\t就它的raw data其實是會在的然後所以這個它的這個object它基本上它只是說好我可能有些summary對然後但是最終它會去調閱哪一天假設如果真的要它可以指到說\n[SPEAKER_01]:\t嗯嗯他可以指到那個文本\n[SPEAKER_02]:\t指到說那一個影片裡面的第幾分幾秒存取?\n[SPEAKER_01]:\t或是Transcript的那個Chunk\n[SPEAKER_02]:\t我覺得如果聲音會比較好因為大家不喜歡看字而且\n[SPEAKER_01]:\t可是不是丟給你說是丟給LLM的部分嗎\n[SPEAKER_02]:\t就是應該說最後的存取的地方就譬如說喔喔你這個是只有講agent的部分我還想的是前面的部分我很想的是說最終你這個後面的agent的部分他當然是去存取所有的相關的transcription的那個那一段的文字對只是說最後在output出譬如說我想說那時候那個發生了什麼事情可能是一個月前\n[SPEAKER_03]:\t如果你可能要掉那一段音檔應該是調得到的\n[SPEAKER_02]:\t只要空間夠嘛如果只要有一個很大的空間存著那個錄音",
+      "score": 0.1333,
+      "matched_terms": [
+        "out",
+        "我們的"
+      ]
+    },
+    {
+      "chunk_id": "rag-0325-L196-L215",
+      "meeting_id": "0325",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0325.txt",
+      "start_line": 196,
+      "end_line": 215,
+      "text": "[SPEAKER_01]:\t我想知道那个Avatar是想要做出他的內容的正確还是想要做出他講話像\n[SPEAKER_03]:\t可以有幾個評估指標嗎就是他是否符合這個人的經歷就是他可能会\n[SPEAKER_03]:\t舉例說我以前爬山的時候怎麼樣這樣子那這個對不對然後跟流暢性那這流暢性可能現在LM都很流暢這樣然後再來就是這個風格可是風格是最困難的因為可能連本人也不知道這個風格到底像不像他\n[SPEAKER_03]:\t所以當時有請李老師評分他好像分數都還蠻高的真的嗎因為老實說後來我們覺得說評自己也很難評分所以不會這樣講對其實應該是要請別人來評因為我不知道我自己的風格是什麼但別人可能也很難這個風格不太容易所以很專注你們有做就譬如說就是那個嘛就類似像tooling test\n[SPEAKER_03]:\t就是一個是真的是李老師講就一模一樣的話然後一個是李老師講一個是就譬如說一個主題跟李老師一個是禮物的model出來然後讓人家聽的時候覺得哪一個或是兩個都是李老師這沒有辦法做那麼詳細的分析因為必須要請李老師來評但他可能沒有那個時間我是說請別的像林思昌老師的學生等等的因為我們有另外的看他就會吐很長其實我們也很難去分辨說\n[SPEAKER_02]:\t所以他是看文字的 他不是看說話的嗎?\n[SPEAKER_02]:\t文字就是它不是Effort用講它是用文字說你要什麼講什麼這樣對對對所以它是沒有聲音跟情緒的它是就是吐文字出來的對對對OK那如果要風格要那麼強烈我自己做過很小的這個實驗是周星馳風格的回顧所以就是要風格這麼強烈這樣那你感覺應該蠻容易的因為那個風格在文字上要怎麼看\n[SPEAKER_03]:\t其實也只能用LM去教就是如果要量化去評估的話那就是給一個他當時的在這個問題下的回覆跟我們方法生成的回覆去讓他評論分數然後再可能也有人來評論就中間一點所以像風格的話會是譬如說像是講話簡短或是說\n[SPEAKER_02]:\t或是說講話會比披上我現在這樣子或是說他的講話的style都比較偏positive等等就是我蠻好奇是用文字要怎麼去定義那個一個人的風格這個好像沒有標準所以這個部分是應該說我蠻好奇是不是像那時候比如說LM你們去prong他說要風格的時候那時候有什麼樣子的prong就是說你要看\n[SPEAKER_02]:\t還是說就是捐榮跟他說要類似的風格喔等等就是怎麼捐就跟他講類似的風格\n[SPEAKER_01]:\t就是因為我那時候那個風格確實很麻煩而且那時候是Avatar會一直講話如果以Meeting來說Meeting的風格就是它有一方面比如說就是最我們都最想要做的就是可能老師會怎樣打斷但是對可能Avatar來說他就不會特別去針對打斷這件事情因為會議可能打斷蠻重要的就是比如說你講到什麼東西然後可能老師自己有哪裡聽不明白他會直接就是直接就是插進來問\n[SPEAKER_02]:\t就是它不會是說我完整的譬如說我準備了今天要講這個東西以及下一個這個東西對 然後但是可能會在某個時刻講到一半的時候我就 欸這個地方我已經很確定等等的 對但是對 那個老師剛剛講的那個東西應該不會今天感覺比較像是文字會像是老師說的文字因為我現在炒的方向可以主要是像這樣但是我你說風格嘛不就不完整可以\n[SPEAKER_01]:\t會不會影響一個?Translating比較麻煩因為Translating比較麻煩就是我們那時候有看一篇論文的解決方法是你要重新Change Model然後那個Model除了吐出文字之外它會另外吐出一個Flag那這個Flag就是代表該不該打斷\n[SPEAKER_01]:\t因為就是這個海文啊所以我們想要讓的是文字先做記憶跟文字就是兩個那個是內容的正確跟就是第一個memory產出的東西然後再用這個outputs再去經過另外一個可能n之類的然後讓它比較像這個文字我細半一下這個我瞄到了一篇論文但我沒有很仔細看就是它是說這個要\n[SPEAKER_03]:\t去模仿一個人的話可能可以就是猜中他很重大的決策但是那種比較小的決策很難中譬如說打斷 打斷的對 但是我可能可以知道說這個老師對於就是可能如果同學們要做演講老師的就會變成說我可能知道您這個\n[SPEAKER_02]:\t槍枝永復的這個看法這樣子就比較大的東西就你會知道你戲班也要先進來對 又可能等一下要去開會要去開了好啊 那其實那就是我們今天就先講因為要上去開會是課程嗎對對對我也要去開課程你也要去開課程我也會好好好我等一下說我晚點到那你老師之後\n[SPEAKER_02]:\t就是如果有就是有有時間的話可以再就是再可能就是再找找看再想完的東西之後可以再可能一起講好啊好啊好啊嗯好謝謝謝謝今天聽起來應該是都蠻蠻好的但其實就是在於某某評估還有可能就是甚至也可以把任務定的更好評估一點嗯有什麼下次好了我想問說有什麼樣可以因為的確像我們現在就是討論商非常發散\n[SPEAKER_02]:\t對 然後我唯一想說的就是某一個東西我們之前講過但是其實現在沒有再要講了對 然後但是我們曾經講過對 就是能找到這個死掉的那個死掉的那個topic對 就譬如說如果我們要回憶說我們這個meeting我們的這一個project其實做了很多半年了中間我們有哪些曾經explored的東西然後後來就是我們\n[SPEAKER_02]:\t沒有在做對 那以現在來說是我發現做不到這一次然後會去抓這個東西然後你還要找說曾經提到這個東西然後在後連職的meeting就說不要然後為什麼不要等等對 就是如果有這樣子的\n[SPEAKER_01]:\tAnswer在那邊等著我們找那就可以很直接去比說誰找得到誰找不到因為就是就是用reg沒有辦法很簡單抓這件事情因為用reg可能就我們想要的不只是就是相關因為我們有好幾次的meeting那你相關相關相關一定全部的meeting都會可能集中講在某個東西是相關的那這個如果你用reg找那可能",
+      "score": 0.1333,
+      "matched_terms": [
+        "out",
+        "我們的"
+      ]
+    },
+    {
+      "chunk_id": "rag-0408-L31-L50",
+      "meeting_id": "0408",
+      "source_file": "C:\\Users\\yiihsinn\\Documents\\project_git\\virtual-mentor\\meeting_recording\\transcript\\grace\\0408.txt",
+      "start_line": 31,
+      "end_line": 50,
+      "text": "[SPEAKER_03]: 我們第一層是每一次 meeting，四次 meeting 會整理成一個 L2。像這個 P001 經過四次之後，就進入階層式記憶。第一層所有的 leaf notes 是每一次 meeting 各自一個，四個往上會整理出一個 L2，所有 L2 再往上整理。\n[SPEAKER_00]: 先看 slides 吧，我現在大概知道這個 dataset，我們來看 slides。\n[SPEAKER_03]: 我們的想像是，先用 LE 去做 match。Match 完之後，你可能得到像這樣的 8 筆 L1 資料，再把 L1 連到的 L2、L3 一起帶進來。這樣就可以同時擁有你想要的細節資訊，也不會錯失上面比較 high level 的整體研究架構。\n[SPEAKER_00]: 也就是 L2、L3 會隨著 L1 一起帶進來。它們都是在處理長期記憶。應該說，在長期記憶裡面有不同精細程度。L3 是最 high level 的。剛剛看 31 的話，以這個 agent 的大腦來說，它現在知道有五個大重點在這裡。再往下是 L2。\n[SPEAKER_00]: L2 是月度的總結，也就是以月為單位的總結。現在是切四個 meeting 算。L1 是最精細的，所以 L1 基本上可以對應到 segment 嗎？Segment 是指真正的 dataset？對。所以 L1 裡面的每一個物件都可以追到更底層的資料。\n[SPEAKER_03]: 它都可以 map 到。L1 的內容也是經過處理的，它會先把 meeting 處理成右下角那樣。每一次 meeting 裡會有很多 object，每個 object 都是我們用 prompt 取出的特定 type。\n[SPEAKER_00]: 也就是摘要這次的內容，取出這些物件，然後生成很多 object。它同時會給 importance。Importance 是後面判斷 score 時一個滿重要的指標。這聽起來滿像 recursively 產生 summary。以前有一個 work，甚至在 NLP 之前，就在討論怎麼總結 Wikipedia。\n[SPEAKER_00]: Wikipedia 的例子可能是：請 worker 來做，有一些 L1 worker，每個 worker 讀一個段落，幫忙寫兩句摘要。到 L2 的人來看兩個 worker 各自讀的一段 paragraph，再寫一個比較 high level 的摘要。一直 high level 上去，就得到最高 level 的摘要，但它也可以往下追到最低層。\n[SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有一個 type 是 open question，它會取那些當初未解的問題。\n[SPEAKER_00]: 未解是怎麼定義？例如在 1 到 31 的錄音檔裡，第一次大家提出某個方法。透過這個流程，它某方面會變成一個 L1 節點，對嗎？針對那個 meeting 檔，它會是一個 L1 節點。假設接下來五次這個主題都沒有被提到，這個節點會怎麼變？\n[SPEAKER_03]: 那它在我們的記憶結構裡會有什麼變動？它的 recency 會變低，但如果當初賦予的 importance 夠高，recency 會有一個 floor 的下限，所以不會 decay 成 0。\n[SPEAKER_03]: 到時候又提到時，semantic 相似度理論上會滿高，所以分數會很高。Recency 因為有 floor，應該也不會變太低。它還是能成功進到前 30 個，讓 LLM 判斷這前 30 個是不是真的高度相關，是否跟這次問到的問題有連結。\n[SPEAKER_00]: OK，這些 weight 是怎麼給的？像這個 score 的 weight 是怎麼設定？目前應該只是先有一個算式，之後可能還要評估怎麼樣比較好。OK，這邊是從 list 或 dynamic query 來處理。\n[SPEAKER_00]: 這邊都是在講長期記憶。所以如果照剛剛講的，你們可以試著用圖畫給我看嗎？例如我們現在要建構它的長期記憶。假設現在有 week 1，最後透過某種處理出現五個題目、五個重點 idea。\n[SPEAKER_00]: 它最後 L1 的結構是什麼？L1 有一個錄音檔 transcription，對。那現在的處理是什麼？我們會先一樣讓 LLM 做這個地方。那我們怎麼 partition？這邊的 prompt 怎麼做？應該是下 prompt 叫它輸出 JSON。\n[SPEAKER_00]: 我真的在想，我們怎麼讓它找到 cluster、找到 idea unit？長期記憶彙整器。這邊我們是請它做嗎？好像不是，這是哪一支？\n[SPEAKER_02]: 這個應該是在前面那個，轉過一下吧。不對，這應該是轉成 UK 那個。我記得應該在 build tree。還是在別的地方？Skimmer。\n[SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。\n[SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？\n[SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。",
+      "score": 0.1333,
+      "matched_terms": [
+        "floor",
+        "我們的"
+      ]
+    }
+  ],
+  "truncated": false,
+  "token_truncated": false,
+  "truncated_from_chars": null,
+  "truncated_from_tokens": null,
+  "metrics": {
+    "context_char_count": 33836,
+    "estimated_context_tokens": 22767,
+    "actual_input_tokens": null,
+    "actual_output_tokens": null,
+    "actual_total_tokens": null,
+    "token_source": "generation_error",
+    "retrieved_chunk_count": 12,
+    "retrieval_ms": 8.215,
+    "context_build_ms": 0.0,
+    "total_ms": 8.215,
+    "truncated": false,
+    "token_truncated": false,
+    "truncated_from_chars": null,
+    "truncated_from_tokens": null,
+    "generation_ms": 0.0
+  },
+  "answer": "Answer generation failed: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', 'status': 'RESOURCE_EXHAUSTED'}}",
+  "answer_error": {
+    "type": "ClientError",
+    "message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', 'status': 'RESOURCE_EXHAUSTED'}}"
+  }
+}

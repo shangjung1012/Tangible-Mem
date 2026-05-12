@@ -1,0 +1,41 @@
+{
+  "strategy": "full_context",
+  "included_meetings": [
+    "0307",
+    "0318",
+    "0325",
+    "0408",
+    "0422",
+    "0429",
+    "0506"
+  ],
+  "included_meeting_count": 7,
+  "included_file_count": 7,
+  "full_context_scope": "all",
+  "full_context_source": "transcripts",
+  "truncated": false,
+  "token_truncated": false,
+  "truncated_from_chars": null,
+  "truncated_from_tokens": null,
+  "metrics": {
+    "context_char_count": 145790,
+    "estimated_context_tokens": 98531,
+    "actual_input_tokens": 77558,
+    "actual_output_tokens": 1409,
+    "actual_total_tokens": 81225,
+    "token_source": "actual_usage_metadata",
+    "included_meeting_count": 7,
+    "included_file_count": 7,
+    "full_context_source": "transcripts",
+    "full_context_scope": "all",
+    "truncated": false,
+    "token_truncated": false,
+    "truncated_from_chars": null,
+    "truncated_from_tokens": null,
+    "retrieval_ms": 0.0,
+    "context_build_ms": 35.471,
+    "total_ms": 56069.458,
+    "generation_ms": 56033.987
+  },
+  "answer": "好的，這是一個關於如何在專題展中展示「fade-out」價值的好問題。根據提供的會議記錄，展示 fade-out 價值的核心在於突顯我們的 Agent 能理解資訊的「時效性」與「演進脈絡」，而不僅僅是儲存所有資訊。\n\n以下是根據會議內容整合的幾個核心要點：\n\n### 1. 核心價值：模仿人類遺忘機制，讓對話更具情境與智慧\n\n傳統的 RAG 或大型語言模型在處理長期對話時，可能會抓取到很久以前但早已無關緊要的資訊。我們的 fade-out 機制旨在解決這個問題。\n\n*   **問題點**：一般的 Language Model 在被問到相關問題時，可能會回答「有喔，我們一年前講過這個」，但它不理解這件事在整個專案演進中已經不重要或被否決了。對它來說，所有提過的資訊都是平等的。\n    *   **來源**：`meeting 0422 / SPEAKER_00`\n*   **我們的優勢**：我們的 Agent 透過 fade-out 機制，能理解某些主題的重要性已經衰退 (fade out)。在正常的即時對話中，它會**刻意避免**輸出這些過時的資訊，讓回應更貼近當前的討論焦點。這證明 Agent 不只「記得」，還「理解」專案的演進。\n    *   **來源**：`meeting 0422 / SPEAKER_00`, `meeting 0429 / SPEAKER_02`\n\n### 2. 機制說明：Inactive 但非刪除，具備重新激活的潛力\n\n展示時需清楚說明，fade-out 並非單純的刪除資料，而是一種更動態的管理機制。\n\n*   **Inactive 狀態**：長時間未被提及、重要性較低的主題會被歸類為「inactive」或「forgotten」狀態。在一般的對話中，系統不會主動觸發或提及這些記憶。\n    *   **來源**：`meeting 0429 / SPEAKER_02`\n*   **可重新激活 (Re-activation)**：這些 inactive 的記憶並未被永久刪除。如果某個過時主題在近期的會議中被重新、反覆地提及，它的分數（或稱為 activation）會再次提升，從而「重新浮現」在 agent 的活躍記憶中。\n    *   **來源**：`meeting 0429 / SPEAKER_04`\n*   **Importance 與 Recency/Activation 的區別 (最新階段)**：可以進一步解釋，記憶節點的 `importance` (重要性) 是在建立時就賦予的，相對靜態，代表其本身的價值。而 `recency` 或 `activation` (時效性/活躍度) 則會隨時間衰減。一個 `importance` 很高的節點，即使 `recency` 降低，也會有一個下限 (floor)，確保它不會被徹底遺忘，這也解釋了它為何有潛力被重新激活。\n    *   **來源**：`meeting 0506 / SPEAKER_04, SPEAKER_02`\n\n### 3. 獨特亮點：Human-in-the-Loop 的協作式記憶\n\n這是我們系統一個很特別的價值，可以展示 Agent 的記憶是可被使用者影響和客製化的。\n\n*   **使用者可調整權重**：我們的系統允許使用者（例如：指導老師）手動調整某個記憶節點的 `importance`。如果使用者認為某個被 Agent 判斷為不重要的點其實很重要，他可以手動提高其權重。\n    *   **來源**：`meeting 0506 / SPEAKER_02`\n*   **對抗遺忘**：經過使用者手動調高 `importance` 的節點，其後續在 long-term memory 中衰減 (decay) 的速度會比其他節點更慢。這體現了一種人機協作的記憶模型，而不僅僅是系統的自動化邏輯。\n    *   **來源**：`meeting 0506 / SPEAKER_02`\n\n### 專題展的具體展示策略\n\n綜合以上要點，專題展的 demo 可以設計如下：\n\n1.  **情境設定**：從我們自己的會議記錄中，找出一個「**已死的題目**」，也就是早期（例如，好幾場會議前）熱烈討論過，但後來被否決或再也沒提過的主題。\n    *   **來源**：`meeting 0422 / SPEAKER_00`, `meeting 0429 / SPEAKER_02`\n\n2.  **對比實驗 (Ablation Study)**：\n    *   **Baseline (RAG)**：向一個僅使用 RAG 的普通 Agent 詢問與該「已死題目」相關的問題。預期它會直接從歷史資料中找出並回答，無法判斷其時效性。\n    *   **Our Agent**：向我們的 Agent 提出同樣的問題。展示它在正常對話中**不會提及**這個過時的題目，證明它理解這個主題已經 fade out。\n    *   **來源**：`meeting 0422 / SPEAKER_00`, `meeting 0429 / SPEAKER_02`\n\n3.  **展示「喚醒」機制**：\n    *   模擬一場新的會議，在對話中刻意重新討論那個「已死的題目」。\n    *   展示我們的 Agent 在偵測到這個主題被重新提及後，能夠從 inactive 狀態中**調出**相關的歷史記憶，並更新其活躍度。\n\n4.  **展示 Inspector 介面與人機互動**：\n    *   透過視覺化介面 (Inspector)，展示 Agent 記憶庫的內部結構（如 L1, L2, L3 的節點）。\n    *   秀出某個節點的 `importance` 和 `activation` 分數。\n    *   動態演示使用者如何手動調高某個節點的 `importance`，並解釋這將如何影響它未來的衰減速度，實現一個可被使用者塑造的、更個人化的記憶系統。\n    *   **來源**：`meeting 0506 / SPEAKER_02, SPEAKER_01`"
+}

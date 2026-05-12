@@ -1,0 +1,51 @@
+好的，這是一個關於 evaluation 設計演進的問答。
+
+### 目前規劃的 Evaluation Baselines 與 Metrics
+
+根據會議內容，團隊規劃了透過「消融研究 (ablation study)」來評估不同記憶體架構的效能，並設計了幾項關鍵的評估指標。
+
+**Baselines (比較基準):**
+團隊計畫將完整的系統與幾個簡化版本進行比較，以證明長短期記憶結合的必要性 (meeting 0429 / SPEAKER_04 / line range: 1029-1032)：
+1.  **僅有 RAG (Retrieval-Augmented Generation) 的 Baseline**：這是最簡單的處理方式，僅將逐字稿切塊後，用語意相似度進行檢索 (meeting 0429 / SPEAKER_01 / line range: 1045-1049)。
+2.  **僅有 Short-Term Memory 機制**。
+3.  **僅有 Long-Term Memory 機制**。
+4.  **Full System (完整系統)**：結合 Working Memory、Short-Term Memory 與 Long-Term Memory 的最終架構。
+
+**Metrics (評估指標):**
+1.  **回答正確率 (Correctness/Accuracy)**：
+    *   方法：參考論文作法，將 Agent 生成的答案與標準答案一同提供給一個 LLM 作為評審，由 LLM 來比對與評分 (meeting 0429 / SPEAKER_04 / line range: 1018-1021)。
+    *   這個方法源於 0318 的 paper review，當時發現若用傳統語意相似度計算分數，可能會出現「艾莉絲今年七歲」和「艾莉絲今年三歲」分數很高但答案錯誤的問題，因此採用 LLM 作為評審 (meeting 0318 / SPEAKER_02 / line range: 200-205)。
+
+2.  **記憶遺忘 (Fade Out) 機制的驗證**：
+    *   這是團隊認為其架構最特別之處。評估 Agent 是否能在一般對話中，**避免**提及那些已經不重要或過時的「fade out」資訊。
+    *   同時，也要測試 Agent 是否依然保有這些被遺忘的記憶，當被刻意提問或主題重新變得重要時，能夠重新將其「activate (激活)」(meeting 0429 / SPEAKER_02 / line range: 1022-1028, 1056-1065)。
+
+3.  **Idea Unit 切割的精準度 (Precision/Recall)**：
+    *   在評估逐字稿前處理的步驟時，可以比較不同切割方法（如 fixed-size vs. dynamic）對於能否準確抓出人類認定的重要 `idea units` 的成效 (meeting 0429 / SPEAKER_02 / line range: 1200-1207)。
+
+### Evaluation 設計的演進歷史
+
+Evaluation 的設計是從一個開放性問題，逐步透過文獻探討和內部討論，最終收斂成一個具體的計畫。
+
+1.  **L1 Evidence Seed (0307)：問題的起源與初步構想**
+    *   **動機**：`SPEAKER_00` 首次提出需要證明記憶架構的價值，他問道：「要怎麼證明我們後面的確需要這些架構？別人可能會說搞不好用一般的 LLM 就好，你怎麼確定這個比較好？」(meeting 0307 / SPEAKER_00 / line range: 104-106)。
+    *   **初步方向**：他建議團隊去研究相關論文是如何進行評估的，並提出一個基於比較性問答的 demo 想法：「你可以設計幾個問題直接問下去，看到它的答案不同」，以此來展現有 Short-Term 和 Long-Term Memory 的 agent 的差異 (meeting 0307 / SPEAKER_00 / line range: 109-113)。
+    *   **指派任務**：`SPEAKER_00` 明確要求團隊下次報告論文中證實模型表現的方法 (meeting 0307 / SPEAKER_00 / line range: 114-114)。
+
+2.  **L2 Evolution Context (0318)：文獻探討與具體方法的引進**
+    *   **研究成果**：團隊回顧了 MEMO 和 MIRIX 等論文，發現它們使用一個名為 LOCOMO 的通用資料集進行評估 (meeting 0318 / SPEAKER_02 / line range: 178-184)。
+    *   **學習到的評估維度**：從論文中，團隊學到了幾種關鍵的評估方法與概念：
+        *   **問題類型 (Question Types)**：了解到評估問題可以分為 `single-hop`（單一問題）、`multi-hop`（需多次推理）、`Temporal Reasoning`（時間性推理，如總結）和 `Open Domain`（開放問題）(meeting 0318 / SPEAKER_02 / line range: 185-199)。
+        *   **評審機制 (Judging Mechanism)**：學到使用 LLM 作為評審來判斷答案的對錯，以避免語意相似度評分的盲點 (meeting 0318 / SPEAKER_02 / line range: 200-205)。
+        *   **比較基準 (Baselines)**：了解到可以跟 `full context`（原始逐字稿）和 `RAG` 等方法進行比較 (meeting 0318 / SPEAKER_02 / line range: 195-199)。
+
+3.  **L2 Evolution Context (0325)：連結專案目標，提出獨特評估點**
+    *   在討論中，團隊開始思考如何評估其架構獨有的「追蹤議題演進」能力。`SPEAKER_02` 提出一個關鍵問題：如何找到那些曾經被討論但後來被放棄的「死掉的 topic」，並證明 agent 能夠理解這個演進過程 (meeting 0325 / SPEAKER_02 / line range: 686-691)。這成為了後來「long term evolution」和「fade out」評估點的核心概念。
+
+4.  **Latest Retrieved Stage (0429)：收斂為三類評估問題**
+    *   團隊將先前的研究和討論整合成一個具體的評估計畫，提出了三類問題，這三類問題正是前面演進的直接成果 (meeting 0429 / SPEAKER_04 / line range: 1010-1015)：
+        *   **Short-Term Questions**：確保基本的短期記憶正確性，這是最基礎的驗證。
+        *   **Long-Term Evolution Questions**：直接對應 0318 學到的 `Temporal Reasoning` 和 0325 提出的「追蹤死掉 topic」的想法。例如，提問「某個研究方法的完整演進是什麼？」來測試 agent 是否能完整重現一個議題的歷史脈絡，而不是胡亂生成或遺漏關鍵轉折。
+        *   **Decision Reasoning Questions**：這種類型類似 0318 提到的 `multi-hop` 推理，要求 agent 解釋「為什麼我們做了這個決定？」，這需要它整合不同時間點的論點 (argument) 和決策 (decision) 來形成一個有邏輯的答案。
+
+總結來說，evaluation 的設計從 `SPEAKER_00` 提出「如何證明價值」的開放問題開始，經由團隊對學術論文的研究，學習到具體的評估框架（如問題分類、LLM 評審），再結合自身專案「追蹤研究脈絡」的核心目標，最終演化為 0429 會議中所規劃的，包含三類核心問題與消融研究的完整評估方案。

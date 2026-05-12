@@ -1,0 +1,36 @@
+根據提供的會議記錄，目前 short-term 和 long-term memory 是採用**個別更新（或稱平行更新）**的關係，兩者都直接從會議逐字稿 (transcript) 獲取資訊來更新各自的記憶結構，而不是將逐字稿先路由到其中一個 memory 再傳遞給另一個。
+
+這個設計是經過討論演進而來的，以下按時間順序說明其轉變與原因：
+
+### 1. 早期概念：循序轉換 (Sequential Conversion)
+
+在專案初期，團隊曾設想過一種循序的更新模式，也就是 short-term memory 的內容在經過一段時間後，會被處理並轉換成長期記憶的一部分。
+
+*   **來源證據 (L1 Evidence Seed):**
+    *   `SPEAKER_00` 提到：「...這些 short term 的 Memory 就會需要轉成另一種架構...之後要去跑 Long Term Memory 的架構，讓它成為 Long Term Memory 的一部分。」 (meeting 0307)
+    *   `SPEAKER_00` 再次確認此想法：「短期記憶的東西會越來越不見，對不對？...應該會變成長期的。」 (meeting 0408)
+
+### 2. 演進與挑戰：發現循序轉換的問題
+
+在後續的討論中，團隊意識到如果 long-term memory 必須等待 short-term memory 的資訊「過期」後才能更新，將會導致 long-term memory 的內容跟不上最新的會議進展，產生資訊延遲或過時的問題。
+
+*   **來源證據 (L2 Evolution Context):**
+    *   `SPEAKER_04` 指出循序模式的缺陷：「但如果照你這樣說會有問題。假設一個題目的演進是 A 到 B 到 C，再多一個 D。假設上次討論了 C 跟 D，這時短期在 C、D 這裡，長期卻還停在前面的狀態...長期記憶就會跟不上最新狀態。」 (meeting 0408)
+
+### 3. 最新設計：平行更新 (Parallel Update)
+
+為了解決上述問題，團隊決定採用平行更新的架構。每次會議結束後，逐字稿會同時被 short-term 和 long-term memory 的更新機制處理。這樣做的好處是，兩種記憶體可以根據各自的結構與目標，獨立地從最原始的資料中提取、組織和儲存資訊。
+
+*   **來源證據 (L2 Evolution Context & Latest Retrieved Stage):**
+    *   `SPEAKER_04` 提出了解決方案：「直接拿這一次的組織稿分別給短期和長期，不是也可以嗎？...長期更新長期自己，短期更新短期自己。」 (meeting 0408)
+    *   在後續會議中，此設計被確認為當前作法。當被問及是否應將 transcript 先分類給 short-term 或 long-term 時，`SPEAKER_02` 回答：「因為我們現在是個別update就是他們不會通常跟 short term 在update的時候他們都會各自拿到完整的transcription在update的時候是不會有任何交互的。」 (meeting 0422)
+    *   `SPEAKER_00` 也認同此作法更合理：「我覺得這比較make sense就是我反正每個Idea units來的時候我都會短期記憶裡面update一些東西，長期記憶裡面會update一些東西。」 (meeting 0422)
+
+**總結來說，不採用路由（routing）而是平行更新的原因是：**
+
+1.  **避免資訊延遲**：確保 long-term memory 能即時反映最新的會議內容，而不是等待資訊從 short-term memory 中淡出。
+2.  **結構與功能差異**：Short-term 和 long-term memory 有不同的儲存結構和功用。
+    *   **Short-term** 側重於近期（如近兩三次會議）的、詳細的、具體的待辦事項 (`action item`)，結構相對離散。 (meeting 0422)
+    *   **Long-term** 則使用階層式結構 (L1, L2, L3) 來捕捉研究的整體脈絡 (`脈絡`) 與演進，並包含遺忘機制 (decay)，結構更為精簡和宏觀。 (meeting 0408, 0422)
+
+讓兩者直接從原始逐字稿更新，能使它們各自以最適合的方式處理和組織資訊，發揮其最大功用。

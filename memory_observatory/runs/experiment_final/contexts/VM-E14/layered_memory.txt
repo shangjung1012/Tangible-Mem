@@ -1,0 +1,177 @@
+=== Memory Router ===
+strategy: both
+targets: short_term, long_term
+reason: query has recent-status hints; include long-term context as background
+confidence: 0.75
+
+=== Short-Term Memory ===
+=== Short-Term Memory Retrieval ===
+memory_version: 7
+last_updated_meeting_id: 0506
+
+[S001] LLM Memory: Hierarchical Structure, Idea Unit Segmentation Repair, Labeling, and Retrieval
+  score: 2.25
+  summary: The memory system utilizes a hierarchical data structure, with 'idea units' forming 'segments' and 'topics'. A repair mechanism has been adopted in the idea unit segmentation process to handle incomplete fragments by merging fragmented sentences with their most relevant context, ensuring information completeness and preventing omissions. To optimize retrieval, the system also uses a dual-labeling strategy (functional and theme labels) for each memory unit, with the optimal search priority still under discussion.
+  role: recent_change
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 30
+  historical_source_count: 200
+  total_source_count: 230
+  source_note: broad unit; source L1 preview is query-ranked
+  source_scope: active
+  source L1: L1-0506-030, L1-0506-034, L1-0429-188, L1-0429-189, L1-0429-190, L1-0429-191, L1-0429-192, L1-0506-001, L1-0506-002, L1-0506-003, L1-0506-005, L1-0506-007 ...
+
+[S006] Agent Evaluation Framework, Step Verification, and Benchmarking
+  score: 1.25
+  summary: The agent's evaluation plan includes assessing the model on various question types and an ablation study. A verification mechanism is being established to inspect and confirm the rationality and sufficiency of each agent's processing step by checking its input and output before proceeding. This mechanism involves recording each agent's prompt and result for tracking. The methodology compares structured memory against RAG using datasets like BMR. Text segmentation performance will be formally evaluated using a benchmark ground truth dataset. Data sufficiency and augmentation strategies are being addressed, and 'long context' will be defined by token count for benchmarking. A definitive evaluation plan is pending, with a two-part demo in May.
+  role: recent_change
+  status: active
+  last_updated_meeting_id: 0506
+  missed_meeting_count: 0
+  active_source_count: 30
+  historical_source_count: 90
+  total_source_count: 120
+  source_note: broad unit; source L1 preview is query-ranked
+  source_scope: active
+  source L1: L1-0429-007, L1-0429-013, L1-0429-001, L1-0429-002, L1-0429-003, L1-0429-004, L1-0429-005, L1-0429-006, L1-0429-00
+...(truncated)
+
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- L3 L3-memory-lifecycle: memory lifecycle
+  - child L2 L2-memory-retention-and-forgetting: memory retention and forgetting
+  - child L2 L2-importance-activation-and-recency: importance, activation, and recency
+  - child L2 L2-importance-feedback-and-editor: importance feedback and editor
+  - child L2 L2-topic-lifecycle-and-evolution: topic lifecycle and evolution
+- Unpromoted L2 topics:
+  - L2-project-demo-strategy: project demo strategy
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-049] type=argument importance=0.73 score=0.889
+  content: 樹狀結構的記憶體架構被認為不適用於長期記憶，因為它們會打散記憶、喪失時間維度，從而無法實施基於時間的權重衰減（time-based weight decay）。
+  evidence: [SPEAKER_03]: 我們在想如果像可能他20場30場看剛剛我們用多長的話那他到底第一場他到第25場的時候他第一場他到底應該要記得多少就是他可能其實不需要像以現在大部分他們在做記憶架構上面那麼的詳細就他們比較像是說 [SPEAKER_02]: 就long term上可能某些東西就可以fade out了這樣因為現在的結構 [SPEAKER_04]: 就是大部分的樹狀結構因為你把記憶打散所以你的時間就沒有辦法放進你的每一個區塊裡面所以變成說你不會有時間造成權重的衰退的結構在這個樹狀結構裡面
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.8811
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可以防止重要的舊記憶完全消失，並在相關主題再次被提及時能夠被重新檢索。
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有一個 type 是 open question，它會取那些當初未解的問題。 [SPEAKER_00]: 未解是怎麼定義？例如在 1 到 31 的錄音檔裡，第一次大家提出某個方法。透過這個流程，它某方面會變成一個 L1 節點，對嗎？針對那個 meeting 檔，它會是一個 L1 節點。假設接下來五次這個主題都沒有被提到，這個節點會怎麼變？ [SPEAKER_03]: 那它在我們的記憶結構裡會有什麼變動？它的 recency 會變低，但如果當初賦予的 importance 夠高，recency 會有一個 floor 的下限，所以不會 decay...
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.9041
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制：重要性分數高於特定閾值的記憶將永遠不會淡出。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西 [SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。但它現在重要性已經非常低那在我們的 memory 裡面它已經 fade out [SPEAKER_00]...
+- [0422 | 2026-04-22 | L1-0422-040] type=argument importance=0.74 score=0.8943
+  content: 針對系統可能遺忘重要資訊的疑慮，其設計的辯護是：遺忘並非隨機發生。記憶只有在與當前上下文無關時才被視為「遺忘」，且其重要性會隨時間更新。如果一個舊主題再次變得相關，它可以被重新喚醒。
+  evidence: [SPEAKER_01]: 我们那个时候调的时候我们会有一个公司去看它的importance跟relevance [SPEAKER_00]: 所以是不是可以去argue说for可以去比较就是时序性的去调动资讯会比较快速吗 [SPEAKER_00]: 有可能比較快速嗎就是我不需要去比對說還有哪一些就是某一些節點其實他已經forget了應該是某一個threshold，比如說我們用threshold到多少比如0.2以下那些節點我們就是assume他是目前已經被forget的東西。 [SPEAKER_02]: 但速度應該都蠻快的因為那個relevancy是靠語意跟關鍵字去找那個有技術就不用靠LLM他是有一個模型在跑，那個速度理論上應該就蠻快的 [SPEAKER_00]: 我意思是說最後我們在 real time 的去...
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.8918
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的 [SPEAKER_00]: 譬如說長期就是短期這件事情我們不會去考慮飛到這件事情，短期的話我們就是 capture 我們現在的最重要的事情但是長期的話可能就是你那部分，我們進長期的話我們可能會有一個很不一樣的機構是我們會隨著時間的 [SPEAKER_00]: 我們可能長期的話可能就是會它跟短期機制不一樣就是...
+- [0422 | 2026-04-22 | L1-0422-045] type=argument importance=0.7 score=0.8912
+  content: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西 [SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。但它現在重要性已經非常低那在我們的 memory 裡面它已經 fade out [SPEAKER_00]...
+- [0422 | 2026-04-22 | L1-0422-031] type=argument importance=0.75 score=0.8873
+  content: Long-term memory 架構的一個關鍵優勢是其「遺忘」機制，資訊的相關性和重要性會隨時間衰減，這使其與 short-term memory 有所區別。
+  evidence: [SPEAKER_02]: 理論上你在拉出來的時候會有那個時間軸就是你可以透過那個時間軸去判斷說，就是你可能看不到它是完全一樣的東西可是它會有時間軸在理論上在你送給LLM的時候他看到同樣的時間點然後有類似的論點然後可能這裡被推翻，他應該就可以靠這個新的時間點知道說它是就是要採用的那個東西 [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的 [SPEAKER_...
+- [0422 | 2026-04-22 | L1-0422-020] type=decision importance=0.78 score=0.8815
+  content: 決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。
+  evidence: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，那另外一個地方可能就是你們要講的應該是那個 [SPEAKER_00]: 記憶體的結構啊你們可能就要去比跟那個跟一般...
+- [0422 | 2026-04-22 | L1-0422-001] type=approach_change importance=0.74 score=0.8811
+  content: 記憶體更新流程已改為採用以 Gemini Tool Calling 為核心的架構。此方法將由 WhisperX 產生的逐字稿視為一個資料庫，讓 Gemini 動態決定要讀取多少行，避免了固定的資料分塊。Gemini 被賦予 `Read` 和 `Write` 兩個主要函式：`Read` 用於存取原始逐字稿和現有的記憶體資料庫 (DB)，而 `Write` 則用於更新一個獨立的、結構化的記憶體資料庫。
+  evidence: [SPEAKER_03]: 就是我們上次做的 Tool Calling 的意思就其實只是讓 Gemini 來可以決定他要怎麼用函數而不是一次全部喂他，就上次可能講得沒有很清楚就是我們使用 Tool Calling 的目的只是讓 Gemini 來可以決定他要用什麼函數，他要怎麼調用整個逐字稿 [SPEAKER_02]: 就是我如果把逐字稿轉成 Database 的形式的話他就可以決定他一次要調用幾行，然後如果他覺得調用的太少的話他可以再回去調用更長或是他想要調用之前的也可以，就可以算是規避掉切塊的這個問題，就是不會有那個資料要被區分怎麼切或怎麼去區分的問題。 [SPEAKER_02]: 是transcript [SPEAKER_00]: 好然後所以given一個transcript然後transcript你們會...
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.9387
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函數調用來存取。如果重複提及使其分數增加，這些記憶可以被重新激活。
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說某一件東西他不應該在 short term在我不知道這是 dialogue 的時候不應該要出現但是他知道他忘記了就是他知道他有這個東西他是不記得但是他在對話的時候他不會突出這個東西 [SPEAKER_04]: 嗯嗯嗯好 [SPEAKER_02]: 然後呃因為我覺得這是一個還蠻特別的一個地方因為過去的agent應該從來沒有人在測這件事情就是有點像說language model在in turn在real time 跟你回答的時候它會避免輸出一些它其實long term但應該要被fade out的東西但是但...
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.9334
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分數可能回升而被重新激活。此舉旨在測試 agent 在保留長期資訊的同時，抑制過時或較不相關資訊的能力。
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。 [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但...
+- [0429 | 2026-04-29 | L1-0429-013] type=finding importance=0.65 score=0.9168
+  content: 團隊提出了一種可逆的「淡出」(fade out) 機制作為新的評估標準。低於某個重要性閾值的記憶會變為「非活躍」狀態，不會在一般對話中浮現，但可透過特殊函數呼叫來列出，並可能因後續提及而重新激活。
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說某一件東西他不應該在 short term在我不知道這是 dialogue 的時候不應該要出現但是他知道他忘記了就是他知道他有這個東西他是不記得但是他在對話的時候他不會突出這個東西 [SPEAKER_04]: 嗯嗯嗯好 [SPEAKER_02]: 然後呃因為我覺得這是一個還蠻特別的一個地方因為過去的agent應該從來沒有人在測這件事情就是有點像說language model在in turn在real time 跟你回答的時候它會避免輸出一些它其實long term但應該要被fade out的東西但是但...
+- [0429 | 2026-04-29 | L1-0429-044] type=finding importance=0.61 score=0.902
+  content: 提出了一項名為「fade-out」的新穎評估標準，用以測試 agent 在一般對話中抑制較不相關或過時的長期資訊的能力。實現此機制的構想是為每個記憶項目賦予一個重要性分數，低於某個閾值的資訊將被視為「非活躍」狀態並被抑制。
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。 [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，它會避免輸出一些它其實在 long-term，但應該要被 fade-out 的東西。但...
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.8844
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情
+- [0429 | 2026-04-29 | L1-0429-029] type=decision importance=0.76 score=0.8842
+  content: 團隊決定探索一種「動態分塊 (dynamic chunking)」方法。系統將不再使用固定大小的區塊，而是預測接下來有多少對話輪次屬於同一主題，並將它們組合成一個可變大小的區塊進行處理。此方法將與固定分塊方法進行比較。
+  evidence: [SPEAKER_02]: 然後我一直去merge merge merge但那個就是非常的compute時間要非常的大對然後對折衷的方式可能是說也許我看到這一句話我大概就知道說就是我們把那個fix拿掉它是dynamic它不要都是三都不要都是三個turn三個turn三個turn但是我現在看到這一句話我大概預估應該會是幾個turn都是在講這件事情我就往前跳然後把它變成一個block [SPEAKER_02]: 對 然後去把它弄起來就是我本來想的是我們是要用比較bottom up的方法那我們可能可以然後就那種動態去切就是我要怎麼去丟那個丟那個最小的單位去給language model去產生小summary然後去iterate產生一個比較high level的high level的summary [SPEAKER_0...
+- [0429 | 2026-04-29 | L1-0429-133] type=approach_change importance=0.75 score=0.8808
+  content: 為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱含地、選擇性地提取相關資訊來更新特定節點。
+  evidence: [SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就呃因為現在這個方法其實跟如果你把先把80行直接去切就是你去再丟個一個另外一個agen...
+- [0429 | 2026-04-29 | L1-0429-047] type=argument importance=0.7 score=0.8768
+  content: 關於 LLM 的「遺忘」機制，應專注於操作外部檢索資料庫（如 RAG），而非改變模型內部權重。這是因為目前主流方法是透過刪除或降權外部資料來實現資訊遺忘，而非讓模型真正「忘記」。
+  evidence: [SPEAKER_02]: 這個東西有 agent 的遺忘這件事情，現在有人在開始做，應該蠻多人做的。可是他們做的應該都是以人類的遺忘曲線，就是可能多久這樣子。但是如果是，他們有人在做嗎？因為 Large Language Model 已經自己很會遺忘啦。他們現在是怎麼樣的人類遺忘曲線？我感覺 Large Language Model 的遺忘，感覺是 sensitive 資料的去除嗎，那一種類型的遺忘。 [SPEAKER_02]: 我有看過，我記得 Time Memory 還是哪一篇，它是有模仿，它是有做遺忘的機制喔。你可以把那一篇等一下貼到那個 chat，但我還要找我這個長相。好好好。就是，對，我覺得他們的遺忘都是直接全部忘掉，就是不可能再 retrieve 回來，就是它不會因為你一直提到再出現這樣。他們的...
+- [0429 | 2026-04-29 | L1-0429-023] type=approach_change importance=0.72 score=0.8732
+  content: 團隊決定推遲原定比較三種文本分塊（chunking）策略的實驗。在報告截止日期（5月12日）之前，團隊將繼續使用當前方法，並暫時假定其有效，不進行正式的基準比較。
+  evidence: [SPEAKER_02]: 我們要這邊有要去做實驗嗎就是我們那時候說三種的trade off [SPEAKER_02]: 一種是fix切的話會有一定的trade off然後如果是一句一句一句看iterative的去merge跟這個應該是我們之前講的那個嘛然後再 [SPEAKER_04]: 但因為我們好像離那個報告只剩13天所以感覺是就是可能5月12日之後可以做的實驗 [SPEAKER_02]: 所以這段我就是假定我就是這麼做了我去不去proof我們可能會有些hypothesis說這個會比別的東西好對那之後呢
+- [0429 | 2026-04-29 | L1-0429-090] type=approach_change importance=0.71 score=0.8727
+  content: 代理人的任務流程架構是圍繞一個函數調用循環 (function-calling loop) 設計的。系統會向模型 (Gemini) 提供函數定義，模型透過調用這些函數來獲取上下文資訊。流程的初始步驟包括：首先調用 `get current memory overview` 讀取短期記憶體資料庫，然後調用 `transcript_overview` 獲取逐字稿的摘要（如行數和預覽）。主應用程式執行這些函數並將結果返回給模型，使其能夠感知其當前狀態。
+  evidence: [SPEAKER_02]: 呼叫取得目前記憶總覽。就譬如說取得目前記憶的總覽這件事情，你這樣沒有任何在跟 database，在這邊取得目前記憶體的總覽，指的是什麼意思？ [SPEAKER_00]: 就是它這個 overview 它會回傳就是說現在可能有那些幾個點， [SPEAKER_02]: 就是它是讀一個 file 嗎，還是什麼？ [SPEAKER_00]: 它會讀目前的 DB 啊，就是會讀這個 short term 本身。然後它會去 DB，就是可能它會把我們目前的 memory 狀態，這個 agent memory 的狀態，會是一個 overview 的情況。就比如說可能會有哪些 action item 啊，然後 action item 的 title 是什麼，它就讀個大概而已。 [SPEAKER_00]...
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.9023
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減下限（floor），以防止其值降得過低。
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...
+- [0506 | 2026-05-06 | L1-0506-036] type=proposal importance=0.65 score=0.8847
+  content: 一項精煉的提案建議，即使「importance」分數是靜態的，也應該捕獲使用者對 LLM 初始「importance」分數的修正。這些回饋可用於個人化並改善 LLM 未來的「importance」預測能力。
+  evidence: [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如說你判定錯了這個其實很重要我還是可以那我未來再判定你不是有那個0到幾0到幾那個那未來可以根據你過去的判定 predict 它的 importance level 的時候它可以變更個人化一點好 那個部分可以從剛剛那個介面的那個 Interaction 做到那接下來說 importance 這件事情它是 static 的對 那但是 long term 之後會變成是
+- [0506 | 2026-05-06 | L1-0506-037] type=argument importance=0.64 score=0.8807
+  content: 即使「重要性 (importance)」分數是靜態的，也應該捕獲用戶對 LLM 初始評分的修正。這樣做的理由是，這些回饋可用於個人化並改進 LLM 未來的預測能力。
+  evidence: [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如說你判定錯了這個其實很重要我還是可以那我未來再判定你不是有那個0到幾0到幾那個那未來可以根據你過去的判定 predict 它的 importance level 的時候它可以變更個人化一點好 那個部分可以從剛剛那個介面的那個 Interaction 做到那接下來說 importance 這件事情它是 static 的對 那但是 long term 之後會變成是
+- [0506 | 2026-05-06 | L1-0506-031] type=approach_change importance=0.74 score=0.8798
+  content: 每個會議都會生成新的 L1 節點。相似的想法可以在單次會議的節點內合併，但不能跨會議合併，因為每個會議都被視為一個獨立的組織單位。
+  evidence: [SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units
+- [0506 | 2026-05-06 | L1-0506-017] type=approach_change importance=0.74 score=0.8767
+  content: 系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。
+  evidence: [SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument, open question他會去抓但這個其實不一定要是這六個就是我們先定一個六個先定在meeting裡面常出現的這六個東西對OK好然後然後接下來要做什麼
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-project-demo-strategy] project demo strategy
+  matched L1: L1-0422-045
+  topic_size=4 selected_event_count=4 omitted_event_count=0
+  current_state: project demo strategy: latest state from 2026-04-22 L1-0422-045 is 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。...
+  evolution_summary: project demo strategy evolved from 2026-03-07 L1-0307-020: 專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。 to 2026-04-22 L1-0422-045: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。...
+  latest_position: 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+  key_rationale: 專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-07 L1-0307-020] 專案的主要目標從嚴謹的評估轉向實作架構以展示 agent 的行為差異，並研究其對人機互動和使用者認知的影響。
+    - [2026-03-07 L1-0307-026] 示範策略為並列比較，展示記憶體增強 agent 和基準 agent 在特定情境下產生不同結果，以凸顯長期記憶的價值。
+    - [2026-04-22 L1-0422-045] 為了展示記憶模型的價值，可以將其與標準的 RAG 模型進行比較。具備遺忘機制的 agent 應該能正確忽略過時的資訊，從而展現其對主題生命週期的理解，這是標準 RAG 模型所缺乏的能力。
+    - [2026-04-22 L1-0422-043] 評估計畫是透過 demo 來展示 agent 因其遺忘機制而能正確忽略過時資訊，從而證明其優於標準 RAG 模型。然而，一項發現是目前的會議資料集時間跨度可能太短，無法有效展示此效果。因此，團隊將在現有資料中尋找特定案例，或合成更長的對話歷史，以創造一個清晰的展示。
+
+[L2-importance-feedback-and-editor] importance feedback and editor
+  parent L3: L3-memory-lifecycle memory lifecycle
+  matched L1: L1-0429-044, L1-0422-040
+  topic_size=6 selected_event_count=6 omitted_event_count=0
+  current_state: importance feedback and editor: latest state from 2026-05-06 L1-0506-034 is 系統是否以及如何整合「人在環路」(human-in-the-loop) 的機制來修正 LLM 生成的「重要性」(importance) 分數，這是一個待解決的設計問題。雖然已決定重要性分數應保持靜態，...
+  evolution_summary: importance feedback and editor evolved from 2026-03-07 L1-0307-004: 系統的遺忘機制（例如，如果一個項目在三次會議內未被討論則刪除）的具體參數和邏輯可能需要進一步定義和調整。...
+  latest_position: 系統是否以及如何整合「人在環路」(human-in-the-loop) 的機制來修正 LLM 生成的「重要性」(importance) 分數，這是一個待解決的設計問題。雖然已決定重要性分數應保持靜態，但仍有提案建議捕捉使用者的修正回饋，用以個人化並改善 LLM 未來的預測能力，...
+  key_rationale: Assignment criteria: feedback; user correction; correction
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-07 L1-0307-004] 系統的遺忘機制（例如，如果一個項目在三次會議內未被討論則刪除）的具體參數和邏輯可能需要進一步定義和調整。
+    - [2026-03-25 L1-0325-086] 簡單的 RAG 方法不足以追蹤主題的演變，例如一個主題何時被放棄以及原因。RAG 只能找到所有相關的提及，但無法捕捉到關鍵的時間順序和最終決定。
+    - [2026-04-22 L1-0422-040] 針對系統可能遺忘重要資訊的疑慮，其設計的辯護是：遺忘並非隨機發生。記憶只有在與當前上下文無關時才被視為「遺忘」，且其重要性會隨時間更新。如果一個舊主題再次變得相關，它可以被重新喚醒。
+    - [2026-04-29 L1-0429-044] 提出了一項名為「fade-out」的新穎評估標準，用以測試 agent 在一般對話中抑制較不相關或過時的長期資訊的能力。實現此機制的構想是為每個記憶項目賦予一個重要性分數，低於某個閾值的資訊將被視為「非活躍」狀態並被抑制。
+    - [2026-04-29 L1-0429-014] 將人類遺忘曲線直接應用於 LLM 的有效性受到質疑，理由是 LLM 本身就會因上下文限制而「遺忘」，且現有的 LLM「遺忘」功能可能主要用於刪除敏感數據，而非模擬認知過程。
+    - [2026-05-06 L1-0506-034] 系統是否以及如何整合「人在環路」(human-in-the-loop) 的機制來修正 LLM 生成的「重要性」(importance) 分數，這是一個待解決的設計問題。雖然已決定重要性分數應保持靜態，但仍有提案建議捕捉使用者的修正回饋，用以個人化並改善 LLM 未來的預測能力，其具體實作方式尚待確定。
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 670
+- hybrid_fallback:
+- hybrid_lexical_count: 120
+- hybrid_semantic_count: 120
+- hybrid_semantic_used: True
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 0
+- retrieval_mode: hybrid
+- selected_child_l2_count: 1
+- selected_l1_count: 24
+- selected_l2_count: 1
+- selected_secondary_l2_count: 0
+- selected_sibling_child_l2_count: 0
+- sibling_candidate_count: 0

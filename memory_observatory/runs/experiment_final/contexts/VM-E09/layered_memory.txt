@@ -1,0 +1,160 @@
+=== Memory Router ===
+strategy: long_term_only
+targets: long_term
+reason: query asks for history, rationale, method evolution, or cross-meeting context
+confidence: 0.8
+
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- L3 L3-memory-lifecycle: memory lifecycle
+  - child L2 L2-memory-retention-and-forgetting: memory retention and forgetting
+  - child L2 L2-importance-activation-and-recency: importance, activation, and recency
+  - child L2 L2-importance-feedback-and-editor: importance feedback and editor
+  - child L2 L2-topic-lifecycle-and-evolution: topic lifecycle and evolution
+- Unpromoted L2 topics:
+  - L2-dataset-selection: dataset selection
+
+=== L1 Evidence Seeds ===
+- [0325 | 2026-03-25 | L1-0325-034] type=decision importance=0.77 score=0.9021
+  content: 專案的初始目標是利用過去一系列會議的錄音來訓練一個對話式 agent。
+  evidence: [SPEAKER_02]: 你們就先講一下我們現在的你們想的我們的題目吧好啦不用開計畫書嘛反正其實大概就是我上次跟你講的那個題目然後我們現在就是在說就是一開始的初衷是想要說透過就是過去透過過去的連續的meeting的錄音檔然後去train出某一個就是最後可以對話的一個agent
+- [0325 | 2026-03-25 | L1-0325-008] type=decision importance=0.68 score=0.8996
+  content: 專案決定使用 ICSI 資料集進行實驗，因為它包含關於同一主題的長期研究會議（超過20個場次），被認為是目前最完整的版本。
+  evidence: [SPEAKER_01]: 喔對可以先提一下我們現在的資料集就是我們現在資料集是一個叫做就是跟上次一樣的ISCI然後它的這個資料集就是它也其實有提供那個那個什麼 mrt的那個字幕的檔所以 [SPEAKER_02]: 它這邊的話它提供的就是沒有timestamp對不對 [SPEAKER_01]: 呃有 [SPEAKER_02]: 是有只是你把它process掉了嗎 [SPEAKER_01]: 是我沒有處理而已我們用的是這個東西它是一個它是20好像2007 [SPEAKER_02]: 二零零幾嗎這麼久以前的對他有發他有就連續的那個他最長大概是他的meeting大概長度是多少 [SPEAKER_03]: 但他應該是最完整的 [SPEAKER_02]: 他是對話檔是不是 [SPEAKER_03]: 因為他是有做垂直就...
+- [0325 | 2026-03-25 | L1-0325-077] type=argument importance=0.65 score=0.888
+  content: 在為會議摘要專案選擇數據源時，存在一個核心權衡：使用公開演講影片有利於獲取精煉的內容，而使用內部連續會議記錄則更能捕捉真實的對話風格與互動。專案目標是追求內容準確性還是風格相似性，將決定數據源的選擇。
+  evidence: [SPEAKER_03]: 不過回到這個問題的話我覺得剛剛那個資料應該可以說如果他們的Meeting是很像這種形式他的 [SPEAKER_03]: 他的錄音檔是指他在的外面給演講的talk還是說他們的內部的meeting的連續的錄音檔 [SPEAKER_01]: 我想知道那个Avatar是想要做出他的內容的正確还是想要做出他講話像 [SPEAKER_03]: 可以有幾個評估指標嗎就是他是否符合這個人的經歷就是他可能会 [SPEAKER_03]: 舉例說我以前爬山的時候怎麼樣這樣子那這個對不對然後跟流暢性那這流暢性可能現在LM都很流暢這樣然後再來就是這個風格可是風格是最困難的因為可能連本人也不知道這個風格到底像不像他
+- [0408 | 2026-04-08 | L1-0408-001] type=approach_change importance=0.69 score=0.9151
+  content: 團隊已決定採用會議錄音資料集中的 BMR 系列進行研究。此系列包含約 29 個檔案，記錄了同一組人進行的連續性討論。
+  evidence: [SPEAKER_00]: Whisper 可以轉成這樣，但是這個是他們提供的資料集，會最準確。所以資料集本身應該是很完整的會議逐字稿格式。每一個 file 裡面有很多 segments，每個 segment 有 speaker、時間長度以及對話內容。每個檔案之間是有延續的嗎？ [SPEAKER_02]: 有，它是連續會議。 [SPEAKER_00]: 所以 BED 這些都是同一個？ [SPEAKER_02]: 應該是 BMR 吧，我們是拿 BMR。 [SPEAKER_00]: 所以像這邊，BMR 總共有 1 到 31，中間缺了兩三個，所以大概是 29 個。BNS 又是另一個 series 的會議。每個 file 的長度大概多長？如果看第一個 segment 的 start time 跟最後一個 segmen...
+- [0408 | 2026-04-08 | L1-0408-003] type=argument importance=0.6 score=0.8939
+  content: 選擇 BMR 系列資料集是基於其特性非常適合長期記憶研究。該資料集包含同一組參與者就一個連續性主題進行的多次、依序的會議，且錄音長度較長，這為追蹤跨會議的對話脈絡和記憶演變提供了理想的基礎。
+  evidence: [SPEAKER_00]: Whisper 可以轉成這樣，但是這個是他們提供的資料集，會最準確。所以資料集本身應該是很完整的會議逐字稿格式。每一個 file 裡面有很多 segments，每個 segment 有 speaker、時間長度以及對話內容。每個檔案之間是有延續的嗎？ [SPEAKER_02]: 有，它是連續會議。 [SPEAKER_00]: 所以 BED 這些都是同一個？ [SPEAKER_02]: 應該是 BMR 吧，我們是拿 BMR。 [SPEAKER_00]: 所以像這邊，BMR 總共有 1 到 31，中間缺了兩三個，所以大概是 29 個。BNS 又是另一個 series 的會議。每個 file 的長度大概多長？如果看第一個 segment 的 start time 跟最後一個 segmen...
+- [0422 | 2026-04-22 | L1-0422-044] type=approach_change importance=0.63 score=0.9082
+  content: 為了展示長期記憶效果，團隊決定採用一種混合的數據集策略。他們將首先在現有的會議記錄中尋找合適的展示片段，如果找不到，則會考慮合成對話資料來創造一個清晰的範例，例如模擬30次會議的歷史記錄。
+  evidence: [SPEAKER_01]: 好我們有一個問題是我們不知道就是那個evaluate我們是要用我們自己的dataset嗎，因為我們dataset的話看起來真的有比較是在討論這個東西，然後有method change的表示可能從這學期開始的四次包含這次第五次那我們就你們可以看 [SPEAKER_00]: 如果說這個 dataset 夠用的話其實也是可以但你們可能就要找到裡面的某一個可以 demo 的環節 [SPEAKER_00]: 其實你們可以自己去組自己去生成那個可以自己去生成那個對話環節，譬如說你可以在我們在Meeting的內容裡面多塞一些就是假設譬如說那個那你就可以講說Long term memory。假設我們總共有譬如說30場的會議然後也許你說每一場用半小時左右就好了那你可以把我們一開始的Meeting的時...
+- [0422 | 2026-04-22 | L1-0422-001] type=approach_change importance=0.74 score=0.8932
+  content: 記憶體更新流程已改為採用以 Gemini Tool Calling 為核心的架構。此方法將由 WhisperX 產生的逐字稿視為一個資料庫，讓 Gemini 動態決定要讀取多少行，避免了固定的資料分塊。Gemini 被賦予 `Read` 和 `Write` 兩個主要函式：`Read` 用於存取原始逐字稿和現有的記憶體資料庫 (DB)，而 `Write` 則用於更新一個獨立的、結構化的記憶體資料庫。
+  evidence: [SPEAKER_03]: 就是我們上次做的 Tool Calling 的意思就其實只是讓 Gemini 來可以決定他要怎麼用函數而不是一次全部喂他，就上次可能講得沒有很清楚就是我們使用 Tool Calling 的目的只是讓 Gemini 來可以決定他要用什麼函數，他要怎麼調用整個逐字稿 [SPEAKER_02]: 就是我如果把逐字稿轉成 Database 的形式的話他就可以決定他一次要調用幾行，然後如果他覺得調用的太少的話他可以再回去調用更長或是他想要調用之前的也可以，就可以算是規避掉切塊的這個問題，就是不會有那個資料要被區分怎麼切或怎麼去區分的問題。 [SPEAKER_02]: 是transcript [SPEAKER_00]: 好然後所以given一個transcript然後transcript你們會...
+- [0429 | 2026-04-29 | L1-0429-001] type=approach_change importance=0.72 score=0.9204
+  content: 團隊決定改變評估資料集規模的指標。他們將不再使用「分鐘」作為單位，而是去研究並採用一個針對 agent 的「長上下文（long context）」的精確定義，並以此標準（很可能是 tokens 數量）來衡量現有資料。
+  evidence: [SPEAKER_02]: 在這個地方的話你們說這個長度對於LLM來說這個不是一個問題它是有什麼樣的根據嗎因為這個地方如果你們在講這個專題的時候你就要蠻明確的講說像是就以Large Language Model來說在處理這種會議資料的時候最長就是在多長 [SPEAKER_04]: 對我們有要去嘗試大概多長大概多長是他的極限那我們就是要做是幾個turn還是幾個字他通常算的應該是我覺得應該是看token對應該是看token [SPEAKER_02]: 所以你可能要去查一下確切的說以現在目前為止就是在agent上面再定義成是long context大家講的是多long就是最large的現在是最長是多長 [SPEAKER_02]: 對 然後用那個方式我們可以才剛好可以回來看說所以以我們的transcription裡面...
+- [0429 | 2026-04-29 | L1-0429-006] type=argument importance=0.62 score=0.9092
+  content: 為了處理現有會議記錄資料量可能不足的問題，有人主張應整合學長姐過去兩年的會議記錄。這樣做的理由是，這些歷史資料能提供一個具有長期歷史和既定上下文的豐富資料集，其中甚至包含了被捨棄的想法，這對於訓練和評估 agent 至關重要。
+  evidence: [SPEAKER_04]: 我們這周主要是我們規劃了一些evaluation的方法然后就是有参考之前看的几篇paper这样然后我们现在累计的data应该是前面有从这个学期开始比较就是有一直focus在研究上的总共有五场然后现在总计的时间大概是180分钟 [SPEAKER_04]: 是已經5場總共加起來180分鐘 [SPEAKER_02]: 對 然後每一場的長短不一樣有半個小時有到快一個小時這樣對然後我們有把這5場都去轉成逐字稿但是因為就是那個錄音檔會有一些就是可能大家講話交雜的聲音所以它轉出來的品質有一些部分是需要修改的然後因為我們有在想說5場的量以現在LLM来说其实他们能力都蛮强那这样下去做实验不太确定这个5场的内容够不够所以我们在想是用LLM去做先请LLM去修正 [SPEAKER_02]: 或者是有另外一...
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.9081
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情
+- [0429 | 2026-04-29 | L1-0429-045] type=proposal importance=0.65 score=0.9062
+  content: 為解決資料集不足的問題，提出了兩種資料擴充策略：1) 使用 LLM 增強現有逐字稿以生成更多對話；2) 使用更大規模的真實世界資料集，例如由學長（Zhen-Ying）收集的兩年會議記錄。
+  evidence: [SPEAKER_04]: 對，然後用那個方式，我們才剛好可以回來看說，所以以我們的 transcription 裡面，先不管 180 分鐘，以那一個標準來看它是幾倍的長度這樣。嗯，然後我們有在想，就是如果今天這個不夠的話，那像有一些 paper 它是用給背景資料，然後請 AI 去對話，那我們現在想的做法是我們把我們的逐字稿送進去，請 AI 去幫忙增長這個對話。 [SPEAKER_02]: 就是讓它的對話可以變得更長，就是 data 更大。或者是有另外一種方式是你可以把我們其他同學的會議錄音也放進去，你就把它變成說是以我作為一個 leader。 [SPEAKER_02]: 然後你們想要來跟我去討論一些事情，那這樣就會存在說，譬如說我跟碩二的同學，我們大概有兩年的 meeting，對，然後就會有很長，就是我對於...
+- [0429 | 2026-04-29 | L1-0429-003] type=proposal importance=0.58 score=0.9057
+  content: 作為另一種資料擴增策略，有人提議整合學長姐的會議錄音（例如兩年份的會議），以建立一個具有長期歷史和既定上下文的資料集。
+  evidence: [SPEAKER_02]: 或者是有另外一種方式是你可以把我們其他同學的會議錄音也放進去你就把它變成說是以我作為一個就是那個leader然後你們想要來跟我去討論一些事情那這樣就會存在說譬如說我跟碩二的同學我們大概有兩年的meeting對然後就會有很長就是我對於每個人我都會我們都有些脈絡然後一定有些東西曾經討論過然後被丟棄 [SPEAKER_04]: 這些錄音都在嗎 [SPEAKER_02]: 應該是都在對我知道真盈因為真盈她也是在弄會議分析所以她的檔案一定是都在 [SPEAKER_04]: OK 所以可以去跟學姊拿
+- [0429 | 2026-04-29 | L1-0429-057] type=argument importance=0.68 score=0.9048
+  content: 在 top-down 的逐字稿處理方法中，LLM 可以處理大塊文本並從中正確識別多個「objects」(idea units)，然後從上次中斷的地方繼續處理，因此不必擔心 LLM 讀取的行數，也不會遺失資訊。
+  evidence: [SPEAKER_00]: 因為我的短期也是差不多的方法。我想就是益心的意思大概是說，因為其實你不用太糾結 LLM 到底會讀幾行，因為 LLM 它自己可以。因為老師您剛剛說就是希望它讀幾行，那一行就是一個 object。但是其實 LLM 就算它真的讀太多行，它其實也知道這邊結束，就沒有什麼關係。 [SPEAKER_00]: 所以它其實比如說讀了 0 到 40 行，假設裡面有兩個 object，不是只有一個 object，它其實也沒關係，它就會處理，就是把這兩個存進去。所以它下一次還是會讀什麼 41 到 80。所以就是對它來說，它只要能處理哪些 object，它就沒有什麼，它就不會有一次剛好就讀一個 object 會比較好，因為這些東西在存成這個形式之前，它都會是一個 candidate。
+- [0429 | 2026-04-29 | L1-0429-004] type=open_issue importance=0.65 score=0.9036
+  content: 團隊不確定目前收集的5次會議（共180分鐘）的逐字稿數據量是否足以進行 LLM 實驗。
+  evidence: [SPEAKER_04]: 我們這周主要是我們規劃了一些evaluation的方法然后就是有参考之前看的几篇paper这样然后我们现在累计的data应该是前面有从这个学期开始比较就是有一直focus在研究上的总共有五场然后现在总计的时间大概是180分钟 [SPEAKER_04]: 是已經5場總共加起來180分鐘 [SPEAKER_02]: 對 然後每一場的長短不一樣有半個小時有到快一個小時這樣對然後我們有把這5場都去轉成逐字稿但是因為就是那個錄音檔會有一些就是可能大家講話交雜的聲音所以它轉出來的品質有一些部分是需要修改的然後因為我們有在想說5場的量以現在LLM来说其实他们能力都蛮强那这样下去做实验不太确定这个5场的内容够不够所以我们在想是用LLM去做先请LLM去修正
+- [0429 | 2026-04-29 | L1-0429-042] type=argument importance=0.66 score=0.9029
+  content: 現有的180分鐘會議轉錄資料量可能不足以進行穩健的 LLM 評估，因此有必要尋求資料擴增策略，例如使用 LLM 生成更多對話，或利用現有的更大型會議資料集。
+  evidence: [SPEAKER_04]: 我們這週主要是我們規劃了一些 evaluation 的方法，然後就是有參考之前看的幾篇 paper。然後我們現在累積的 data，應該是前面有從這個學期開始，比較就是有一直 focus 在研究上的，總共有五場。然後現在總計的時間大概是 180 分鐘。 [SPEAKER_04]: 是已經 5 場，總共加起來 180 分鐘。對，然後每一場的長短不一樣，有半個小時，有到快一個小時這樣。對，然後我們有把這 5 場都去轉成逐字稿，但是因為那個錄音檔會有一些可能大家講話交雜的聲音，所以它轉出來的品質有一些部分是需要修改的。然後因為我們有在想說。 [SPEAKER_04]: 五場的量，以現在 LLM 來說其實他們能力都蠻強，那這樣下去做實驗，不太確定這五場的內容夠不夠，所以我們在想是用 LLM...
+- [0429 | 2026-04-29 | L1-0429-041] type=argument importance=0.63 score=0.9027
+  content: 團隊需要修正現有的5次會議（總計約180分鐘）的逐字稿，因為其品質不佳，並考慮使用 LLM 來協助校正。
+  evidence: [SPEAKER_04]: 我們這週主要是我們規劃了一些 evaluation 的方法，然後就是有參考之前看的幾篇 paper。然後我們現在累積的 data，應該是前面有從這個學期開始，比較就是有一直 focus 在研究上的，總共有五場。然後現在總計的時間大概是 180 分鐘。 [SPEAKER_04]: 是已經 5 場，總共加起來 180 分鐘。對，然後每一場的長短不一樣，有半個小時，有到快一個小時這樣。對，然後我們有把這 5 場都去轉成逐字稿，但是因為那個錄音檔會有一些可能大家講話交雜的聲音，所以它轉出來的品質有一些部分是需要修改的。然後因為我們有在想說。 [SPEAKER_04]: 五場的量，以現在 LLM 來說其實他們能力都蠻強，那這樣下去做實驗，不太確定這五場的內容夠不夠，所以我們在想是用 LLM...
+- [0429 | 2026-04-29 | L1-0429-085] type=argument importance=0.66 score=0.899
+  content: 目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。
+  evidence: [SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_02]: 不然就是這個任務的流程可能要再更specific。比如說下一段的逐字稿看起來它就沒有照著我們 follow 的做啊，對不對？因為它剛剛 1 到 40 句，它下一段根本不該從 31 開始啊。而且 1 到 40 裡面，其實我不知道裡面的 idea units 有幾個。在那個情況裡...
+- [0429 | 2026-04-29 | L1-0429-065] type=decision importance=0.73 score=0.8983
+  content: 團隊決定進行一項實驗，比較「動態分塊 (dynamic chunking)」與「固定分塊 (fixed-chunk)」兩種方法。動態方法將根據主題連貫性預測要讀取的對話輪次數。為求公平比較，固定分塊的大小將設定為動態方法產生的平均分塊大小。評估將比較計算成本（以請求數量為代理指標）和輸出品質。品質將透過與人工標註的「重要想法單元」(important idea units) 地面實況進行精確率 (precision) 和召回率 (recall) 的比較來衡量。
+  evidence: [SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，但是通常過去的 work 都是切幾個 turn嘛，比如說 3 個、5 個等等地這樣去切。 [SPEAKER_02]: 對，然後我們...
+- [0429 | 2026-04-29 | L1-0429-069] type=argument importance=0.67 score=0.8889
+  content: 針對分塊（chunking）方法的評估，將使用精確率（precision）和召回率（recall）作為指標，並以人類定義的「重要想法單元」作為基準真相（ground truth）。假設逐輪迭代摘要（per-turn iterative summary）雖然能達到高召回率，但精確率會很低；而動態分塊方法則有望同時實現高精確率和高召回率，因為重要想法不會被與其他主題混合而模糊。
+  evidence: [SPEAKER_02]: 然後我覺得我們的方式，我們切的那 20 個斷點，它其實每一個長短也是不同，但它的長短是根據它的主題是什麼東西有關。 [SPEAKER_02]: 對，然後跟那個說你就是一個一個去找，那就是要 100 個 compute 嘛。然後你就要一直去 iterate，也就是你每一句都有一個 summary，然後你要再把一樣的去 merge 起來，那個算的次數一定會多非常多。那它當然會非常精準，然後但是我相信也會出現剛剛益心說的一些不是很重要的話，它會被變成是一個 item。對。 [SPEAKER_02]: 然後只是這的話，感覺上也是去想一下說要怎麼去 evaluate、要怎麼去呈現。就是說我們在處理會議資訊的時候，我們去減少它的 compute，然後也增加它的精細程度。然後哪一些，也是精細程度...
+- [0506 | 2026-05-06 | L1-0506-013] type=approach_change importance=0.7 score=0.9111
+  content: 為了能客觀評估文本分割（segmentation）的性能，團隊決定建立一個「真實標記」(ground truth) 資料集。此方法將透過手動標記樣本中的正確斷點，來計算不同方法（如固定窗口與自適應窗口）的精確度（precision）和召回率（recall）。
+  evidence: [SPEAKER_02]: 因為他已經你們那時候是寫一個 prompt 嗎跟他說就是讓它去讓它去測就是算是寫一個測試版去看看他的結果怎麼樣然後再就是因為效果不好所以他就因為他說我蠻好奇效果的地方是怎麼怎麼 measure，因為通常我想像效果的應該是說我現在有了 ground truth，像我有 data，我已經知道正確的切點在哪個地方 假設說這一個100行的data裡面真正切對的話總共會有20個點那如果用fixed 的話就可以直接算了嘛如果用fixed 的話我可以直接算出說所以它是它如果是用每三句一切的話它的precision/recall 會是多少那如果是用window 的話其實supposedly它應該就是我每一句話丟進去之後 它去predict 他未來還有多長然後我可以直接去算說他的prediction...
+- [0506 | 2026-05-06 | L1-0506-003] type=decision importance=0.68 score=0.9068
+  content: 過去一項使用自適應窗口（adaptive window）進行分段的實驗已被放棄，因為它導致結果惡化。失敗的原因是該方法缺乏精確定位邊界的能力，任何不準確都需要回退到邊界校正，從而抵消了自適應的好處，該實驗的程式碼已被覆蓋。
+  evidence: [SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況 然後可能我們猜測是因為adaptive window它很難完全預測準確到那一行就是...
+- [0506 | 2026-05-06 | L1-0506-020] type=decision importance=0.64 score=0.9011
+  content: 決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。
+  evidence: [SPEAKER_02]: 然後剛剛講到剛剛講到label label都是什麼都是theme的label theme的label因為現在你先講一下現在的label現在的label就是是針對idea units就是最小的單位是idea units對然後它會是屬於某一個segment 這樣嗎 它會是屬於某個segment會對它會屬於所以它會它中間是有relationship的所以每一個segment ID它會對應它應該你應該是可以你去到某一串的idea units對就是一樣這樣就是這個 segment然後會看到這是segments然後會看到很多idea unit這些idea unit都是在這個 segment裡面然後會有對應得好的數字這個 segment 它是針對它是針對錄音 檔的segment對不對?組織稿這都...
+- [0506 | 2026-05-06 | L1-0506-030] type=approach_change importance=0.75 score=0.8887
+  content: 設計上已決定將「importance」分數保持靜態，作為節點創建時重要性的歷史參考。記憶衰減改由一個獨立的「activation」參數處理。高重要性的節點可能會有一個衰減下限（floor），以防止其值降得過低。
+  evidence: [SPEAKER_04]: 我們現在decay其實是在importance之外再加一個叫activation的參數就是讓它去判定這個記憶現在有多活躍因為不想動他importance是因為覺得importance其實是最初建立是這個東西好不好的一個指標所以如果你一開始你直接把它改掉的話它變成那個參考價值就不見了就是importance本來可以當成一個指標來判定說這個東西在那個時候是不是一個算是很 [SPEAKER_02]: 那個時候比較重要的觀點但是如果因為decay的關係它就迅速消失它的那個參考的那個本來可以參考的這個意義這層意義就消失了所以你說importance它是之於那一場會議的時候的relative importance然後你現在有除了那importance它是你還是可以user input就是說譬如...
+- [0506 | 2026-05-06 | L1-0506-031] type=approach_change importance=0.74 score=0.8881
+  content: 每個會議都會生成新的 L1 節點。相似的想法可以在單次會議的節點內合併，但不能跨會議合併，因為每個會議都被視為一個獨立的組織單位。
+  evidence: [SPEAKER_02]: 它更新的意思是說它會先移到我現在要更改的memory node它現在existing本來是這樣然後我update 成這樣其實不會有existing node吧它就直接加進去因為我們是用日期去分 [SPEAKER_01]: 就是他會是一次Meeting有一個這樣一次Meeting會有很多個 L1 的 node這樣對但如果今天就是好今天這九個units只要第一個加進去第一個先第一個因為什麼都沒有他先加進去但第八個可能跟第一個有關或是有蠻相似的那他可能就會併進去這樣就會在同一個Meeting裡面在一場Meeting裡面他是會去併的但是跨Meeting的話就不會因為我們是一次Meeting為一個大的就是單位這樣然後裡面有很多個units
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-dataset-selection] dataset selection
+  matched L1: L1-0429-001, L1-0408-001, L1-0429-006, L1-0429-045, L1-0429-003, L1-0429-004, L1-0429-042, L1-0325-008, L1-0325-077
+  topic_size=27 selected_event_count=4 omitted_event_count=23
+  current_state: dataset selection: latest state from 2026-04-29 L1-0429-045 is 為解決資料集不足的問題，提出了兩種資料擴充策略：1) 使用 LLM 增強現有逐字稿以生成更多對話；2) 使用更大規模的真實世界資料集，例如由學長（Zhen-Ying）收集的兩年會議記錄。...
+  evolution_summary: dataset selection evolved from 2026-03-07 L1-0307-002: 為簡化實驗，針對實體會議的說話者日誌記錄（speaker diarization）挑戰，將採取假設講者身份的方式進行，除非有像WhisperX這樣高準確度的工具。 to 2026-04-29 L1-0429-045: 為解決資料集不足的問題，...
+  latest_position: 為解決資料集不足的問題，提出了兩種資料擴充策略：1) 使用 LLM 增強現有逐字稿以生成更多對話；2) 使用更大規模的真實世界資料集，例如由學長（Zhen-Ying）收集的兩年會議記錄。
+  key_rationale: 為簡化實驗，針對實體會議的說話者日誌記錄（speaker diarization）挑戰，將採取假設講者身份的方式進行，除非有像WhisperX這樣高準確度的工具。
+  open_tensions: 評估資料集包含依類型（如 single/multi-hop、temporal reasoning、open-domain）分類的問題，但該評估的最終目標或比較基準尚不明確，這是一個待解決的問題。
+  timeline_digest:
+    - [2026-03-25 L1-0325-008] 專案決定使用 ICSI 資料集進行實驗，因為它包含關於同一主題的長期研究會議（超過20個場次），被認為是目前最完整的版本。
+    - [2026-03-25 L1-0325-077] 在為會議摘要專案選擇數據源時，存在一個核心權衡：使用公開演講影片有利於獲取精煉的內容，而使用內部連續會議記錄則更能捕捉真實的對話風格與互動。專案目標是追求內容準確性還是風格相似性，將決定數據源的選擇。
+    - [2026-04-08 L1-0408-001] 團隊已決定採用會議錄音資料集中的 BMR 系列進行研究。此系列包含約 29 個檔案，記錄了同一組人進行的連續性討論。
+    - [2026-04-29 L1-0429-001] 團隊決定改變評估資料集規模的指標。他們將不再使用「分鐘」作為單位，而是去研究並採用一個針對 agent 的「長上下文（long context）」的精確定義，並以此標準（很可能是 tokens 數量）來衡量現有資料。
+
+[L2-overall-memory-system-evaluation] Overall Memory System Evaluation
+  parent L3: L3-memory-evaluation-strategy memory evaluation strategy
+  matched L1: L1-0408-003
+  topic_size=12 selected_event_count=8 omitted_event_count=4
+  current_state: Overall Memory System Evaluation: latest state from 2026-04-29 L1-0429-063 is 團隊已確定評估策略，將進行消融研究 (ablation study) 來比較完整系統與多個基準線的效能，包括僅使用 RAG、僅使用短期記憶體，以及僅使用長期記憶體。在所有實驗條件下，...
+  evolution_summary: Overall Memory System Evaluation evolved from 2026-03-18 L1-0318-008: 在評估的脈絡下，「Temporal Reasoning」被定義為針對特定會議或對話片段生成摘要或大綱的任務。 to 2026-04-29 L1-0429-063: 團隊已確定評估策略，...
+  latest_position: 團隊已確定評估策略，將進行消融研究 (ablation study) 來比較完整系統與多個基準線的效能，包括僅使用 RAG、僅使用短期記憶體，以及僅使用長期記憶體。在所有實驗條件下，工作記憶體 (working memory) 將維持不變。
+  key_rationale: Assignment criteria: evaluation plan; ablation; baseline
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-18 L1-0318-008] 在評估的脈絡下，「Temporal Reasoning」被定義為針對特定會議或對話片段生成摘要或大綱的任務。
+    - [2026-03-18 L1-0318-019] 新的「可持續 AI」研究專案將採用新穎的「人性化角度 (human angle)」，探索是否能引導使用者做出更節能的選擇，而非僅專注於硬體或軟體。具體構想包括在聊天機器人中實作「節能模式」。
+    - [2026-03-25 L1-0325-011] 儘管專案的設定是「導師-學員」(mentor-mentee) 的情境，但使用 ICSI 資料集中的研究會議（research meetings）格式是可以接受的，因為「導師-學員」的框架只是一個用於說明的「銷售情境」(selling scenario)，而非對資料來源的嚴格限制。
+    - [2026-03-25 L1-0325-016] 需要設計一個評估方法，以證明新的人格記憶方法能有效抵抗「人格漂移」(personality drift)。
+    - [2026-03-25 L1-0325-027] 團隊提出了一種維持 AI 人格特質的方法，即僅使用最近的互動來提取常用語，但如何評估其有效性仍是一個挑戰。目前的評估標準被建議為「真人感」，並提出一個具體的「人在迴路」評估方法：讓原始發言者的學生來評估 agent 的語氣和感覺是否與本人相符。然而，評估方法尚未最終確定。
+    - [2026-03-25 L1-0325-069] 在評估 AI 分身的真實性時，決議不採用教授本人的自我評估，因其被認定為不可靠的指標。
+    - [2026-03-25 L1-0325-084] 專案需要一個評估方法來測試系統追蹤決策演變的能力。目前已提出一個使用合成資料集「植入」答案的方案，例如測試系統能否正確排除已放棄的任務，但此評估策略尚未最終確定。
+    - [2026-04-08 L1-0408-003] 選擇 BMR 系列資料集是基於其特性非常適合長期記憶研究。該資料集包含同一組參與者就一個連續性主題進行的多次、依序的會議，且錄音長度較長，這為追蹤跨會議的對話脈絡和記憶演變提供了理想的基礎。
+
+[L2-evaluation-datasets-ground-truth] Evaluation Datasets & Ground Truth
+  parent L3: L3-memory-evaluation-strategy memory evaluation strategy
+  source: sibling child L2
+  why included: same_parent_l3_rationale_context
+  topic_size=12 selected_event_count=3 omitted_event_count=9
+  current_state: Evaluation Datasets & Ground Truth: latest state from 2026-04-29 L1-0429-043 is 評估方法提議使用一個 LLM 來比對 agent 生成的答案與預設的標準答案 (ground truth)，並以此進行評分。然而，這種使用 LLM 作為評審的評分機制的可靠性與有效性尚未確定。...
+  evolution_summary: Evaluation Datasets & Ground Truth evolved from 2026-03-07 L1-0307-023: 建議團隊應研究參考論文如何評估其模型性能，因為這是一個關鍵挑戰，且可能已有現成的資料集或標準化測試可供使用。...
+  latest_position: 評估方法提議使用一個 LLM 來比對 agent 生成的答案與預設的標準答案 (ground truth)，並以此進行評分。然而，這種使用 LLM 作為評審的評分機制的可靠性與有效性尚未確定。
+  key_rationale: Assignment criteria: locomo; memo; mirix
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-07 L1-0307-023] 建議團隊應研究參考論文如何評估其模型性能，因為這是一個關鍵挑戰，且可能已有現成的資料集或標準化測試可供使用。
+    - [2026-03-18 L1-0318-001] LOCOMO 數據集包含一項測試，用於識別 agent 知識範圍之外無法回答的問題，但 MEMO 論文並未執行此測試。這引出了一個問題：我們的評估是否應該包含這種類型的測試。
+    - [2026-03-18 L1-0318-009] 團隊將「多跳推理 (multi-hop reasoning)」定義為需要解決中間子問題的任務，而非指涉多輪對話。例如，要找出某位導演的出生地，需要先確定導演是誰，再查找其出生地。
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 662
+- hybrid_fallback:
+- hybrid_lexical_count: 120
+- hybrid_semantic_count: 120
+- hybrid_semantic_used: True
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 36
+- retrieval_mode: hybrid
+- selected_child_l2_count: 1
+- selected_l1_count: 24
+- selected_l2_count: 1
+- selected_secondary_l2_count: 0
+- selected_sibling_child_l2_count: 1
+- sibling_candidate_count: 1
