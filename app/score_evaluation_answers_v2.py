@@ -47,6 +47,8 @@ OUT_FIELDS = BASE_FIELDS + [
     "type",
     "response",
     "type_specific_metric",
+    "score_status",
+    "skip_reason",
     "factuality_score",
     "completeness_score",
     "hallucination_control_score",
@@ -65,6 +67,13 @@ OUT_FIELDS = BASE_FIELDS + [
     "judge_total_tokens",
     "judge_token_source",
 ]
+
+FAILED_RESPONSE_MARKERS = (
+    "answer generation failed",
+    "resource_exhausted",
+    "quota",
+    "429",
+)
 
 
 def type_specific(category: str) -> tuple[str, str]:
@@ -174,10 +183,13 @@ def score_from_parsed(parsed: dict[str, Any], metric_key: str) -> dict[str, Any]
         raise ValueError(f"missing common score: {parsed}")
     type_score = getnum(metric_key)
     if type_score is None:
+        type_score = getnum("type_specific_score")
+    if type_score is None:
         raise ValueError(f"missing type score {metric_key}: {parsed}")
 
     base = sum(float(score) for score in common_scores) / 4.0
     final = 0.7 * base + 0.3 * type_score
+    parsed[metric_key] = round(type_score, 2)
     parsed["base_quality_score"] = round(base, 2)
     parsed["type_specific_score"] = round(type_score, 2)
     parsed["final_quality_score"] = round(final, 2)
@@ -201,11 +213,53 @@ def existing_rows(path: Path) -> dict[tuple[str, str, str], dict[str, str]]:
     if not path.exists():
         return {}
     rows = load_rows(path)
+    for row in rows:
+        if row.get("final_quality_score") and not row.get("score_status"):
+            row["score_status"] = "ok"
+            row.setdefault("skip_reason", "")
     return {
         (row["question_id"], row["method"], row["type"]): row
         for row in rows
-        if row.get("final_quality_score")
+        if row.get("final_quality_score") or row.get("score_status") == "skipped"
     }
+
+
+def is_failed_response(response: str) -> bool:
+    text = str(response or "").strip()
+    if not text:
+        return True
+    lowered = text.lower()
+    return any(marker in lowered for marker in FAILED_RESPONSE_MARKERS)
+
+
+def skipped_row(
+    row: dict[str, str],
+    method_label: str,
+    variant_label: str,
+    response: str,
+    metric_key: str,
+    reason: str,
+) -> dict[str, str]:
+    output_row = {field: row.get(field, "") for field in BASE_FIELDS}
+    output_row.update(
+        {
+            "method": method_label,
+            "type": variant_label,
+            "response": response,
+            "type_specific_metric": metric_key,
+            "score_status": "skipped",
+            "skip_reason": reason,
+            "final_judgment": "Skipped",
+            "judge_notes": reason,
+            "judge_json": json.dumps(
+                {"score_status": "skipped", "skip_reason": reason},
+                ensure_ascii=False,
+            ),
+        }
+    )
+    for field in OUT_FIELDS:
+        output_row.setdefault(field, "")
+    return output_row
 
 
 def selected_variants(value: str) -> list[tuple[str, str]]:
@@ -253,6 +307,21 @@ def run(argv: list[str] | None = None) -> int:
 
                 response = row.get(answer_col if variant_key == "answer" else evidence_col, "")
                 metric_key, metric_label = type_specific(row.get("category", ""))
+
+                if is_failed_response(response):
+                    output_rows.append(
+                        skipped_row(
+                            row,
+                            method_label,
+                            variant_label,
+                            response,
+                            metric_key,
+                            "source_response_failed_or_empty",
+                        )
+                    )
+                    write_rows(output_path, output_rows)
+                    continue
+
                 prompt = build_prompt(row, method_label, variant_label, response)
 
                 parsed: dict[str, Any] | None = None
@@ -284,12 +353,25 @@ def run(argv: list[str] | None = None) -> int:
                         break
                     except Exception as exc:
                         if attempt >= 4:
-                            raise
+                            output_rows.append(
+                                skipped_row(
+                                    row,
+                                    method_label,
+                                    variant_label,
+                                    response,
+                                    metric_key,
+                                    f"judge_failed_after_retries: {type(exc).__name__}: {exc}",
+                                )
+                            )
+                            write_rows(output_path, output_rows)
+                            parsed = None
+                            break
                         wait_s = min(20.0, 2**attempt) + random.random()
                         print(f"retry after {type(exc).__name__}: {wait_s:.1f}s", flush=True)
                         time.sleep(wait_s)
 
-                assert parsed is not None
+                if parsed is None:
+                    continue
                 output_row = {field: row.get(field, "") for field in BASE_FIELDS}
                 output_row.update(
                     {
@@ -297,6 +379,8 @@ def run(argv: list[str] | None = None) -> int:
                         "type": variant_label,
                         "response": response,
                         "type_specific_metric": metric_key,
+                        "score_status": "ok",
+                        "skip_reason": "",
                     }
                 )
                 for field in OUT_FIELDS:

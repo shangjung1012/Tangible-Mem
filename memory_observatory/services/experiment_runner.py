@@ -17,6 +17,11 @@ from .report_store import ReportStore
 from .retrieval_trace import RetrievalTraceService
 from .token_utils import estimate_tokens, usage_metadata_to_tokens
 
+TRANSIENT_GENERATION_ERROR_RE = re.compile(
+    r"RESOURCE_EXHAUSTED|429|UNAVAILABLE|DEADLINE_EXCEEDED|503|500",
+    re.IGNORECASE,
+)
+
 
 ANSWER_SYSTEM_PROMPT = (
     "你是一個會議記憶問答助手。請只根據提供的 context 回答使用者問題。"
@@ -321,7 +326,11 @@ def _answer_prompt(query: str, context: str) -> str:
     )
 
 
-def _generate_answer(query: str, context: str, *, model: str) -> dict[str, Any]:
+def _is_transient_generation_error(exc: Exception) -> bool:
+    return bool(TRANSIENT_GENERATION_ERROR_RE.search(f"{type(exc).__name__}: {exc}"))
+
+
+def _generate_answer_once(query: str, context: str, *, model: str) -> dict[str, Any]:
     from share_mem.l1.gemini_clients import create_gemini_client
 
     prompt = _answer_prompt(query, context)
@@ -356,6 +365,23 @@ def _generate_answer(query: str, context: str, *, model: str) -> dict[str, Any]:
         ),
         "token_source": token_source,
     }
+
+
+def _generate_answer(query: str, context: str, *, model: str, max_attempts: int = 4) -> dict[str, Any]:
+    retry_errors: list[str] = []
+    for attempt in range(1, max(1, max_attempts) + 1):
+        try:
+            result = _generate_answer_once(query, context, model=model)
+            result["generation_attempts"] = attempt
+            if retry_errors:
+                result["retry_errors"] = retry_errors
+            return result
+        except Exception as exc:
+            retry_errors.append(f"{type(exc).__name__}: {exc}")
+            if attempt >= max_attempts or not _is_transient_generation_error(exc):
+                raise
+            time.sleep(min(30.0, 2.0 * attempt))
+    raise RuntimeError("answer generation failed without returning or raising")
 
 
 def run_experiment(
@@ -499,6 +525,9 @@ def run_experiment(
                     metrics["actual_output_tokens"] = answer_result["actual_output_tokens"]
                     metrics["actual_total_tokens"] = answer_result["actual_total_tokens"]
                     metrics["token_source"] = answer_result["token_source"]
+                    metrics["generation_attempts"] = answer_result.get("generation_attempts", 1)
+                    if answer_result.get("retry_errors"):
+                        data["answer_retry_errors"] = answer_result["retry_errors"]
                     metrics["total_ms"] = round(
                         float(metrics.get("total_ms", 0.0) or 0.0)
                         + float(answer_result["generation_ms"] or 0.0),

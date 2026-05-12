@@ -9,10 +9,36 @@ from .data_loader import ObservatoryDataLoader
 from .token_utils import context_token_metrics, estimate_tokens
 
 TOKEN_RE = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]{2,}", re.IGNORECASE)
+MEETING_ID_RE = re.compile(r"\b[A-Z]{2,}[-_ ]?\d{3,}\b|\b\d{4}\b", re.IGNORECASE)
 
 
 def _tokens(text: str) -> list[str]:
     return [item.lower() for item in TOKEN_RE.findall(str(text or "").lower())]
+
+
+def _normalized_meeting_id(value: str) -> str:
+    return re.sub(r"[-_\s]+", "-", str(value or "").strip().upper())
+
+
+def _query_meeting_ids(query: str, available_meeting_ids: Sequence[str]) -> list[str]:
+    available = {
+        _normalized_meeting_id(meeting_id): str(meeting_id)
+        for meeting_id in available_meeting_ids
+    }
+    output: list[str] = []
+    for match in MEETING_ID_RE.findall(str(query or "")):
+        normalized = _normalized_meeting_id(match)
+        meeting_id = available.get(normalized)
+        if meeting_id and meeting_id not in output:
+            output.append(meeting_id)
+    return output
+
+
+def _meeting_id_token_parts(meeting_ids: Sequence[str]) -> set[str]:
+    parts: set[str] = set()
+    for meeting_id in meeting_ids:
+        parts.update(_tokens(meeting_id))
+    return parts
 
 
 def _parse_meeting_ids(value: str | Sequence[str]) -> list[str]:
@@ -142,9 +168,16 @@ def retrieve_lexical_rag(
 ) -> dict[str, Any]:
     started = time.perf_counter()
     loader = ObservatoryDataLoader(repo_root)
-    query_terms = set(_tokens(query))
+    transcripts = loader.load_transcripts()
+    target_meeting_ids = _query_meeting_ids(query, sorted(transcripts))
+    query_terms = set(_tokens(query)) - _meeting_id_token_parts(target_meeting_ids)
     scored: list[dict[str, Any]] = []
-    for meeting_id, transcript in loader.load_transcripts().items():
+    searchable_transcripts = {
+        meeting_id: transcript
+        for meeting_id, transcript in transcripts.items()
+        if not target_meeting_ids or meeting_id in target_meeting_ids
+    }
+    for meeting_id, transcript in searchable_transcripts.items():
         lines = _transcript_lines(transcript)
         for start_line, end_line, chunk_text in _line_chunks(
             lines,

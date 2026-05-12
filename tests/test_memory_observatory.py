@@ -237,6 +237,40 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(chunk["start_line"], 1)
         self.assertGreater(chunk["score"], 0)
 
+    def test_lexical_rag_prefers_explicit_meeting_id_over_line_number_matches(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            transcript_root = root / "meeting_recording" / "transcript" / "grace"
+            (transcript_root / "ND-017.txt").write_text(
+                "\n".join(
+                    [
+                        "[046] unrelated setup",
+                        "[047] 學生: 團隊針對別的主題整理了背景，不是這題的 meeting。",
+                        "[048] unrelated follow-up",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (transcript_root / "ND-047.txt").write_text(
+                "\n".join(
+                    [
+                        "[001] opening logistics",
+                        "[002] 老師: 時間電價反應會影響排程品質與操作可行性。",
+                        "[003] next step",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = retrieve_lexical_rag(
+                "在 ND-047，團隊針對「時間電價反應」記錄了什麼關鍵觀點？",
+                repo_root=root,
+                top_k=1,
+            )
+
+        self.assertEqual(result["retrieved_chunks"][0]["meeting_id"], "ND-047")
+
     def test_lexical_rag_can_stop_at_token_budget(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1315,6 +1349,33 @@ class MemoryObservatoryTests(unittest.TestCase):
                 (run_dir / "answers" / "q001" / "rag_baseline.txt").read_text(encoding="utf-8"),
             )
 
+    def test_answer_generation_retries_transient_errors(self) -> None:
+        from memory_observatory.services import experiment_runner
+
+        with patch.object(
+            experiment_runner,
+            "_generate_answer_once",
+            side_effect=[
+                RuntimeError("429 RESOURCE_EXHAUSTED"),
+                {
+                    "answer": "ok",
+                    "generation_ms": 1.0,
+                    "actual_input_tokens": 2,
+                    "actual_output_tokens": 3,
+                    "actual_total_tokens": 5,
+                    "token_source": "actual_usage_metadata",
+                },
+            ],
+        ) as generate_once:
+            with patch.object(experiment_runner.time, "sleep") as sleep:
+                result = experiment_runner._generate_answer("q", "ctx", model="model", max_attempts=2)
+
+        self.assertEqual(result["answer"], "ok")
+        self.assertEqual(result["generation_attempts"], 2)
+        self.assertEqual(len(result["retry_errors"]), 1)
+        self.assertEqual(generate_once.call_count, 2)
+        sleep.assert_called_once()
+
     def test_v2_scorer_can_select_answer_only_variant(self) -> None:
         from app.score_evaluation_answers_v2 import selected_variants
 
@@ -1331,6 +1392,90 @@ class MemoryObservatoryTests(unittest.TestCase):
             rows = load_rows(path)
 
         self.assertEqual(rows[0]["question_id"], "VM-E12")
+
+    def test_v2_scorer_detects_failed_responses(self) -> None:
+        from app.score_evaluation_answers_v2 import is_failed_response
+
+        self.assertTrue(is_failed_response(""))
+        self.assertTrue(is_failed_response("Answer generation failed: ClientError: 429 RESOURCE_EXHAUSTED"))
+        self.assertFalse(is_failed_response("根據會議記錄，團隊決定先做 pilot。"))
+
+    def test_v2_scorer_falls_back_to_type_specific_score(self) -> None:
+        from app.score_evaluation_answers_v2 import score_from_parsed
+
+        parsed = score_from_parsed(
+            {
+                "factuality_score": 5,
+                "completeness_score": 5,
+                "hallucination_control_score": 5,
+                "evidence_grounding_score": 5,
+                "context_specificity_score": None,
+                "type_specific_score": 4,
+            },
+            "context_specificity_score",
+        )
+
+        self.assertEqual(parsed["context_specificity_score"], 4.0)
+        self.assertEqual(parsed["type_specific_score"], 4.0)
+        self.assertEqual(parsed["final_quality_score"], 4.7)
+
+    def test_v2_scorer_marks_failed_source_response_as_skipped(self) -> None:
+        from app.score_evaluation_answers_v2 import is_failed_response, skipped_row
+
+        response = "Answer generation failed: ClientError: 429 RESOURCE_EXHAUSTED"
+
+        self.assertTrue(is_failed_response(response))
+        row = skipped_row(
+            {"question_id": "VM-E01", "question": "q", "expected_answer": "a"},
+            "Structured",
+            "Answer",
+            response,
+            "context_specificity_score",
+            "source_response_failed_or_empty",
+        )
+
+        self.assertEqual(row["score_status"], "skipped")
+        self.assertEqual(row["skip_reason"], "source_response_failed_or_empty")
+        self.assertEqual(row["final_quality_score"], "")
+
+    def test_v2_scorer_existing_rows_keeps_skipped_rows(self) -> None:
+        from app.score_evaluation_answers_v2 import existing_rows, write_rows
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "scores.csv"
+            write_rows(
+                path,
+                [
+                    {
+                        "question_id": "VM-E01",
+                        "method": "Structured",
+                        "type": "Answer",
+                        "score_status": "skipped",
+                        "skip_reason": "judge_failed_after_retries",
+                    }
+                ],
+            )
+
+            rows = existing_rows(path)
+
+        self.assertIn(("VM-E01", "Structured", "Answer"), rows)
+        self.assertEqual(rows[("VM-E01", "Structured", "Answer")]["score_status"], "skipped")
+
+    def test_v2_scorer_existing_rows_normalizes_legacy_scored_rows(self) -> None:
+        from app.score_evaluation_answers_v2 import existing_rows
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "scores.csv"
+            path.write_text(
+                "question_id,method,type,final_quality_score\n"
+                "VM-E01,Structured,Answer,4.7\n",
+                encoding="utf-8",
+            )
+
+            rows = existing_rows(path)
+
+        row = rows[("VM-E01", "Structured", "Answer")]
+        self.assertEqual(row["score_status"], "ok")
 
 
 if __name__ == "__main__":
