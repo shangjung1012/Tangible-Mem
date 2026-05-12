@@ -1,0 +1,138 @@
+=== Memory Router ===
+strategy: none
+targets:
+reason: query does not appear to need meeting memory
+confidence: 0.7
+
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-energy-data-and-sensor-pipeline: energy data and sensor pipeline
+  - child L2 L2-meter-calibration-drift: meter calibration drift
+  - child L2 L2-missing-sensor-data-imputation: missing sensor data imputation
+  - child L2 L2-building-load-normalization: building load normalization
+  - child L2 L2-weather-aligned-data-cleaning: weather aligned data cleaning
+  - child L2 L2-iot-gateway-offline-buffering: iot gateway offline buffering
+  - child L2 L2-lorawan-packet-loss-diagnosis: lorawan packet loss diagnosis
+  - child L2 L2-power-quality-and-harmonics: power quality and harmonics
+  - child L2 L2-sensor-ownership-and-data-access: sensor ownership and data access
+- Unpromoted L2 topics:
+  - L2-iot-gateway-offline-buffering: iot gateway offline buffering
+
+=== L1 Evidence Seeds ===
+- [ND-015 | 2026-09-07 | L1-ND-015-031] type=action_item importance=0.78 score=0.606
+  content: IoT gateway 離線緩衝 的討論顯示同一個技術選擇會同時影響成本、公平性、維護負擔與使用者信任，因此不能只用單一指標判斷。（ND-015 第 3 個相關觀點，聚焦於 現場部署。）
+  evidence: [184] 學生一: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [185] 學生二: 我們不能只看單一角度，IoT gateway 離線緩衝 同時牽涉到能源成本、使用者公平性、現場維護和資料可信度。 [186] 學生三: 從評估角度來看，我們要把節電、等待時間、公平性和使用者信任分開看，不然「IoT gateway 離線緩衝」最後只會被單一指標主導。 [187] 學生四: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。
+- [ND-015 | 2026-09-07 | L1-ND-015-033] type=action_item importance=0.76 score=0.602
+  content: 團隊把 IoT gateway 離線緩衝 列為需要跨會議追蹤的主題，因為它在後續部署、評估與 stakeholder 溝通中可能會再次被更新。（ND-015 第 5 個相關觀點，聚焦於 成本效益。）
+  evidence: [190] 學生一: 我剛剛看資料時發現一個反例，週三下午的用電曲線明明很高，但系統判斷成普通日，這會影響「IoT gateway 離線緩衝」的判斷。 [191] 學生二: 如果下次結果和今天不一樣，要回頭確認今天的假設是不是被新的 evidence 推翻，而不是把舊結論硬套上去。 [192] 學生三: 如果要做 field pilot，我建議先在兩棟樓和四支充電樁開始，不要一開始就擴到全校區，否則「IoT gateway 離線緩衝」很難 debug。 [193] 學生四: 這裡我有一點不同意，因為「IoT gateway 離線緩衝」如果只用平均值處理，尖峰時段和例外事件會被洗掉，最後排程看起來很漂亮但現場不一定可用。
+- [ND-015 | 2026-09-07 | L1-ND-015-032] type=finding importance=0.75 score=0.6
+  content: 會議中出現對 IoT gateway 離線緩衝 的修正觀點：若資料缺口、政策例外或使用者行為沒有處理，原本的模型假設會失效。（ND-015 第 4 個相關觀點，聚焦於 成本效益。）
+  evidence: [187] 學生四: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [188] 行政窗口: 如果要做 field pilot，我建議先在兩棟樓和四支充電樁開始，不要一開始就擴到全校區，否則「IoT gateway 離線緩衝」很難 debug。 [189] 老師: 如果我們要讓行政端接受這個建議，儀表板上不能只有一個分數，應該要顯示為什麼系統推薦這個充電或節能策略。 [190] 學生一: 我剛剛看資料時發現一個反例，週三下午的用電曲線明明很高，但系統判斷成普通日，這會影響「IoT gateway 離線緩衝」的判斷。
+- [ND-015 | 2026-09-07 | L1-ND-015-035] type=action_item importance=0.73 score=0.596
+  content: 對於 IoT gateway 離線緩衝，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-015 第 7 個相關觀點，聚焦於 使用者反應。）
+  evidence: [196] 學生一: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [197] 學生二: 我建議把 IoT gateway 離線緩衝 的 evidence 留在這場會議，因為後面如果要做 topic evolution，就要知道這個想法是從哪裡開始變動的。 [198] 學生三: 從評估角度來看，我們要把節電、等待時間、公平性和使用者信任分開看，不然「IoT gateway 離線緩衝」最後只會被單一指標主導。 [199] 學生四: 我先把上一輪關於「IoT gateway 離線緩衝」的狀況整理一下，現在最大的問題不是模型能不能跑，而是資料進來之後是不是能穩定代表現場狀態。
+- [ND-015 | 2026-09-07 | L1-ND-015-030] type=approach_change importance=0.71 score=0.592
+  content: 針對 IoT gateway 離線緩衝，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-015 第 2 個相關觀點，聚焦於 使用者反應。）
+  evidence: [181] 學生四: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [182] 行政窗口: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [183] 老師: 從評估角度來看，我們要把節電、等待時間、公平性和使用者信任分開看，不然「IoT gateway 離線緩衝」最後只會被單一指標主導。 [184] 學生一: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。
+- [ND-020 | 2026-10-12 | L1-ND-020-052] type=finding importance=0.61 score=0.6887
+  content: 充電排隊公平性 在 ND-020 的討論中被延伸成「資料與政策落差」觀點，這個 idea unit 用來捕捉非主要 event 但可能影響後續決策的背景脈絡。 團隊提醒此觀點若在後續會議重複出現，應被視為新的長期主題候選。
+  evidence: [216] 學生一: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [217] 學生二: 這一段對應到 IoT gateway 離線緩衝，目前狀態是：團隊針對「IoT gateway offline buffering」提出反面觀點，認為若忽略使用者行為或現場限制，模型結果會失真。 [218] 學生三: 這裡我有一點不同意，因為「IoT gateway 離線緩衝」如果只用平均值處理，尖峰時段和例外事件會被洗掉，最後排程看起來很漂亮但現場不一定可用。 [219] 學生四: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。 [220] 行政窗口: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。
+- [ND-020 | 2026-10-12 | L1-ND-020-036] type=argument importance=0.5 score=0.6667
+  content: IoT gateway 離線緩衝 被記錄為一個 論點，核心內容是 團隊針對「IoT gateway offline buffering」提出反面觀點，認為若忽略使用者行為或現場限制，模型結果會失真。 這個單元強調資料可信度、現場限制與後續可驗證性。（ND-020 第 1 個相關觀點，聚焦於 使用者反應。）
+  evidence: [215] 老師: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [216] 學生一: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [217] 學生二: 這一段對應到 IoT gateway 離線緩衝，目前狀態是：團隊針對「IoT gateway offline buffering」提出反面觀點，認為若忽略使用者行為或現場限制，模型結果會失真。 [218] 學生三: 這裡我有一點不同意，因為「IoT gateway 離線緩衝」如果只用平均值處理，尖峰時段和例外事件會被洗掉，最後排程看起來很漂亮但現場不一定可用。
+- [ND-033 | 2027-01-11 | L1-ND-033-049] type=argument importance=0.71 score=0.592
+  content: 對於 IoT gateway 離線緩衝，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-033 第 7 個相關觀點，聚焦於 現場部署。）
+  evidence: [278] 學生一: 這裡我有一點不同意，因為「IoT gateway 離線緩衝」如果只用平均值處理，尖峰時段和例外事件會被洗掉，最後排程看起來很漂亮但現場不一定可用。 [279] 學生二: 我建議把 IoT gateway 離線緩衝 的 evidence 留在這場會議，因為後面如果要做 topic evolution，就要知道這個想法是從哪裡開始變動的。 [280] 學生三: 我先把上一輪關於「IoT gateway 離線緩衝」的狀況整理一下，現在最大的問題不是模型能不能跑，而是資料進來之後是不是能穩定代表現場狀態。 [281] 學生四: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。
+- [ND-033 | 2027-01-11 | L1-ND-033-065] type=action_item importance=0.71 score=0.592
+  content: 充電排隊公平性 在 ND-033 的討論中被延伸成「pilot 限制」觀點，這個 idea unit 用來捕捉非主要 event 但可能影響後續決策的背景脈絡。 團隊提醒此觀點若在後續會議重複出現，應被視為新的長期主題候選。
+  evidence: [275] 學生四: 我剛剛看資料時發現一個反例，週三下午的用電曲線明明很高，但系統判斷成普通日，這會影響「IoT gateway 離線緩衝」的判斷。 [276] 行政窗口: 這個主題先不要直接定案，我想先看三種 baseline：人工規則、目前演算法、以及加入「IoT gateway 離線緩衝」後的版本。 [277] 老師: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [278] 學生一: 這裡我有一點不同意，因為「IoT gateway 離線緩衝」如果只用平均值處理，尖峰時段和例外事件會被洗掉，最後排程看起來很漂亮但現場不一定可用。 [279] 學生二: 我建議把 IoT gateway 離線緩衝 的 evidence 留在這場會議，因為後面如果要做 topic evolution，就要知道這個想法是從哪裡開始變動的。
+- [ND-033 | 2027-01-11 | L1-ND-033-044] type=action_item importance=0.7 score=0.59
+  content: 針對 IoT gateway 離線緩衝，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-033 第 2 個相關觀點，聚焦於 評估設計。）
+  evidence: [263] 學生四: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。 [264] 行政窗口: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [265] 老師: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [266] 學生一: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。
+- [ND-037 | 2027-02-08 | L1-ND-037-030] type=finding importance=0.85 score=0.62
+  content: 針對 IoT gateway 離線緩衝，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-037 第 2 個相關觀點，聚焦於 資料品質。）
+  evidence: [180] 學生二: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [181] 學生三: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [182] 學生四: 從評估角度來看，我們要把節電、等待時間、公平性和使用者信任分開看，不然「IoT gateway 離線緩衝」最後只會被單一指標主導。 [183] 行政窗口: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。
+- [ND-037 | 2027-02-08 | L1-ND-037-033] type=open_issue importance=0.85 score=0.62
+  content: 團隊把 IoT gateway 離線緩衝 列為需要跨會議追蹤的主題，因為它在後續部署、評估與 stakeholder 溝通中可能會再次被更新。（ND-037 第 5 個相關觀點，聚焦於 成本效益。）
+  evidence: [189] 行政窗口: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [190] 老師: 如果下次結果和今天不一樣，要回頭確認今天的假設是不是被新的 evidence 推翻，而不是把舊結論硬套上去。 [191] 學生一: 如果我們要讓行政端接受這個建議，儀表板上不能只有一個分數，應該要顯示為什麼系統推薦這個充電或節能策略。 [192] 學生二: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。
+- [ND-037 | 2027-02-08 | L1-ND-037-029] type=action_item importance=0.75 score=0.6
+  content: IoT gateway 離線緩衝 被記錄為一個 行動項，核心內容是 團隊指派成員整理「IoT gateway offline buffering」的資料、指標或 stakeholder 回饋，供下次會議檢查。 這個單元強調資料可信度、現場限制與後續可驗證性。（ND-037 第 1 個相關觀點，聚焦於 現場部署。）
+  evidence: [177] 行政窗口: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [178] 老師: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [179] 學生一: 這一段對應到 IoT gateway 離線緩衝，目前狀態是：團隊指派成員整理「IoT gateway offline buffering」的資料、指標或 stakeholder 回饋，供下次會議檢查。 [180] 學生二: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。
+- [ND-037 | 2027-02-08 | L1-ND-037-031] type=finding importance=0.74 score=0.598
+  content: IoT gateway 離線緩衝 的討論顯示同一個技術選擇會同時影響成本、公平性、維護負擔與使用者信任，因此不能只用單一指標判斷。（ND-037 第 3 個相關觀點，聚焦於 成本效益。）
+  evidence: [183] 行政窗口: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [184] 老師: 我們不能只看單一角度，IoT gateway 離線緩衝 同時牽涉到能源成本、使用者公平性、現場維護和資料可信度。 [185] 學生一: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [186] 學生二: 這個主題先不要直接定案，我想先看三種 baseline：人工規則、目前演算法、以及加入「IoT gateway 離線緩衝」後的版本。
+- [ND-037 | 2027-02-08 | L1-ND-037-034] type=approach_change importance=0.7 score=0.59
+  content: IoT gateway 離線緩衝 的 evidence 指向一個可測試假設：如果將現場限制納入，排程或節能建議的結果會和純演算法版本不同。（ND-037 第 6 個相關觀點，聚焦於 安全風險。）
+  evidence: [192] 學生二: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [193] 學生三: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [194] 學生四: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。 [195] 行政窗口: 從評估角度來看，我們要把節電、等待時間、公平性和使用者信任分開看，不然「IoT gateway 離線緩衝」最後只會被單一指標主導。
+- [ND-045 | 2027-04-05 | L1-ND-045-054] type=action_item importance=0.71 score=0.592
+  content: IoT gateway 離線緩衝 在 ND-045 的討論中被延伸成「stakeholder 觀點」觀點，這個 idea unit 用來捕捉非主要 event 但可能影響後續決策的背景脈絡。 團隊提醒此觀點若在後續會議重複出現，應被視為新的長期主題候選。
+  evidence: [205] 行政窗口: 現場端的限制是，設備不是每一台都會即時回報，所以「電價模擬基線」不能假設資料每分鐘都完整，這點要寫進下一版實驗設定。 [206] 老師: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [207] 學生一: 暫時的結論是，電價模擬基線 不能只用一個摘要代表，我們要把它拆成可追蹤的觀察、假設、決策和後續行動。 [208] 學生二: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [209] 學生三: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。
+- [ND-050 | 2027-05-10 | L1-ND-050-046] type=argument importance=0.71 score=0.7087
+  content: 會議中出現對 IoT gateway 離線緩衝 的修正觀點：若資料缺口、政策例外或使用者行為沒有處理，原本的模型假設會失效。（ND-050 第 4 個相關觀點，聚焦於 安全風險。）
+  evidence: [266] 學生三: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [267] 學生四: 我先把上一輪關於「IoT gateway 離線緩衝」的狀況整理一下，現在最大的問題不是模型能不能跑，而是資料進來之後是不是能穩定代表現場狀態。 [268] 行政窗口: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。 [269] 老師: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。
+- [ND-050 | 2027-05-10 | L1-ND-050-052] type=open_issue importance=0.71 score=0.7087
+  content: 誤報分流 在 ND-050 的討論中被延伸成「使用者信任」觀點，這個 idea unit 用來捕捉非主要 event 但可能影響後續決策的背景脈絡。 團隊提醒此觀點若在後續會議重複出現，應被視為新的長期主題候選。
+  evidence: [279] 學生四: 如果我們要讓行政端接受這個建議，儀表板上不能只有一個分數，應該要顯示為什麼系統推薦這個充電或節能策略。 [280] 行政窗口: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [281] 老師: 這個主題先不要直接定案，我想先看三種 baseline：人工規則、目前演算法、以及加入「IoT gateway 離線緩衝」後的版本。 [282] 學生一: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [283] 學生二: 這個主題先不要直接定案，我想先看三種 baseline：人工規則、目前演算法、以及加入「IoT gateway 離線緩衝」後的版本。
+- [ND-050 | 2027-05-10 | L1-ND-050-045] type=argument importance=0.68 score=0.7027
+  content: IoT gateway 離線緩衝 的討論顯示同一個技術選擇會同時影響成本、公平性、維護負擔與使用者信任，因此不能只用單一指標判斷。（ND-050 第 3 個相關觀點，聚焦於 成本效益。）
+  evidence: [263] 老師: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [264] 學生一: 我們不能只看單一角度，IoT gateway 離線緩衝 同時牽涉到能源成本、使用者公平性、現場維護和資料可信度。 [265] 學生二: 如果要做 field pilot，我建議先在兩棟樓和四支充電樁開始，不要一開始就擴到全校區，否則「IoT gateway 離線緩衝」很難 debug。 [266] 學生三: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。
+- [ND-050 | 2027-05-10 | L1-ND-050-049] type=finding importance=0.66 score=0.6987
+  content: 對於 IoT gateway 離線緩衝，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-050 第 7 個相關觀點，聚焦於 現場部署。）
+  evidence: [275] 老師: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [276] 學生一: 我建議把 IoT gateway 離線緩衝 的 evidence 留在這場會議，因為後面如果要做 topic evolution，就要知道這個想法是從哪裡開始變動的。 [277] 學生二: 我覺得這件事要留一個 open issue，因為我們現在還不知道使用者會不會因為通知太多就直接忽略建議。 [278] 學生三: 現場端的限制是，設備不是每一台都會即時回報，所以「IoT gateway 離線緩衝」不能假設資料每分鐘都完整，這點要寫進下一版實驗設定。
+- [ND-050 | 2027-05-10 | L1-ND-050-043] type=open_issue importance=0.63 score=0.6927
+  content: IoT gateway 離線緩衝 被記錄為一個 未解問題，核心內容是 團隊提出「IoT gateway offline buffering」仍不確定，形成後續行動，需要釐清資料、政策和現場限制。 這個單元強調資料可信度、現場限制與後續可驗證性。（ND-050 第 1 個相關觀點，聚焦於 安全風險。）
+  evidence: [257] 老師: 這個主題先不要直接定案，我想先看三種 baseline：人工規則、目前演算法、以及加入「IoT gateway 離線緩衝」後的版本。 [258] 學生一: 從評估角度來看，我們要把節電、等待時間、公平性和使用者信任分開看，不然「IoT gateway 離線緩衝」最後只會被單一指標主導。 [259] 學生二: 這一段對應到 IoT gateway 離線緩衝，目前狀態是：團隊提出「IoT gateway offline buffering」仍不確定，形成後續行動，需要釐清資料、政策和現場限制。 [260] 學生三: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。
+- [ND-050 | 2027-05-10 | L1-ND-050-047] type=argument importance=0.63 score=0.6927
+  content: 團隊把 IoT gateway 離線緩衝 列為需要跨會議追蹤的主題，因為它在後續部署、評估與 stakeholder 溝通中可能會再次被更新。（ND-050 第 5 個相關觀點，聚焦於 成本效益。）
+  evidence: [269] 老師: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [270] 學生一: 如果下次結果和今天不一樣，要回頭確認今天的假設是不是被新的 evidence 推翻，而不是把舊結論硬套上去。 [271] 學生二: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [272] 學生三: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。
+- [ND-050 | 2027-05-10 | L1-ND-050-048] type=approach_change importance=0.55 score=0.6767
+  content: IoT gateway 離線緩衝 的 evidence 指向一個可測試假設：如果將現場限制納入，排程或節能建議的結果會和純演算法版本不同。（ND-050 第 6 個相關觀點，聚焦於 評估設計。）
+  evidence: [272] 學生三: 這裡其實不是單純的技術問題，還有資料同意、設備維護和誰能覆寫建議的權責問題。 [273] 學生四: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。 [274] 行政窗口: 我剛剛看資料時發現一個反例，週三下午的用電曲線明明很高，但系統判斷成普通日，這會影響「IoT gateway 離線緩衝」的判斷。 [275] 老師: 我們需要記錄這個決策的原因，因為下次看到不同結果時，才知道是資料問題、模型問題，還是 stakeholder 政策變了。
+- [ND-050 | 2027-05-10 | L1-ND-050-044] type=action_item importance=0.54 score=0.6747
+  content: 針對 IoT gateway 離線緩衝，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-050 第 2 個相關觀點，聚焦於 資料品質。）
+  evidence: [260] 學生三: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。 [261] 學生四: 這個主題先不要直接定案，我想先看三種 baseline：人工規則、目前演算法、以及加入「IoT gateway 離線緩衝」後的版本。 [262] 行政窗口: 如果我們要讓行政端接受這個建議，儀表板上不能只有一個分數，應該要顯示為什麼系統推薦這個充電或節能策略。 [263] 老師: 我們可以先把這個問題拆成資料層、決策層和溝通層；資料層要先確認 evidence，決策層再看要不要改排程策略。
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-iot-gateway-offline-buffering] iot gateway offline buffering
+  parent L3: L3-energy-data-and-sensor-pipeline energy data and sensor pipeline
+  matched L1: L1-ND-050-046, L1-ND-050-045, L1-ND-050-049, L1-ND-050-043, L1-ND-050-047, L1-ND-050-048, L1-ND-050-044, L1-ND-020-036, L1-ND-037-030, L1-ND-037-033, L1-ND-015-031, L1-ND-015-033, L1-ND-015-032, L1-ND-037-029, L1-ND-037-031, L1-ND-015-035, L1-ND-015-030, L1-ND-033-049, L1-ND-045-054, L1-ND-033-044, L1-ND-037-034
+  topic_size=58 selected_event_count=8 omitted_event_count=50
+  current_state: This L2 topic has 58 linked L1 evidence objects across 16 meeting(s). Latest evidence: 對於 IoT gateway 離線緩衝，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-050 第 7 個相關觀點，聚焦於 現場部署。）
+  timeline_digest:
+    - [2026-09-07 L1-ND-015-030] 針對 IoT gateway 離線緩衝，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-015 第 2 個相關觀點，聚焦於 使用者反應。）
+    - [2026-09-07 L1-ND-015-031] IoT gateway 離線緩衝 的討論顯示同一個技術選擇會同時影響成本、公平性、維護負擔與使用者信任，因此不能只用單一指標判斷。（ND-015 第 3 個相關觀點，聚焦於 現場部署。）
+    - [2026-09-07 L1-ND-015-032] 會議中出現對 IoT gateway 離線緩衝 的修正觀點：若資料缺口、政策例外或使用者行為沒有處理，原本的模型假設會失效。（ND-015 第 4 個相關觀點，聚焦於 成本效益。）
+    - [2026-09-07 L1-ND-015-033] 團隊把 IoT gateway 離線緩衝 列為需要跨會議追蹤的主題，因為它在後續部署、評估與 stakeholder 溝通中可能會再次被更新。（ND-015 第 5 個相關觀點，聚焦於 成本效益。）
+    - [2026-09-07 L1-ND-015-035] 對於 IoT gateway 離線緩衝，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-015 第 7 個相關觀點，聚焦於 使用者反應。）
+    - [2026-10-12 L1-ND-020-036] IoT gateway 離線緩衝 被記錄為一個 論點，核心內容是 團隊針對「IoT gateway offline buffering」提出反面觀點，認為若忽略使用者行為或現場限制，模型結果會失真。 這個單元強調資料可信度、現場限制與後續可驗證性。（ND-020 第 1 個相關觀點，聚焦於 使用者反應。）
+    - [2027-01-11 L1-ND-033-044] 針對 IoT gateway 離線緩衝，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-033 第 2 個相關觀點，聚焦於 評估設計。）
+    - [2027-01-11 L1-ND-033-049] 對於 IoT gateway 離線緩衝，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-033 第 7 個相關觀點，聚焦於 現場部署。）
+
+[L2-false-alarm-triage] false alarm triage
+  parent L3: L3-safety-and-fault-detection safety and fault detection
+  matched L1: L1-ND-050-052
+  topic_size=61 selected_event_count=8 omitted_event_count=53
+  current_state: This L2 topic has 61 linked L1 evidence objects across 15 meeting(s). Latest evidence: 誤報分流 在 ND-050 的討論中被延伸成「使用者信任」觀點，這個 idea unit 用來捕捉非主要 event 但可能影響後續決策的背景脈絡。 團隊提醒此觀點若在後續會議重複出現，...
+  timeline_digest:
+    - [2026-07-06 L1-ND-006-029] 誤報分流 被記錄為一個 未解問題，核心內容是 團隊提出「false alarm triage」仍不確定，提出問題或初始假設，需要釐清資料、政策和現場限制。 這個單元強調資料可信度、現場限制與後續可驗證性。（ND-006 第 1 個相關觀點，聚焦於 安全風險。）
+    - [2026-07-06 L1-ND-006-030] 針對 誤報分流，團隊把討論拆成可追蹤的 idea unit：先保留會議 evidence，再區分觀察、限制、決策和下一步。（ND-006 第 2 個相關觀點，聚焦於 成本效益。）
+    - [2026-07-06 L1-ND-006-031] 誤報分流 的討論顯示同一個技術選擇會同時影響成本、公平性、維護負擔與使用者信任，因此不能只用單一指標判斷。（ND-006 第 3 個相關觀點，聚焦於 現場部署。）
+    - [2026-07-06 L1-ND-006-032] 會議中出現對 誤報分流 的修正觀點：若資料缺口、政策例外或使用者行為沒有處理，原本的模型假設會失效。（ND-006 第 4 個相關觀點，聚焦於 資料品質。）
+    - [2026-07-06 L1-ND-006-033] 團隊把 誤報分流 列為需要跨會議追蹤的主題，因為它在後續部署、評估與 stakeholder 溝通中可能會再次被更新。（ND-006 第 5 個相關觀點，聚焦於 使用者反應。）
+    - [2026-07-06 L1-ND-006-034] 誤報分流 的 evidence 指向一個可測試假設：如果將現場限制納入，排程或節能建議的結果會和純演算法版本不同。（ND-006 第 6 個相關觀點，聚焦於 使用者反應。）
+    - [2026-07-06 L1-ND-006-035] 對於 誤報分流，目前共識是先做小範圍 pilot 或 offline replay，避免在資料和責任邊界未清楚前直接全面部署。（ND-006 第 7 個相關觀點，聚焦於 資料品質。）
+    - [2027-05-10 L1-ND-050-052] 誤報分流 在 ND-050 的討論中被延伸成「使用者信任」觀點，這個 idea unit 用來捕捉非主要 event 但可能影響後續決策的背景脈絡。 團隊提醒此觀點若在後續會議重複出現，應被視為新的長期主題候選。
+
+=== Retrieval Debug ===
+- expanded_context_chars: 0
+- global_topic_map_chars: 1174
+- large_l2_expanded_without_child_split: False
+- omitted_event_count: 103
+- retrieval_mode: lexical
+- selected_child_l2_count: 2
+- selected_l1_count: 24
+- selected_l2_count: 0
+- selected_secondary_l2_count: 0
+- selected_sibling_child_l2_count: 0
+- sibling_candidate_count: 0
