@@ -99,6 +99,42 @@ This writes `comparison_report.md`, `comparison_report.json`, and
 `manual_review_queue.json`. Promote nothing from the experiment unless the
 manual queue and per-meeting gates have been reviewed.
 
+## ICSI Batch Orchestration
+
+Do not run ICSI as one long `build_tree.py` batch. ICSI transcripts are longer
+and the multi-agent pipeline can exceed an interactive timeout before the
+aggregate `tree.json`, `manifest.json`, and indexes are complete. Use the
+per-file orchestrator instead:
+
+```bash
+uv run python share_mem/run_icsi_batch.py \
+  --transcript-dir meeting_recording/transcript/ISCI \
+  --output-root share_mem_experiments/icsi_l1_batch_<timestamp> \
+  --transcript-glob "Bmr*.txt" \
+  --line-limit 360 \
+  --timeout-seconds 7200 \
+  --clean
+```
+
+The orchestrator processes one transcript or subset at a time, refreshes
+`share_mem`-style indexes after each successful file, then writes ICSI review
+sidecars under `<output-root>/validation/after_<meeting_id>/`. If a file fails
+or times out, the batch status is written and later files are not started unless
+`--continue-on-failure` is explicitly set.
+
+Generated orchestration outputs:
+
+- `<output-root>/share_mem/tree.json`: experiment-only aggregate L1 tree.
+- `<output-root>/share_mem/meetings/*.json`: per-meeting experiment payloads.
+- `<output-root>/validation/after_<meeting_id>/icsi_l1_review_gate.json`: ICSI
+  sidecar review/drop gate.
+- `<output-root>/batch_status.json`: resumable per-file status with command,
+  source hash, stdout/stderr paths, duration, and validation summaries.
+
+Use `--resume` to skip a previously successful transcript when its source hash
+has not changed. This runner must not target canonical `share_mem/`; it rejects
+that output root.
+
 ## Experimental Topic-Tree View
 
 The first `share_mem` topic-tree builder remains available for experiments and
