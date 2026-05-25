@@ -27,13 +27,20 @@ SETUP_KEYWORDS = {
 
 DURABLE_SETUP_KEYWORDS = {
     "annotation",
+    "anonymization",
     "asr",
+    "audio quality",
+    "content moderation",
     "corpus",
     "data quality",
+    "data handling",
     "data collection",
+    "equipment failure",
     "far-field",
+    "failure mode",
     "frame-synchronous",
     "frame-synchronously",
+    "hardware issue",
     "meeting recorder",
     "metadata",
     "methodology",
@@ -44,11 +51,14 @@ DURABLE_SETUP_KEYWORDS = {
     "project vision",
     "privacy",
     "procedure",
+    "post-processing",
     "quality issue",
     "recording procedure",
     "recording rule",
     "reusable",
+    "sensitive content",
     "speech recognition",
+    "transcript anonymization",
     "transcription",
     "video recording",
 }
@@ -75,6 +85,21 @@ SOURCE_DATA_ONLY_KEYWORDS = {
     "stationary microphone",
 }
 
+SOURCE_DATA_STRONG_INVENTORY_KEYWORDS = {
+    "assigned channel",
+    "channel number",
+    "channel mapping",
+    "dummy pda",
+    "headset announcement",
+    "microphone inventory",
+    "microphone type",
+    "participant list",
+    "participant names",
+    "pzm",
+    "speaker introduction",
+    "stationary microphone",
+}
+
 SOURCE_DATA_DURABLE_KEYWORDS = {
     "annotation",
     "asr",
@@ -88,6 +113,24 @@ SOURCE_DATA_DURABLE_KEYWORDS = {
     "instruction",
     "methodology",
     "near-field",
+    "policy",
+    "rationale",
+    "recording rule",
+    "reusable",
+    "speech recognition",
+    "speaker identification",
+}
+
+SOURCE_DATA_STRONG_DURABLE_KEYWORDS = {
+    "annotation",
+    "asr",
+    "corpus metadata policy",
+    "data quality risk",
+    "downstream indexing",
+    "frame-synchronous",
+    "frame-synchronously",
+    "instruction",
+    "methodology",
     "policy",
     "rationale",
     "recording rule",
@@ -127,7 +170,10 @@ TOPIC_ALIAS_GROUPS: dict[str, set[str]] = {
     },
 }
 
-DUPLICATE_AUTO_MERGE_MIN_CONTENT_SIMILARITY = 0.35
+# Same evidence is common in ICSI because a short exchange can contain a finding,
+# proposal, action item, and open issue. Only near-paraphrases should be removed
+# from the filtered view automatically; moderate similarity stays review-only.
+DUPLICATE_AUTO_MERGE_MIN_CONTENT_SIMILARITY = 0.50
 
 
 def _utc_now_iso() -> str:
@@ -179,6 +225,8 @@ def _is_source_data_only(obj: dict[str, Any]) -> bool:
     text = _normalize_text(_obj_text(obj))
     if not any(keyword in text for keyword in SOURCE_DATA_ONLY_KEYWORDS):
         return False
+    if any(keyword in text for keyword in SOURCE_DATA_STRONG_INVENTORY_KEYWORDS):
+        return not any(keyword in text for keyword in SOURCE_DATA_STRONG_DURABLE_KEYWORDS)
     return not any(keyword in text for keyword in SOURCE_DATA_DURABLE_KEYWORDS)
 
 

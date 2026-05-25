@@ -185,6 +185,48 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertIn("L1-Bdb001-011", gate["filtered_candidate_obj_ids"])
         self.assertIn("L1-Bdb001-011", gate["duplicate_reviews"][0]["manual_review_obj_ids"])
 
+    def test_same_evidence_distinct_xml_claims_need_review_not_merge(self) -> None:
+        shared_evidence = (
+            "[me011]: I sort of already have developed an XML format for this "
+            "sort of stuff. [me018]: Can I see it? [me011]: The only question "
+            "is it the sort of thing that you want to use or not? Have you "
+            "looked at that? I had a web page up."
+        )
+        objects = [
+            _obj(
+                "L1-Bdb001-020",
+                obj_type="action_item",
+                content=(
+                    "The group needs to review the existing XML format and "
+                    "its associated web page to evaluate it as a potential "
+                    "database format for linking various data types."
+                ),
+                evidence=shared_evidence,
+                importance=0.63,
+                topics=["annotation data model", "xml format"],
+            ),
+            _obj(
+                "L1-Bdb001-021",
+                obj_type="finding",
+                content=(
+                    "A participant has already developed a relevant XML format "
+                    "for linking various data types and has made it available "
+                    "via a web page."
+                ),
+                evidence=shared_evidence,
+                importance=0.62,
+                topics=["annotation data model", "xml format"],
+            ),
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["merge_candidate_count"], 0)
+        self.assertEqual(gate["summary"]["duplicate_review_candidate_count"], 1)
+        self.assertIn("L1-Bdb001-020", gate["filtered_candidate_obj_ids"])
+        self.assertIn("L1-Bdb001-021", gate["filtered_candidate_obj_ids"])
+        self.assertIn("L1-Bdb001-021", gate["duplicate_reviews"][0]["manual_review_obj_ids"])
+
     def test_write_review_gate_outputs_sidecar_and_filtered_view(self) -> None:
         objects = [
             _obj(
@@ -284,6 +326,53 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertEqual(gate["summary"]["drop_candidate_count"], 0)
         self.assertIn("L1-Bed002-001", gate["filtered_candidate_obj_ids"])
 
+    def test_review_gate_does_not_flag_anonymization_policy_as_setup_noise(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bed002-002",
+                obj_type="finding",
+                content=(
+                    "The strategy for handling sensitive content is transcript "
+                    "anonymization plus post-processing edits, rather than asking "
+                    "participants to self-censor during recording."
+                ),
+                evidence=(
+                    "[me010]: In terms of people worrying about excising things "
+                    "from the transcript, it is unlikely since it is not attributed."
+                ),
+                importance=0.57,
+                topics=["data handling", "anonymization", "content moderation"],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["review_candidate_count"], 0)
+        self.assertIn("L1-Bed002-002", gate["filtered_candidate_obj_ids"])
+
+    def test_review_gate_does_not_flag_audio_quality_failure_as_setup_noise(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bmr001-020",
+                obj_type="finding",
+                content=(
+                    "The custom-built amplifier prototype was found to be too "
+                    "noisy and clumsy, creating an audio quality hardware issue."
+                ),
+                evidence=(
+                    "[me025]: I built this thing, but it is very noisy, so I am "
+                    "using another pre-amp as an alternative."
+                ),
+                importance=0.66,
+                topics=["audio quality", "hardware issue", "equipment failure"],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["review_candidate_count"], 0)
+        self.assertIn("L1-Bmr001-020", gate["filtered_candidate_obj_ids"])
+
     def test_review_gate_drops_microphone_inventory_even_when_labeled_protocol(self) -> None:
         objects = [
             _obj(
@@ -311,6 +400,39 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertEqual(gate["summary"]["drop_candidate_count"], 1)
         self.assertIn("L1-Bmr001-008", gate["drop_candidate_obj_ids"])
         self.assertNotIn("L1-Bmr001-008", gate["filtered_candidate_obj_ids"])
+
+    def test_review_gate_drops_microphone_inventory_with_generic_corpus_topics(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bmr001-021",
+                obj_type="finding",
+                content=(
+                    "The recording setup for this session includes a mix of "
+                    "close-talking and far-field microphones: an ear-mounted wired "
+                    "headset, a wireless microphone, a lapel microphone, three PZM "
+                    "tabletop microphones, and a dummy PDA device."
+                ),
+                evidence=(
+                    "[me013]: What's this one here? [me025]: That's the dummy PDA. "
+                    "[me011]: Both channels. [me025]: I'm speaking on the ear mount."
+                ),
+                importance=0.53,
+                topics=[
+                    "data collection",
+                    "microphone usage",
+                    "corpus design",
+                    "far-field audio",
+                    "close-talking audio",
+                    "pda device",
+                ],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["drop_candidate_count"], 1)
+        self.assertIn("L1-Bmr001-021", gate["drop_candidate_obj_ids"])
+        self.assertNotIn("L1-Bmr001-021", gate["filtered_candidate_obj_ids"])
 
     def test_write_report_outputs_json_and_markdown(self) -> None:
         objects = [
