@@ -30,10 +30,13 @@ from .multi_agent_tools import (
 from .multi_agent_validators import normalize_idea_completeness
 from .prior_context import format_prior_context_for_prompt
 from .taxonomy import (
+    CONTENT_LANGUAGE_ENGLISH,
+    CONTENT_LANGUAGE_TRADITIONAL_ZH,
     LEGACY_COMPATIBILITY_DESCRIPTIONS,
     candidate_schema_for_taxonomy,
     fallback_candidate_schema_for_taxonomy,
     normalize_legacy_type,
+    normalize_content_language,
     normalize_taxonomy,
     type_definitions_for_taxonomy,
     type_set_for_taxonomy,
@@ -60,6 +63,30 @@ Language contract:
 - evidence should stay faithful to the source wording and may preserve the original
   transcript language or mixed-language technical phrasing.
 """.strip()
+
+L1_ENGLISH_LANGUAGE_POLICY = """
+Language contract:
+- content MUST be written in English.
+- content should be a concise human-facing memory summary, not a literal
+  transcript quote.
+- related_topics MUST be English machine-facing topic keys. Use concise
+  normalized labels, preferably lowercase words separated by spaces.
+- evidence should stay faithful to the source wording.
+""".strip()
+
+
+def language_policy_for_content_language(content_language: str | None) -> str:
+    normalized = normalize_content_language(content_language)
+    if normalized == CONTENT_LANGUAGE_ENGLISH:
+        return L1_ENGLISH_LANGUAGE_POLICY
+    return L1_LANGUAGE_POLICY
+
+
+def format_dataset_guidance(dataset_guidance: str | None) -> str:
+    clean = str(dataset_guidance or "").strip()
+    if not clean:
+        return ""
+    return f"Dataset-specific guidance:\n{clean}"
 
 SEGMENT_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -564,21 +591,31 @@ def segmentation_agent(
     meeting_id: str,
     plan: WindowPlan,
     transcript_lines: list[TranscriptLine],
+    dataset_guidance: str = "",
 ) -> list[SegmentProposal]:
     start = max(1, plan.start_line - plan.lookback_lines)
     end = plan.end_line + plan.lookahead_lines
     lines = slice_lines(transcript_lines, start, end)
+    primary_window_line_count = max(1, plan.end_line - plan.start_line + 1)
+    primary_window_phrase = (
+        "an 80-line primary window"
+        if primary_window_line_count == 80
+        else f"this {primary_window_line_count}-line primary window"
+    )
+    dataset_guidance_text = format_dataset_guidance(dataset_guidance)
     prompt = f"""
 You are segmentation_agent for a long-term memory extraction pipeline.
 Return JSON only. Split the transcript window into topic-coherent segments.
 Use original line numbers.
 
 Create durable discussion segments, not sentence-level or checklist-like slices.
-Normally return 3-6 segments for an 80-line primary window.
+Normally return 3-6 segments for {primary_window_phrase}.
 You may return up to {MAX_SEGMENTS_PER_WINDOW} segments only when there are clear
 major topic shifts. Prefer 10-24 primary-window lines per segment.
 Do not split every small subpoint into a segment; downstream idea units will handle
 the smaller claims inside each durable segment.
+
+{dataset_guidance_text}
 
 Meeting: {meeting_id}
 Primary window: {plan.start_line}-{plan.end_line}
@@ -614,8 +651,10 @@ def idea_unit_agent(
     *,
     segment: SegmentProposal,
     transcript_lines: list[TranscriptLine],
+    dataset_guidance: str = "",
 ) -> list[IdeaUnit]:
     lines = slice_lines(transcript_lines, segment.line_start, segment.line_end)
+    dataset_guidance_text = format_dataset_guidance(dataset_guidance)
     prompt = f"""
 You are idea_unit_agent. Convert this segment into compact idea units.
 Each unit should express one checkable idea that downstream L1 agents can share.
@@ -630,6 +669,8 @@ evaluation criteria, comparison rationale, and unresolved design discussions
 when they affect future project decisions or memory behavior.
 Ignore only true filler, acknowledgements, local wording clarifications, and
 purely social turns that do not affect the project state.
+
+{dataset_guidance_text}
 
 Use completeness exactly as one of: complete, partial, incomplete, uncertain.
 Completeness rubric:
@@ -689,6 +730,7 @@ def idea_unit_repair_agent(
     transcript_lines: list[TranscriptLine],
     current_units: list[IdeaUnit],
     validation_report: dict[str, Any],
+    dataset_guidance: str = "",
 ) -> tuple[list[IdeaUnit], list[dict[str, Any]]]:
     """Ask the model to semantically repair idea-unit coverage before fallback."""
     lines = slice_lines(transcript_lines, segment.line_start, segment.line_end)
@@ -703,6 +745,7 @@ def idea_unit_repair_agent(
         }
         for unit in current_units
     ]
+    dataset_guidance_text = format_dataset_guidance(dataset_guidance)
     prompt = f"""
 You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
 Return a full revised set of semantic idea units for the segment, not a patch.
@@ -728,6 +771,8 @@ Do not use fallback or compacted.
 For non_memory_context_ranges, include only lines that are purely filler,
 acknowledgements, local wording clarification, or social closing with no memory
 value.
+
+{dataset_guidance_text}
 
 Segment: {segment.segment_id}
 Topic: {segment.topic_label}
@@ -838,6 +883,8 @@ def l1_type_agent(
     segment_ids: list[str] | None = None,
     taxonomy: str = "v1",
     include_legacy_type: bool = False,
+    content_language: str = CONTENT_LANGUAGE_TRADITIONAL_ZH,
+    dataset_guidance: str = "",
 ) -> list[L1Candidate]:
     segment_ids = segment_ids or []
     taxonomy = normalize_taxonomy(taxonomy)
@@ -850,6 +897,8 @@ def l1_type_agent(
     prior_context_text = format_prior_context_for_prompt(prior_context_pack)
     previous_context_text = format_previous_context_for_prompt(previous_context)
     batch_metadata_text = format_batch_metadata_for_prompt(batch_metadata)
+    language_policy = language_policy_for_content_language(content_language)
+    dataset_guidance_text = format_dataset_guidance(dataset_guidance)
     prompt = f"""
 You are l1_{obj_type}_agent in a multi-agent long-term memory pipeline.
 Your operational type definition: {type_definitions[obj_type]}.
@@ -890,7 +939,9 @@ Only output durable long-term memory:
 - use 0.50-0.70 for useful but local meeting-level context
 Return JSON only.
 
-{L1_LANGUAGE_POLICY}
+{language_policy}
+
+{dataset_guidance_text}
 
 Extraction packet: {extraction_scope or "(single bounded extraction packet)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
@@ -911,6 +962,7 @@ Bounded idea units:
             taxonomy,
             include_legacy_type=include_legacy_type,
             max_items=MAX_L1_CANDIDATES_PER_TYPE,
+            content_language=content_language,
         )
         if taxonomy != "v1" or include_legacy_type
         else CANDIDATE_SCHEMA
@@ -969,6 +1021,8 @@ def l1_fallback_agent(
     segment_ids: list[str] | None = None,
     taxonomy: str = "v1",
     include_legacy_type: bool = False,
+    content_language: str = CONTENT_LANGUAGE_TRADITIONAL_ZH,
+    dataset_guidance: str = "",
 ) -> list[L1Candidate]:
     """Conservative fallback when typed agents produce nothing for a non-empty extraction packet."""
     segment_ids = segment_ids or []
@@ -984,6 +1038,8 @@ def l1_fallback_agent(
     prior_context_text = format_prior_context_for_prompt(prior_context_pack)
     previous_context_text = format_previous_context_for_prompt(previous_context)
     batch_metadata_text = format_batch_metadata_for_prompt(batch_metadata)
+    language_policy = language_policy_for_content_language(content_language)
+    dataset_guidance_text = format_dataset_guidance(dataset_guidance)
     prompt = f"""
 You are general_l1_fallback_agent in a multi-agent long-term memory pipeline.
 This fallback runs only because the typed L1 agents produced no candidates for this bounded extraction packet.
@@ -997,7 +1053,9 @@ Return at most {MAX_FALLBACK_CANDIDATES} candidates.
 {"Every candidate must include legacy_type using one of: " + ", ".join(sorted(LEGACY_COMPATIBILITY_DESCRIPTIONS)) + "." if include_legacy_type else ""}
 Return JSON only.
 
-{L1_LANGUAGE_POLICY}
+{language_policy}
+
+{dataset_guidance_text}
 
 Extraction packet: {extraction_scope or "(single bounded extraction packet)"}
 Segment IDs: {", ".join(segment_ids) if segment_ids else "(not provided)"}
@@ -1021,6 +1079,7 @@ Bounded idea units:
                 taxonomy,
                 include_legacy_type=include_legacy_type,
                 max_items=MAX_FALLBACK_CANDIDATES,
+                content_language=content_language,
             )
             if taxonomy != "v1" or include_legacy_type
             else FALLBACK_CANDIDATE_SCHEMA

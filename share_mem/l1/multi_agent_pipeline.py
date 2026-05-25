@@ -1154,6 +1154,8 @@ def run_multi_agent_l1_pipeline(
     previous_context_enabled: bool = False,
     taxonomy: str = "v1",
     include_legacy_type: bool = False,
+    content_language: str = "traditional_zh",
+    dataset_guidance: str = "",
 ) -> MultiAgentPipelineResult:
     taxonomy = normalize_taxonomy(taxonomy)
     agent_type_order = type_order_for_taxonomy(taxonomy)
@@ -1238,6 +1240,8 @@ def run_multi_agent_l1_pipeline(
             "model": model_name,
             "taxonomy": taxonomy,
             "include_legacy_type": include_legacy_type,
+            "content_language": content_language,
+            "dataset_guidance": dataset_guidance,
             "source_file": source_file,
             "line_count": len(lines),
             "run_dir": str(logger.run_dir),
@@ -1285,6 +1289,8 @@ def run_multi_agent_l1_pipeline(
                 "model": model_name,
                 "taxonomy": taxonomy,
                 "include_legacy_type": include_legacy_type,
+                "content_language": content_language,
+                "dataset_guidance": dataset_guidance,
                 "line_count": len(lines),
                 "implemented_l1_agent_types": list(agent_type_order),
                 "deferred_l1_agent_types": [],
@@ -1319,6 +1325,7 @@ def run_multi_agent_l1_pipeline(
                 meeting_id=meeting_id,
                 plan=plan,
                 transcript_lines=lines,
+                dataset_guidance=dataset_guidance,
             )
             repaired_segments, coverage_report = repair_segment_coverage(plan, segments)
             coarsened_segments, coarsening_report = coarsen_segments_for_window(
@@ -1364,6 +1371,7 @@ def run_multi_agent_l1_pipeline(
                 meeting_id=meeting_id,
                 plan=plan,
                 transcript_lines=lines,
+                dataset_guidance=dataset_guidance,
             )
             repaired_refined, refined_coverage = repair_segment_coverage(plan, refined_raw)
             coarsened_refined, refined_coarsening = coarsen_segments_for_window(
@@ -1408,6 +1416,7 @@ def run_multi_agent_l1_pipeline(
                 runner,
                 segment=segment,
                 transcript_lines=lines,
+                dataset_guidance=dataset_guidance,
             )
             diagnostic_units, diagnostic_report = repair_idea_units_for_segment(
                 segment=segment,
@@ -1442,6 +1451,7 @@ def run_multi_agent_l1_pipeline(
                         transcript_lines=lines,
                         current_units=units,
                         validation_report=diagnostic_report,
+                        dataset_guidance=dataset_guidance,
                     )
                     if semantic_units or non_memory_ranges:
                         repair_source_units = semantic_units
@@ -1557,6 +1567,8 @@ def run_multi_agent_l1_pipeline(
                     segment_ids=list(batch["segment_ids"]),
                     taxonomy=taxonomy,
                     include_legacy_type=include_legacy_type,
+                    content_language=content_language,
+                    dataset_guidance=dataset_guidance,
                 )
                 batch_candidates.extend(candidates)
                 logger.append_event(
@@ -1590,6 +1602,8 @@ def run_multi_agent_l1_pipeline(
                     segment_ids=list(batch["segment_ids"]),
                     taxonomy=taxonomy,
                     include_legacy_type=include_legacy_type,
+                    content_language=content_language,
+                    dataset_guidance=dataset_guidance,
                 )
                 batch_candidates.extend(fallback_candidates)
                 batch_fallback_reports.append(

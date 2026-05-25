@@ -24,6 +24,7 @@ from share_mem.l1.multi_agent_agents import (  # noqa: E402
     idea_unit_repair_agent,
     l1_fallback_agent,
     l1_type_agent,
+    segmentation_agent,
 )
 from share_mem.l1.multi_agent_pipeline import (  # noqa: E402
     EXTRACTION_BATCH_OVERLAP_UNITS,
@@ -222,6 +223,24 @@ class FakeIdeaRunner:
         }
 
 
+class FakeSegmentationRunner:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, dict]] = []
+
+    def call_json(self, stage: str, prompt: str, schema: dict) -> dict:
+        self.calls.append((stage, prompt, schema))
+        return {
+            "segments": [
+                {
+                    "line_start": 1,
+                    "line_end": 20,
+                    "topic_label": "database format discussion",
+                    "needs_more_context": False,
+                }
+            ]
+        }
+
+
 class FakePipelineRunner:
     def __init__(self, **kwargs) -> None:
         del kwargs
@@ -273,6 +292,61 @@ class MultiAgentPipelineTests(unittest.TestCase):
             CANDIDATE_SCHEMA["properties"]["candidates"]["maxItems"],
             MAX_L1_CANDIDATES_PER_TYPE,
         )
+
+    def test_segmentation_prompt_uses_actual_primary_window_size_and_dataset_guidance(self) -> None:
+        runner = FakeSegmentationRunner()
+        transcript_lines = parse_transcript_lines(
+            "\n".join(f"[me011]: durable line {index}" for index in range(1, 121))
+        )
+        plan = WindowPlan(
+            start_line=1,
+            end_line=120,
+            lookback_lines=10,
+            lookahead_lines=10,
+            reason="isci test",
+        )
+
+        segmentation_agent(
+            runner,
+            meeting_id="Bmr001",
+            plan=plan,
+            transcript_lines=transcript_lines,
+            dataset_guidance=(
+                "ICSI meetings contain fragmented speaker turns; do not promote "
+                "pure mic checks unless they affect corpus quality."
+            ),
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("120-line primary window", prompt)
+        self.assertNotIn("80-line primary window", prompt)
+        self.assertIn("fragmented speaker turns", prompt)
+        self.assertIn("pure mic checks", prompt)
+
+    def test_segmentation_prompt_preserves_grace_default_window_wording(self) -> None:
+        runner = FakeSegmentationRunner()
+        transcript_lines = parse_transcript_lines(
+            "\n".join(f"[SPEAKER_00]: durable line {index}" for index in range(1, 81))
+        )
+        plan = WindowPlan(
+            start_line=1,
+            end_line=80,
+            lookback_lines=6,
+            lookahead_lines=6,
+            reason="grace default",
+        )
+
+        segmentation_agent(
+            runner,
+            meeting_id="0506",
+            plan=plan,
+            transcript_lines=transcript_lines,
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("Normally return 3-6 segments for an 80-line primary window.", prompt)
+        self.assertNotIn("this 80-line primary window", prompt)
+        self.assertNotIn("Dataset-specific guidance", prompt)
 
     def test_normalize_idea_completeness_maps_model_variants(self) -> None:
         self.assertEqual(normalize_idea_completeness("Complete"), "complete")

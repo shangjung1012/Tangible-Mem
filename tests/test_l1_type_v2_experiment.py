@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from share_mem.build_tree import _run_bridge_for_transcript, parse_args
 from share_mem.compare_l1_runs import compare_l1_trees, iter_l1_objects, write_comparison_outputs
+from share_mem.l1.bridge import resolve_dataset_guidance_for_l1
+from share_mem.l1.dataset_profiles import resolve_dataset_profile
 from share_mem.l1.multi_agent_agents import l1_fallback_agent, l1_type_agent
 from share_mem.l1.multi_agent_logger import ResearchLogger
 from share_mem.l1.multi_agent_pipeline import _llm_metrics
@@ -266,6 +268,49 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertIn("Traditional Chinese", properties["content"]["description"])
         self.assertIn("English", properties["related_topics"]["description"])
 
+    def test_v2_candidate_schema_can_request_english_content(self) -> None:
+        schema = candidate_schema_for_taxonomy(
+            "v2-memory-roles",
+            include_legacy_type=True,
+            content_language="english",
+        )
+        properties = schema["properties"]["candidates"]["items"]["properties"]
+
+        self.assertIn("Write L1 content in English", properties["content"]["description"])
+        self.assertNotIn("Traditional Chinese", properties["content"]["description"])
+        self.assertIn("English", properties["related_topics"]["description"])
+
+    def test_v2_type_agent_prompt_can_use_english_content_policy(self) -> None:
+        runner = _PromptCaptureRunner()
+        units = [
+            IdeaUnit(
+                unit_id="U-1",
+                segment_id="S-1",
+                line_start=10,
+                line_end=12,
+                text="The team discussed database formats for word transcripts and annotations.",
+                completeness="complete",
+            )
+        ]
+
+        l1_type_agent(
+            runner,
+            obj_type="finding",
+            idea_units=units,
+            existing_topics=[],
+            extraction_scope="B-001",
+            segment_ids=["S-1"],
+            taxonomy="v2-memory-roles",
+            include_legacy_type=True,
+            content_language="english",
+            dataset_guidance="ICSI meetings contain fragmented turns and setup chatter.",
+        )
+
+        prompt = runner.calls[0][1]
+        self.assertIn("content MUST be written in English", prompt)
+        self.assertIn("ICSI meetings contain fragmented turns", prompt)
+        self.assertNotIn("content MUST be written in Traditional Chinese", prompt)
+
     def test_reduce_v2_patch_preserves_type_and_legacy_type(self) -> None:
         _, memory_objects, quality_index = reduce_l1_patch(
             [
@@ -355,6 +400,75 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
         self.assertTrue(args.include_legacy_type)
         self.assertIn("share_mem_experiments", args.output_root)
 
+    def test_build_tree_accepts_icsi_manual_pipeline_flags(self) -> None:
+        args = parse_args(
+            [
+                "--transcript-dir",
+                "meeting_recording/transcript/ISCI",
+                "--output-root",
+                "share_mem_experiments/icsi_bmr_english_probe",
+                "--dataset-profile",
+                "isci",
+                "--content-language",
+                "english",
+                "--multi-agent-window-size",
+                "120",
+                "--multi-agent-lookback-lines",
+                "10",
+                "--multi-agent-lookahead-lines",
+                "10",
+                "--multi-agent-previous-context",
+            ]
+        )
+
+        self.assertEqual(args.dataset_profile, "isci")
+        self.assertEqual(args.content_language, "english")
+        self.assertEqual(args.multi_agent_window_size, 120)
+        self.assertEqual(args.multi_agent_lookback_lines, 10)
+        self.assertEqual(args.multi_agent_lookahead_lines, 10)
+        self.assertTrue(args.multi_agent_previous_context)
+        self.assertFalse(args.use_dataset_guidance)
+
+    def test_grace_default_does_not_inject_profile_guidance(self) -> None:
+        profile = resolve_dataset_profile(
+            "meeting_recording/transcript/grace/0506.txt",
+            requested_profile="grace",
+        )
+
+        guidance = resolve_dataset_guidance_for_l1(
+            dataset_profile=profile,
+            content_language="traditional_zh",
+        )
+
+        self.assertEqual(guidance, "")
+
+    def test_non_grace_profile_uses_dataset_guidance_by_default(self) -> None:
+        profile = resolve_dataset_profile(
+            "meeting_recording/transcript/ISCI/Bdb001.txt",
+            requested_profile="isci",
+        )
+
+        guidance = resolve_dataset_guidance_for_l1(
+            dataset_profile=profile,
+            content_language="english",
+        )
+
+        self.assertIn("fragmented English speaker turns", guidance)
+
+    def test_grace_profile_guidance_can_be_forced_for_experiments(self) -> None:
+        profile = resolve_dataset_profile(
+            "meeting_recording/transcript/grace/0506.txt",
+            requested_profile="grace",
+        )
+
+        guidance = resolve_dataset_guidance_for_l1(
+            dataset_profile=profile,
+            content_language="traditional_zh",
+            force=True,
+        )
+
+        self.assertIn("longer Mandarin", guidance)
+
     def test_bridge_invocation_passes_taxonomy_flags(self) -> None:
         with patch("share_mem.l1.bridge.main") as bridge_main:
             _run_bridge_for_transcript(
@@ -366,12 +480,49 @@ class L1TypeV2ExperimentTests(unittest.TestCase):
                 model="gemini-2.5-pro",
                 taxonomy="v2-memory-roles",
                 include_legacy_type=True,
+                content_language="traditional_zh",
+                multi_agent_window_size=80,
+                multi_agent_lookback_lines=6,
+                multi_agent_lookahead_lines=6,
+                multi_agent_previous_context=False,
             )
 
         bridge_args = bridge_main.call_args.args[0]
         self.assertIn("--taxonomy", bridge_args)
         self.assertIn("v2-memory-roles", bridge_args)
         self.assertIn("--include-legacy-type", bridge_args)
+        self.assertNotIn("--use-dataset-guidance", bridge_args)
+
+    def test_bridge_invocation_passes_icsi_manual_pipeline_flags(self) -> None:
+        with patch("share_mem.l1.bridge.main") as bridge_main:
+            _run_bridge_for_transcript(
+                transcript_path=Path("meeting_recording/transcript/ISCI/Bmr001.txt"),
+                tree_path=Path("share_mem_experiments/icsi_probe/tree.json"),
+                snapshot_dir=Path("share_mem_experiments/icsi_probe/snapshots"),
+                research_log_dir=Path("share_mem_experiments/icsi_probe/research_logs"),
+                dataset_profile="isci",
+                model="gemini-2.5-pro",
+                taxonomy="v2-memory-roles",
+                include_legacy_type=True,
+                content_language="english",
+                multi_agent_window_size=120,
+                multi_agent_lookback_lines=10,
+                multi_agent_lookahead_lines=10,
+                multi_agent_previous_context=True,
+            )
+
+        bridge_args = bridge_main.call_args.args[0]
+        self.assertIn("--dataset-profile", bridge_args)
+        self.assertIn("isci", bridge_args)
+        self.assertIn("--content-language", bridge_args)
+        self.assertIn("english", bridge_args)
+        self.assertIn("--multi-agent-window-size", bridge_args)
+        self.assertIn("120", bridge_args)
+        self.assertIn("--multi-agent-lookback-lines", bridge_args)
+        self.assertIn("10", bridge_args)
+        self.assertIn("--multi-agent-lookahead-lines", bridge_args)
+        self.assertIn("10", bridge_args)
+        self.assertIn("--multi-agent-previous-context", bridge_args)
 
     def test_research_logger_writes_structured_api_call_debug_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

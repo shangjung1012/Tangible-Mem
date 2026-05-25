@@ -7,6 +7,8 @@ from typing import Any
 
 TAXONOMY_V1 = "v1"
 TAXONOMY_V2_MEMORY_ROLES = "v2-memory-roles"
+CONTENT_LANGUAGE_TRADITIONAL_ZH = "traditional_zh"
+CONTENT_LANGUAGE_ENGLISH = "english"
 
 LEGACY_L1_TYPE_ORDER = (
     "decision",
@@ -77,6 +79,32 @@ def normalize_taxonomy(value: str | None) -> str:
     raise ValueError(f"Unsupported L1 taxonomy: {value}")
 
 
+def normalize_content_language(value: str | None) -> str:
+    clean = str(value or "").strip().lower().replace("-", "_")
+    if clean in {"", "traditional_zh", "traditional_chinese", "zh_tw", "chinese"}:
+        return CONTENT_LANGUAGE_TRADITIONAL_ZH
+    if clean in {"english", "en"}:
+        return CONTENT_LANGUAGE_ENGLISH
+    raise ValueError(f"Unsupported L1 content language: {value}")
+
+
+def content_description_for_language(content_language: str | None) -> str:
+    normalized = normalize_content_language(content_language)
+    if normalized == CONTENT_LANGUAGE_ENGLISH:
+        return (
+            "Human-facing L1 memory summary. Write L1 content in English. Keep "
+            "technical terms and dataset-specific labels in their source wording "
+            "when that wording is clearer than translation."
+        )
+    return (
+        "Human-facing L1 memory summary. Write canonical share_mem L1 "
+        "content in Traditional Chinese, even when bounded idea units are "
+        "English intermediate summaries; keep technical anchors such as "
+        "RAG, L1/L2/L3, API, topic lifecycle, and manager-agent in English "
+        "when those terms are used."
+    )
+
+
 def type_order_for_taxonomy(taxonomy: str | None) -> tuple[str, ...]:
     normalized = normalize_taxonomy(taxonomy)
     if normalized == TAXONOMY_V2_MEMORY_ROLES:
@@ -115,6 +143,7 @@ def candidate_schema_for_taxonomy(
     include_legacy_type: bool = False,
     max_items: int = 6,
     require_type: bool | None = None,
+    content_language: str = CONTENT_LANGUAGE_TRADITIONAL_ZH,
 ) -> dict[str, Any]:
     """Return a structured-output schema for L1 candidates.
 
@@ -131,13 +160,7 @@ def candidate_schema_for_taxonomy(
         "source_unit_ids": {"type": "array", "items": {"type": "string"}},
         "content": {
             "type": "string",
-            "description": (
-                "Human-facing L1 memory summary. Write canonical share_mem L1 "
-                "content in Traditional Chinese, even when bounded idea units are "
-                "English intermediate summaries; keep technical anchors such as "
-                "RAG, L1/L2/L3, API, topic lifecycle, and manager-agent in English "
-                "when those terms are used."
-            ),
+            "description": content_description_for_language(content_language),
         },
         "importance": {"type": "number"},
         "confidence": {"type": "number"},
@@ -200,12 +223,14 @@ def fallback_candidate_schema_for_taxonomy(
     *,
     include_legacy_type: bool = False,
     max_items: int = 3,
+    content_language: str = CONTENT_LANGUAGE_TRADITIONAL_ZH,
 ) -> dict[str, Any]:
     return candidate_schema_for_taxonomy(
         taxonomy,
         include_legacy_type=include_legacy_type,
         max_items=max_items,
         require_type=True,
+        content_language=content_language,
     )
 
 

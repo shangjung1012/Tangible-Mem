@@ -89,6 +89,46 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Include legacy_type compatibility labels in experiment outputs.",
     )
     parser.add_argument(
+        "--content-language",
+        choices=["traditional_zh", "english"],
+        default="traditional_zh",
+        help=(
+            "Language for human-facing L1 content. Keep traditional_zh for "
+            "canonical Grace; use english for English transcript experiments."
+        ),
+    )
+    parser.add_argument(
+        "--multi-agent-window-size",
+        type=int,
+        default=80,
+        help="Primary transcript lines per context-planner window.",
+    )
+    parser.add_argument(
+        "--multi-agent-lookback-lines",
+        type=int,
+        default=6,
+        help="Context lookback lines for segmentation prompts.",
+    )
+    parser.add_argument(
+        "--multi-agent-lookahead-lines",
+        type=int,
+        default=6,
+        help="Context lookahead lines for segmentation prompts.",
+    )
+    parser.add_argument(
+        "--multi-agent-previous-context",
+        action="store_true",
+        help="Pass compact previous extraction-packet summaries to typed L1 agents.",
+    )
+    parser.add_argument(
+        "--use-dataset-guidance",
+        action="store_true",
+        help=(
+            "Opt in to profile-specific prompt guidance even for canonical Grace. "
+            "Non-Grace profiles use guidance by default."
+        ),
+    )
+    parser.add_argument(
         "--clean",
         action="store_true",
         help="Remove generated share_mem outputs before rebuilding.",
@@ -111,6 +151,12 @@ def _run_bridge_for_transcript(
     model: str,
     taxonomy: str = "v1",
     include_legacy_type: bool = False,
+    content_language: str = "traditional_zh",
+    multi_agent_window_size: int = 80,
+    multi_agent_lookback_lines: int = 6,
+    multi_agent_lookahead_lines: int = 6,
+    multi_agent_previous_context: bool = False,
+    use_dataset_guidance: bool = False,
 ) -> None:
     from share_mem.l1 import bridge
 
@@ -131,9 +177,21 @@ def _run_bridge_for_transcript(
         model,
         "--taxonomy",
         taxonomy,
+        "--content-language",
+        content_language,
+        "--multi-agent-window-size",
+        str(multi_agent_window_size),
+        "--multi-agent-lookback-lines",
+        str(multi_agent_lookback_lines),
+        "--multi-agent-lookahead-lines",
+        str(multi_agent_lookahead_lines),
     ]
     if include_legacy_type:
         bridge_argv.append("--include-legacy-type")
+    if multi_agent_previous_context:
+        bridge_argv.append("--multi-agent-previous-context")
+    if use_dataset_guidance:
+        bridge_argv.append("--use-dataset-guidance")
     meeting_date = infer_grace_meeting_date(transcript_path.stem)
     if meeting_date:
         bridge_argv.extend(["--meeting-date", meeting_date])
@@ -161,6 +219,12 @@ def build_share_mem_tree(args: argparse.Namespace) -> dict:
             "output_root": str(output_root),
             "taxonomy": str(args.taxonomy),
             "include_legacy_type": bool(args.include_legacy_type),
+            "content_language": str(args.content_language),
+            "multi_agent_window_size": int(args.multi_agent_window_size),
+            "multi_agent_lookback_lines": int(args.multi_agent_lookback_lines),
+            "multi_agent_lookahead_lines": int(args.multi_agent_lookahead_lines),
+            "multi_agent_previous_context": bool(args.multi_agent_previous_context),
+            "use_dataset_guidance": bool(args.use_dataset_guidance),
             "transcripts": [path.name for path in transcripts],
         }
 
@@ -175,6 +239,12 @@ def build_share_mem_tree(args: argparse.Namespace) -> dict:
             model=str(args.model),
             taxonomy=str(args.taxonomy),
             include_legacy_type=bool(args.include_legacy_type),
+            content_language=str(args.content_language),
+            multi_agent_window_size=int(args.multi_agent_window_size),
+            multi_agent_lookback_lines=int(args.multi_agent_lookback_lines),
+            multi_agent_lookahead_lines=int(args.multi_agent_lookahead_lines),
+            multi_agent_previous_context=bool(args.multi_agent_previous_context),
+            use_dataset_guidance=bool(args.use_dataset_guidance),
         )
 
     tree = load_share_tree(output_root)
@@ -200,6 +270,12 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Output root: {result['output_root']}")
         print(f"Taxonomy: {result['taxonomy']}")
         print(f"Include legacy type: {result['include_legacy_type']}")
+        print(f"Content language: {result['content_language']}")
+        print(f"Window size: {result['multi_agent_window_size']}")
+        print(f"Lookback lines: {result['multi_agent_lookback_lines']}")
+        print(f"Lookahead lines: {result['multi_agent_lookahead_lines']}")
+        print(f"Previous context: {result['multi_agent_previous_context']}")
+        print(f"Force dataset guidance: {result['use_dataset_guidance']}")
         for name in result["transcripts"]:
             print(f"  {name}")
 

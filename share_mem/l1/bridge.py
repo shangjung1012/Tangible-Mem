@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .dataset_profiles import dataset_profile_choices
+from .dataset_profiles import dataset_profile_choices, resolve_dataset_profile
 from .io_utils import load_api_keys, load_tree, print_json_safe, save_json, utc_now_iso
 from .l1_quality import (
     load_l1_quality_index,
@@ -32,6 +32,7 @@ from .memory_relations import (
 from .multi_agent_pipeline import run_multi_agent_l1_pipeline
 from .prior_context import build_prior_context_pack
 from .schema import DEFAULT_MODEL_NAME
+from .taxonomy import CONTENT_LANGUAGE_TRADITIONAL_ZH
 
 
 def collect_existing_topics(tree: dict[str, Any]) -> list[str]:
@@ -94,6 +95,31 @@ def resolve_model_name(requested_model: str | None) -> str:
     return os.getenv("GEMINI_MODEL", DEFAULT_MODEL_NAME)
 
 
+def resolve_dataset_guidance_for_l1(
+    *,
+    dataset_profile: Any,
+    content_language: str,
+    force: bool = False,
+) -> str:
+    """Keep canonical Grace prompts stable while enabling dataset-specific probes.
+
+    Grace is the checked-in canonical L1 corpus. New dataset guidance is useful
+    for ICSI-style pilots, but silently adding it to Grace would change the next
+    Grace extraction prompts. Grace can still opt in with force=True.
+    """
+    prompt_hint = str(getattr(dataset_profile, "prompt_hint", "") or "").strip()
+    if not prompt_hint:
+        return ""
+    if force:
+        return prompt_hint
+    if (
+        str(getattr(dataset_profile, "name", "") or "").strip().lower() == "grace"
+        and content_language == CONTENT_LANGUAGE_TRADITIONAL_ZH
+    ):
+        return ""
+    return prompt_hint
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Bridge: extract L1 memory objects into share_mem."
@@ -141,6 +167,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--include-legacy-type",
         action="store_true",
         help="When using a v2 experiment, include legacy_type compatibility labels.",
+    )
+    parser.add_argument(
+        "--content-language",
+        choices=["traditional_zh", "english"],
+        default="traditional_zh",
+        help=(
+            "Language for human-facing L1 content. Defaults to traditional_zh "
+            "for canonical Grace share_mem output."
+        ),
+    )
+    parser.add_argument(
+        "--use-dataset-guidance",
+        action="store_true",
+        help=(
+            "Opt in to profile-specific prompt guidance even for canonical Grace. "
+            "Non-Grace profiles use guidance by default."
+        ),
     )
     parser.add_argument(
         "--research-log-dir",
@@ -215,6 +258,10 @@ def main(argv: list[str] | None = None) -> None:
     activity_path = memory_activity_default_path(tree_path)
     existing_quality_index = load_l1_quality_index(quality_path)
     existing_activity_index = load_memory_activity_index(activity_path)
+    dataset_profile = resolve_dataset_profile(
+        transcript_path,
+        requested_profile=args.dataset_profile,
+    )
     prior_context_pack = build_prior_context_pack(
         tree=tree,
         meeting_id=meeting_id,
@@ -240,6 +287,12 @@ def main(argv: list[str] | None = None) -> None:
         previous_context_enabled=args.multi_agent_previous_context,
         taxonomy=args.taxonomy,
         include_legacy_type=args.include_legacy_type,
+        content_language=args.content_language,
+        dataset_guidance=resolve_dataset_guidance_for_l1(
+            dataset_profile=dataset_profile,
+            content_language=args.content_language,
+            force=args.use_dataset_guidance,
+        ),
     )
     memory_objects = multi_agent_result.memory_objects
 
