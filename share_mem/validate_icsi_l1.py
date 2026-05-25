@@ -54,6 +54,9 @@ DURABLE_SETUP_KEYWORDS = {
 }
 
 SOURCE_DATA_ONLY_KEYWORDS = {
+    "audio setup mapping",
+    "assigned channel",
+    "channel number",
     "channel mapping",
     "device placement",
     "dummy pda",
@@ -63,10 +66,13 @@ SOURCE_DATA_ONLY_KEYWORDS = {
     "meeting metadata",
     "meeting number",
     "microphone inventory",
+    "microphone type",
     "participant list",
     "participant names",
+    "pzm",
     "recorded on",
     "speaker introduction",
+    "stationary microphone",
 }
 
 SOURCE_DATA_DURABLE_KEYWORDS = {
@@ -83,7 +89,6 @@ SOURCE_DATA_DURABLE_KEYWORDS = {
     "methodology",
     "near-field",
     "policy",
-    "protocol",
     "rationale",
     "recording rule",
     "reusable",

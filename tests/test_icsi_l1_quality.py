@@ -244,6 +244,34 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertEqual(gate["summary"]["drop_candidate_count"], 0)
         self.assertIn("L1-Bed002-001", gate["filtered_candidate_obj_ids"])
 
+    def test_review_gate_drops_microphone_inventory_even_when_labeled_protocol(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bmr001-008",
+                obj_type="approach_change",
+                content=(
+                    "A procedure was adopted for microphone checks where participants "
+                    "identify their assigned channel number and microphone type. "
+                    "Stationary PZM microphones and a dummy PDA were also identified "
+                    "to complete the audio setup mapping."
+                ),
+                evidence=(
+                    "[me025]: Let's name the microphones. "
+                    "[me011]: I'm now talking on microphone number two. "
+                    "[me025]: This is the PZM nearest the machine room end. "
+                    "[me025]: This is the left side of the dummy PDA."
+                ),
+                importance=0.64,
+                topics=["recording procedure", "recording protocol", "microphone technique"],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["drop_candidate_count"], 1)
+        self.assertIn("L1-Bmr001-008", gate["drop_candidate_obj_ids"])
+        self.assertNotIn("L1-Bmr001-008", gate["filtered_candidate_obj_ids"])
+
     def test_write_report_outputs_json_and_markdown(self) -> None:
         objects = [
             _obj(
