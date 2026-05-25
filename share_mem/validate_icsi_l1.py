@@ -127,6 +127,8 @@ TOPIC_ALIAS_GROUPS: dict[str, set[str]] = {
     },
 }
 
+DUPLICATE_AUTO_MERGE_MIN_CONTENT_SIMILARITY = 0.35
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -240,6 +242,15 @@ def _same_evidence_duplicate_groups(objects: list[dict[str, Any]]) -> list[dict[
             }
         )
     return groups
+
+
+def _content_similarity_to_keep(keep: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, float]:
+    keep_id = str(keep.get("obj_id", ""))
+    return {
+        str(row.get("obj_id", "")): round(_jaccard(keep.get("content", ""), row.get("content", "")), 3)
+        for row in rows
+        if str(row.get("obj_id", "")) and str(row.get("obj_id", "")) != keep_id
+    }
 
 
 def _score_summary(values: list[float]) -> dict[str, Any]:
@@ -391,6 +402,7 @@ def build_icsi_l1_review_gate(objects: Iterable[dict[str, Any]]) -> dict[str, An
 
     duplicate_reviews: list[dict[str, Any]] = []
     merge_candidate_obj_ids: set[str] = set()
+    duplicate_review_candidate_obj_ids: set[str] = set()
     for index, group in enumerate(_same_evidence_duplicate_groups(rows), start=1):
         group_rows = [by_obj_id[obj_id] for obj_id in group["obj_ids"] if obj_id in by_obj_id]
         if len(group_rows) < 2:
@@ -402,8 +414,22 @@ def build_icsi_l1_review_gate(objects: Iterable[dict[str, Any]]) -> dict[str, An
         ]
         keep = _choose_duplicate_representative(keep_pool or group_rows)
         keep_id = str(keep.get("obj_id", ""))
-        merge_ids = [str(row.get("obj_id", "")) for row in group_rows if str(row.get("obj_id", "")) != keep_id]
+        similarity_to_keep = _content_similarity_to_keep(keep, group_rows)
+        merge_ids = [
+            str(row.get("obj_id", ""))
+            for row in group_rows
+            if str(row.get("obj_id", "")) != keep_id
+            and similarity_to_keep.get(str(row.get("obj_id", "")), 0.0)
+            >= DUPLICATE_AUTO_MERGE_MIN_CONTENT_SIMILARITY
+        ]
+        manual_review_ids = [
+            str(row.get("obj_id", ""))
+            for row in group_rows
+            if str(row.get("obj_id", "")) != keep_id
+            and str(row.get("obj_id", "")) not in merge_ids
+        ]
         merge_candidate_obj_ids.update(merge_ids)
+        duplicate_review_candidate_obj_ids.update(manual_review_ids)
         duplicate_reviews.append(
             {
                 "group_id": f"same-evidence-{index:03d}",
@@ -413,10 +439,13 @@ def build_icsi_l1_review_gate(objects: Iterable[dict[str, Any]]) -> dict[str, An
                 "types": sorted({str(row.get("type", "")) for row in group_rows}),
                 "recommended_keep_obj_id": keep_id,
                 "merge_candidate_obj_ids": merge_ids,
+                "manual_review_obj_ids": manual_review_ids,
+                "content_similarity_to_keep": similarity_to_keep,
                 "avg_content_similarity": group.get("avg_content_similarity", 0.0),
                 "note": (
-                    "Review-only recommendation. Keep candidate is chosen by "
-                    "importance/type priority; no object type is rewritten."
+                    "Review-only recommendation. Low-similarity same-evidence "
+                    "objects stay in the filtered view for manual review; no "
+                    "object type is rewritten."
                 ),
             }
         )
@@ -434,6 +463,16 @@ def build_icsi_l1_review_gate(objects: Iterable[dict[str, Any]]) -> dict[str, An
                         obj,
                         ["same_evidence_duplicate", "merge_candidate"],
                         "merge_candidate",
+                    )
+                )
+        for obj_id in duplicate["manual_review_obj_ids"]:
+            obj = by_obj_id.get(obj_id)
+            if obj and obj_id not in drop_candidates:
+                review_items.append(
+                    _object_brief(
+                        obj,
+                        ["same_evidence_duplicate", "needs_manual_duplicate_review"],
+                        "duplicate_review_candidate",
                     )
                 )
 
@@ -457,10 +496,12 @@ def build_icsi_l1_review_gate(objects: Iterable[dict[str, Any]]) -> dict[str, An
             "review_candidate_count": len(review_candidates),
             "merge_review_group_count": len(duplicate_reviews),
             "merge_candidate_count": len(merge_candidate_obj_ids),
+            "duplicate_review_candidate_count": len(duplicate_review_candidate_obj_ids),
             "filtered_candidate_count": len(filtered_ids),
         },
         "drop_candidate_obj_ids": sorted(dropped_ids),
         "merge_candidate_obj_ids": sorted(merge_candidate_obj_ids),
+        "duplicate_review_candidate_obj_ids": sorted(duplicate_review_candidate_obj_ids),
         "filtered_candidate_obj_ids": filtered_ids,
         "review_items": review_items,
         "duplicate_reviews": duplicate_reviews,
@@ -593,6 +634,7 @@ def _markdown_gate(gate: dict[str, Any]) -> str:
         f"- review_candidate_count: {summary.get('review_candidate_count', 0)}",
         f"- merge_review_group_count: {summary.get('merge_review_group_count', 0)}",
         f"- merge_candidate_count: {summary.get('merge_candidate_count', 0)}",
+        f"- duplicate_review_candidate_count: {summary.get('duplicate_review_candidate_count', 0)}",
         f"- filtered_candidate_count: {summary.get('filtered_candidate_count', 0)}",
         "",
         "## Drop / Merge Review Items",
@@ -619,7 +661,8 @@ def _markdown_gate(gate: dict[str, Any]) -> str:
         for item in duplicates[:20]:
             lines.append(
                 f"- {item.get('group_id')}: keep={item.get('recommended_keep_obj_id')} "
-                f"merge={', '.join(item.get('merge_candidate_obj_ids', []))}"
+                f"merge={', '.join(item.get('merge_candidate_obj_ids', [])) or 'none'} "
+                f"review={', '.join(item.get('manual_review_obj_ids', [])) or 'none'}"
             )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"

@@ -143,7 +143,47 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertNotIn("auto_reclassified_decisions", gate)
         duplicate = gate["duplicate_reviews"][0]
         self.assertEqual(duplicate["recommended_keep_obj_id"], "L1-Bmr001-002")
-        self.assertIn("L1-Bmr001-003", duplicate["merge_candidate_obj_ids"])
+        self.assertIn("L1-Bmr001-003", duplicate["manual_review_obj_ids"])
+        self.assertIn("L1-Bmr001-003", gate["filtered_candidate_obj_ids"])
+
+    def test_low_similarity_same_evidence_duplicates_stay_in_filtered_view(self) -> None:
+        shared_evidence = (
+            "[me018]: You can tell if it is picking up breath noise. "
+            "[me011]: The AF indicator lights up. "
+            "[fe016]: But we still do not know how to remove the noise."
+        )
+        objects = [
+            _obj(
+                "L1-Bdb001-010",
+                obj_type="approach_change",
+                content=(
+                    "A method was identified for detecting breath and mouth noises "
+                    "in real time using the AF indicator."
+                ),
+                evidence=shared_evidence,
+                importance=0.60,
+                topics=["recording data quality", "breath noise detection"],
+            ),
+            _obj(
+                "L1-Bdb001-011",
+                obj_type="open_issue",
+                content=(
+                    "The audio recordings contain breath and mouth noise, and it "
+                    "remains unresolved how that noise will be mitigated or removed."
+                ),
+                evidence=shared_evidence,
+                importance=0.54,
+                topics=["recording data quality", "noise reduction"],
+            ),
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["merge_candidate_count"], 0)
+        self.assertEqual(gate["summary"]["duplicate_review_candidate_count"], 1)
+        self.assertIn("L1-Bdb001-010", gate["filtered_candidate_obj_ids"])
+        self.assertIn("L1-Bdb001-011", gate["filtered_candidate_obj_ids"])
+        self.assertIn("L1-Bdb001-011", gate["duplicate_reviews"][0]["manual_review_obj_ids"])
 
     def test_write_review_gate_outputs_sidecar_and_filtered_view(self) -> None:
         objects = [
