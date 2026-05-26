@@ -326,6 +326,69 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertEqual(gate["summary"]["drop_candidate_count"], 0)
         self.assertIn("L1-Bed002-001", gate["filtered_candidate_obj_ids"])
 
+    def test_review_gate_keeps_ground_truth_microphone_methodology(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bed002-003",
+                obj_type="action_item",
+                content=(
+                    "The project's data collection approach uses tabletop PZM "
+                    "microphones and close-talking microphones. The close-talking "
+                    "mics provide ground truth high-quality audio so language-focused "
+                    "research is not penalized by far-field audio quality."
+                ),
+                evidence=(
+                    "[me011]: The close-talking mics give us some ground truth, "
+                    "high quality audio, especially for people interested in "
+                    "language rather than recognition."
+                ),
+                importance=0.72,
+                topics=[
+                    "data collection",
+                    "recording data quality",
+                    "ground truth",
+                    "far-field audio",
+                    "close-talking audio",
+                    "recording setup",
+                ],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["drop_candidate_count"], 0)
+        self.assertIn("L1-Bed002-003", gate["filtered_candidate_obj_ids"])
+
+    def test_review_gate_does_not_flag_belief_net_probability_setup_as_setup_noise(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bed003-001",
+                obj_type="argument",
+                content=(
+                    "A big-flat belief-net model was criticized because setting "
+                    "up the probabilities would be impractical. The setup of "
+                    "probabilities would be exponentially complex and would "
+                    "handicap later learning steps."
+                ),
+                evidence=(
+                    "[me003]: The initial idea was all features pointing to the "
+                    "output node. It would be a pain to set up all the probabilities."
+                ),
+                importance=0.67,
+                topics=[
+                    "belief-net model",
+                    "model architecture",
+                    "machine learning",
+                    "computational complexity",
+                ],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["review_candidate_count"], 0)
+        self.assertIn("L1-Bed003-001", gate["filtered_candidate_obj_ids"])
+
     def test_review_gate_does_not_flag_anonymization_policy_as_setup_noise(self) -> None:
         objects = [
             _obj(
