@@ -1,0 +1,5 @@
+from __future__ import annotations
+
+SEMANTIC_KEY_SCHEMA_VERSION = 1
+L2_SCHEMA_VERSION = 1
+L3_SCHEMA_VERSION = 1

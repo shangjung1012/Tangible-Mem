@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-06-01T23:14:59Z",
+  "source_candidate_root": "optimization\\runs\\synthetic_focused_split_candidate_dominance_20260602_0002",
+  "second_pass_review_root": "optimization\\runs\\synthetic_second_pass_split_review_top3_20260602_0001",
+  "second_pass_candidate_root": "optimization\\runs\\synthetic_second_pass_split_candidate_top3_20260602_0001",
+  "reviewed_sources": [
+    "L2-child-l2",
+    "L2-decision-history",
+    "L2-experiment-lab"
+  ],
+  "accepted_split_count": 2,
+  "review_only_count": 1,
+  "rejected_count": 0,
+  "usage_metadata": {
+    "cache_tokens_details": null,
+    "cached_content_token_count": null,
+    "candidates_token_count": 1228,
+    "candidates_tokens_details": [
+      {
+        "modality": "TEXT",
+        "token_count": 1228
+      }
+    ],
+    "prompt_token_count": 10114,
+    "prompt_tokens_details": [
+      {
+        "modality": "TEXT",
+        "token_count": 10114
+      }
+    ],
+    "thoughts_token_count": 4663,
+    "tool_use_prompt_token_count": null,
+    "tool_use_prompt_tokens_details": null,
+    "total_token_count": 16005,
+    "traffic_type": "ON_DEMAND"
+  },
+  "applied_split_count": 0,
+  "skipped_split_count": 2,
+  "skipped_splits": [
+    {
+      "source_l2_id": "L2-child-l2",
+      "reason": "candidate_child_still_oversized",
+      "child_sizes": [
+        155,
+        76
+      ]
+    },
+    {
+      "source_l2_id": "L2-decision-history",
+      "reason": "candidate_child_still_oversized",
+      "child_sizes": [
+        178,
+        30
+      ]
+    }
+  ],
+  "validation": {
+    "severe_count": 0,
+    "warning_count": 3
+  },
+  "decision": "no_second_pass_materialization; keep review-only for these sources",
+  "interpretation": [
+    "Second-pass top3 review reduced an earlier over-splitting risk: L2-experiment-lab became review_only.",
+    "The proposed rationale-vs-implementation splits for L2-child-l2 and L2-decision-history still leave oversized child candidates, so they should not be materialized.",
+    "For synthetic data, many large L2s appear to reflect repeated template dimensions rather than naturally separable durable subtopics.",
+    "Next work should evaluate retrieval pressure before attempting more splits; do not split just to reduce counts."
+  ]
+}

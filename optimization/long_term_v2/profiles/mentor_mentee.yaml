@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "name": "mentor_mentee",
+  "domain": "mentor_mentee_research_meeting",
+  "content_language": "zh-TW",
+  "topic_key_language": "en",
+  "l1_roles": [
+    "decision",
+    "action_item",
+    "open_issue",
+    "proposal",
+    "argument",
+    "finding",
+    "approach_change"
+  ],
+  "text_processing": {
+    "max_cjk_token_chars": 12,
+    "stopwords": [
+      "a", "about", "actually", "after", "again", "all", "also", "am", "an",
+      "and", "any", "are", "as", "at", "be", "because", "been", "before",
+      "being", "between", "but", "by", "can", "could", "do", "does", "don",
+      "dont", "during", "for", "from", "get", "going", "got", "has", "have", "he",
+      "her", "him", "i", "if", "in", "include", "includes", "including",
+      "inside", "into", "is", "isn", "it", "its", "just", "kind", "like", "ll", "made",
+      "make", "may", "me", "mean", "more", "much", "my", "need", "needs",
+      "not", "of", "ok", "okay", "on", "one", "only", "or", "other", "our", "out", "over",
+      "re", "right", "said", "say", "she", "should", "so", "some", "sort", "speaker",
+      "than", "that", "the", "their", "them", "then", "there", "they", "this",
+      "through", "to", "too", "uh", "um", "us", "use", "using", "wanna", "was", "we",
+      "were", "what", "when", "where", "whether", "which", "while", "will", "with",
+      "without", "would", "yeah", "you", "your", "mm", "hmm"
+    ],
+    "generic_ngram_terms": [
+      "data", "discussion", "meeting", "memory", "model", "system", "team",
+      "thing", "things", "topic"
+    ]
+  },
+  "label_policy": {
+    "type_like_labels": [
+      "action item", "approach change", "design decision", "open issue",
+      "open question", "method change", "result", "todo"
+    ],
+    "role_artifact_terms": [
+      "action", "change", "issue", "method", "open", "question", "result",
+      "todo"
+    ],
+    "generic_single_labels": [
+      "agent", "ai", "api", "architecture", "candidate", "chunk", "chunking",
+      "context", "data", "dataset", "design", "discussion", "evaluation",
+      "feature", "function", "gemini", "idea", "importance", "input", "item",
+      "idea unit", "l1", "l2", "l3", "label", "long", "long term", "memory", "method",
+      "model", "object", "paper", "process", "project", "prompt", "retrieval", "score",
+      "segment", "short", "short term", "system", "term", "topic", "transcript",
+      "transcription", "turn", "unit", "update", "workflow"
+    ],
+    "weak_child_terms": [
+      "action", "data", "idea", "llm", "long", "memory", "open", "short", "tim",
+      "system", "update", "workflow"
+    ],
+    "reject_exact_labels": [
+      "agent architecture", "architecture design", "data management",
+      "data processing", "data structure", "design philosophy",
+      "development strategy", "experimental design", "system design",
+      "term memory", "term long", "term short", "l1 discard", "discard l1"
+    ],
+    "child_label_normalization": {
+      "phrase_blockers": [" 和", " 與", " and "],
+      "aliases": [
+        {"required_terms": ["ltm"], "label": "long term memory"},
+        {"required_terms": ["stm"], "label": "short term memory"},
+        {"required_terms": ["long", "term", "update"], "label": "long term update"},
+        {"prefix_terms": ["short", "term"], "label": "short term memory"},
+        {"subset_terms": ["agent", "manager"], "required_terms": ["manager"], "label": "manager agent"}
+      ],
+      "reject_if_contains_all": [
+        ["idea", "long", "term"]
+      ],
+      "reject_exact": [
+        "short term long", "long term short", "term long term", "term short term"
+      ],
+      "reject_prefixes": ["term memory "],
+      "allow_repeated_exact": ["long term memory", "short term memory"]
+    }
+  },
+  "semantic_facets": [
+    {
+      "name": "project_goal",
+      "seed_terms": ["goal", "objective", "purpose", "research", "project", "target"]
+    },
+    {
+      "name": "design_problem",
+      "seed_terms": ["problem", "issue", "risk", "challenge", "question", "tradeoff", "whether"]
+    },
+    {
+      "name": "method_or_approach",
+      "seed_terms": ["method", "approach", "strategy", "workflow", "process", "pipeline", "mechanism"]
+    },
+    {
+      "name": "evaluation_or_validation",
+      "seed_terms": ["evaluate", "evaluation", "validate", "validation", "test", "score", "baseline", "quality"]
+    },
+    {
+      "name": "implementation_workflow",
+      "seed_terms": ["implement", "build", "run", "tool", "code", "step", "output", "log"]
+    },
+    {
+      "name": "resource_or_constraint",
+      "seed_terms": ["budget", "cost", "token", "latency", "time", "limit", "constraint", "resource"]
+    },
+    {
+      "name": "next_action",
+      "seed_terms": ["todo", "action", "next", "assign", "owner", "follow", "fix"]
+    },
+    {
+      "name": "unresolved_question",
+      "seed_terms": ["unclear", "unresolved", "open", "decide", "question", "unknown", "verify"]
+    }
+  ],
+  "noise_policy": {
+    "review_only": [
+      "setup_logistics",
+      "purely_administrative",
+      "repeated_acknowledgement"
+    ],
+    "low_importance_threshold": 0.35
+  },
+  "l2_policy": {
+    "min_topic_evidence": 4,
+    "minimum_assignment_confidence": 0.25,
+    "high_importance_threshold": 0.7,
+    "max_l2_topic_share_before_specificity_penalty": 0.18,
+    "prefer_cross_meeting_topics": true,
+    "allow_single_meeting_topic_if_high_importance": true
+  },
+  "l3_policy": {
+    "adaptive_thresholds": true,
+    "min_absolute_threshold": 10,
+    "target_child_l2_size_range": [6, 20],
+    "min_child_l2_count": 2
+  },
+  "retrieval_eval_defaults": {
+    "top_k_l1": 8,
+    "max_l2_context": 3
+  },
+  "retrieval_eval": {
+    "token_equivalents": {
+      "agentic": "manager agent orchestration",
+      "control": "orchestration",
+      "metric": "evaluation strategy",
+      "integration": "architecture",
+      "agents": "agent",
+      "ltm": "long term memory",
+      "pipeline": "workflow",
+      "segmentation": "chunking strategy segment",
+      "strategy": "metric goal baseline system",
+      "stm": "short term memory"
+    }
+  }
+}
