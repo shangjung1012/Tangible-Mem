@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-06-02T22:37:20Z",
+  "source_reports": {
+    "certification_report": "optimization\\reports\\maturity_certification_delivery_20260603_0001\\maturity_certification_report.json",
+    "v2_native_diagnostics": "optimization\\reports\\v2_native_query_diagnostics_20260603_0001.json"
+  },
+  "deliverability_status": "deliverable_shadow_mode",
+  "promotion_boundary": "do_not_promote_to_canonical",
+  "core_evidence": {
+    "certification_status": "warning",
+    "failing_gate_count": 0,
+    "warning_gates": [
+      "gate_12_promotion_decision"
+    ],
+    "isolation_status": "pass",
+    "hardcode_scan_status": "pass",
+    "hardcode_match_count": 0,
+    "baseline_high_importance_linked_rate": 0.9577,
+    "v2_high_importance_linked_rate": 1.0,
+    "l2_severe_count": 0,
+    "l2_warning_count": 2,
+    "retrieval_l1_recall": 0.8728,
+    "retrieval_l2_semantic_hit": 1.0,
+    "retrieval_l3_semantic_hit": 0.5,
+    "l3_parent_count": 3,
+    "child_l2_count": 6
+  },
+  "answer_quality": {
+    "status": "pass",
+    "best_strategy": "optimization_v2_deterministic",
+    "overall_scores": {
+      "canonical_layered": 0.85,
+      "full_context": 0.2857,
+      "optimization_v2_deterministic": 0.8905,
+      "optimization_v2_llm_assisted": 0.8571,
+      "rag_baseline": 0.4286
+    },
+    "average_context_tokens": {
+      "canonical_layered": 10262.7,
+      "full_context": 98531.0,
+      "optimization_v2_deterministic": 3685.3,
+      "optimization_v2_llm_assisted": 3696.0,
+      "rag_baseline": 20197.3
+    },
+    "failure_case_count": 4
+  },
+  "cross_dataset": {
+    "status": "pass",
+    "dataset_count": 3,
+    "failed_dataset_count": 0,
+    "icsi_severe_count": 0,
+    "icsi_warning_count": 0
+  },
+  "manual_review": {
+    "status": "pass",
+    "decision_count": 43,
+    "severe_issue_count": 0,
+    "wrong_assignment_rate": 0.0465,
+    "generic_bucket_count": 0,
+    "unsupported_label_count": 0
+  },
+  "split_review": {
+    "focused_status": "pass",
+    "pending_split_review_count": 14,
+    "reviewed_source_count": 14,
+    "accepted_split_count": 2,
+    "candidate_status": "pass",
+    "applied_split_count": 1,
+    "skipped_split_count": 2
+  },
+  "v2_native_diagnostics": [
+    {
+      "dataset": "synthetic_candidate_needs_split",
+      "query_count": 12,
+      "avg_l1_recall": 0.625,
+      "l2_semantic_hit": 1.0,
+      "needs_split_topic_count": 13,
+      "topics_with_retrieval_pressure_count": 12
+    },
+    {
+      "dataset": "icsi_5file_largest_topics",
+      "query_count": 8,
+      "avg_l1_recall": 1.0,
+      "l2_semantic_hit": 1.0,
+      "needs_split_topic_count": null,
+      "topics_with_retrieval_pressure_count": null
+    }
+  ],
+  "talking_points": [
+    "Optimization v2 is isolated: it reads raw L1 evidence but writes only optimization-side artifacts.",
+    "The L2/L3 pipeline is evidence-driven and profile-driven, without the old Grace-specific canonical label map.",
+    "Related topics are treated as an optional stabilizing signal, not the only assignment source.",
+    "Current certification has no failing gate; the remaining boundary is policy-level shadow-mode only.",
+    "Answer-quality evidence favors optimization_v2_deterministic over canonical layered, RAG, and full context on the scored sample."
+  ],
+  "demo_flow": [
+    "Open with the problem: canonical L2/L3 worked for Grace but looked too project-specific.",
+    "Show the v2 design: L1 evidence -> semantic keys -> induced L2 -> adaptive L3 -> validation gates.",
+    "Show the certification summary: no failing gates, no hardcode scan hits, ICSI and synthetic checks pass.",
+    "Show answer-quality comparison: v2 deterministic has stronger score with much smaller context than full context.",
+    "Close honestly: v2 is ready for shadow-mode evaluation, not canonical promotion."
+  ],
+  "remaining_risks": [
+    "Not promoted: repeated isolated runs and explicit user approval are still required.",
+    "Some split candidates were intentionally skipped because validation found weak separability.",
+    "Answer-quality report still keeps failure cases for manual review rather than hiding them."
+  ]
+}

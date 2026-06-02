@@ -37,6 +37,9 @@ from optimization.long_term_v2.llm_topic_refinement import _extract_json, refine
 from optimization.long_term_v2.make_retrieval_pressure_queries import (  # noqa: E402
     build_retrieval_pressure_queries,
 )
+from optimization.long_term_v2.make_professor_delivery_report import (  # noqa: E402
+    build_professor_delivery_report,
+)
 from optimization.long_term_v2.profiles import load_profile  # noqa: E402
 from optimization.long_term_v2.promote_l3 import build_l3_view  # noqa: E402
 from optimization.long_term_v2.retrieval_split_pressure import build_retrieval_split_pressure_report  # noqa: E402
@@ -2780,6 +2783,172 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(query["expected_l2_labels"], ["evaluation evidence"])
             self.assertEqual(query["expected_obj_ids"], ["L1-SYN-001-001", "L1-SYN-001-002"])
             self.assertTrue((run_root / "retrieval_eval" / "v2_native_queries.jsonl").exists())
+
+    def test_professor_delivery_report_summarizes_maturity_and_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp) / "optimization" / "reports" / "delivery"
+            certification = {
+                "status": "warning",
+                "failing_gates": [],
+                "warning_gates": ["gate_12_promotion_decision"],
+                "gate_results": {
+                    "gate_1_isolation": {"status": "pass"},
+                    "gate_2_no_grace_specific_core": {"status": "pass", "match_count": 0},
+                    "gate_3_l1_input_audit": {
+                        "status": "pass",
+                        "comparison": {
+                            "baseline_high_importance_linked_rate": 0.9577,
+                            "v2_high_importance_linked_rate": 1.0,
+                        },
+                    },
+                    "gate_5_l2_topic_quality": {
+                        "status": "pass",
+                        "validation": {"severe_count": 0, "warning_count": 2},
+                    },
+                    "gate_8_retrieval_quality": {
+                        "status": "pass",
+                        "retrieval": {
+                            "avg_expected_obj_recall_at_context": 0.8728,
+                            "expected_l2_semantic_hit_rate": 1.0,
+                            "expected_l3_semantic_hit_rate": 0.5,
+                        },
+                    },
+                    "gate_9_answer_quality_evaluation": {
+                        "status": "pass",
+                        "answer_quality": {
+                            "summary": {
+                                "canonical_layered": {
+                                    "average_overall_score": 0.85,
+                                    "average_context_tokens": 10262.6667,
+                                },
+                                "optimization_v2_deterministic": {
+                                    "average_overall_score": 0.8905,
+                                    "average_context_tokens": 3685.3333,
+                                },
+                                "rag_baseline": {
+                                    "average_overall_score": 0.4286,
+                                    "average_context_tokens": 20197.3333,
+                                },
+                                "full_context": {
+                                    "average_overall_score": 0.2857,
+                                    "average_context_tokens": 98531.0,
+                                },
+                            },
+                            "failure_case_count": 4,
+                        },
+                    },
+                    "gate_10_cross_dataset_maturity_suite": {
+                        "status": "pass",
+                        "suite": {"dataset_count": 3, "failed_dataset_count": 0},
+                    },
+                    "gate_11_manual_review_completion": {
+                        "status": "pass",
+                        "manual_review": {
+                            "decision_count": 43,
+                            "severe_issue_count": 0,
+                            "wrong_assignment_rate": 0.0465,
+                        },
+                    },
+                    "gate_12_promotion_decision": {
+                        "status": "warning",
+                        "promotion_recommendation": "eligible_for_shadow_mode_only",
+                    },
+                },
+            }
+            diagnostics = {
+                "summary": [
+                    {
+                        "dataset": "synthetic_candidate_needs_split",
+                        "query_count": 12,
+                        "avg_expected_obj_recall_at_context": 0.625,
+                        "expected_l2_semantic_hit_rate": 1.0,
+                    },
+                    {
+                        "dataset": "icsi_5file_largest_topics",
+                        "query_count": 8,
+                        "avg_expected_obj_recall_at_context": 1.0,
+                        "expected_l2_semantic_hit_rate": 1.0,
+                    },
+                ],
+            }
+
+            report = build_professor_delivery_report(
+                certification=certification,
+                v2_native_diagnostics=diagnostics,
+                out_dir=out_dir,
+            )
+
+            self.assertEqual(report["deliverability_status"], "deliverable_shadow_mode")
+            self.assertEqual(report["promotion_boundary"], "do_not_promote_to_canonical")
+            self.assertEqual(report["core_evidence"]["failing_gate_count"], 0)
+            self.assertEqual(report["answer_quality"]["best_strategy"], "optimization_v2_deterministic")
+            self.assertEqual(report["cross_dataset"]["dataset_count"], 3)
+            self.assertEqual(len(report["talking_points"]), 5)
+            self.assertTrue((out_dir / "professor_delivery_report.json").exists())
+            md = (out_dir / "professor_delivery_report.md").read_text(encoding="utf-8")
+            self.assertIn("Optimization v2 Delivery Report", md)
+            self.assertIn("do_not_promote_to_canonical", md)
+
+    def test_professor_delivery_report_cli_runs_from_repo_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            cert_path = base / "certification.json"
+            diagnostics_path = base / "diagnostics.json"
+            out_dir = base / "optimization" / "reports" / "delivery"
+            cert_path.write_text(
+                json.dumps(
+                    {
+                        "status": "warning",
+                        "failing_gates": [],
+                        "warning_gates": ["gate_12_promotion_decision"],
+                        "gate_results": {
+                            "gate_1_isolation": {"status": "pass"},
+                            "gate_2_no_grace_specific_core": {"status": "pass", "match_count": 0},
+                            "gate_9_answer_quality_evaluation": {
+                                "status": "pass",
+                                "answer_quality": {
+                                    "summary": {
+                                        "canonical_layered": {"average_overall_score": 0.8},
+                                        "optimization_v2_deterministic": {"average_overall_score": 0.9},
+                                    }
+                                },
+                            },
+                            "gate_10_cross_dataset_maturity_suite": {
+                                "status": "pass",
+                                "suite": {"dataset_count": 1, "failed_dataset_count": 0},
+                            },
+                            "gate_11_manual_review_completion": {
+                                "status": "pass",
+                                "manual_review": {"decision_count": 1, "severe_issue_count": 0},
+                            },
+                            "gate_12_promotion_decision": {"status": "warning"},
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            diagnostics_path.write_text(json.dumps({"summary": []}), encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "optimization/long_term_v2/make_professor_delivery_report.py",
+                    "--certification-report",
+                    str(cert_path),
+                    "--v2-native-diagnostics",
+                    str(diagnostics_path),
+                    "--out",
+                    str(out_dir),
+                ],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((out_dir / "professor_delivery_report.md").exists())
 
     def test_retrieval_eval_report_keeps_expected_ids_for_audit(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

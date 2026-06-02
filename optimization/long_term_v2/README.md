@@ -46,6 +46,9 @@ Maturity tooling added after the initial v2 scaffold:
 - `retrieval_split_pressure.py` ranks `needs_split_review` topics by actual
   retrieval-query hits, so split work is driven by retrieval pressure rather
   than raw topic size alone.
+- `make_professor_delivery_report.py` aggregates the latest certification and
+  v2-native diagnostics into a professor-facing status report for handoff or
+  presentation prep.
 
 Recent diagnostic reports:
 
@@ -69,4 +72,13 @@ uv run python optimization/long_term_v2/evaluate_retrieval.py `
 uv run python optimization/long_term_v2/retrieval_split_pressure.py `
   --run-root optimization/runs/<run_id> `
   --retrieval-subdir retrieval_eval_v2_native
+```
+
+Professor delivery report:
+
+```powershell
+uv run python optimization/long_term_v2/make_professor_delivery_report.py `
+  --certification-report optimization/reports/maturity_certification_delivery_20260603_0001/maturity_certification_report.json `
+  --v2-native-diagnostics optimization/reports/v2_native_query_diagnostics_20260603_0001.json `
+  --out optimization/reports/professor_delivery_20260603_0001
 ```

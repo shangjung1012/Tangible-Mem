@@ -25,7 +25,7 @@ optimization/runs/grace_v2_det_rescue_20260529_065827
 Latest maturity certification:
 
 ```text
-optimization/reports/maturity_certification_split_pressure_20260602_0002
+optimization/reports/maturity_certification_delivery_20260603_0001
 ```
 
 Current status: mature enough for isolated/shadow-mode evaluation, not promoted
@@ -50,6 +50,18 @@ Key properties:
 - v2-native query diagnostics are now available under
   `optimization/long_term_v2/curate_v2_native_queries.py`; split work should be
   prioritized by retrieval pressure, not raw L2 size alone.
+
+Professor-facing delivery report:
+
+```text
+optimization/reports/professor_delivery_20260603_0001/professor_delivery_report.md
+```
+
+This report is the preferred handoff artifact for a progress update. It
+summarizes the current maturity status, answer-quality comparison, cross-dataset
+checks, split-review evidence, remaining risks, and a short demo flow. It says
+the system is deliverable for isolated/shadow-mode evaluation, but must not be
+promoted to canonical artifacts yet.
 
 Rebuild command:
 
@@ -80,4 +92,13 @@ uv run python optimization/long_term_v2/maturity_certification.py `
   --suite-root optimization/runs/maturity_suite_20260529_044200 `
   --core-root optimization/long_term_v2 `
   --out optimization/reports/maturity_certification_<timestamp>
+```
+
+Professor delivery report command:
+
+```powershell
+uv run python optimization/long_term_v2/make_professor_delivery_report.py `
+  --certification-report optimization/reports/maturity_certification_delivery_20260603_0001/maturity_certification_report.json `
+  --v2-native-diagnostics optimization/reports/v2_native_query_diagnostics_20260603_0001.json `
+  --out optimization/reports/professor_delivery_20260603_0001
 ```
