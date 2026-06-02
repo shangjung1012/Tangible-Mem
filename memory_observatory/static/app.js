@@ -445,7 +445,16 @@ function renderObjects() {
     return true;
   });
   $("#objectList").replaceChildren(...objects.map((obj) => {
-    const node = memoryCard(obj.obj_id, `${obj.type} | imp ${fmtNumber(obj.effective_importance)}`, obj.content_preview, ["l1"]);
+    const linked = Boolean((obj.topic_link || {}).l2_id);
+    const node = memoryCard(
+      obj.obj_id,
+      `${obj.type} | imp ${fmtNumber(obj.effective_importance)}`,
+      obj.content_preview,
+      [
+        "l1",
+        linked ? { text: "linked", class: "l2" } : { text: "unlinked", class: "unlinked" },
+      ],
+    );
     node.classList.add("clickable-card", "explorer-object-card");
     if (obj.obj_id === selectedObjectId) node.classList.add("active");
     node.addEventListener("click", () => loadObjectDetail(obj.obj_id));
