@@ -50,6 +50,9 @@ const STRATEGY_LABELS = {
   layered_memory: "Layered memory",
 };
 
+let currentRunQueries = [];
+let selectedQueryId = "";
+
 function formatMetricValue(value, kind = "number") {
   const num = Number(value);
   if (!Number.isFinite(num)) return "0";
@@ -395,25 +398,38 @@ async function runTrace() {
 }
 
 async function loadExplorer() {
-  const meetings = await api("/api/meetings");
-  $("#meetingList").replaceChildren(...meetings.map((m) => {
+  currentMeetings = await api("/api/meetings");
+  renderMeetings();
+  if (currentMeetings[0]) await loadObjects(currentMeetings[0].meeting_id);
+}
+
+let currentMeetings = [];
+let currentObjects = [];
+let selectedMeetingId = "";
+let selectedObjectId = "";
+
+function renderMeetings() {
+  $("#meetingList").replaceChildren(...currentMeetings.map((m) => {
     const node = memoryCard(m.meeting_id, `${m.meeting_date} | ${m.object_count} objects`, `${m.high_importance_count} high importance`, []);
+    node.classList.add("clickable-card", "explorer-meeting-card");
+    if (m.meeting_id === selectedMeetingId) node.classList.add("active");
     node.addEventListener("click", () => loadObjects(m.meeting_id));
     return node;
   }));
-  if (meetings[0]) await loadObjects(meetings[0].meeting_id);
 }
 
-let currentObjects = [];
-
 async function loadObjects(meetingId) {
+  selectedMeetingId = meetingId;
+  selectedObjectId = "";
   currentObjects = await api(`/api/meetings/${meetingId}/objects`);
   const types = [...new Set(currentObjects.map((obj) => obj.type).filter(Boolean))].sort();
   $("#objectTypeFilter").replaceChildren(
     el("option", { value: "", text: "all types" }),
     ...types.map((t) => el("option", { value: t, text: t })),
   );
+  renderMeetings();
   renderObjects();
+  $("#objectDetail").replaceChildren(el("p", { class: "muted", text: "Select an L1 object to inspect details." }));
 }
 
 function renderObjects() {
@@ -430,6 +446,8 @@ function renderObjects() {
   });
   $("#objectList").replaceChildren(...objects.map((obj) => {
     const node = memoryCard(obj.obj_id, `${obj.type} | imp ${fmtNumber(obj.effective_importance)}`, obj.content_preview, ["l1"]);
+    node.classList.add("clickable-card", "explorer-object-card");
+    if (obj.obj_id === selectedObjectId) node.classList.add("active");
     node.addEventListener("click", () => loadObjectDetail(obj.obj_id));
     return node;
   }));
@@ -443,10 +461,12 @@ function renderObjects() {
 
 async function loadObjectDetail(objId) {
   const data = await api(`/api/objects/${objId}`);
+  selectedObjectId = objId;
   selectedFeedbackObject = data;
   $("#objectDetail").replaceChildren(renderObjectDetail(data));
   $("#feedbackTarget").textContent = objId;
   $("#feedbackImportance").value = data.details.importance || 0.5;
+  if (currentObjects.length) renderObjects();
 }
 
 function renderObjectDetail(data) {
@@ -701,6 +721,7 @@ async function loadFeedback() {
   const objects = await api("/api/objects").catch(() => []);
   $("#feedbackObjects").replaceChildren(...objects.map((obj) => {
     const node = memoryCard(obj.obj_id, `${obj.type} | canonical ${fmtNumber(obj.canonical_importance)}`, obj.content_preview, obj.has_feedback ? ["feedback"] : []);
+    node.classList.add("clickable-card");
     node.addEventListener("click", () => loadObjectDetail(obj.obj_id));
     return node;
   }));
@@ -729,21 +750,80 @@ async function loadRuns() {
 async function loadRun(runId) {
   const data = await api(`/api/runs/${runId}`);
   const summary = data.summary || {};
+  currentRunQueries = data.queries || [];
+  selectedQueryId = currentRunQueries[0]?.query_id || "";
   $("#runSummary").replaceChildren(
     card("queries", String(summary.query_count || 0)),
     metricSummaryCard("avg context tokens", summary.avg_context_tokens || {}, "number"),
     metricSummaryCard("avg total time", summary.avg_total_ms || {}, "ms"),
   );
-  $("#queryTable").replaceChildren(...(data.queries || []).map((q) => {
-    const node = memoryCard(q.query_id, q.query, "open details", []);
-    node.addEventListener("click", () => showQueryDetail(q));
+  renderQueryList();
+  if (currentRunQueries[0]) {
+    showQueryDetail(currentRunQueries[0]);
+  } else {
+    $("#queryDetail").replaceChildren(el("p", { class: "muted", text: "This run has no query details." }));
+  }
+}
+
+function renderQueryList() {
+  $("#queryCount").textContent = `${currentRunQueries.length} total`;
+  $("#queryTable").replaceChildren(...currentRunQueries.map((q) => {
+    const tags = [
+      q.category ? { text: q.category, class: "" } : null,
+      q.expected_route ? { text: q.expected_route, class: "l2" } : null,
+    ].filter(Boolean);
+    const node = memoryCard(q.query_id, q.query, q.expected_answer || "open details", tags);
+    node.classList.add("clickable-card", "lab-query-card");
+    if (q.query_id === selectedQueryId) node.classList.add("active");
+    node.addEventListener("click", () => {
+      selectedQueryId = q.query_id || "";
+      renderQueryList();
+      showQueryDetail(q);
+    });
     return node;
   }));
 }
 
 function showQueryDetail(q) {
   const strategies = ["full_context", "rag_baseline", "layered_memory"];
-  $("#queryDetail").replaceChildren(...strategies.map((s) => renderStrategyDetail(s, (q.strategies || {})[s] || {})));
+  $("#queryDetail").replaceChildren(
+    renderQueryHeader(q),
+    el("div", { class: "strategy-compare" }, strategies.map((s) => renderStrategyDetail(s, (q.strategies || {})[s] || {}))),
+  );
+}
+
+function renderQueryHeader(q) {
+  const expectedObjCount = (q.expected_obj_ids || []).length;
+  const expectedL2Count = (q.expected_l2_ids || []).length;
+  const expectedL3Count = (q.expected_l3_ids || []).length;
+  return el("div", { class: "query-detail-header" }, [
+    el("div", { class: "query-title-row" }, [
+      el("div", {}, [
+        el("div", { class: "label", text: q.query_id || "Query" }),
+        el("h2", { text: q.query || "" }),
+      ]),
+      el("div", { class: "tag-row" }, [
+        q.category ? tag(q.category, "") : null,
+        q.expected_route ? tag(q.expected_route, "l2") : null,
+        q.expected_winner ? tag(q.expected_winner, "feedback") : null,
+      ]),
+    ]),
+    el("div", { class: "query-context-grid" }, [
+      el("div", { class: "subpanel" }, [
+        el("h3", { text: "Expected Answer" }),
+        el("p", { class: "answer-text", text: q.expected_answer || "No expected answer attached to this query." }),
+      ]),
+      el("div", { class: "subpanel" }, [
+        el("h3", { text: "Gold Targets" }),
+        keyValueRows([
+          { label: "L1 objects", value: expectedObjCount },
+          { label: "L2 topics", value: expectedL2Count },
+          { label: "L3 topics", value: expectedL3Count },
+          { label: "Meetings", value: (q.gold_meeting_ids || []).join(", ") },
+        ]),
+      ]),
+    ]),
+  ]);
 }
 
 function metricValue(metrics, key, kind = "number") {
@@ -781,7 +861,7 @@ function renderStrategyDetail(strategy, item) {
     ]),
     el("div", { class: "answer-box" }, [
       el("h3", { text: "Answer" }),
-      el("p", { text: answer ? preview(answer, 900) : "No answer generated in this run." }),
+      el("p", { class: "answer-text", text: answer ? preview(answer, 1800) : "No answer generated in this run." }),
     ]),
     renderStrategyEvidence(strategy, item),
   ]);
