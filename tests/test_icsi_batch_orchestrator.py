@@ -7,6 +7,7 @@ from pathlib import Path
 from share_mem.run_icsi_batch import (
     BatchConfig,
     build_bridge_command,
+    build_filtered_share_tree,
     prepare_transcript_input,
     run_batch,
     validate_output_root_safety,
@@ -80,6 +81,39 @@ class ICSIBatchOrchestratorTests(unittest.TestCase):
             self.assertEqual([row["status"] for row in status["runs"]], ["dry_run", "dry_run"])
             self.assertTrue((root / "out" / "batch_status.json").exists())
             self.assertFalse((root / "out" / "share_mem" / "tree.json").exists())
+
+    def test_build_filtered_share_tree_keeps_raw_tree_unchanged(self) -> None:
+        tree = {
+            "tree_version": 1,
+            "last_updated_utc": "2026-06-05T00:00:00Z",
+            "meetings": [
+                {
+                    "meeting_id": "Bmr001",
+                    "timestamp": "2026-06-05T00:00:00Z",
+                    "meeting_date": "",
+                    "source_file": "Bmr001.txt",
+                    "phase_id": "",
+                    "memory_objects": [
+                        {"obj_id": "L1-Bmr001-001", "content": "drop inventory"},
+                        {"obj_id": "L1-Bmr001-002", "content": "keep protocol"},
+                    ],
+                }
+            ],
+        }
+        gate = {"filtered_candidate_obj_ids": ["L1-Bmr001-002"]}
+
+        filtered = build_filtered_share_tree(tree, gate)
+
+        self.assertEqual(
+            [obj["obj_id"] for obj in filtered["meetings"][0]["memory_objects"]],
+            ["L1-Bmr001-002"],
+        )
+        self.assertEqual(
+            [obj["obj_id"] for obj in tree["meetings"][0]["memory_objects"]],
+            ["L1-Bmr001-001", "L1-Bmr001-002"],
+        )
+        self.assertEqual(filtered["source_view"]["raw_tree_object_count"], 2)
+        self.assertEqual(filtered["source_view"]["filtered_object_count"], 1)
 
 
 if __name__ == "__main__":

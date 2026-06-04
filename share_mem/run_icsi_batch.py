@@ -77,6 +77,10 @@ class BatchConfig:
         return self.output_root / "validation"
 
     @property
+    def filtered_share_mem_root(self) -> Path:
+        return self.output_root / "filtered_share_mem"
+
+    @property
     def status_path(self) -> Path:
         return self.output_root / "batch_status.json"
 
@@ -173,6 +177,7 @@ def _write_json(path: Path, data: dict[str, Any]) -> None:
 def _clean_output(config: BatchConfig) -> None:
     for child in [
         config.share_mem_root,
+        config.filtered_share_mem_root,
         config.input_root,
         config.orchestration_log_root,
         config.validation_root,
@@ -200,6 +205,53 @@ def _refresh_share_mem(config: BatchConfig) -> dict[str, Any]:
     )
 
 
+def build_filtered_share_tree(tree: dict[str, Any], gate: dict[str, Any]) -> dict[str, Any]:
+    """Return an ICSI effective-L1 tree without mutating the raw L1 tree.
+
+    The raw extraction output remains under ``share_mem/``. This sidecar tree is
+    for downstream L2/L3 experiments that should ignore review-gated source-data
+    noise while keeping every retained object in normal share_mem shape.
+    """
+    allowed = {str(obj_id) for obj_id in gate.get("filtered_candidate_obj_ids", [])}
+    filtered_tree = dict(tree)
+    filtered_meetings: list[dict[str, Any]] = []
+    for meeting in tree.get("meetings", []):
+        if not isinstance(meeting, dict):
+            continue
+        meeting_copy = dict(meeting)
+        meeting_copy["memory_objects"] = [
+            dict(obj)
+            for obj in meeting.get("memory_objects", [])
+            if str(obj.get("obj_id", "")) in allowed
+        ]
+        filtered_meetings.append(meeting_copy)
+    filtered_tree["meetings"] = filtered_meetings
+    filtered_tree["source_view"] = {
+        "source": "icsi_l1_review_gate",
+        "sidecar_only": True,
+        "raw_tree_object_count": sum(
+            len(meeting.get("memory_objects", []))
+            for meeting in tree.get("meetings", [])
+            if isinstance(meeting, dict)
+        ),
+        "filtered_object_count": sum(len(meeting["memory_objects"]) for meeting in filtered_meetings),
+    }
+    return filtered_tree
+
+
+def _refresh_filtered_share_mem(config: BatchConfig, gate: dict[str, Any]) -> dict[str, Any]:
+    tree = load_share_tree(config.share_mem_root)
+    filtered_tree = build_filtered_share_tree(tree, gate)
+    manifest = refresh_share_mem_outputs(
+        root=config.filtered_share_mem_root,
+        tree=filtered_tree,
+        source_transcript_dir=config.transcript_dir,
+    )
+    manifest["source_view"] = filtered_tree.get("source_view", {})
+    _write_json(config.filtered_share_mem_root / "manifest.json", manifest)
+    return manifest
+
+
 def _run_validation(config: BatchConfig, label: str) -> dict[str, Any]:
     objects: list[dict[str, Any]] = []
     tree = load_share_tree(config.share_mem_root)
@@ -212,10 +264,18 @@ def _run_validation(config: BatchConfig, label: str) -> dict[str, Any]:
     out = config.validation_root / label
     quality = write_icsi_l1_quality_report(objects, out)
     gate = write_icsi_l1_review_gate(objects, out)
+    filtered_manifest = _refresh_filtered_share_mem(config, gate)
     return {
         "validation_dir": str(out),
         "quality_summary": quality.get("summary", {}),
         "review_gate_summary": gate.get("summary", {}),
+        "filtered_share_mem_root": str(config.filtered_share_mem_root),
+        "filtered_manifest": {
+            "meeting_count": filtered_manifest.get("meeting_count"),
+            "object_count": filtered_manifest.get("object_count"),
+            "tree_hash": filtered_manifest.get("tree_hash"),
+            "source_view": filtered_manifest.get("source_view", {}),
+        },
     }
 
 
