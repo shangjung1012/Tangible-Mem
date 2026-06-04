@@ -63,6 +63,30 @@ checks, split-review evidence, remaining risks, and a short demo flow. It says
 the system is deliverable for isolated/shadow-mode evaluation, but must not be
 promoted to canonical artifacts yet.
 
+## Shadow Runtime Export
+
+Optimization v2 can now be exported into a runtime-compatible sidecar under the
+same isolated run root. This is a shadow-mode bridge only: it lets the app read
+v2 L2/L3 sidecars for comparison without copying them into canonical
+`long_term/l2` or `long_term/l3`.
+
+```powershell
+uv run python optimization/long_term_v2/export_runtime_view.py `
+  --run-root optimization/runs/grace_v2_det_rescue_20260529_065827 `
+  --clean
+```
+
+To exercise that exported view in local retrieval:
+
+```powershell
+$env:LONG_TERM_BACKEND = "optimization_v2"
+$env:OPTIMIZATION_V2_RUN_ROOT = "optimization/runs/grace_v2_det_rescue_20260529_065827"
+```
+
+Unset those environment variables to return to canonical runtime artifacts.
+The app falls back to canonical if the v2 runtime export is missing or
+incomplete.
+
 Rebuild command:
 
 ```powershell

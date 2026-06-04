@@ -1,21 +1,39 @@
 # Long-Term Memory
 
-`long_term/` owns the active long-term recall surface and generated L2/L3 views
-over canonical L1 evidence from `share_mem/`.
+`long_term/` owns the current canonical Grace recall surface and fallback L2/L3
+sidecars over immutable L1 evidence from `share_mem/`.
 
 Do not use `long_term/tree.json` as a current source of truth; the old temporal
 pipeline is archived under `long_term/archive/legacy_temporal_l2_l3/`.
+
+For new datasets and future L2/L3 promotion work, prefer the isolated
+profile-driven pipeline under `optimization/long_term_v2/`. The canonical
+builder in this folder is still available as the Grace fallback and regression
+baseline, but it is no longer the preferred path for ICSI or other new corpus
+experiments.
+
+Canonical sidecars remain the default runtime backend. For shadow-mode
+comparison only, export an optimization v2 run with
+`optimization/long_term_v2/export_runtime_view.py`, then set
+`LONG_TERM_BACKEND=optimization_v2` and `OPTIMIZATION_V2_RUN_ROOT=<run-root>`.
+If the exported v2 runtime view is missing or incomplete, the app falls back to
+the canonical backend.
 
 ## Active Contract
 
 - L1 source: `share_mem/tree.json` and `share_mem/meetings/<meeting_id>.json`.
 - Recall: `long_term/recall.py`.
 - Planner: `long_term/recall_planner.py`.
-- L2 builder: `long_term/build_l2_view.py`.
-- L2 validator: `long_term/validate_l2_view.py`.
+- L2 builder fallback: `long_term/build_l2_view.py`.
+- L2 validator fallback: `long_term/validate_l2_view.py`.
 - CLI: `long_term/cli.py`.
 
-## Build And Validate L2
+## Legacy Canonical Build And Validation
+
+Use this path when rebuilding the current Grace fallback sidecars or when
+running a direct comparison against optimization v2. Do not use it as the
+primary L2/L3 induction path for ICSI or new datasets without an explicit
+comparison objective.
 
 ```bash
 uv run long_term/cli.py build-l2-view \
@@ -46,6 +64,12 @@ underscores/hyphens with spaces, removing punctuation, dropping generic or
 type-like labels, mapping aliases to canonical L2 labels, and deduplicating by
 canonical label. Content keyword rules only confirm or refine those seeds,
 especially when the seed is broad.
+
+This builder is Grace-tuned. Its data format, sidecar generation, and validators
+remain useful, but its topic assignment behavior is not the target architecture
+for new datasets. New dataset work should generate L2/L3 sidecars with
+`optimization/long_term_v2/` and keep outputs under `optimization/runs/` until a
+runtime backend selector is promoted.
 
 L3 promotion is deterministic by default. To let Gemini assist only the L3
 split stage, run:
@@ -272,3 +296,8 @@ uv run python long_term/evaluate_retrieval.py \
 The old temporal L1/L2/L3 pipeline, old snapshots, and prototype viewers are
 under `long_term/archive/`. They are historical reference only and are not
 exposed through active CLI commands.
+
+The current canonical L2/L3 builder implementation is archived under
+`long_term/archive/canonical_l2_l3_builder_legacy/`. Root-level modules with the
+same names remain as compatibility wrappers for existing CLI commands, tests,
+and rollback workflows.

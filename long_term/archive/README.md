@@ -3,8 +3,9 @@
 This folder keeps small reference artifacts from older long-term-memory experiments.
 It is not part of the active runtime path.
 
-Active code should stay in `long_term/` root modules. Historical docs that
-belong to the old temporal pipeline can live in this archive.
+Active runtime code should stay in `long_term/` root modules. Grace-tuned
+builder implementation code can live in this archive when root-level
+compatibility wrappers preserve old imports and CLI commands.
 Generated caches, SQLite working databases, pycache files, and per-run bridge snapshots
 should not be archived here because they can be regenerated.
 
@@ -13,6 +14,9 @@ Current archive contents:
 - `backup_pre_redesign/tree.json.bak`: compact pre-redesign tree backup.
 - `redesign_preview/tree_source.json`: compact redesign preview source tree.
 - `method_changes.json`: historical method-change reference output.
+- `canonical_l2_l3_builder_legacy/`: migration boundary and inventory for the
+  canonical Grace-tuned L2/L3 builder implementation. Root-level wrappers keep
+  compatibility; new dataset work should prefer `optimization/long_term_v2/`.
 - `legacy_temporal_l2_l3/`: archived old temporal build/summarize pipeline,
   incremental baseline, old snapshots, and old temporal tree.
 - `prototype_l2_threads/`: archived L2 topic-thread and thread-memory

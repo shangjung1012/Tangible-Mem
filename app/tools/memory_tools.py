@@ -3,6 +3,13 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+APP_DIR = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from config import GEMINI_API_KEY, MAX_RECALL_CONTEXT_CHARS, MODEL_NAME, PLANNER_MODEL_NAME
 from memory_context import (
     retrieve_long_term_context,
@@ -10,10 +17,6 @@ from memory_context import (
     retrieve_short_term_context_adapter,
 )
 from runtime_log import log_tool_result
-
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 
 def get_memory_context(query: str) -> dict[str, str]:

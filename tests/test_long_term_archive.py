@@ -29,6 +29,31 @@ class LongTermArchiveTests(unittest.TestCase):
         self.assertTrue((legacy_dir / "tree.json").exists())
         self.assertTrue((legacy_dir / "snapshots").is_dir())
 
+    def test_canonical_l2_l3_builder_implementation_is_archived_behind_wrappers(self) -> None:
+        legacy_dir = LONG_TERM_DIR / "archive" / "canonical_l2_l3_builder_legacy"
+
+        self.assertTrue((legacy_dir / "build_l2_view.py").exists())
+        self.assertTrue((legacy_dir / "validate_l2_view.py").exists())
+        self.assertTrue((legacy_dir / "validate_l3_view.py").exists())
+        self.assertTrue((legacy_dir / "l3_promotion.py").exists())
+
+        build_l2_view = importlib.import_module("build_l2_view")
+        validate_l2_view = importlib.import_module("validate_l2_view")
+        validate_l3_view = importlib.import_module("validate_l3_view")
+
+        self.assertIn(
+            "canonical_l2_l3_builder_legacy",
+            str(Path(build_l2_view.build_l2_view_outputs.__code__.co_filename)),
+        )
+        self.assertIn(
+            "canonical_l2_l3_builder_legacy",
+            str(Path(validate_l2_view.validate_l2_view_outputs.__code__.co_filename)),
+        )
+        self.assertIn(
+            "canonical_l2_l3_builder_legacy",
+            str(Path(validate_l3_view.validate_l3_view_outputs.__code__.co_filename)),
+        )
+
     def test_app_memory_context_still_imports_active_recall_stack(self) -> None:
         from app import memory_context
 

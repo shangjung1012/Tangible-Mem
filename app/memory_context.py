@@ -72,6 +72,68 @@ def _long_term_runtime_budget_profile() -> dict[str, Any]:
         return get_retrieval_budget_profile("generous_layered")
 
 
+def _canonical_long_term_runtime_paths(*, fallback_reason: str = "") -> dict[str, Any]:
+    paths = {
+        "backend": "canonical",
+        "tree_path": LONG_TERM_TREE_PATH,
+        "l2_index_path": LONG_TERM_L2_INDEX_PATH,
+        "l2_view_path": LONG_TERM_L2_VIEW_PATH,
+        "l2_secondary_links_path": LONG_TERM_L2_SECONDARY_LINKS_PATH,
+        "l3_promotions_path": LONG_TERM_L3_PROMOTIONS_PATH,
+        "l3_view_path": LONG_TERM_L3_VIEW_PATH,
+        "l3_index_path": LONG_TERM_L3_INDEX_PATH,
+    }
+    if fallback_reason:
+        paths["fallback_reason"] = fallback_reason
+    return paths
+
+
+def _resolve_repo_relative_path(value: str) -> Path:
+    path = Path(value)
+    return path if path.is_absolute() else ROOT / path
+
+
+def resolve_long_term_runtime_paths() -> dict[str, Any]:
+    backend = os.getenv("LONG_TERM_BACKEND", "canonical").strip().lower()
+    if backend not in {"optimization_v2", "optimization-v2", "v2"}:
+        return _canonical_long_term_runtime_paths()
+
+    runtime_root_env = os.getenv("OPTIMIZATION_V2_RUNTIME_ROOT", "").strip()
+    run_root_env = os.getenv("OPTIMIZATION_V2_RUN_ROOT", "").strip()
+    if runtime_root_env:
+        runtime_root = _resolve_repo_relative_path(runtime_root_env)
+    elif run_root_env:
+        runtime_root = _resolve_repo_relative_path(run_root_env) / "runtime"
+    else:
+        return _canonical_long_term_runtime_paths(
+            fallback_reason="optimization_v2_runtime_not_configured"
+        )
+
+    paths = {
+        "backend": "optimization_v2",
+        "runtime_root": runtime_root,
+        "tree_path": runtime_root / "input_snapshot" / "tree.json",
+        "l2_index_path": runtime_root / "l2" / "l2_index.json",
+        "l2_view_path": runtime_root / "l2" / "l2_view.json",
+        "l2_secondary_links_path": runtime_root / "l2" / "l2_secondary_links.json",
+        "l3_promotions_path": runtime_root / "l3" / "l3_promotions.json",
+        "l3_view_path": runtime_root / "l3" / "l3_view.json",
+        "l3_index_path": runtime_root / "l3" / "l3_index.json",
+    }
+    required = [
+        paths["tree_path"],
+        paths["l2_index_path"],
+        paths["l2_view_path"],
+        paths["l3_view_path"],
+        paths["l3_index_path"],
+    ]
+    if not all(Path(path).exists() for path in required):
+        return _canonical_long_term_runtime_paths(
+            fallback_reason="optimization_v2_runtime_incomplete"
+        )
+    return paths
+
+
 def retrieve_memory_context(
     query: str,
     api_key: str,
@@ -179,7 +241,8 @@ def retrieve_long_term_context(
     use_llm_planner: bool = False,
     retrieval_mode: str = "hybrid",
 ) -> str:
-    tree = load_json_object(LONG_TERM_TREE_PATH)
+    runtime_paths = resolve_long_term_runtime_paths()
+    tree = load_json_object(runtime_paths["tree_path"])
     if not tree:
         return "（無長期記憶）"
 
@@ -201,12 +264,12 @@ def retrieve_long_term_context(
         api_key=api_key,
         model_name=model_name,
         short_term_memory=None,
-        l2_index_path=LONG_TERM_L2_INDEX_PATH,
-        l2_view_path=LONG_TERM_L2_VIEW_PATH,
-        l2_secondary_links_path=LONG_TERM_L2_SECONDARY_LINKS_PATH,
-        l3_promotions_path=LONG_TERM_L3_PROMOTIONS_PATH,
-        l3_view_path=LONG_TERM_L3_VIEW_PATH,
-        l3_index_path=LONG_TERM_L3_INDEX_PATH,
+        l2_index_path=runtime_paths["l2_index_path"],
+        l2_view_path=runtime_paths["l2_view_path"],
+        l2_secondary_links_path=runtime_paths["l2_secondary_links_path"],
+        l3_promotions_path=runtime_paths["l3_promotions_path"],
+        l3_view_path=runtime_paths["l3_view_path"],
+        l3_index_path=runtime_paths["l3_index_path"],
         top_k_raw=int(budget["top_k_raw"]),
         max_l1_seeds_for_prompt=int(budget["max_l1_seeds_for_prompt"]),
         max_global_topic_map_chars=int(budget["max_global_topic_map_chars"]),
