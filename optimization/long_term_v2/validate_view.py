@@ -10,7 +10,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from optimization.long_term_v2.io_utils import load_json, utc_now_iso, write_json, write_text
-from optimization.long_term_v2.profiles import load_profile, profile_generic_topic_labels, profile_type_like_labels
+from optimization.long_term_v2.profiles import (
+    load_profile,
+    profile_generic_topic_labels,
+    profile_rejected_topic_labels,
+    profile_type_like_labels,
+)
 
 
 def _issue(severity: str, code: str, message: str, **extra: Any) -> dict[str, Any]:
@@ -65,6 +70,8 @@ def _label_issue(label: str, *, profile: dict[str, Any]) -> str:
     clean = str(label).strip().lower().replace("_", " ")
     if clean in profile_type_like_labels(profile):
         return "type_like_l2_label"
+    if clean in profile_rejected_topic_labels(profile):
+        return "rejected_l2_label"
     generic_labels = profile_generic_topic_labels(profile)
     if clean in generic_labels:
         return "generic_l2_label"
@@ -141,6 +148,19 @@ def validate_run(*, run_root: Path | str) -> dict[str, Any]:
     assigned_l3_ids = set(l3_index)
     for parent in l3_view.get("l3_parents", []) or []:
         for child in parent.get("child_l2_nodes", []) or []:
+            code = _label_issue(str(child.get("label", "") or ""), profile=profile)
+            if code:
+                child_code = code.replace("_l2_label", "_child_l2_label")
+                item = _issue(
+                    "warning",
+                    child_code,
+                    "Child L2 label needs review.",
+                    parent_l3_id=parent.get("l3_id"),
+                    child_l2_id=child.get("child_l2_id"),
+                    label=child.get("label"),
+                )
+                issues.append(item)
+                manual_queue.append(item)
             count = len(child.get("linked_obj_ids", []) or [])
             if count < 3:
                 item = _issue("warning", "tiny_child_l2", "Child L2 has fewer than 3 L1 objects.", child_l2_id=child.get("child_l2_id"))

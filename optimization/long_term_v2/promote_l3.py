@@ -7,12 +7,15 @@ from typing import Any
 
 from optimization.long_term_v2.io_utils import utc_now_iso, write_json, write_text
 from optimization.long_term_v2.profiles import (
+    profile_generic_topic_labels,
     profile_generic_ngram_terms,
+    profile_rejected_topic_labels,
     profile_max_cjk_token_chars,
     profile_child_label_normalization,
     profile_role_artifact_tokens,
     profile_role_artifact_terms,
     profile_stopwords,
+    profile_type_like_labels,
     profile_weak_child_terms,
 )
 from optimization.long_term_v2.schemas import L3_SCHEMA_VERSION
@@ -224,6 +227,12 @@ def _is_usable_child_term(
         return False
     parts = term.split()
     if len(parts) < 2:
+        return False
+    if term in profile_rejected_topic_labels(profile):
+        return False
+    if term in profile_type_like_labels(profile):
+        return False
+    if term in profile_generic_topic_labels(profile):
         return False
     term_tokens = set(parts)
     if parent_tokens.issuperset(term_tokens):

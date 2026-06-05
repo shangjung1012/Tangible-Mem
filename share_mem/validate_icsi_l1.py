@@ -150,6 +150,21 @@ SOURCE_DATA_STRONG_DURABLE_KEYWORDS = {
     "speaker identification",
 }
 
+SOURCE_DATA_DURABLE_PROTOCOL_KEYWORDS = {
+    "acoustic analysis",
+    "addressee detection",
+    "channel mapping issue",
+    "data collection protocol",
+    "gaze detection",
+    "intended addressee",
+    "metadata capture",
+    "metadata collection",
+    "off-by-one",
+    "speaker addressee",
+    "standardized and documented procedure",
+    "zero-based indexing",
+}
+
 TOPIC_ALIAS_GROUPS: dict[str, set[str]] = {
     "annotation data model": {
         "annotation format",
@@ -184,7 +199,7 @@ TOPIC_ALIAS_GROUPS: dict[str, set[str]] = {
 # Same evidence is common in ICSI because a short exchange can contain a finding,
 # proposal, action item, and open issue. Only near-paraphrases should be removed
 # from the filtered view automatically; moderate similarity stays review-only.
-DUPLICATE_AUTO_MERGE_MIN_CONTENT_SIMILARITY = 0.50
+DUPLICATE_AUTO_MERGE_MIN_CONTENT_SIMILARITY = 0.90
 
 
 def _utc_now_iso() -> str:
@@ -235,6 +250,13 @@ def _has_durable_setup_signal(obj: dict[str, Any]) -> bool:
 def _is_source_data_only(obj: dict[str, Any]) -> bool:
     text = _normalize_text(_obj_text(obj))
     if not any(keyword in text for keyword in SOURCE_DATA_ONLY_KEYWORDS):
+        return False
+    if any(keyword in text for keyword in SOURCE_DATA_DURABLE_PROTOCOL_KEYWORDS):
+        return False
+    if (
+        ("not being recorded" in text or "not currently being recorded" in text)
+        and any(keyword in text for keyword in {"metadata", "channel mapping", "microphone placement"})
+    ):
         return False
     if any(keyword in text for keyword in SOURCE_DATA_STRONG_INVENTORY_KEYWORDS):
         return not any(keyword in text for keyword in SOURCE_DATA_STRONG_DURABLE_KEYWORDS)

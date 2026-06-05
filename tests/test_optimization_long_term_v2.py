@@ -958,6 +958,57 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             child_labels,
         )
 
+    def test_icsi_l3_child_labels_reject_setup_fragments(self) -> None:
+        profile = load_profile(REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "isci_meeting.yaml")
+        timeline = [
+            {
+                "meeting_id": "SYN",
+                "meeting_date": "2026-05-01",
+                "obj_id": f"L1-SYN-{idx:03d}",
+                "summary": (
+                    "The team discussed recording setup, microphone placement, wire management, "
+                    "and equipment cabinet changes for reliable meeting data collection."
+                ),
+                "importance": 0.76,
+            }
+            for idx in range(1, 31)
+        ]
+        l2_result = {
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-recording-setup",
+                    "label": "recording setup",
+                    "linked_obj_ids": [row["obj_id"] for row in timeline],
+                    "timeline_digest": timeline,
+                    "top_semantic_terms": [
+                        {"term": "stuff gets broken", "object_count": 40},
+                        {"term": "third extra person", "object_count": 40},
+                        {"term": "another building", "object_count": 40},
+                        {"term": "hoc data format", "object_count": 40},
+                        {"term": "recording equipment", "object_count": 8},
+                        {"term": "microphone placement", "object_count": 8},
+                        {"term": "wire management", "object_count": 8},
+                    ],
+                }
+            ]
+        }
+
+        l3 = build_l3_view(l2_result=l2_result, profile=profile)
+        child_labels = [
+            child["label"]
+            for parent in l3["l3_parents"]
+            for child in parent.get("child_l2_nodes", [])
+        ]
+
+        self.assertFalse(
+            {"stuff gets broken", "third extra person", "another building", "hoc data format"} & set(child_labels),
+            child_labels,
+        )
+        self.assertTrue(
+            {"recording equipment", "microphone placement", "wire management"} & set(child_labels),
+            child_labels,
+        )
+
     def test_l3_uses_more_children_for_large_l2_to_avoid_oversized_child(self) -> None:
         profile = load_profile(REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "mentor_mentee.yaml")
         topics = [
@@ -1289,6 +1340,83 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(validation["severe_count"], 0)
             self.assertTrue(
                 any(issue["code"] == "oversized_child_l2" for issue in validation["manual_review_queue"]),
+                validation["manual_review_queue"],
+            )
+
+    def test_validation_flags_rejected_child_l2_label(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "bad_child_label"
+            (run_root / "input_snapshot").mkdir(parents=True, exist_ok=True)
+            (run_root / "semantic_keys").mkdir(parents=True, exist_ok=True)
+            (run_root / "l2").mkdir(parents=True, exist_ok=True)
+            (run_root / "l3").mkdir(parents=True, exist_ok=True)
+            linked_ids = [f"L1-{index:03d}" for index in range(6)]
+            (run_root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "source_l1_count": 6,
+                        "profile_path": str(REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "isci_meeting.yaml"),
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "input_snapshot" / "tree.json").write_text(json.dumps({"meetings": []}), encoding="utf-8")
+            (run_root / "semantic_keys" / "semantic_key_index.json").write_text(
+                json.dumps({"objects": {obj_id: {} for obj_id in linked_ids}}),
+                encoding="utf-8",
+            )
+            (run_root / "l2" / "l2_view.json").write_text(
+                json.dumps(
+                    {
+                        "l2_nodes": [
+                            {
+                                "l2_id": "L2-recording-setup",
+                                "label": "recording setup",
+                                "definition": "Recording setup topic.",
+                                "inclusion_criteria": ["recording setup evidence"],
+                                "exclusion_criteria": ["unrelated evidence"],
+                                "linked_obj_ids": linked_ids,
+                                "representative_l1_ids": linked_ids[:3],
+                                "creation_rationale": "Recurring evidence supports this topic.",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l2" / "l2_index.json").write_text(
+                json.dumps({obj_id: {"rationale": "Assigned from evidence.", "score_breakdown": {}} for obj_id in linked_ids}),
+                encoding="utf-8",
+            )
+            (run_root / "l3" / "l3_view.json").write_text(
+                json.dumps(
+                    {
+                        "l3_parents": [
+                            {
+                                "l3_id": "L3-recording-setup",
+                                "label": "recording setup",
+                                "child_l2_nodes": [
+                                    {
+                                        "child_l2_id": "L2-recording-setup-stuff-gets-broken",
+                                        "label": "stuff gets broken",
+                                        "linked_obj_ids": linked_ids,
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l3" / "l3_index.json").write_text(
+                json.dumps({obj_id: {"child_l2_id": "L2-recording-setup-stuff-gets-broken"} for obj_id in linked_ids}),
+                encoding="utf-8",
+            )
+
+            validation = validate_run(run_root=run_root)
+
+            self.assertTrue(
+                any(issue["code"] == "rejected_child_l2_label" for issue in validation["manual_review_queue"]),
                 validation["manual_review_queue"],
             )
 

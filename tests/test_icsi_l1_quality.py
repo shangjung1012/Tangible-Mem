@@ -227,6 +227,71 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertIn("L1-Bdb001-021", gate["filtered_candidate_obj_ids"])
         self.assertIn("L1-Bdb001-021", gate["duplicate_reviews"][0]["manual_review_obj_ids"])
 
+    def test_same_evidence_different_roles_stay_filtered_not_auto_merged(self) -> None:
+        shared_evidence = (
+            "[fe016]: I bet you could pick up intended addressees in the acoustics. "
+            "[me025]: That would make the meeting summarization work easier."
+        )
+        objects = [
+            _obj(
+                "L1-Bmr006-010",
+                obj_type="action_item",
+                content=(
+                    "A new research approach was introduced to identify meeting "
+                    "hot spots for summarization by analyzing raw interaction cues."
+                ),
+                evidence=shared_evidence,
+                importance=0.68,
+                topics=["data analysis", "event detection", "acoustic analysis"],
+            ),
+            _obj(
+                "L1-Bmr006-012",
+                obj_type="proposal",
+                content=(
+                    "A new research idea was proposed to identify important meeting "
+                    "segments or hot spots for summarization using microphone and "
+                    "interaction cues."
+                ),
+                evidence=shared_evidence,
+                importance=0.73,
+                topics=["meeting summarization", "acoustic analysis"],
+            ),
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["merge_candidate_count"], 0)
+        self.assertEqual(gate["summary"]["duplicate_review_candidate_count"], 1)
+        self.assertIn("L1-Bmr006-010", gate["filtered_candidate_obj_ids"])
+        self.assertIn("L1-Bmr006-012", gate["filtered_candidate_obj_ids"])
+
+    def test_same_evidence_near_identical_claims_can_be_auto_merge_candidates(self) -> None:
+        shared_evidence = "[me011]: We will run another digit reading session at the end."
+        objects = [
+            _obj(
+                "L1-Bmr002-022",
+                obj_type="decision",
+                content="The team decided to conduct another digit reading session at the end of the meeting to collect more data.",
+                evidence=shared_evidence,
+                importance=0.65,
+                topics=["data collection protocol"],
+            ),
+            _obj(
+                "L1-Bmr002-023",
+                obj_type="action_item",
+                content="The team decided to conduct another digit reading session at the end of the meeting to collect more data.",
+                evidence=shared_evidence,
+                importance=0.63,
+                topics=["data collection protocol"],
+            ),
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["merge_candidate_count"], 1)
+        self.assertIn("L1-Bmr002-023", gate["merge_candidate_obj_ids"])
+        self.assertNotIn("L1-Bmr002-023", gate["filtered_candidate_obj_ids"])
+
     def test_write_review_gate_outputs_sidecar_and_filtered_view(self) -> None:
         objects = [
             _obj(
@@ -496,6 +561,62 @@ class ICSIQualityTests(unittest.TestCase):
         self.assertEqual(gate["summary"]["drop_candidate_count"], 1)
         self.assertIn("L1-Bmr001-021", gate["drop_candidate_obj_ids"])
         self.assertNotIn("L1-Bmr001-021", gate["filtered_candidate_obj_ids"])
+
+    def test_review_gate_keeps_channel_mapping_protocol_issue(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bmr002-003",
+                obj_type="open_issue",
+                content=(
+                    "There is a persistent off-by-one error between microphone "
+                    "numbers and zero-based channel numbers, causing confusion "
+                    "during data collection. No official group procedure has "
+                    "been adopted to resolve this channel mapping issue."
+                ),
+                evidence=(
+                    "[me011]: I'm talking on mike two. [me025]: That's in "
+                    "channel one. [me011]: Channel one, OK, so we're off by one."
+                ),
+                importance=0.60,
+                topics=[
+                    "microphone identification",
+                    "channel mapping",
+                    "data collection protocol",
+                    "data quality",
+                    "metadata",
+                    "zero-based indexing",
+                ],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["drop_candidate_count"], 0)
+        self.assertIn("L1-Bmr002-003", gate["filtered_candidate_obj_ids"])
+
+    def test_review_gate_keeps_acoustic_addressee_hypothesis(self) -> None:
+        objects = [
+            _obj(
+                "L1-Bmr005-030",
+                obj_type="proposal",
+                content=(
+                    "A hypothesis was proposed that the intended addressee of "
+                    "speech could be detected from acoustic signals, because gaze "
+                    "direction correlates with voice directionality."
+                ),
+                evidence=(
+                    "[fe016]: I bet you could pick that up in the acoustics, "
+                    "because your gaze is correlated with directionality."
+                ),
+                importance=0.65,
+                topics=["gaze detection", "addressee detection", "acoustic analysis"],
+            )
+        ]
+
+        gate = build_icsi_l1_review_gate(objects)
+
+        self.assertEqual(gate["summary"]["drop_candidate_count"], 0)
+        self.assertIn("L1-Bmr005-030", gate["filtered_candidate_obj_ids"])
 
     def test_write_report_outputs_json_and_markdown(self) -> None:
         objects = [

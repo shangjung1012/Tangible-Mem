@@ -103,11 +103,17 @@ def profile_type_like_labels(profile: dict[str, Any]) -> set[str]:
 
 
 def profile_generic_topic_labels(profile: dict[str, Any]) -> set[str]:
-    return _string_set(profile_label_policy(profile).get("generic_single_labels", []))
+    policy = profile_label_policy(profile)
+    return _string_set(policy.get("generic_single_labels", [])) | _string_set(
+        policy.get("additional_generic_single_labels", [])
+    )
 
 
 def profile_rejected_topic_labels(profile: dict[str, Any]) -> set[str]:
-    return _string_set(profile_label_policy(profile).get("reject_exact_labels", []))
+    policy = profile_label_policy(profile)
+    return _string_set(policy.get("reject_exact_labels", [])) | _string_set(
+        policy.get("additional_reject_exact_labels", [])
+    )
 
 
 def profile_role_artifact_terms(profile: dict[str, Any]) -> set[str]:
@@ -123,7 +129,12 @@ def profile_role_artifact_tokens(profile: dict[str, Any]) -> set[str]:
 
 
 def profile_weak_child_terms(profile: dict[str, Any]) -> set[str]:
-    return profile_generic_topic_labels(profile) | _string_set(profile_label_policy(profile).get("weak_child_terms", []))
+    policy = profile_label_policy(profile)
+    return (
+        profile_generic_topic_labels(profile)
+        | _string_set(policy.get("weak_child_terms", []))
+        | _string_set(policy.get("additional_weak_child_terms", []))
+    )
 
 
 def profile_stopwords(profile: dict[str, Any]) -> set[str]:
