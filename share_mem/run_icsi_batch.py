@@ -12,6 +12,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from optimization.output_roots import resolve_memory_run_root
+from optimization.run_manifest import write_run_manifest
+
 try:
     from .store import load_share_tree, refresh_share_mem_outputs
     from .validate_icsi_l1 import write_icsi_l1_quality_report, write_icsi_l1_review_gate
@@ -23,7 +30,6 @@ except ImportError:  # pragma: no cover - direct script execution fallback
     )
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TRANSCRIPT_DIR = REPO_ROOT / "meeting_recording" / "transcript" / "ISCI"
 DEFAULT_MODEL = "gemini-2.5-pro"
 
@@ -54,6 +60,8 @@ class BatchConfig:
     timeout_seconds: int = 7200
     transcript_glob: str = "*.txt"
     max_files: int | None = None
+    start_after: str = ""
+    target_success_count: int | None = None
     resume: bool = False
     continue_on_failure: bool = False
     dry_run: bool = False
@@ -95,6 +103,18 @@ def validate_output_root_safety(output_root: Path | str) -> Path:
 
 def discover_transcripts(config: BatchConfig) -> list[Path]:
     transcripts = sorted(config.transcript_dir.glob(config.transcript_glob), key=lambda path: path.name)
+    start_after = str(config.start_after or "").strip()
+    if start_after:
+        marker_index: int | None = None
+        for index, path in enumerate(transcripts):
+            if path.name == start_after or path.stem == Path(start_after).stem:
+                marker_index = index
+                break
+        if marker_index is None:
+            raise ValueError(
+                f"start-after marker not found under {config.transcript_dir}: {start_after}"
+            )
+        transcripts = transcripts[marker_index + 1 :]
     if config.max_files is not None:
         transcripts = transcripts[: max(0, config.max_files)]
     return transcripts
@@ -166,7 +186,7 @@ def build_bridge_command(config: BatchConfig, transcript_path: Path) -> list[str
 def _load_status(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {"schema_version": 1, "runs": []}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def _write_json(path: Path, data: dict[str, Any]) -> None:
@@ -317,6 +337,33 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
     transcripts = discover_transcripts(config)
     if not transcripts:
         raise RuntimeError(f"No transcripts matched {config.transcript_glob} under {config.transcript_dir}")
+    write_run_manifest(
+        run_root=config.output_root,
+        dataset=config.dataset_profile,
+        run_kind="bmr_first360" if config.line_limit else "bmr_full",
+        source_paths=transcripts,
+        config={
+            "transcript_dir": str(config.transcript_dir),
+            "output_root": str(config.output_root),
+            "dataset_profile": config.dataset_profile,
+            "taxonomy": config.taxonomy,
+            "include_legacy_type": config.include_legacy_type,
+            "content_language": config.content_language,
+            "window_size": config.window_size,
+            "lookback_lines": config.lookback_lines,
+            "lookahead_lines": config.lookahead_lines,
+            "previous_context": config.previous_context,
+            "line_limit": config.line_limit,
+            "timeout_seconds": config.timeout_seconds,
+            "transcript_glob": config.transcript_glob,
+            "max_files": config.max_files,
+            "start_after": config.start_after,
+            "target_success_count": config.target_success_count,
+            "resume": config.resume,
+            "continue_on_failure": config.continue_on_failure,
+            "dry_run": config.dry_run,
+        },
+    )
 
     status = _load_status(config.status_path)
     status.update(
@@ -338,6 +385,8 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
                 "timeout_seconds": config.timeout_seconds,
                 "transcript_glob": config.transcript_glob,
                 "max_files": config.max_files,
+                "start_after": config.start_after,
+                "target_success_count": config.target_success_count,
                 "resume": config.resume,
                 "continue_on_failure": config.continue_on_failure,
                 "dry_run": config.dry_run,
@@ -348,6 +397,13 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
     completed_hashes = _completed_source_hashes(status) if config.resume else {}
 
     for source_path in transcripts:
+        if config.target_success_count is not None:
+            succeeded_count = sum(1 for run in runs if run.get("status") == "succeeded")
+            if succeeded_count >= config.target_success_count:
+                status["target_success_reached"] = True
+                _write_json(config.status_path, status)
+                break
+
         source_hash = sha256_file(source_path)
         if config.resume and completed_hashes.get(str(source_path)) == source_hash:
             runs.append(
@@ -428,6 +484,8 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
         "timed_out_count": sum(1 for run in runs if run.get("status") == "timed_out"),
         "skipped_count": sum(1 for run in runs if run.get("status") == "skipped"),
         "dry_run_count": sum(1 for run in runs if run.get("status") == "dry_run"),
+        "target_success_count": config.target_success_count,
+        "target_success_reached": bool(status.get("target_success_reached", False)),
     }
     _write_json(config.status_path, status)
     return status
@@ -437,6 +495,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run ICSI L1 extraction one transcript at a time.")
     parser.add_argument("--transcript-dir", default=str(DEFAULT_TRANSCRIPT_DIR))
     parser.add_argument("--output-root", default="")
+    parser.add_argument("--output-base", default="")
+    parser.add_argument("--run-id", default="")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--dataset-profile", default="isci")
     parser.add_argument("--taxonomy", choices=["v1", "v2-memory-roles"], default="v2-memory-roles")
@@ -451,6 +511,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=int, default=7200)
     parser.add_argument("--transcript-glob", default="*.txt")
     parser.add_argument("--max-files", type=int, default=None)
+    parser.add_argument("--start-after", default="")
+    parser.add_argument("--target-success-count", type=int, default=None)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--continue-on-failure", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -459,9 +521,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def config_from_args(args: argparse.Namespace) -> BatchConfig:
-    output_root = Path(args.output_root) if args.output_root else (
-        REPO_ROOT / "share_mem_experiments" / f"icsi_l1_batch_{_timestamp_for_path()}"
-    )
+    if args.output_root:
+        output_root = Path(args.output_root)
+    elif args.output_base:
+        run_kind = "bmr_first360" if args.line_limit else "bmr_full"
+        output_root = resolve_memory_run_root(
+            base_root=Path(args.output_base),
+            dataset="icsi",
+            run_kind=run_kind,
+            run_id=str(args.run_id or _timestamp_for_path()),
+        )
+    else:
+        output_root = REPO_ROOT / "share_mem_experiments" / f"icsi_l1_batch_{_timestamp_for_path()}"
     return BatchConfig(
         transcript_dir=Path(args.transcript_dir),
         output_root=output_root,
@@ -479,6 +550,8 @@ def config_from_args(args: argparse.Namespace) -> BatchConfig:
         timeout_seconds=int(args.timeout_seconds),
         transcript_glob=str(args.transcript_glob),
         max_files=args.max_files,
+        start_after=str(args.start_after),
+        target_success_count=args.target_success_count,
         resume=bool(args.resume),
         continue_on_failure=bool(args.continue_on_failure),
         dry_run=bool(args.dry_run),

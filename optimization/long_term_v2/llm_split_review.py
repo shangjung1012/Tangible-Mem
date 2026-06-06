@@ -49,6 +49,31 @@ def _split_review_source_ids(root: Path) -> set[str]:
     }
 
 
+def _topic_review_source_ids(path: Path | str | None) -> set[str]:
+    if not path:
+        return set()
+    review_path = Path(path)
+    if not review_path.exists():
+        return set()
+    review = load_json(review_path)
+    items = review.get("items", []) or review.get("issues", []) or review.get("manual_review_items", []) or []
+    source_ids: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        code = str(item.get("code", "") or "")
+        action = str(item.get("action", "") or "")
+        if code not in {"needs_topic_review", "broad_l2_mixed_signatures", "oversized_l2"} and action not in {
+            "needs_topic_review",
+            "needs_split_review",
+        }:
+            continue
+        l2_id = str(item.get("l2_id", "") or item.get("source_l2_id", "") or "")
+        if l2_id:
+            source_ids.add(l2_id)
+    return source_ids
+
+
 def _compact_split_source(node: dict[str, Any], *, sample_limit: int) -> dict[str, Any]:
     return {
         "source_l2_id": node.get("l2_id", ""),
@@ -146,7 +171,30 @@ def _normalized_child_candidates(row: dict[str, Any], allowed: set[str]) -> list
     return normalized
 
 
+def _canonical_split_review_payload(parsed: Any) -> dict[str, list[dict[str, Any]]]:
+    split_candidates: list[dict[str, Any]] = []
+    review_only: list[dict[str, Any]] = []
+
+    def collect(value: Any) -> None:
+        if isinstance(value, list):
+            for item in value:
+                collect(item)
+            return
+        if not isinstance(value, dict):
+            return
+        split_candidates.extend(
+            row for row in value.get("split_candidates", []) or [] if isinstance(row, dict)
+        )
+        review_only.extend(row for row in value.get("review_only", []) or [] if isinstance(row, dict))
+        if "topics" in value:
+            collect(value.get("topics"))
+
+    collect(parsed)
+    return {"split_candidates": split_candidates, "review_only": review_only}
+
+
 def _validate_split_review(parsed: dict[str, Any], sources: list[dict[str, Any]], profile: dict[str, Any]) -> dict[str, Any]:
+    payload = _canonical_split_review_payload(parsed)
     by_id = {str(source.get("source_l2_id", "")): source for source in sources}
     allowed_ids = {
         source_id: {
@@ -160,7 +208,7 @@ def _validate_split_review(parsed: dict[str, Any], sources: list[dict[str, Any]]
     accepted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     review_only: list[dict[str, Any]] = []
-    for row in parsed.get("split_candidates", []) or []:
+    for row in payload["split_candidates"]:
         if not isinstance(row, dict):
             continue
         source = str(row.get("source_l2_id", "") or "")
@@ -200,7 +248,7 @@ def _validate_split_review(parsed: dict[str, Any], sources: list[dict[str, Any]]
                     "representative_l1_ids": reps,
                 }
             )
-    for row in parsed.get("review_only", []) or []:
+    for row in payload["review_only"]:
         if not isinstance(row, dict):
             continue
         source = str(row.get("source_l2_id", "") or "")
@@ -219,11 +267,13 @@ def propose_focused_split_review(
     model: str = "",
     client: Any | None = None,
     source_l2_ids: list[str] | None = None,
+    review_source_path: Path | str | None = None,
     sample_limit: int = 12,
 ) -> dict[str, Any]:
     root = ensure_optimization_output(run_root)
     l2_view = load_json(root / "l2" / "l2_view.json")
-    split_ids = set(source_l2_ids or []) or _split_review_source_ids(root)
+    explicit_ids = {str(value) for value in source_l2_ids or [] if str(value)}
+    split_ids = explicit_ids or _topic_review_source_ids(review_source_path) or _split_review_source_ids(root)
     l2_by_id = {str(node.get("l2_id", "")): node for node in l2_view.get("l2_nodes", []) or []}
     sources = [
         _compact_split_source(l2_by_id[source_id], sample_limit=sample_limit)
@@ -355,6 +405,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Create focused LLM split-review sidecar proposals for needs_split_review L2 topics.")
     parser.add_argument("--run-root", required=True)
     parser.add_argument("--profile", required=True)
+    parser.add_argument("--review-source", default="", help="Optional topic-quality review queue JSON to select broad L2 sources.")
     parser.add_argument("--model", default="")
     parser.add_argument("--source-l2-id", action="append", default=[])
     parser.add_argument("--sample-limit", type=int, default=12)
@@ -364,6 +415,7 @@ def main() -> None:
         profile=load_profile(args.profile),
         model=args.model,
         source_l2_ids=args.source_l2_id,
+        review_source_path=args.review_source,
         sample_limit=args.sample_limit,
     )
     print(

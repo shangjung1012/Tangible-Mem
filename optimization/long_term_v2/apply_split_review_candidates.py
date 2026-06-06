@@ -105,6 +105,8 @@ def _separability_failure(assignments: list[list[dict[str, Any]]]) -> dict[str, 
     max_count = max(counts) if counts else 0
     if non_empty < 2:
         return {"reason": "low_assignment_separability", "child_sizes": counts}
+    if total >= 5 and any(0 < count < 3 for count in counts):
+        return {"reason": "tiny_candidate_child", "child_sizes": counts}
     if max_count > 35:
         return {"reason": "candidate_child_still_oversized", "child_sizes": counts}
     return None
@@ -291,6 +293,18 @@ def apply_split_review_candidates(
         "applied_splits": applied,
         "skipped_splits": skipped,
     }
+    manifest_path = out / "manifest.json"
+    if manifest_path.exists():
+        manifest = load_json(manifest_path)
+        manifest["l3_parent_count"] = len(parents)
+        manifest["l3_assigned_l1_count"] = len(l3_index)
+        manifest["split_review_candidate"] = {
+            "source_run_root": str(source.resolve()),
+            "applied_split_count": len(applied),
+            "skipped_split_count": len(skipped),
+            "generated_at_utc": report["generated_at_utc"],
+        }
+        write_json(manifest_path, manifest)
     write_json(out / "l3" / "applied_split_review_candidates.json", report)
     write_text(out / "l3" / "applied_split_review_candidates.md", _format_report_md(report))
     return report

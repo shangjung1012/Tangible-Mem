@@ -1,0 +1,649 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{geometry}
+\geometry{margin=2.2cm}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\setmainfont{Arial}
+\setmonofont[Scale=0.86]{Consolas}
+\setCJKmainfont{Microsoft JhengHei}
+\sloppy
+\setlength{\emergencystretch}{3em}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  urlcolor=blue!55!black
+}
+
+\definecolor{VMBlue}{HTML}{1F4E79}
+\definecolor{VMGray}{HTML}{F2F4F7}
+\definecolor{VMGold}{HTML}{9A6B00}
+\newcommand{\code}[1]{{\footnotesize\texttt{#1}}}
+\newcommand{\decision}[1]{\textcolor{VMBlue}{\textbf{#1}}}
+\newcommand{\warning}[1]{\textcolor{VMGold}{\textbf{#1}}}
+\newcommand{\tightlist}{}
+
+\title{\textbf{Optimization v2 Decision Catalog}\\
+\large Evidence-First L1/L2/L3 Memory View}
+\author{Virtual Mentor Project}
+\date{2026-06-03}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\fcolorbox{VMBlue}{VMGray}{
+\begin{minipage}{0.92\linewidth}
+\textbf{Scope.} This report explains the current decision logic of the isolated \code{optimization/long\_term\_v2} pipeline. Grace examples are used for explanation. The optimization pipeline does not mutate canonical \code{share\_mem/}, \code{long\_term/l2/}, or \code{long\_term/l3/}.
+\end{minipage}}
+\end{center}
+
+\section{Executive Summary}
+
+Optimization v2 is designed to make long-term memory construction more evidence-backed and less dependent on Grace-specific hardcoded topic rules. The main idea is:
+
+\begin{quote}
+Transcript evidence first becomes immutable L1 memory objects. Optimization v2 then derives semantic keys from L1 content and evidence, groups repeated durable keys into L2 topics, and promotes oversized L2 topics into L3 topic families only when the split is evidence-supported.
+\end{quote}
+
+The current Grace reference run is:
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.55\linewidth}>{\raggedleft\arraybackslash}p{0.2\linewidth}}
+\textbf{Item} & \textbf{Count} \\
+\hline
+Source L1 objects & 448 \\
+Semantic key rows & 448 \\
+L2 topics & 49 \\
+Linked L1 & 440 \\
+Unlinked L1 & 8 \\
+L3 topic families & 3 \\
+L3-assigned L1 & 72 \\
+\end{longtable}
+
+Reference run: \code{optimization/runs/grace\_v2\_det\_rescue\_20260529\_065827}.
+
+\section{End-To-End Decision Flow}
+
+\begin{verbatim}
+Transcript
+  -> bounded idea units / evidence spans
+  -> L1 evidence object candidates
+  -> L1 verifier + reducer + importance calibration
+  -> immutable share_mem L1
+  -> optimization semantic keys
+  -> durable L2 topic induction and assignment
+  -> adaptive L3 promotion if L2 is too large
+  -> validation, manual review queues, retrieval eval
+\end{verbatim}
+
+The pipeline is intentionally layered:
+
+\begin{itemize}
+  \item \textbf{L1} is the factual evidence unit.
+  \item \textbf{L2} is a durable topic or topic-evolution context built from multiple L1 objects.
+  \item \textbf{L3} is a topic-family navigation layer for oversized L2 topics.
+  \item L2/L3 views are sidecars. They never overwrite raw L1 evidence.
+\end{itemize}
+
+\section{Idea Unit To L1}
+
+Optimization v2 does not re-extract L1 from transcripts. It consumes existing \code{share\_mem} L1. However, to explain the system end-to-end, the upstream L1 evidence gate is summarized here.
+
+\subsection{What Becomes L1}
+
+An idea unit should become L1 when it is a bounded, evidence-backed, reusable memory object. The current L1 role taxonomy is:
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.18\linewidth}>{\raggedright\arraybackslash}p{0.72\linewidth}}
+\textbf{Type} & \textbf{Kept when evidence shows} \\
+\hline
+\code{decision} & Adopted, rejected, resolved, or materially revised conclusion that changes project state. \\
+\code{action\_item} & Explicit follow-up, experiment, implementation task, check, or assigned work with execution expectation. \\
+\code{open\_issue} & Unresolved blocker, design issue, uncertainty, research question, or decision point. \\
+\code{proposal} & Suggested option, alternative, hypothesis, design, or plan not yet adopted. \\
+\code{argument} & Reasoning, tradeoff, constraint, evidence interpretation, or justification. \\
+\code{finding} & Stable observation, experiment result, comparison, data-quality finding, literature finding, or failure mode. \\
+\code{approach\_change} & Adopted change in method, process, architecture, retrieval strategy, schema, data handling, or evaluation approach. \\
+\end{longtable}
+
+A candidate also needs:
+
+\begin{itemize}
+  \item a clear evidence span;
+  \item reusable project-memory value;
+  \item calibrated importance above the retention threshold;
+  \item no stronger duplicate object covering the same evidence;
+  \item a bounded claim rather than a vague conversation summary.
+\end{itemize}
+
+\subsection{What Should Not Become L1}
+
+The upstream gate should reject or review:
+
+\begin{itemize}
+  \item greetings, acknowledgements, filler, or repeated confirmations;
+  \item pure scheduling or transient logistics;
+  \item one-off setup inventory, microphone checks, channel configuration, or source-file metadata unless it changes a reusable data-quality rule;
+  \item unsupported claims;
+  \item duplicate objects answering the same durable question from the same evidence;
+  \item surface wording that looks important but does not prove adoption.
+\end{itemize}
+
+For example, ``suggested'' or ``considered'' should not automatically become \code{decision}; it should be \code{proposal} unless the evidence shows acceptance.
+
+\subsection{Grace Review Reference Cards}
+
+The examples below use these shared reference cards. Each card includes meeting id, L1 id, L1 content, a short meeting evidence excerpt, and the current optimization result.
+
+\textbf{G1: \code{0422 / L1-0422-006}.} L1 content: 為了取代逐「輪」更新記憶體，團隊探討兩種預處理逐字稿以生成 \code{idea units} 的方法。 Evidence: 「今天的meeting完了我得到一個今天的逐字稿... 要回去update我的memory... 可能不能用turn，因為可能我們好幾個turn都在講同一件事情」。 Result: \code{approach\_change}; assigned to \code{L2-memory-update}.
+
+\textbf{G2: \code{0506 / L1-0506-002}.} L1 content: 團隊定義 \code{segment} 是較廣泛的相關主題，\code{idea unit} 是其中更小、更具體的組成部分。 Evidence: 「segment會是一個相關的段落... idea unit可能是裡面有講到... to-do... decision... 最小的單位都是idea units」。 Result: \code{decision}; assigned to \code{L2-segmentation}.
+
+\textbf{G3: \code{0506 / L1-0506-009}.} L1 content: 提出應考慮由下而上（bottom-up）的處理方法，從 idea unit 到主題。 Evidence: 「每一個idea units裡面它可能會有一些label... 現在可能是先從先去分theme然後再去切... inductive coding... 是從idea units」。 Result: \code{proposal}; assigned to \code{L2-bottom-up}.
+
+\textbf{G4: \code{0429 / L1-0429-122}.} L1 content: 專案放棄完整逐字稿一次性更新記憶，因為 context 太大且 JSON 輸出難處理，轉為分塊策略。 Evidence: 「為什麼不要整個transcription直接進去... 我們一開始就是這樣子... 第一個就是context太大，因為我們一定要固定成json」。 Result: \code{approach\_change}; assigned to \code{L2-update-memory}.
+
+\textbf{G5: \code{0429 / L1-0429-102}.} L1 content: 系統架構被概念化為 manager-agent 模型，由精簡 manager 協調多個專業 agent。 Evidence: 「你可能有一個 manager... 有一些小小的 agent 在處理一些不同的任務... 我預期它比較像就是個 manager」。 Result: \code{approach\_change}; assigned to \code{L2-manager-agent}.
+
+\textbf{G6: \code{0307 / L1-0307-025}.} L1 content: 團隊需要確定如何評估記憶架構效能，並證明它優於標準 LLM。 Evidence: 「你們可能要看一下他們怎麼 evaluate... 也許已經有 dataset... 他們是怎麼證明 model performance 的？」 Result: \code{open\_issue}; assigned to \code{L2-long-term-memory}.
+
+\textbf{G7: \code{0307 / L1-0307-034}.} L1 content: 團隊成員需要統一資料夾結構，避免多個組件重複使用 \code{meeting\_transcript}。 Evidence: 「你的格式要不要來跟我對一下... short term 裡面吃的是 meeting\_recording 裡 transcript 的東西... 才不會有兩份 meeting transcript」。 Result: retained but unlinked; \code{singleton\_l2\_not\_durable\_enough}.
+
+\textbf{G8: \code{0506 / L1-0506-020}.} L1 content: 系統處理由 Whisper 依語音停頓切分的逐字稿時，決定依賴話語順序，不使用 timestamps。 Evidence: 「segment它是針對錄音檔的segment... label都是針對idea units... 中間是有relationship」。 Result: retained but review-only; \code{semantic\_rescue\_low\_confidence\_review}.
+
+\textbf{G9: \code{0408 / L1-0408-011}.} L1 content: 應取得另一團隊的 idea-unit 分割 recipe，並評估是否能用於中文會議記錄。 Evidence: 「它最後 L1 的結構是什麼？... 我們怎麼 partition？... prompt 怎麼做？... 改成自己先做 partition」。 Result: \code{action\_item}; assigned to \code{L2-prompt-engineering}.
+
+\textbf{G10: \code{0307 / L1-0307-028}.} L1 content: 因為評估是關鍵挑戰，團隊應研究參考論文如何評估模型。 Evidence: 「你們可能要看一下他們怎麼 evaluate... 也許已經有 dataset... 他們是怎麼證明 model performance 的？」 Result: \code{argument}; assigned to \code{L2-literature-review}.
+
+\textbf{G11: \code{0307 / L1-0307-010}.} L1 content: 長期記憶應是獨立、粗粒度結構，用來追蹤研究專案長期發展弧線、目標和主題。 Evidence: 「research meeting 會持續一年... 可能要用另一個架構，比較粗略地抓整個研究脈絡... 架構變化、研究目標、整個主題」。 Result: \code{action\_item}; assigned to \code{L2-memory-architecture}.
+
+\textbf{G12: \code{0307 / L1-0307-039}.} L1 content: 確認本次會議錄音為部分錄音，從討論中研院實習議題時才開始。 Evidence: 「我剛剛有一部錄影... 不過是從你們講中研院之後開始」。 Result: \code{finding}; assigned to \code{L2-data-quality}.
+
+\subsection{Grace Examples: Promoted To L1}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.09\linewidth}>{\raggedright\arraybackslash}p{0.18\linewidth}>{\raggedright\arraybackslash}p{0.62\linewidth}}
+\textbf{Ref} & \textbf{L1} & \textbf{Why it is retained} \\
+\hline
+G1 & \code{L1-0422-006} & \code{approach\_change}, 0.70. The team changed from turn-based update to idea-unit preprocessing. \\
+G2 & \code{L1-0506-002} & \code{decision}, 0.62. The team defined reusable terminology for \code{segment} and \code{idea unit}. \\
+G3 & \code{L1-0506-009} & \code{proposal}, 0.65. Bottom-up processing was proposed but not yet adopted. \\
+G4 & \code{L1-0429-122} & \code{approach\_change}, 0.73. The team abandoned full-transcript one-shot update and moved toward chunking. \\
+G5 & \code{L1-0429-102} & \code{approach\_change}, 0.72. The architecture was reframed as a manager-agent model. \\
+G6 & \code{L1-0307-025} & \code{open\_issue}, 0.64. The team still needed an evaluation method for memory architecture. \\
+\end{longtable}
+
+\section{L1 To Semantic Keys}
+
+Optimization v2 inserts a semantic key layer between raw L1 and L2 topics. This avoids making \code{related\_topics} responsible for too many jobs.
+
+\subsection{Input And Output}
+
+Input signals:
+
+\begin{itemize}
+  \item \code{content}
+  \item \code{evidence}
+  \item \code{type}
+  \item \code{importance}
+  \item \code{related\_topics}
+  \item \code{related\_obj\_ids}
+\end{itemize}
+
+Semantic facets:
+
+\begin{itemize}
+  \item \code{project\_goal}
+  \item \code{design\_problem}
+  \item \code{method\_or\_approach}
+  \item \code{evaluation\_or\_validation}
+  \item \code{implementation\_workflow}
+  \item \code{resource\_or\_constraint}
+  \item \code{next\_action}
+  \item \code{unresolved\_question}
+\end{itemize}
+
+Decision rules:
+
+\begin{itemize}
+  \item Content and evidence are primary.
+  \item \code{related\_topics} is an optional stabilizing signal, not an authoritative assignment source.
+  \item In the mentor-mentee profile, topic keys are English even when L1 content is Traditional Chinese.
+  \item Stopwords, speaker IDs, filler, type-like labels, generic single words, and artifacts are filtered.
+\end{itemize}
+
+\subsection{Grace Examples}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.09\linewidth}>{\raggedright\arraybackslash}p{0.18\linewidth}>{\raggedright\arraybackslash}p{0.62\linewidth}}
+\textbf{Ref} & \textbf{L1} & \textbf{Useful semantic signals} \\
+\hline
+G2 & \code{L1-0506-002} & \code{segmentation}, \code{idea unit}, \code{data model}, \code{terminology}. \\
+G3 & \code{L1-0506-009} & \code{bottom up}, \code{top down}, \code{idea unit}, \code{segmentation}. \\
+G5 & \code{L1-0429-102} & \code{manager agent}, \code{modularity}, \code{agent architecture}. \\
+G6 & \code{L1-0307-025} & \code{evaluation}, \code{benchmarking}, \code{model performance}, \code{long term memory}. \\
+\end{longtable}
+
+\section{Semantic Keys To L2}
+
+An L2 is a durable topic, not an L1 type and not a one-off memory item.
+
+\subsection{L2 Must Contain}
+
+\begin{itemize}
+  \item \code{l2\_id}, label, definition;
+  \item inclusion and exclusion criteria;
+  \item linked L1 ids;
+  \item assignment rationale;
+  \item current state and evolution summary;
+  \item confidence;
+  \item representative L1 ids.
+\end{itemize}
+
+\subsection{Assignment Criteria}
+
+The deterministic topic induction process considers:
+
+\begin{enumerate}
+  \item repeated appearance across L1 evidence;
+  \item phrase specificity;
+  \item whether terms come from content/evidence/facets;
+  \item importance of linked L1 objects;
+  \item penalties for labels that absorb too much of the corpus;
+  \item rejection of type-like or generic labels.
+\end{enumerate}
+
+Profile defaults:
+
+\begin{itemize}
+  \item \code{min\_topic\_evidence = 4}
+  \item \code{minimum\_assignment\_confidence = 0.25}
+  \item \code{high\_importance\_threshold = 0.70}
+  \item \code{max\_l2\_topic\_share\_before\_specificity\_penalty = 0.18}
+\end{itemize}
+
+\subsection{Grace Assignment Examples}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.08\linewidth}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}p{0.43\linewidth}}
+\textbf{Ref} & \textbf{L1} & \textbf{Assigned L2} & \textbf{Why} \\
+\hline
+G1 & \code{L1-0422-006} & \code{L2-memory-update} & Captures the shift toward idea-unit preprocessing for memory updates. \\
+G2 & \code{L1-0506-002} & \code{L2-segmentation} & Defines segment vs idea unit, directly supporting segmentation. \\
+G3 & \code{L1-0506-009} & \code{L2-bottom-up} & Repeats with other top-down/bottom-up tradeoff objects. \\
+G4 & \code{L1-0429-122} & \code{L2-update-memory} & Abandons full-transcript memory update and moves to chunking. \\
+G5 & \code{L1-0429-102} & \code{L2-manager-agent} & Shares manager-agent architecture and modularity signals. \\
+G9 & \code{L1-0408-011} & \code{L2-prompt-engineering} & Evaluates another team's prompt-engineering recipe for idea-unit segmentation. \\
+\end{longtable}
+
+\subsection{Example L2 Topics In Grace}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.08\linewidth}>{\raggedright\arraybackslash}p{0.28\linewidth}>{\raggedleft\arraybackslash}p{0.11\linewidth}>{\raggedright\arraybackslash}p{0.43\linewidth}}
+\textbf{Ref} & \textbf{L2} & \textbf{L1 count} & \textbf{Interpretation} \\
+\hline
+G10 & \code{L2-literature-review} & 26 & Literature search, paper positioning, and dataset/paper review work. \\
+G11 & \code{L2-memory-architecture} & 25 & Long-term/short-term memory architecture and project-level memory design. \\
+G12 & \code{L2-data-quality} & 21 & Data quality, transcription/data-source issues, and evidence reliability. \\
+G1 & \code{L2-memory-update} & 15 & How memory is updated from transcript evidence. \\
+G3 & \code{L2-bottom-up} & 12 & Bottom-up vs top-down transcript/idea-unit processing. \\
+G5 & \code{L2-manager-agent} & 12 & Manager-agent orchestration and modular architecture. \\
+\end{longtable}
+
+\section{Why Some L1 Remain Unlinked}
+
+Unlinked does not mean the L1 is wrong. It means the object is not safely useful as L2 topic context yet.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.44\linewidth}>{\raggedright\arraybackslash}p{0.50\linewidth}}
+\textbf{Reason} & \textbf{Meaning} \\
+\hline
+\code{candidate\_topic\_not\_durable\_enough} & Candidate label did not recur enough, and the L1 was not high-impact enough to justify a singleton topic. \\
+\code{singleton\_l2\_not\_durable\_enough} & The candidate topic had only one L1 and did not pass the high-importance exception. \\
+\code{low\_assignment\_confidence} & Best assignment score was below threshold. \\
+\code{semantic\_rescue\_low\_confidence\_review} & A possible rescue link existed, but confidence was low, so it remains review-only. \\
+\end{longtable}
+
+\subsection{Grace Unlinked Examples}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.08\linewidth}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.34\linewidth}>{\raggedright\arraybackslash}p{0.14\linewidth}}
+\textbf{Ref} & \textbf{L1} & \textbf{Candidate} & \textbf{Reason} & \textbf{Interpretation} \\
+\hline
+G7 & \code{L1-0307-034} & \code{meeting transcript} & \code{singleton\_l2\_not\_durable\_enough} & Valid L1, not durable L2. \\
+G8 & \code{L1-0506-020} & \code{data quality} & \code{semantic\_rescue\_low\_confidence\_review} & Review-only, not forced. \\
+\end{longtable}
+
+\section{L2 To L3}
+
+L3 is created only when an L2 becomes too large or internally diverse for prompt-efficient retrieval. L3 is not the main answer source; it is a topic-family navigation layer.
+
+\subsection{Promotion Criteria}
+
+Promotion is considered when:
+
+\begin{itemize}
+  \item an L2 is large enough relative to corpus size;
+  \item it has separable child topics;
+  \item child labels are evidence-backed;
+  \item all source L1 can be assigned exactly once to child L2;
+  \item the split improves retrieval/navigation clarity.
+\end{itemize}
+
+Promotion is blocked or sent to review when:
+
+\begin{itemize}
+  \item one child dominates and the split does not improve coherence;
+  \item too many children are empty or tiny;
+  \item child labels are generic, type-like, artificial, or unsupported;
+  \item duplicate or missing child assignments appear.
+\end{itemize}
+
+Current profile:
+
+\begin{itemize}
+  \item \code{min\_absolute\_threshold = 10}
+  \item \code{target\_child\_l2\_size\_range = 6-20}
+  \item Grace adaptive threshold in the reference run: \code{20}
+\end{itemize}
+
+\subsection{Grace L3 Examples}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.08\linewidth}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}p{0.26\linewidth}>{\raggedright\arraybackslash}p{0.12\linewidth}}
+\textbf{Ref} & \textbf{L3 parent} & \textbf{Source L2} & \textbf{Child L2} & \textbf{Counts} \\
+\hline
+G10 & \code{L3-literature-review} & \code{L2-literature-review} & \code{google scholar}; \code{speech annote test} & 15; 11 \\
+G11 & \code{L3-memory-architecture} & \code{L2-memory-architecture} & \code{long term memory}; \code{short term memory} & 15; 10 \\
+G12 & \code{L3-data-quality} & \code{L2-data-quality} & \code{segment start time}; \code{voice conversion} & 10; 11 \\
+\end{longtable}
+
+These splits are induced from parent evidence. They are not hand-written Grace child taxonomies.
+
+\section{Validation And Review Gates}
+
+Each optimization run emits:
+
+\begin{verbatim}
+validation/
+  l1_input_audit.json
+  semantic_key_validation.json
+  l2_validation_report.json
+  l3_validation_report.json
+  manual_review_queue.json
+  explainability_report.md
+\end{verbatim}
+
+Main gates:
+
+\begin{itemize}
+  \item raw L1 input hash unchanged;
+  \item linked topics reference existing \code{obj\_id};
+  \item \code{related\_topics} is not the only assignment source;
+  \item type-like L2 labels rejected;
+  \item generic-only L2 labels rejected;
+  \item assignment rationale required;
+  \item high-importance unlinked L1 enters manual review;
+  \item promoted source L1 assigned exactly once;
+  \item tiny child L2 enters merge review;
+  \item oversized child L2 enters split review.
+\end{itemize}
+
+\section{Why This Is Less Hardcoded}
+
+The previous canonical L2/L3 system had more project-specific rules:
+
+\begin{itemize}
+  \item hardcoded label maps around Grace memory-system topics;
+  \item handwritten child L2 taxonomy for known oversized topics;
+  \item \code{related\_topics} acting as metadata, assignment seed, and retrieval cue simultaneously.
+\end{itemize}
+
+Optimization v2 changes this:
+
+\begin{itemize}
+  \item semantic keys are extracted from content/evidence first;
+  \item \code{related\_topics} is optional and stabilizing, not authoritative;
+  \item L2 labels are induced from repeated evidence-backed terms;
+  \item L3 children are induced from parent evidence;
+  \item profile settings control language, stopwords, noise policy, and thresholds rather than project-specific answers.
+\end{itemize}
+
+This does not make v2 universally general. The target domain remains mentor-mentee / research meetings. The key claim is narrower: the topic decisions are more traceable and less dependent on Grace-specific hardcoded ontology.
+
+\section{Known Limitations}
+
+\begin{itemize}
+  \item Optimization v2 does not solve L1 extraction itself.
+  \item Some deterministic L2 labels can still be unintuitive when lexical recurrence dominates.
+  \item \code{related\_topics} ablation works but quality drops, meaning it is useful as a stabilizer.
+  \item LLM-assisted topic induction is proposal/review-first and cannot overwrite deterministic assignment without validation.
+  \item v2 remains an isolated experiment until repeated runs, answer-quality gates, and manual review pass.
+\end{itemize}
+
+\section{Chinese Grace Examples}
+
+This section gives concrete Chinese examples from the Grace series. These are useful for explaining the decision rules in a meeting.
+
+\subsection{Example 1: Why an idea unit becomes L1}
+
+\textbf{\code{L1-0422-006}}
+
+\textbf{L1 content.}
+
+\begin{quote}
+為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。
+\end{quote}
+
+\textbf{Meeting evidence excerpt.}
+
+\begin{quote}
+[SPEAKER\_00]: 如果假設說好現在我要我們現在今天的meeting完了我得到一個今天的逐字稿，那我現在就要回去update我的memory對不對... 可能不能用turn，因為可能我們好幾個turn都在講同一件事情... [SPEAKER\_02]: Long-term 跟 Short-...
+\end{quote}
+
+Decision:
+
+\begin{itemize}
+  \item \code{type = approach\_change}
+  \item \code{importance = 0.70}
+  \item This is not ordinary conversation. It changes how transcripts enter the memory update pipeline.
+  \item It has traceable evidence and affects later system design, so it becomes L1.
+\end{itemize}
+
+\textbf{\code{L1-0506-002}}
+
+\textbf{L1 content.}
+
+\begin{quote}
+團隊已定義 \code{segment} 與 \code{idea unit} 之間的區別：\code{segment} 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 \code{idea unit} 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。
+\end{quote}
+
+\textbf{Meeting evidence excerpt.}
+
+\begin{quote}
+[SPEAKER\_01]: segment會是一個相關的段落，就是他都在討論這件事情，那idea unit可能是裡面有講到裡面可能to-do是什麼、decision是什麼，就是比較細節的東西... [SPEAKER\_02]: 最小的單位都是idea units...
+\end{quote}
+
+Decision:
+
+\begin{itemize}
+  \item \code{type = decision}
+  \item \code{importance = 0.62}
+  \item It defines reusable system terminology.
+  \item Without this L1, later discussions about L1/L2, segmentation, and idea units would lose shared context.
+\end{itemize}
+
+\subsection{Example 2: How L1 becomes L2}
+
+\textbf{\code{L1-0506-002 -> L2-segmentation}}
+
+\begin{itemize}
+  \item The L1 defines \code{segment} and \code{idea unit}.
+  \item The semantic signals include \code{segmentation}, \code{idea unit}, and \code{terminology}.
+  \item Because \code{segmentation} recurs across multiple L1 objects, it becomes \code{L2-segmentation}.
+\end{itemize}
+
+\textbf{\code{L1-0506-009 -> L2-bottom-up}}
+
+\textbf{L1 content.}
+
+\begin{quote}
+提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。
+\end{quote}
+
+\textbf{Meeting evidence excerpt.}
+
+\begin{quote}
+[SPEAKER\_02]: 我們說每一個idea units裡面它可能會有一些label... 它有可能是theme是什麼... 然後我們現在可能是先從先去分theme然後再去切... inductive coding的話他是從idea units然後他找到...
+\end{quote}
+
+Decision:
+
+\begin{itemize}
+  \item This is \code{proposal}, not \code{decision}, because the evidence proposes an option rather than proving adoption.
+  \item Semantic signals include \code{bottom up}, \code{top down}, \code{idea unit}, and \code{segmentation}.
+  \item Multiple Grace L1 objects discuss bottom-up vs top-down tradeoffs, so the topic becomes \code{L2-bottom-up}.
+\end{itemize}
+
+\textbf{\code{L1-0429-122 -> L2-update-memory}}
+
+\textbf{L1 content.}
+
+\begin{quote}
+專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+\end{quote}
+
+\textbf{Meeting evidence excerpt.}
+
+\begin{quote}
+[SPEAKER\_02]: 為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改？ [SPEAKER\_00]: 我們一開始就是這樣子，但是這樣有幾個問題，第一個就是context太大，因為我們一定要固定成json...
+\end{quote}
+
+Decision:
+
+\begin{itemize}
+  \item This is \code{approach\_change}: full-transcript one-shot update was abandoned.
+  \item It connects with memory update, chunking, and context-window L1 objects.
+  \item The L2 is about how the memory update method evolves over time, not just one meeting sentence.
+\end{itemize}
+
+\subsection{Example 3: Why some L1 are not linked to L2}
+
+\textbf{\code{L1-0307-034}}
+
+\textbf{L1 content.}
+
+\begin{quote}
+團隊成員需要協調統一其資料檔案夾結構，以避免因多個組件都使用 \code{meeting\_transcript} 而造成檔案重複的問題。
+\end{quote}
+
+\textbf{Meeting evidence excerpt.}
+
+\begin{quote}
+[SPEAKER\_01]: 你的格式要不要來跟我對一下？... 我現在在 app 同層建 short term，short term 裡面吃的是 \code{meeting\_recording} 裡 transcript 的東西... 我們才不會有兩份 \code{meeting\_transcript} 之類的。
+\end{quote}
+
+Decision:
+
+\begin{itemize}
+  \item This is valid L1 evidence because it records an implementation open issue.
+  \item Candidate topic \code{meeting transcript} has only singleton support.
+  \item It remains L1 but is not forced into L2. Reason: \code{singleton\_l2\_not\_durable\_enough}.
+\end{itemize}
+
+\textbf{\code{L1-0506-020}}
+
+\textbf{L1 content.}
+
+\begin{quote}
+決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。
+\end{quote}
+
+\textbf{Meeting evidence excerpt.}
+
+\begin{quote}
+[SPEAKER\_02]: 這個segment它是針對錄音檔的segment對不對？... label都是針對idea units... 它會屬於某個segment... 中間是有relationship的...
+\end{quote}
+
+Decision:
+
+\begin{itemize}
+  \item This is valid L1 because it records a transcript-handling decision.
+  \item It may relate to \code{data quality}, but assignment confidence is not stable enough.
+  \item The system sends it to review instead of forcing it into \code{L2-data-quality}. Reason: \code{semantic\_rescue\_low\_confidence\_review}.
+\end{itemize}
+
+\subsection{Example 4: How L2 becomes L3}
+
+\textbf{\code{L2-memory-architecture}}
+
+\begin{itemize}
+  \item Linked L1 count: 25.
+  \item Grace reference run L3 promotion threshold: 20.
+  \item The parent topic naturally separates into long-term memory and short-term memory.
+\end{itemize}
+
+The promoted view is:
+
+\begin{verbatim}
+L3-memory-architecture
+  -> L2-memory-architecture-long-term-memory   15 L1
+  -> L2-memory-architecture-short-term-memory  10 L1
+\end{verbatim}
+
+Why this is useful:
+
+\begin{itemize}
+  \item The original \code{L2-memory-architecture} is too broad for retrieval.
+  \item If the query asks about long-term memory, retrieval can expand the long-term child.
+  \item If the query asks about short-term memory, retrieval can expand the short-term child.
+  \item L3 is navigation, not an answer source.
+\end{itemize}
+
+\textbf{\code{L2-data-quality}}
+
+\begin{verbatim}
+L3-data-quality
+  -> L2-data-quality-segment-start-time  10 L1
+  -> L2-data-quality-voice-conversion    11 L1
+\end{verbatim}
+
+Decision:
+
+\begin{itemize}
+  \item \code{data quality} contains different types of evidence-quality concerns.
+  \item Grace evidence supports a split between segment/time metadata and voice-conversion/transcription issues.
+  \item The child labels come from parent evidence terms and timeline summaries, not from a handwritten taxonomy.
+\end{itemize}
+
+\subsection{Chinese talk track}
+
+\begin{quote}
+例如 Grace 裡 \code{L1-0506-002} 定義了 segment 和 idea unit 的差別，所以它被保留成 L1，並被連到 \code{L2-segmentation}。但像 \code{L1-0307-034} 這種資料夾命名協調，雖然是有效 L1，卻沒有足夠 recurring evidence 形成長期 topic，所以不會硬建立 L2。再往上，如果某個 L2 太大，例如 \code{memory architecture} 有 25 個 L1，系統會把它升成 L3，並拆成 \code{long term memory} 和 \code{short term memory} 兩個 child L2，讓 retrieval 不需要整包塞進 prompt。
+\end{quote}
+
+\section{Professor-Facing Talk Track}
+
+\textbf{Short explanation.}
+
+\begin{quote}
+We do not directly use every transcript sentence as long-term memory. We first keep only evidence-backed L1 objects: decisions, actions, issues, proposals, arguments, findings, and approach changes. Then optimization v2 converts L1 into semantic keys derived primarily from content and evidence. Repeated and durable semantic keys become L2 topics. Oversized L2 topics become L3 topic families only if the evidence supports separable child topics. All assignments have rationale, raw L1 evidence remains immutable, and uncertain cases are left as review sidecars rather than silently forced into topics.
+\end{quote}
+
+\textbf{If asked why some L1 are unlinked.}
+
+\begin{quote}
+Unlinked means the object may still be valid L1 evidence, but it does not yet have enough repeated or high-confidence evidence to become long-term topic context. This prevents L2 from becoming a noisy bucket. High-importance unlinked objects are sent to manual review instead of being ignored.
+\end{quote}
+
+\textbf{If asked why L3 exists.}
+
+\begin{quote}
+L3 is not another answer source. It is a navigation layer used when an L2 topic becomes too large. It lets retrieval expand the right child L2 rather than injecting a huge mixed topic into the prompt.
+\end{quote}
+
+\textbf{If asked whether this is Grace-specific.}
+
+\begin{quote}
+Grace terms may appear in labels because they appear in Grace evidence. But optimization v2 does not hardcode Grace's topic map or child taxonomy in the core logic. Dataset-specific behavior should live in profiles, and every L2/L3 label must be backed by representative L1 evidence.
+\end{quote}
+
+\end{document}

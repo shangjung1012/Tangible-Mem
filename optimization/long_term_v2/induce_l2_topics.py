@@ -272,7 +272,6 @@ def _rescue_semantically_related_unlinked(
             remaining.append(item)
             continue
         meeting, _obj = objects_by_id.get(obj_id, ({}, {}))
-        grouped[best_label].append(obj_id)
         l2_id = f"L2-{slugify(best_label)}"
         confidence = min(0.82, 0.32 + best_score * 0.6 + importance * 0.12)
         if confidence < min_confidence:
@@ -287,6 +286,7 @@ def _rescue_semantically_related_unlinked(
                 }
             )
             continue
+        grouped[best_label].append(obj_id)
         assignments[obj_id] = {
             "obj_id": obj_id,
             "l2_id": l2_id,
@@ -326,6 +326,7 @@ def induce_l2_topics(
     l2_policy = profile.get("l2_policy", {}) or {}
     min_topic_evidence = int(l2_policy.get("min_topic_evidence", 4) or 4)
     min_confidence = float(l2_policy.get("minimum_assignment_confidence", 0.25) or 0.25)
+    review_only_min_confidence = float(l2_policy.get("review_only_min_assignment_confidence", min_confidence) or min_confidence)
     high_importance = float(l2_policy.get("high_importance_threshold", 0.7) or 0.7)
     max_l2_topic_share = float(l2_policy.get("max_l2_topic_share_before_specificity_penalty", 0.18) or 0.18)
 
@@ -371,6 +372,20 @@ def induce_l2_topics(
             continue
         if confidence < min_confidence:
             unlinked.append({"obj_id": obj_id, "reason": "low_assignment_confidence", "candidate_label": label})
+            continue
+        if df >= min_topic_evidence and confidence < review_only_min_confidence:
+            unlinked.append(
+                {
+                    "obj_id": obj_id,
+                    "reason": "high_importance_ambiguous_topic_review"
+                    if importance >= high_importance
+                    else "review_only_low_assignment_confidence",
+                    "candidate_label": label,
+                    "importance": importance,
+                    "assignment_confidence": round(confidence, 3),
+                    "review": True,
+                }
+            )
             continue
         grouped[label].append(obj_id)
         l2_id = f"L2-{slugify(label)}"

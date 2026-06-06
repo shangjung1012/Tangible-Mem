@@ -59,7 +59,7 @@ def _write_json(path: Path, data: Any) -> None:
 
 
 def _load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def _meeting_sort_value(meeting: dict[str, Any]) -> tuple[str, str, str]:

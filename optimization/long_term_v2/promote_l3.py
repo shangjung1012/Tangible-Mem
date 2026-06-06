@@ -19,7 +19,7 @@ from optimization.long_term_v2.profiles import (
     profile_weak_child_terms,
 )
 from optimization.long_term_v2.schemas import L3_SCHEMA_VERSION
-from optimization.long_term_v2.text_utils import ngrams, slugify, tokens, token_sequences
+from optimization.long_term_v2.text_utils import jaccard, ngrams, slugify, tokens, token_sequences
 
 
 def _percentile(values: list[int], percentile: float) -> float:
@@ -68,25 +68,100 @@ def _max_materialized_child_size(profile: dict[str, Any]) -> int:
     return int(l3_policy.get("max_materialized_child_l2_size", 35) or 35)
 
 
-def _split_needs_review_only(children: list[dict[str, Any]], *, source_event_count: int, profile: dict[str, Any]) -> dict[str, Any]:
-    if not children:
-        return {"needs_review": True, "reason_codes": ["no_child_candidates"], "max_child_event_count": 0}
+def _child_term_set(child: dict[str, Any], *, profile: dict[str, Any]) -> set[str]:
+    token_kwargs = {
+        "stopwords": profile_stopwords(profile),
+        "max_cjk_token_chars": profile_max_cjk_token_chars(profile),
+    }
+    text = " ".join(
+        [
+            str(child.get("label", "") or ""),
+            " ".join(str(value) for value in child.get("assignment_criteria", []) or []),
+        ]
+    )
+    return set(tokens(text, **token_kwargs))
+
+
+def _split_separability(children: list[dict[str, Any]], *, source_event_count: int, profile: dict[str, Any]) -> dict[str, Any]:
     counts = [len(child.get("linked_obj_ids", []) or []) for child in children]
-    max_count = max(counts) if counts else 0
     non_empty_count = sum(1 for count in counts if count > 0)
+    empty_count = len(children) - non_empty_count
+    max_count = max(counts) if counts else 0
+    max_share = max_count / max(source_event_count, 1)
     max_allowed = _max_materialized_child_size(profile)
+    weak_terms = profile_weak_child_terms(profile)
+    generic_terms = profile_generic_topic_labels(profile)
+    child_terms = [_child_term_set(child, profile=profile) for child in children]
+    max_label_overlap = 0.0
+    for index, left in enumerate(child_terms):
+        for right in child_terms[index + 1 :]:
+            max_label_overlap = max(max_label_overlap, jaccard(left, right))
+    weak_label_count = 0
+    manual_review_child_count = 0
+    for child, term_set in zip(children, child_terms):
+        label = str(child.get("label", "") or "").strip().lower()
+        if child.get("manual_review_required"):
+            manual_review_child_count += 1
+        if not term_set or label in generic_terms or term_set.issubset(weak_terms | generic_terms):
+            weak_label_count += 1
+    score = 1.0
     reason_codes: list[str] = []
-    if non_empty_count < 2 and max_count > max_allowed:
+    if non_empty_count < 2:
+        score -= 0.60
         reason_codes.append("insufficient_non_empty_children")
-    if max_count > max_allowed:
+    if max_share >= 0.80 and max_count > max_allowed:
+        score -= 0.25
         reason_codes.append("dominant_oversized_child")
-    if counts and counts.count(0) > len(counts) // 2 and max_count > max_allowed:
+    if empty_count > len(children) // 2 and max_count > max_allowed:
+        score -= 0.15
         reason_codes.append("too_many_empty_children")
+    if max_label_overlap >= 0.72:
+        score -= 0.25
+        reason_codes.append("high_sibling_label_overlap")
+    if weak_label_count:
+        score -= min(0.25, weak_label_count * 0.08)
+        reason_codes.append("weak_child_labels")
+    if manual_review_child_count:
+        score -= min(0.25, manual_review_child_count * 0.08)
+        reason_codes.append("manual_review_child_labels")
     return {
-        "needs_review": bool(reason_codes),
+        "score": round(max(0.0, score), 3),
         "reason_codes": reason_codes,
         "max_child_event_count": max_count,
         "non_empty_child_count": non_empty_count,
+        "empty_child_count": empty_count,
+        "max_child_share": round(max_share, 3),
+        "max_label_overlap": round(max_label_overlap, 3),
+        "weak_label_count": weak_label_count,
+        "manual_review_child_count": manual_review_child_count,
+    }
+
+
+def _split_needs_review_only(children: list[dict[str, Any]], *, source_event_count: int, profile: dict[str, Any]) -> dict[str, Any]:
+    if not children:
+        return {"needs_review": True, "reason_codes": ["no_child_candidates"], "max_child_event_count": 0}
+    split = _split_separability(children, source_event_count=source_event_count, profile=profile)
+    l3_policy = profile.get("l3_policy", {}) or {}
+    min_score = float(l3_policy.get("min_split_separability", 0.35) or 0.35)
+    reason_codes: list[str] = []
+    has_prompt_pressure = split["max_child_event_count"] > _max_materialized_child_size(profile)
+    if has_prompt_pressure:
+        reason_codes.extend(split["reason_codes"])
+        if split["score"] < min_score:
+            reason_codes.append("low_split_separability")
+    elif split["manual_review_child_count"] and split["score"] < min_score:
+        reason_codes.append("low_split_separability")
+    return {
+        "needs_review": bool(reason_codes),
+        "reason_codes": sorted(set(reason_codes)),
+        "separability_score": split["score"],
+        "min_split_separability": min_score,
+        "max_child_event_count": split["max_child_event_count"],
+        "non_empty_child_count": split["non_empty_child_count"],
+        "max_child_share": split["max_child_share"],
+        "max_label_overlap": split["max_label_overlap"],
+        "weak_label_count": split["weak_label_count"],
+        "manual_review_child_count": split["manual_review_child_count"],
     }
 
 
@@ -123,6 +198,8 @@ def _child_candidates_for_node(node: dict[str, Any], profile: dict[str, Any]) ->
         counts.update(terms)
 
     child_count = _target_child_count(node, profile)
+    l3_policy = profile.get("l3_policy", {}) or {}
+    min_child_count = int(l3_policy.get("min_child_l2_count", 2) or 2)
     candidates: list[dict[str, Any]] = []
     ranked_terms = sorted(
         counts.items(),
@@ -143,6 +220,9 @@ def _child_candidates_for_node(node: dict[str, Any], profile: dict[str, Any]) ->
         )
         if len(candidates) >= child_count:
             break
+
+    if len(candidates) >= min_child_count:
+        return candidates
 
     if len(candidates) < child_count:
         for idx in range(child_count - len(candidates)):
@@ -236,6 +316,8 @@ def _is_usable_child_term(
         return False
     term_tokens = set(parts)
     if parent_tokens.issuperset(term_tokens):
+        return False
+    if parent_tokens and parent_tokens.issubset(term_tokens) and len(term_tokens - parent_tokens) <= 1:
         return False
     normalization = profile_child_label_normalization(profile)
     alias_labels = {

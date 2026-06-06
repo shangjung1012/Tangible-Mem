@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "name": "conversation_memory",
+  "inherits": "mentor_mentee",
+  "domain": "mentor_mentee_conversation_memory",
+  "content_language": "en",
+  "topic_key_language": "en",
+  "notes": [
+    "Small conversation-memory validation profile for LOCOMO-style fixtures.",
+    "This profile must not encode fixture answers or gold topic labels."
+  ],
+  "text_processing": {
+    "generic_ngram_terms": [
+      "conversation",
+      "discussion",
+      "memory",
+      "meeting",
+      "person",
+      "topic",
+      "update"
+    ]
+  },
+  "label_policy": {
+    "additional_generic_single_labels": [
+      "conversation",
+      "person",
+      "preference",
+      "update"
+    ],
+    "additional_reject_exact_labels": [
+      "conversation memory",
+      "memory update"
+    ]
+  },
+  "l2_policy": {
+    "min_topic_evidence": 2,
+    "minimum_assignment_confidence": 0.25,
+    "semantic_rescue_min_confidence": 0.55,
+    "high_importance_threshold": 0.7,
+    "allow_single_meeting_topic_if_high_importance": false,
+    "max_l2_topic_share_before_specificity_penalty": 0.35
+  },
+  "l3_policy": {
+    "adaptive_thresholds": true,
+    "min_absolute_threshold": 18,
+    "target_child_l2_size_range": [5, 14],
+    "min_child_l2_count": 2
+  }
+}

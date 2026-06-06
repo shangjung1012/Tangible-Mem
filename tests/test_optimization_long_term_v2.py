@@ -1634,6 +1634,17 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             candidate_root = base / "candidate"
             (source_root / "l2").mkdir(parents=True, exist_ok=True)
             (source_root / "l3").mkdir(parents=True, exist_ok=True)
+            (source_root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "source_l1_count": 4,
+                        "l2_topic_count": 1,
+                        "l3_parent_count": 0,
+                        "l3_assigned_l1_count": 0,
+                    }
+                ),
+                encoding="utf-8",
+            )
             timeline = [
                 {"obj_id": "L1-001", "meeting_id": "M01", "meeting_date": "2026-05-01", "summary": "Routing policy was chosen for manager handoff."},
                 {"obj_id": "L1-002", "meeting_id": "M02", "meeting_date": "2026-05-02", "summary": "Worker coordination failure modes were reviewed."},
@@ -1707,6 +1718,10 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertFalse(
                 any(row.get("source_l2_id") == "L2-agentic-pipeline" and row.get("action") == "needs_split_review" for row in candidate_review["merge_reviews"])
             )
+            candidate_manifest = load_json(candidate_root / "manifest.json")
+            self.assertEqual(candidate_manifest["l3_parent_count"], 1)
+            self.assertEqual(candidate_manifest["l3_assigned_l1_count"], 4)
+            self.assertEqual(candidate_manifest["split_review_candidate"]["applied_split_count"], 1)
             self.assertTrue((candidate_root / "l3" / "applied_split_review_candidates.json").exists())
 
     def test_apply_split_review_candidates_skips_low_separability_split(self) -> None:

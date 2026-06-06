@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-03",
+  "scope": "optimization_long_term_v2_decision_catalog",
+  "reference_run": "optimization/runs/grace_v2_det_rescue_20260529_065827",
+  "canonical_mutation_policy": {
+    "share_mem": "read_only",
+    "long_term_l2_l3": "read_only",
+    "optimization_runs": "generated_outputs_only"
+  },
+  "grace_snapshot": {
+    "source_l1_count": 448,
+    "semantic_key_count": 448,
+    "l2_topic_count": 49,
+    "linked_l1_count": 440,
+    "unlinked_l1_count": 8,
+    "l3_parent_count": 3,
+    "l3_assigned_l1_count": 72
+  },
+  "l1_promotion_criteria": {
+    "kept_types": [
+      "decision",
+      "action_item",
+      "open_issue",
+      "proposal",
+      "argument",
+      "finding",
+      "approach_change"
+    ],
+    "must_have": [
+      "bounded evidence span",
+      "durable project-memory value",
+      "importance above retention threshold",
+      "not a duplicate stronger object",
+      "specific claim rather than vague restatement"
+    ],
+    "drop_or_review": [
+      "greetings or filler",
+      "pure scheduling or transient logistics",
+      "source-data-only setup inventory unless it affects reusable data-quality policy",
+      "unsupported claims",
+      "near-duplicate objects covering the same evidence"
+    ]
+  },
+  "semantic_key_layer": {
+    "primary_sources": [
+      "content",
+      "evidence"
+    ],
+    "secondary_sources": [
+      "type",
+      "importance",
+      "related_topics",
+      "related_obj_ids"
+    ],
+    "related_topics_role": "optional_stabilizing_signal_not_authoritative_assignment_source",
+    "facets": [
+      "project_goal",
+      "design_problem",
+      "method_or_approach",
+      "evaluation_or_validation",
+      "implementation_workflow",
+      "resource_or_constraint",
+      "next_action",
+      "unresolved_question"
+    ]
+  },
+  "l2_induction_criteria": {
+    "min_topic_evidence": 4,
+    "minimum_assignment_confidence": 0.25,
+    "high_importance_threshold": 0.7,
+    "max_l2_topic_share_before_specificity_penalty": 0.18,
+    "reject_labels": [
+      "type-like labels",
+      "generic-only labels",
+      "unsupported singletons",
+      "low-confidence assignments"
+    ],
+    "unlink_reasons": [
+      "candidate_topic_not_durable_enough",
+      "singleton_l2_not_durable_enough",
+      "low_assignment_confidence",
+      "semantic_rescue_low_confidence_review"
+    ]
+  },
+  "grace_l1_to_l2_examples": [
+    {
+      "obj_id": "L1-0422-006",
+      "l1_type": "approach_change",
+      "importance": 0.7,
+      "l2_id": "L2-memory-update",
+      "l2_label": "memory update",
+      "reason": "Transcript preprocessing into idea units changes the memory update approach."
+    },
+    {
+      "obj_id": "L1-0506-002",
+      "l1_type": "decision",
+      "importance": 0.62,
+      "l2_id": "L2-segmentation",
+      "l2_label": "segmentation",
+      "reason": "Defines segment versus idea unit as reusable terminology."
+    },
+    {
+      "obj_id": "L1-0506-009",
+      "l1_type": "proposal",
+      "importance": 0.65,
+      "l2_id": "L2-bottom-up",
+      "l2_label": "bottom up",
+      "reason": "Proposes bottom-up processing as an alternative design direction."
+    },
+    {
+      "obj_id": "L1-0429-122",
+      "l1_type": "approach_change",
+      "importance": 0.73,
+      "l2_id": "L2-update-memory",
+      "l2_label": "update memory",
+      "reason": "Abandons full-transcript one-shot memory update in favor of chunked processing."
+    },
+    {
+      "obj_id": "L1-0429-102",
+      "l1_type": "approach_change",
+      "importance": 0.72,
+      "l2_id": "L2-manager-agent",
+      "l2_label": "manager agent",
+      "reason": "Reframes the system as manager-agent orchestration."
+    }
+  ],
+  "grace_unlinked_examples": [
+    {
+      "obj_id": "L1-0307-035",
+      "candidate_label": "academia sinica",
+      "reason": "candidate_topic_not_durable_enough"
+    },
+    {
+      "obj_id": "L1-0307-034",
+      "candidate_label": "meeting transcript",
+      "reason": "singleton_l2_not_durable_enough"
+    },
+    {
+      "obj_id": "L1-0506-020",
+      "candidate_label": "data quality",
+      "reason": "semantic_rescue_low_confidence_review"
+    }
+  ],
+  "l3_promotion_criteria": {
+    "role": "topic_family_navigation_layer",
+    "min_absolute_threshold": 10,
+    "target_child_l2_size_range": [
+      6,
+      20
+    ],
+    "grace_adaptive_threshold": 20,
+    "must_have": [
+      "large enough source L2",
+      "separable child topics",
+      "evidence-backed child labels",
+      "exactly-once assignment of promoted source L1"
+    ],
+    "review_instead_of_promote": [
+      "dominant oversized child",
+      "too many empty or tiny children",
+      "generic or unsupported child labels",
+      "duplicate or missing child assignment"
+    ]
+  },
+  "grace_l3_examples": [
+    {
+      "l3_id": "L3-literature-review",
+      "source_l2_id": "L2-literature-review",
+      "children": [
+        {
+          "child_l2_id": "L2-literature-review-google-scholar",
+          "label": "google scholar",
+          "linked_l1_count": 15
+        },
+        {
+          "child_l2_id": "L2-literature-review-speech-annote-test",
+          "label": "speech annote test",
+          "linked_l1_count": 11
+        }
+      ]
+    },
+    {
+      "l3_id": "L3-memory-architecture",
+      "source_l2_id": "L2-memory-architecture",
+      "children": [
+        {
+          "child_l2_id": "L2-memory-architecture-long-term-memory",
+          "label": "long term memory",
+          "linked_l1_count": 15
+        },
+        {
+          "child_l2_id": "L2-memory-architecture-short-term-memory",
+          "label": "short term memory",
+          "linked_l1_count": 10
+        }
+      ]
+    },
+    {
+      "l3_id": "L3-data-quality",
+      "source_l2_id": "L2-data-quality",
+      "children": [
+        {
+          "child_l2_id": "L2-data-quality-segment-start-time",
+          "label": "segment start time",
+          "linked_l1_count": 10
+        },
+        {
+          "child_l2_id": "L2-data-quality-voice-conversion",
+          "label": "voice conversion",
+          "linked_l1_count": 11
+        }
+      ]
+    }
+  ],
+  "validation_gates": [
+    "raw L1 input hash unchanged",
+    "linked topics reference existing obj_id",
+    "related_topics is not the only assignment source",
+    "type-like L2 labels rejected",
+    "generic-only L2 labels rejected",
+    "assignment rationale required",
+    "high-importance unlinked L1 enters review",
+    "promoted source L1 assigned exactly once",
+    "tiny child L2 enters merge review",
+    "oversized child L2 enters split review"
+  ],
+  "status": "isolated_experiment_report_ready_not_canonical_promotion",
+  "chinese_grace_examples": [
+    {
+      "category": "idea_unit_to_l1",
+      "obj_id": "L1-0422-006",
+      "l1_content": "為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。",
+      "meeting_evidence_excerpt": "[SPEAKER_00]: 如果假設說好現在我要我們現在今天的meeting完了我得到一個今天的逐字稿，那我現在就要回去update我的memory對不對... 可能不能用turn，因為可能我們好幾個turn都在講同一件事情...",
+      "decision": "升成 L1，因為這是會影響 memory update pipeline 的 approach_change。"
+    },
+    {
+      "category": "idea_unit_to_l1",
+      "obj_id": "L1-0506-002",
+      "l1_content": "團隊已定義 segment 與 idea unit 之間的區別：segment 是指一個較廣泛的相關主題，而 idea unit 則是該主題內一個更小、更具體的組成部分。",
+      "meeting_evidence_excerpt": "[SPEAKER_01]: segment會是一個相關的段落，就是他都在討論這件事情，那idea unit可能是裡面有講到裡面可能to-do是什麼、decision是什麼... [SPEAKER_02]: 最小的單位都是idea units...",
+      "decision": "升成 L1，因為這是後續 segmentation 和 memory object pipeline 反覆使用的核心定義。"
+    },
+    {
+      "category": "l1_to_l2",
+      "obj_id": "L1-0506-009",
+      "l1_content": "提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法。",
+      "meeting_evidence_excerpt": "[SPEAKER_02]: 我們說每一個idea units裡面它可能會有一些label... 然後我們現在可能是先從先去分theme然後再去切... inductive coding的話他是從idea units然後他找到...",
+      "assigned_l2_id": "L2-bottom-up",
+      "decision": "歸入 L2-bottom-up，因為 bottom-up/top-down tradeoff 在 Grace 中形成 recurring semantic key。"
+    },
+    {
+      "category": "unlinked_l1",
+      "obj_id": "L1-0307-034",
+      "l1_content": "團隊成員需要協調統一其資料檔案夾結構，以避免因多個組件都使用 meeting_transcript 而造成檔案重複的問題。",
+      "meeting_evidence_excerpt": "[SPEAKER_01]: 你的格式要不要來跟我對一下？... short term 裡面吃的是 meeting_recording 裡 transcript 的東西... 我們才不會有兩份 meeting transcript 之類的。",
+      "unlink_reason": "singleton_l2_not_durable_enough",
+      "decision": "保留 L1，但不硬建立 L2，因為它沒有足夠 recurring evidence 形成長期 topic。"
+    },
+    {
+      "category": "unlinked_l1_review",
+      "obj_id": "L1-0506-020",
+      "l1_content": "決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。",
+      "meeting_evidence_excerpt": "[SPEAKER_02]: 這個segment它是針對錄音檔的segment對不對？... label都是針對idea units... 它會屬於某個segment... 中間是有relationship的...",
+      "unlink_reason": "semantic_rescue_low_confidence_review",
+      "decision": "保留 L1，但 data quality assignment 信心不足，所以進 review，不硬塞進 L2-data-quality。"
+    },
+    {
+      "category": "l2_to_l3",
+      "source_l2_id": "L2-memory-architecture",
+      "l3_id": "L3-memory-architecture",
+      "children": [
+        "L2-memory-architecture-long-term-memory",
+        "L2-memory-architecture-short-term-memory"
+      ],
+      "decision": "L2-memory-architecture 有 25 個 linked L1，超過 Grace promotion threshold 20，且自然分成 long-term memory 和 short-term memory 兩條 child L2。"
+    }
+  ]
+}

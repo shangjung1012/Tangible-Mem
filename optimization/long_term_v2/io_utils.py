@@ -22,7 +22,7 @@ def utc_now_iso() -> str:
 
 
 def load_json(path: Path | str) -> Any:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
 def write_json(path: Path | str, payload: Any) -> None:

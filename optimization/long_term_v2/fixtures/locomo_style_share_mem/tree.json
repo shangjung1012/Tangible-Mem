@@ -1,0 +1,158 @@
+{
+  "tree_version": 1,
+  "last_updated_utc": "2026-06-05T00:00:00Z",
+  "project_profile": {
+    "dataset": "locomo_style_fixture",
+    "sidecar_only": true
+  },
+  "phases": [],
+  "meetings": [
+    {
+      "meeting_id": "LOC-001",
+      "timestamp": "2026-01-01T00:00:00Z",
+      "meeting_date": "2026-01-01",
+      "source_file": "LOC-001.txt",
+      "phase_id": "",
+      "memory_objects": [
+        {
+          "obj_id": "L1-LOC-001-001",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The mentee prefers evening study sessions because morning lab work is unpredictable.",
+          "importance": 0.66,
+          "evidence": "Mentee: I usually study in the evening because lab work can change every morning.",
+          "related_topics": ["evening study schedule", "lab schedule constraint"],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-LOC-001-002",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The advisor document is stored in the shared project folder, but the final filename was not confirmed.",
+          "importance": 0.58,
+          "evidence": "Mentor: Put the advisor document in the shared folder for now; we can confirm the final filename later.",
+          "related_topics": ["advisor document location", "insufficient evidence filename"],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-LOC-001-003",
+          "type": "open_issue",
+          "legacy_type": "open_question",
+          "content": "The exact scholarship submission deadline is unknown and needs confirmation from the department page.",
+          "importance": 0.72,
+          "evidence": "Mentee: I am not sure if the scholarship deadline is March 10 or March 12.",
+          "related_topics": ["scholarship deadline uncertainty", "insufficient evidence deadline"],
+          "related_obj_ids": []
+        },
+        {
+          "obj_id": "L1-LOC-001-004",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The mentee's commuting constraint affects availability for early lab meetings.",
+          "importance": 0.62,
+          "evidence": "Mentee: The early train is unreliable, so morning meetings are hard before lab.",
+          "related_topics": ["commuting constraint", "lab schedule constraint"],
+          "related_obj_ids": ["L1-LOC-001-001"]
+        }
+      ]
+    },
+    {
+      "meeting_id": "LOC-002",
+      "timestamp": "2026-01-08T00:00:00Z",
+      "meeting_date": "2026-01-08",
+      "source_file": "LOC-002.txt",
+      "phase_id": "",
+      "memory_objects": [
+        {
+          "obj_id": "L1-LOC-002-001",
+          "type": "approach_change",
+          "legacy_type": "method_change",
+          "content": "The mentee changed the study routine from late evening to afternoon sessions after the lab schedule stabilized.",
+          "importance": 0.74,
+          "evidence": "Mentee: Since lab hours are stable now, I can study in the afternoon instead of late evening.",
+          "related_topics": ["study schedule change", "temporal state change"],
+          "related_obj_ids": ["L1-LOC-001-001"]
+        },
+        {
+          "obj_id": "L1-LOC-002-002",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The advisor document was renamed to proposal_notes_v3 and remains in the shared project folder.",
+          "importance": 0.69,
+          "evidence": "Mentor: The file is proposal_notes_v3 in the same shared folder.",
+          "related_topics": ["advisor document filename", "advisor document location"],
+          "related_obj_ids": ["L1-LOC-001-002"]
+        },
+        {
+          "obj_id": "L1-LOC-002-003",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The scholarship deadline was confirmed as March 12, resolving the earlier uncertainty.",
+          "importance": 0.76,
+          "evidence": "Mentee: I checked the department page; the scholarship deadline is March 12.",
+          "related_topics": ["scholarship deadline confirmed", "temporal state change"],
+          "related_obj_ids": ["L1-LOC-001-003"]
+        },
+        {
+          "obj_id": "L1-LOC-002-004",
+          "type": "argument",
+          "legacy_type": "argument",
+          "content": "The mentor reasoned that afternoon study is better only if it does not conflict with weekly advisor meetings.",
+          "importance": 0.63,
+          "evidence": "Mentor: Afternoon study works if it does not collide with the weekly advisor meeting.",
+          "related_topics": ["study schedule constraint", "advisor meeting dependency"],
+          "related_obj_ids": ["L1-LOC-002-001"]
+        }
+      ]
+    },
+    {
+      "meeting_id": "LOC-003",
+      "timestamp": "2026-01-15T00:00:00Z",
+      "meeting_date": "2026-01-15",
+      "source_file": "LOC-003.txt",
+      "phase_id": "",
+      "memory_objects": [
+        {
+          "obj_id": "L1-LOC-003-001",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The afternoon study plan is blocked on Wednesdays because the advisor meeting moved to that slot.",
+          "importance": 0.71,
+          "evidence": "Mentee: Wednesday afternoon is no longer available because the advisor meeting moved there.",
+          "related_topics": ["study schedule change", "advisor meeting dependency"],
+          "related_obj_ids": ["L1-LOC-002-001", "L1-LOC-002-004"]
+        },
+        {
+          "obj_id": "L1-LOC-003-002",
+          "type": "open_issue",
+          "legacy_type": "open_question",
+          "content": "It is still unknown whether the scholarship portal accepts the renamed proposal_notes_v3 file.",
+          "importance": 0.73,
+          "evidence": "Mentee: I know the deadline, but I do not know if the portal accepts proposal_notes_v3.",
+          "related_topics": ["scholarship file uncertainty", "insufficient evidence portal"],
+          "related_obj_ids": ["L1-LOC-002-002", "L1-LOC-002-003"]
+        },
+        {
+          "obj_id": "L1-LOC-003-003",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The document location plus confirmed deadline create a multi-hop context for scholarship preparation.",
+          "importance": 0.68,
+          "evidence": "Mentor: To prepare the scholarship, combine the shared-folder document with the confirmed March 12 deadline.",
+          "related_topics": ["multi hop scholarship context", "advisor document deadline"],
+          "related_obj_ids": ["L1-LOC-002-002", "L1-LOC-002-003"]
+        },
+        {
+          "obj_id": "L1-LOC-003-004",
+          "type": "finding",
+          "legacy_type": "result",
+          "content": "The meeting ended with a brief note that the next check-in may be remote.",
+          "importance": 0.24,
+          "evidence": "Mentor: Next check-in might be remote; we can decide later.",
+          "related_topics": ["administrative check in"],
+          "related_obj_ids": []
+        }
+      ]
+    }
+  ]
+}

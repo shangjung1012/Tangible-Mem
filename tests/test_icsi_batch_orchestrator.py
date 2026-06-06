@@ -3,11 +3,16 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from share_mem.run_icsi_batch import (
     BatchConfig,
+    _load_status,
     build_bridge_command,
     build_filtered_share_tree,
+    config_from_args,
+    discover_transcripts,
+    parse_args,
     prepare_transcript_input,
     run_batch,
     validate_output_root_safety,
@@ -60,6 +65,81 @@ class ICSIBatchOrchestratorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_output_root_safety(Path("share_mem/icsi_bad_output"))
 
+    def test_output_base_and_run_id_resolve_dataset_run_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            args = parse_args(
+                [
+                    "--transcript-dir",
+                    str(Path(tmp) / "transcripts"),
+                    "--output-base",
+                    str(Path(tmp) / "memory_outputs"),
+                    "--run-id",
+                    "bmr012_016_first360_20260605",
+                    "--line-limit",
+                    "360",
+                    "--dry-run",
+                ]
+            )
+
+            config = config_from_args(args)
+
+            self.assertEqual(
+                config.output_root,
+                Path(tmp)
+                / "memory_outputs"
+                / "icsi"
+                / "runs"
+                / "bmr_first360_bmr012_016_first360_20260605",
+            )
+
+    def test_discover_transcripts_start_after_then_max_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            transcript_dir = Path(tmp) / "transcripts"
+            transcript_dir.mkdir()
+            for name in [
+                "Bmr010.txt",
+                "Bmr011.txt",
+                "Bmr012.txt",
+                "Bmr013.txt",
+                "Bmr014.txt",
+                "Bmr015.txt",
+                "Bmr016.txt",
+                "Bmr018.txt",
+            ]:
+                (transcript_dir / name).write_text("[me001]: hello\n", encoding="utf-8")
+            config = BatchConfig(
+                transcript_dir=transcript_dir,
+                output_root=Path(tmp) / "out",
+                model="gemini-2.5-pro",
+                transcript_glob="Bmr*.txt",
+                start_after="Bmr011.txt",
+                max_files=5,
+            )
+
+            selected = discover_transcripts(config)
+
+            self.assertEqual(
+                [path.name for path in selected],
+                ["Bmr012.txt", "Bmr013.txt", "Bmr014.txt", "Bmr015.txt", "Bmr016.txt"],
+            )
+
+    def test_discover_transcripts_start_after_requires_existing_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            transcript_dir = Path(tmp) / "transcripts"
+            transcript_dir.mkdir()
+            (transcript_dir / "Bmr012.txt").write_text("[me001]: hello\n", encoding="utf-8")
+            config = BatchConfig(
+                transcript_dir=transcript_dir,
+                output_root=Path(tmp) / "out",
+                model="gemini-2.5-pro",
+                transcript_glob="Bmr*.txt",
+                start_after="Bmr011.txt",
+                max_files=5,
+            )
+
+            with self.assertRaisesRegex(ValueError, "start-after"):
+                discover_transcripts(config)
+
     def test_dry_run_writes_per_file_status_without_tree_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -81,6 +161,83 @@ class ICSIBatchOrchestratorTests(unittest.TestCase):
             self.assertEqual([row["status"] for row in status["runs"]], ["dry_run", "dry_run"])
             self.assertTrue((root / "out" / "batch_status.json").exists())
             self.assertFalse((root / "out" / "share_mem" / "tree.json").exists())
+
+    def test_dry_run_with_output_base_writes_status_under_resolved_run_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            transcript_dir = root / "transcripts"
+            transcript_dir.mkdir()
+            (transcript_dir / "Bmr012.txt").write_text("[me001]: hello\n", encoding="utf-8")
+            args = parse_args(
+                [
+                    "--transcript-dir",
+                    str(transcript_dir),
+                    "--output-base",
+                    str(root / "memory_outputs"),
+                    "--run-id",
+                    "bmr012_016_first360_20260605",
+                    "--transcript-glob",
+                    "Bmr*.txt",
+                    "--line-limit",
+                    "360",
+                    "--dry-run",
+                ]
+            )
+
+            config = config_from_args(args)
+            status = run_batch(config)
+
+            expected_root = (
+                root
+                / "memory_outputs"
+                / "icsi"
+                / "runs"
+                / "bmr_first360_bmr012_016_first360_20260605"
+            )
+            self.assertEqual(config.output_root, expected_root)
+            self.assertEqual(status["summary"]["dry_run_count"], 1)
+            self.assertTrue((expected_root / "batch_status.json").exists())
+            self.assertTrue((expected_root / "run_manifest.json").exists())
+
+
+    def test_batch_stops_after_target_success_count_without_starting_next_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            transcript_dir = root / "transcripts"
+            transcript_dir.mkdir()
+            for name in ["Bmr001.txt", "Bmr002.txt", "Bmr003.txt"]:
+                (transcript_dir / name).write_text("[me001]: hello\n", encoding="utf-8")
+            config = BatchConfig(
+                transcript_dir=transcript_dir,
+                output_root=root / "out",
+                model="gemini-2.5-pro",
+                target_success_count=2,
+                continue_on_failure=True,
+            )
+
+            with (
+                patch("share_mem.run_icsi_batch._run_command", return_value=("succeeded", 0, "")),
+                patch(
+                    "share_mem.run_icsi_batch._refresh_share_mem",
+                    return_value={"meeting_count": 1, "object_count": 1},
+                ),
+                patch(
+                    "share_mem.run_icsi_batch._run_validation",
+                    return_value={"review_gate_summary": {}, "filtered_manifest": {}},
+                ),
+            ):
+                status = run_batch(config)
+
+            self.assertEqual(status["summary"]["succeeded_count"], 2)
+            self.assertTrue(status["summary"]["target_success_reached"])
+            self.assertEqual([row["meeting_source"] for row in status["runs"]], ["Bmr001.txt", "Bmr002.txt"])
+
+    def test_batch_status_loader_accepts_utf8_bom(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "batch_status.json"
+            path.write_text('\ufeff{"schema_version": 1, "runs": []}', encoding="utf-8")
+
+            self.assertEqual(_load_status(path)["runs"], [])
 
     def test_build_filtered_share_tree_keeps_raw_tree_unchanged(self) -> None:
         tree = {
