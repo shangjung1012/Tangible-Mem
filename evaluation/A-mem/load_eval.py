@@ -90,10 +90,13 @@ def build_amem_system(notes: list[dict], use_llm_evolution: bool = False) -> Age
     
     # 初始化 A-mem
     # 因為我們不進行 LLM 呼叫，所以 backend 可以隨便填 (或如果需要 LLM，請填入合適的 API KEY)
+    # 這裡預設提供 "mock-key" 以免在沒有設定環境變數時報 ValueError 錯
+    api_key = os.getenv("OPENAI_API_KEY") or "mock-key"
     memory_system = AgenticMemorySystem(
         model_name='all-MiniLM-L6-v2',
         llm_backend="openai",
-        llm_model="gpt-4o-mini"
+        llm_model="gpt-4o-mini",
+        api_key=api_key
     )
     
     for idx, note in enumerate(notes):
