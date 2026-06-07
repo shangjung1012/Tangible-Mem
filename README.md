@@ -96,6 +96,19 @@ experiments, keep `--model gemini-2.5-pro` for answers. Add
 `--use-llm-planner --planner-model gemini-2.5-flash` only when you intentionally
 want Gemini to plan retrieval.
 
+Run A-mem evaluation:
+
+```bash
+# 1. 讀入 grace 的 L1 結構化記憶物件並跑 gold queries 評估 (預設，會輸出 Recall 結果)
+uv run evaluation/A-mem/load_eval.py --mode l1-tree --k 5
+
+# 2. 讀入原始 grace 逐字稿進行 Chunking 切片與檢索測試
+uv run evaluation/A-mem/load_eval.py --mode raw-grace --chunk-size 15 --k 5
+
+# 3. 讀入原始 ICSI 逐字稿進行 Chunking 切片與檢索測試
+uv run evaluation/A-mem/load_eval.py --mode raw-icsi --chunk-size 15 --k 5
+```
+
 Update short-term memory from a share_mem snapshot:
 
 ```bash
