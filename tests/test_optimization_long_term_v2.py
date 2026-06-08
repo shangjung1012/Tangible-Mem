@@ -22,6 +22,7 @@ from optimization.long_term_v2.extract_semantic_keys import (  # noqa: E402
 from optimization.long_term_v2.evaluate_retrieval import evaluate_retrieval, _rank_l1, _semantic_topic_hit  # noqa: E402
 from optimization.long_term_v2.evaluate_answer_quality import evaluate_answer_quality  # noqa: E402
 from optimization.long_term_v2.effective_view import load_effective_topic_surface  # noqa: E402
+from optimization.long_term_v2.finalize_active_l2_review import finalize_active_l2_review  # noqa: E402
 from optimization.long_term_v2.finalize_manual_review import finalize_manual_review  # noqa: E402
 from optimization.long_term_v2.io_utils import load_json  # noqa: E402
 from optimization.long_term_v2.apply_split_review_candidates import apply_split_review_candidates  # noqa: E402
@@ -742,6 +743,141 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertIn("correct", report["review_schema"]["allowed_decisions"])
             self.assertTrue((root / "review" / "active_l2_manual_review.json").exists())
             self.assertTrue((root / "review" / "active_l2_manual_review.md").exists())
+
+    def test_active_l2_review_finalizer_counts_warnings_and_known_items(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            review_dir = root / "review"
+            review_dir.mkdir(parents=True)
+            (review_dir / "active_l2_manual_review.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "top_largest_active_l2": [
+                            {"l2_id": "L2-keep", "label": "recording setup", "linked_l1_count": 12},
+                            {"l2_id": "L2-label", "label": "ti digit", "linked_l1_count": 8},
+                        ],
+                        "suppressed_l2": [
+                            {"l2_id": "L2-go", "label": "go ahead", "linked_l1_count": 5},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            decisions = root / "decisions.jsonl"
+            decisions.write_text(
+                "\n".join(
+                    [
+                        json.dumps(
+                            {
+                                "review_id": "AR-0001",
+                                "item_type": "active_l2",
+                                "item_id": "L2-keep",
+                                "decision": "correct",
+                                "severity": "none",
+                                "reason": "Representative evidence is coherent.",
+                                "reviewer": "agent",
+                                "created_at_utc": "2026-06-09T00:00:00Z",
+                            }
+                        ),
+                        json.dumps(
+                            {
+                                "review_id": "AR-0002",
+                                "item_type": "active_l2",
+                                "item_id": "L2-label",
+                                "decision": "needs_label_review",
+                                "severity": "warning",
+                                "reason": "The label is too abbreviated for a review audience.",
+                                "reviewer": "agent",
+                                "created_at_utc": "2026-06-09T00:00:00Z",
+                            }
+                        ),
+                        json.dumps(
+                            {
+                                "review_id": "AR-0003",
+                                "item_type": "suppressed_l2",
+                                "item_id": "L2-go",
+                                "decision": "correct_suppressed",
+                                "severity": "none",
+                                "reason": "This is a discourse transition, not a durable topic.",
+                                "reviewer": "agent",
+                                "created_at_utc": "2026-06-09T00:00:00Z",
+                            }
+                        ),
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = finalize_active_l2_review(review_path=review_dir / "active_l2_manual_review.json", decisions_path=decisions, out=root / "out")
+
+            self.assertEqual(report["status"], "warning")
+            self.assertEqual(report["decision_count"], 3)
+            self.assertEqual(report["warning_issue_count"], 1)
+            self.assertEqual(report["known_item_decision_count"], 3)
+            self.assertEqual(report["by_decision"]["needs_label_review"], 1)
+            self.assertTrue((root / "out" / "active_l2_review_decisions_summary.json").exists())
+            self.assertTrue((root / "out" / "active_l2_review_decisions_summary.md").exists())
+
+    def test_active_l2_review_finalizer_rejects_unknown_item_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            review_path = root / "active_l2_manual_review.json"
+            review_path.write_text(
+                json.dumps({"top_largest_active_l2": [{"l2_id": "L2-known"}], "suppressed_l2": []}),
+                encoding="utf-8",
+            )
+            decisions = root / "decisions.jsonl"
+            decisions.write_text(
+                json.dumps(
+                    {
+                        "review_id": "AR-0001",
+                        "item_type": "active_l2",
+                        "item_id": "L2-missing",
+                        "decision": "correct",
+                        "severity": "none",
+                        "reason": "Bad reference.",
+                        "reviewer": "agent",
+                        "created_at_utc": "2026-06-09T00:00:00Z",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            report = finalize_active_l2_review(review_path=review_path, decisions_path=decisions, out=root / "out")
+
+            self.assertEqual(report["status"], "fail")
+            self.assertEqual(report["unknown_item_count"], 1)
+
+    def test_active_l2_review_finalizer_rejects_invalid_decision_label(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            review_path = root / "active_l2_manual_review.json"
+            review_path.write_text(
+                json.dumps({"top_largest_active_l2": [{"l2_id": "L2-known"}], "suppressed_l2": []}),
+                encoding="utf-8",
+            )
+            decisions = root / "decisions.jsonl"
+            decisions.write_text(
+                json.dumps(
+                    {
+                        "review_id": "AR-0001",
+                        "item_type": "active_l2",
+                        "item_id": "L2-known",
+                        "decision": "custom_rule",
+                        "severity": "none",
+                        "reason": "Bad decision.",
+                        "reviewer": "agent",
+                        "created_at_utc": "2026-06-09T00:00:00Z",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            report = finalize_active_l2_review(review_path=review_path, decisions_path=decisions, out=root / "out")
+
+            self.assertEqual(report["status"], "fail")
+            self.assertEqual(report["validation_error_count"], 1)
 
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
