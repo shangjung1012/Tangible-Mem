@@ -159,6 +159,11 @@ def _write_share_root(root: Path, tree: dict | None = None) -> None:
     (root / "tree.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def _write_effective_surface_fixture(run_root: Path, *, profile_path: Path | None = None) -> None:
     raw_l2_view = {
         "l2_nodes": [
@@ -878,6 +883,112 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
 
             self.assertEqual(report["status"], "fail")
             self.assertEqual(report["validation_error_count"], 1)
+
+    def test_label_refinement_proposals_require_representative_l1(self) -> None:
+        from optimization.long_term_v2.propose_topic_label_refinements import propose_label_refinements
+
+        review = {
+            "decisions": [
+                {
+                    "item_type": "active_l2",
+                    "item_id": "L2-ti-digit",
+                    "decision": "needs_label_review",
+                    "reason": "Representative L1 concerns TI-digits benchmark comparison set.",
+                }
+            ]
+        }
+        l2_nodes = {
+            "L2-ti-digit": {
+                "l2_id": "L2-ti-digit",
+                "label": "ti digit",
+                "linked_obj_ids": ["L1-A", "L1-B"],
+                "timeline_digest": [{"obj_id": "L1-A", "summary": "Compare against TI-digits benchmark."}],
+                "top_semantic_terms": [{"term": "ti digit benchmark", "object_count": 2}],
+            }
+        }
+
+        report = propose_label_refinements(review=review, l2_nodes=l2_nodes)
+
+        self.assertEqual(report["proposal_count"], 1)
+        proposal = report["proposals"][0]
+        self.assertEqual(proposal["source_l2_id"], "L2-ti-digit")
+        self.assertNotEqual(proposal["proposed_label"], "ti digit")
+        self.assertTrue(proposal["representative_l1_ids"])
+        self.assertEqual(proposal["application_policy"], "sidecar_review_required")
+
+    def test_effective_topic_run_comparison_reports_label_and_metric_changes(self) -> None:
+        from optimization.long_term_v2.compare_effective_topic_runs import compare_effective_topic_runs
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline = root / "optimization" / "runs" / "baseline"
+            candidate = root / "optimization" / "runs" / "candidate"
+            for run_root, label in [(baseline, "ti digit"), (candidate, "TI-digits benchmark comparison")]:
+                _write_json(
+                    run_root / "manifest.json",
+                    {"source_l1_count": 2, "linked_l1_count": 2, "l2_topic_count": 1, "l3_parent_count": 0},
+                )
+                _write_json(
+                    run_root / "l2" / "l2_view.json",
+                    {"l2_nodes": [{"l2_id": "L2-ti-digit", "label": label, "linked_obj_ids": ["L1-A", "L1-B"]}]},
+                )
+                _write_json(run_root / "l2" / "l2_index.json", {"L1-A": {"l2_id": "L2-ti-digit", "l2_label": label}})
+                _write_json(run_root / "l3" / "l3_view.json", {"l3_parents": []})
+                _write_json(run_root / "l3" / "l3_index.json", {})
+            _write_json(
+                baseline / "retrieval_eval_icsi_effective" / "retrieval_eval_report.json",
+                {"summary": {"avg_expected_obj_recall_at_context": 0.5, "expected_l2_semantic_hit_rate": 1.0}},
+            )
+            _write_json(
+                candidate / "retrieval_eval_icsi_effective" / "retrieval_eval_report.json",
+                {"summary": {"avg_expected_obj_recall_at_context": 0.6, "expected_l2_semantic_hit_rate": 1.0}},
+            )
+
+            report = compare_effective_topic_runs(baseline=baseline, candidate=candidate, out=root / "optimization" / "reports" / "comparison")
+
+            self.assertEqual(report["changed_label_count"], 1)
+            self.assertGreaterEqual(report["retrieval_metric_deltas"]["avg_expected_obj_recall_at_context"], 0)
+            self.assertEqual(report["decision"], "candidate_kept_isolated")
+
+    def test_icsi_answer_quality_proxy_compares_candidate_context_quality(self) -> None:
+        from optimization.long_term_v2.evaluate_icsi_answer_quality import evaluate_icsi_answer_quality_proxy
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline = root / "optimization" / "runs" / "baseline"
+            candidate = root / "optimization" / "runs" / "candidate"
+            _write_json(
+                baseline / "retrieval_eval_icsi_effective" / "retrieval_eval_report.json",
+                {
+                    "summary": {"avg_expected_obj_recall_at_context": 0.6, "expected_l2_semantic_hit_rate": 1.0},
+                    "queries": [{"query_id": "q1", "expected_l2_labels": ["ti digit"], "selected_l1": [{"obj_id": "L1-A"}]}],
+                },
+            )
+            _write_json(
+                candidate / "retrieval_eval_icsi_effective" / "retrieval_eval_report.json",
+                {
+                    "summary": {"avg_expected_obj_recall_at_context": 0.7, "expected_l2_semantic_hit_rate": 1.0},
+                    "queries": [
+                        {
+                            "query_id": "q1",
+                            "expected_l2_labels": ["TI-digits benchmark comparison"],
+                            "selected_l1": [{"obj_id": "L1-A"}, {"obj_id": "L1-B"}],
+                        }
+                    ],
+                },
+            )
+
+            report = evaluate_icsi_answer_quality_proxy(
+                baseline_run_root=baseline,
+                candidate_run_root=candidate,
+                out=root / "optimization" / "reports" / "answer_quality",
+            )
+
+            self.assertEqual(report["strategy_count"], 2)
+            self.assertGreaterEqual(
+                report["strategies"]["optimization_v2_candidate5"]["proxy_overall_score"],
+                report["strategies"]["optimization_v2_candidate4"]["proxy_overall_score"],
+            )
 
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

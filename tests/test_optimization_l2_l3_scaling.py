@@ -1002,6 +1002,95 @@ class OptimizationL2L3ScalingTests(unittest.TestCase):
             self.assertEqual(report["applied_split_count"], 0)
             self.assertEqual(report["skipped_splits"][0]["reason"], "tiny_candidate_child")
 
+    def test_active_l2_split_candidate_requires_evidence_backed_children(self) -> None:
+        from optimization.long_term_v2.propose_active_l2_splits import propose_active_l2_splits
+
+        node = {
+            "l2_id": "L2-large",
+            "label": "data collection",
+            "linked_obj_ids": ["L1-A", "L1-B", "L1-C", "L1-D", "L1-E", "L1-F"],
+            "top_semantic_terms": [
+                {"term": "digit reading data", "object_count": 3},
+                {"term": "corpus distribution rationale", "object_count": 3},
+            ],
+            "timeline_digest": [
+                {"obj_id": "L1-A", "summary": "Collect digit reading data."},
+                {"obj_id": "L1-B", "summary": "Collect digit reading data and review the task protocol."},
+                {"obj_id": "L1-C", "summary": "Digit reading data collection will continue."},
+                {"obj_id": "L1-D", "summary": "Define corpus distribution rationale."},
+                {"obj_id": "L1-E", "summary": "Corpus distribution rationale depends on general usefulness."},
+                {"obj_id": "L1-F", "summary": "Discuss corpus distribution rationale for external users."},
+            ],
+        }
+
+        report = propose_active_l2_splits({"L2-large": node}, target_l2_ids=["L2-large"])
+
+        self.assertIn("split_candidates", report)
+        self.assertEqual(report["source_l2_count"], 1)
+        self.assertTrue(report["split_candidates"] or report["review_only"])
+        if report["split_candidates"]:
+            child_candidates = report["split_candidates"][0]["child_candidates"]
+            self.assertGreaterEqual(len(child_candidates), 2)
+            self.assertTrue(all(child["representative_l1_ids"] for child in child_candidates))
+
+    def test_apply_topic_review_candidates_writes_only_candidate_run(self) -> None:
+        from optimization.long_term_v2.apply_topic_review_candidates import apply_topic_review_candidates
+
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "optimization" / "runs" / "source"
+            _write_json(
+                source / "manifest.json",
+                {"source_l1_count": 2, "linked_l1_count": 2, "l2_topic_count": 1, "l3_parent_count": 0},
+            )
+            _write_json(
+                source / "l2" / "l2_view.json",
+                {
+                    "l2_nodes": [
+                        {
+                            "l2_id": "L2-label",
+                            "label": "old label",
+                            "linked_obj_ids": ["L1-A", "L1-B"],
+                            "timeline_digest": [
+                                {"obj_id": "L1-A", "summary": "Alpha evidence."},
+                                {"obj_id": "L1-B", "summary": "Beta evidence."},
+                            ],
+                        }
+                    ]
+                },
+            )
+            _write_json(
+                source / "l2" / "l2_index.json",
+                {
+                    "L1-A": {"l2_id": "L2-label", "l2_label": "old label"},
+                    "L1-B": {"l2_id": "L2-label", "l2_label": "old label"},
+                },
+            )
+            _write_json(source / "l3" / "l3_view.json", {"l3_parents": []})
+            _write_json(source / "l3" / "l3_index.json", {})
+            before = (source / "l2" / "l2_view.json").read_text(encoding="utf-8")
+
+            report = apply_topic_review_candidates(
+                source_run_root=source,
+                label_candidates={
+                    "proposals": [
+                        {
+                            "source_l2_id": "L2-label",
+                            "proposed_label": "new evidence label",
+                            "representative_l1_ids": ["L1-A"],
+                            "validation_status": "candidate_review_required",
+                        }
+                    ]
+                },
+                split_candidates={"split_candidates": []},
+                out_root=Path(tmp) / "optimization" / "runs" / "candidate",
+                clean=True,
+            )
+
+            self.assertIn("candidate_run_root", report)
+            self.assertEqual((source / "l2" / "l2_view.json").read_text(encoding="utf-8"), before)
+            candidate_l2 = load_json(Path(report["candidate_run_root"]) / "l2" / "l2_view.json")
+            self.assertEqual(candidate_l2["l2_nodes"][0]["label"], "new evidence label")
+
     def test_apply_split_review_skips_even_but_tiny_children(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "optimization" / "runs" / "source"
