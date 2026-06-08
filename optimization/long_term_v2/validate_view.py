@@ -15,6 +15,7 @@ from optimization.long_term_v2.profiles import (
     profile_generic_topic_labels,
     profile_rejected_topic_labels,
     profile_type_like_labels,
+    profile_weak_phrase_terms,
 )
 
 
@@ -78,6 +79,8 @@ def _label_issue(label: str, *, profile: dict[str, Any]) -> str:
     parts = clean.split()
     if len(parts) == 1 and parts[0] in generic_labels:
         return "generic_l2_label"
+    if set(parts) & profile_weak_phrase_terms(profile):
+        return "weak_l2_label"
     return ""
 
 
@@ -156,6 +159,7 @@ def validate_run(*, run_root: Path | str) -> dict[str, Any]:
                     child_code,
                     "Child L2 label needs review.",
                     parent_l3_id=parent.get("l3_id"),
+                    source_l2_id=parent.get("source_l2_id"),
                     child_l2_id=child.get("child_l2_id"),
                     label=child.get("label"),
                 )

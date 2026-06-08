@@ -10,7 +10,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from optimization.long_term_v2.io_utils import ensure_optimization_output, load_json, utc_now_iso, write_json
-from optimization.long_term_v2.profiles import profile_generic_topic_labels, profile_type_like_labels
+from optimization.long_term_v2.profiles import (
+    profile_generic_topic_labels,
+    profile_type_like_labels,
+    profile_weak_phrase_terms,
+)
 from optimization.long_term_v2.text_utils import normalize_phrase
 from share_mem.store import iter_l1_objects
 
@@ -31,10 +35,13 @@ def _label_rejection(label: str, *, profile: dict[str, Any]) -> str:
         return "empty_label"
     generic = profile_generic_topic_labels(profile)
     type_like = profile_type_like_labels(profile)
+    weak_phrase_terms = profile_weak_phrase_terms(profile)
     if clean in type_like or clean in generic or clean in FUNCTION_WORD_LABELS:
         return "generic_or_type_like_label"
     if len(clean.split()) == 1 and clean in generic:
         return "generic_or_type_like_label"
+    if set(clean.split()) & weak_phrase_terms:
+        return "weak_phrase_label"
     return ""
 
 

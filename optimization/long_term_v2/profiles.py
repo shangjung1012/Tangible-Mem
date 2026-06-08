@@ -137,6 +137,13 @@ def profile_weak_child_terms(profile: dict[str, Any]) -> set[str]:
     )
 
 
+def profile_weak_phrase_terms(profile: dict[str, Any]) -> set[str]:
+    policy = profile_label_policy(profile)
+    return _string_set(policy.get("weak_phrase_terms", [])) | _string_set(
+        policy.get("additional_weak_phrase_terms", [])
+    )
+
+
 def profile_stopwords(profile: dict[str, Any]) -> set[str]:
     return _string_set(profile_text_policy(profile).get("stopwords", []))
 

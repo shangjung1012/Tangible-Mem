@@ -63,7 +63,19 @@ def _topic_review_source_ids(path: Path | str | None) -> set[str]:
             continue
         code = str(item.get("code", "") or "")
         action = str(item.get("action", "") or "")
-        if code not in {"needs_topic_review", "broad_l2_mixed_signatures", "oversized_l2"} and action not in {
+        if code not in {
+            "needs_topic_review",
+            "broad_l2_mixed_signatures",
+            "oversized_l2",
+            "weak_l2_label",
+            "generic_l2_label",
+            "rejected_l2_label",
+            "type_like_l2_label",
+            "weak_child_l2_label",
+            "generic_child_l2_label",
+            "rejected_child_l2_label",
+            "type_like_child_l2_label",
+        } and action not in {
             "needs_topic_review",
             "needs_split_review",
         }:
@@ -96,6 +108,9 @@ def _build_prompt(sources: list[dict[str, Any]], profile: dict[str, Any]) -> str
             "Do not split a source if most evidence would still belong to one child and the other children would be tiny edge cases.",
             "Do not invent project-specific taxonomy that is not supported by the evidence.",
             "Prefer review_only when the source L2 is a single repeated concept that cannot be split coherently.",
+            "Every review_only row must include review_disposition: coherent_no_split, incoherent_no_durable_topic, or needs_manual_review.",
+            "Use coherent_no_split only when the evidence is a real recurring topic but separable child topics would be trivial or tiny.",
+            "Use incoherent_no_durable_topic when the source label is functional/discourse-like or the linked L1 evidence has no shared durable subject.",
             "Return JSON only.",
         ],
         "profile": {
@@ -121,6 +136,7 @@ def _build_prompt(sources: list[dict[str, Any]], profile: dict[str, Any]) -> str
             "review_only": [
                 {
                     "source_l2_id": "existing id",
+                    "review_disposition": "coherent_no_split | incoherent_no_durable_topic | needs_manual_review",
                     "reason": "why no reliable split should be materialized",
                     "representative_l1_ids": ["obj ids from this source L2"],
                 }
@@ -128,6 +144,66 @@ def _build_prompt(sources: list[dict[str, Any]], profile: dict[str, Any]) -> str
         },
     }
     return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def _chunked(items: list[dict[str, Any]], size: int) -> list[list[dict[str, Any]]]:
+    if size <= 0 or len(items) <= size:
+        return [items]
+    return [items[index : index + size] for index in range(0, len(items), size)]
+
+
+def _sum_usage_metadata(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    totals: dict[str, Any] = {}
+    for row in rows:
+        for key, value in (row or {}).items():
+            if isinstance(value, (int, float)):
+                totals[key] = totals.get(key, 0) + value
+    return totals
+
+
+def _proposal_source_id(row: dict[str, Any]) -> str:
+    return str(row.get("source_l2_id", "") or "")
+
+
+def _merge_with_existing_report(report: dict[str, Any], existing: dict[str, Any]) -> dict[str, Any]:
+    replacement_ids = set(report.get("source_l2_ids", []) or [])
+
+    def merge_rows(key: str) -> list[dict[str, Any]]:
+        retained = [
+            row
+            for row in existing.get(key, []) or []
+            if isinstance(row, dict) and _proposal_source_id(row) not in replacement_ids
+        ]
+        return retained + [row for row in report.get(key, []) or [] if isinstance(row, dict)]
+
+    merged = {**report}
+    merged["accepted_split_candidates"] = merge_rows("accepted_split_candidates")
+    merged["review_only"] = merge_rows("review_only")
+    merged["rejected"] = merge_rows("rejected")
+    merged["accepted_split_count"] = len(merged["accepted_split_candidates"])
+    merged["review_only_count"] = len(merged["review_only"])
+    merged["rejected_count"] = len(merged["rejected"])
+    merged["source_l2_ids"] = sorted(
+        {
+            str(value)
+            for value in (existing.get("source_l2_ids", []) or []) + (report.get("source_l2_ids", []) or [])
+            if str(value)
+        }
+    )
+    merged["source_l2_count"] = len(merged["source_l2_ids"])
+    merged["batches"] = (existing.get("batches", []) or []) + (report.get("batches", []) or [])
+    merged["batch_count"] = len(merged["batches"]) or report.get("batch_count", 0)
+    merged["usage_metadata"] = _sum_usage_metadata(
+        [
+            existing.get("usage_metadata", {}) or {},
+            report.get("usage_metadata", {}) or {},
+        ]
+    )
+    merged["batch_usage_metadata"] = (existing.get("batch_usage_metadata", []) or []) + (
+        report.get("batch_usage_metadata", []) or []
+    )
+    merged["merged_existing_report"] = True
+    return merged
 
 
 def _safe_float(value: Any) -> float:
@@ -254,7 +330,14 @@ def _validate_split_review(parsed: dict[str, Any], sources: list[dict[str, Any]]
         source = str(row.get("source_l2_id", "") or "")
         reps = [str(value) for value in row.get("representative_l1_ids", []) or [] if str(value) in allowed_ids.get(source, set())]
         if source in by_id:
-            review_only.append({**row, "representative_l1_ids": reps})
+            disposition = str(row.get("review_disposition", "") or "").strip().lower()
+            if disposition not in {
+                "coherent_no_split",
+                "incoherent_no_durable_topic",
+                "needs_manual_review",
+            }:
+                disposition = "needs_manual_review"
+            review_only.append({**row, "review_disposition": disposition, "representative_l1_ids": reps})
         else:
             rejected.append({"proposal": row, "reason": "unknown_review_only_source_l2_id"})
     return {"accepted_split_candidates": accepted, "review_only": review_only, "rejected": rejected}
@@ -269,6 +352,8 @@ def propose_focused_split_review(
     source_l2_ids: list[str] | None = None,
     review_source_path: Path | str | None = None,
     sample_limit: int = 12,
+    max_sources_per_call: int = 0,
+    merge_existing: bool = False,
 ) -> dict[str, Any]:
     root = ensure_optimization_output(run_root)
     l2_view = load_json(root / "l2" / "l2_view.json")
@@ -305,58 +390,104 @@ def propose_focused_split_review(
         from share_mem.l1.gemini_clients import create_gemini_client
 
         client = create_gemini_client()
-    prompt = _build_prompt(sources, profile)
-    start = time.perf_counter()
-    raw_text = ""
-    parsed: dict[str, Any] = {}
-    usage_metadata: dict[str, Any] = {}
-    error = ""
-    try:
-        response = client.models.generate_content(
-            model=selected_model,
-            contents=prompt,
-            config={"response_mime_type": "application/json"},
+    batches = _chunked(sources, max_sources_per_call)
+    batch_reports: list[dict[str, Any]] = []
+    accepted: list[dict[str, Any]] = []
+    review_only: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    usage_rows: list[dict[str, Any]] = []
+    total_latency_ms = 0.0
+    errors: list[str] = []
+    for batch_index, batch_sources in enumerate(batches, start=1):
+        prompt = _build_prompt(batch_sources, profile)
+        start = time.perf_counter()
+        raw_text = ""
+        parsed: dict[str, Any] = {}
+        usage_metadata: dict[str, Any] = {}
+        error = ""
+        try:
+            response = client.models.generate_content(
+                model=selected_model,
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
+            raw_text = _response_text(response)
+            usage_metadata = _usage_metadata(response)
+            parsed = _extract_json(raw_text)
+        except Exception as exc:
+            error = f"{type(exc).__name__}: {exc}"
+            parsed = {}
+        latency_ms = round((time.perf_counter() - start) * 1000, 3)
+        total_latency_ms = round(total_latency_ms + latency_ms, 3)
+        if error:
+            errors.append(error)
+        validation = _validate_split_review(parsed, batch_sources, profile)
+        accepted.extend(validation["accepted_split_candidates"])
+        review_only.extend(validation["review_only"])
+        rejected.extend(validation["rejected"])
+        usage_rows.append(usage_metadata)
+        batch_report = {
+            "batch_index": batch_index,
+            "batch_count": len(batches),
+            "source_l2_count": len(batch_sources),
+            "source_l2_ids": [source["source_l2_id"] for source in batch_sources],
+            "accepted_split_count": len(validation["accepted_split_candidates"]),
+            "review_only_count": len(validation["review_only"]),
+            "rejected_count": len(validation["rejected"]),
+            "latency_ms": latency_ms,
+            "usage_metadata": usage_metadata,
+            "error": error,
+        }
+        batch_reports.append(batch_report)
+        log_name = (
+            "0002_l2_focused_split_review.json"
+            if len(batches) == 1
+            else f"0002_l2_focused_split_review_batch_{batch_index:03d}.json"
         )
-        raw_text = _response_text(response)
-        usage_metadata = _usage_metadata(response)
-        parsed = _extract_json(raw_text)
-    except Exception as exc:
-        error = f"{type(exc).__name__}: {exc}"
-        parsed = {}
-    latency_ms = round((time.perf_counter() - start) * 1000, 3)
-    validation = _validate_split_review(parsed, sources, profile)
+        write_json(
+            api_dir / log_name,
+            {
+                "schema_version": 1,
+                "created_at_utc": utc_now_iso(),
+                "stage": "l2_focused_split_review",
+                "batch_index": batch_index,
+                "batch_count": len(batches),
+                "model": selected_model,
+                "prompt": prompt,
+                "raw_response": raw_text,
+                "parsed_json": parsed,
+                "latency_ms": latency_ms,
+                "usage_metadata": usage_metadata,
+                "error": error,
+            },
+        )
+    usage_metadata = _sum_usage_metadata(usage_rows)
+    error = " | ".join(errors)
     report = {
         "schema_version": 1,
         "generated_at_utc": utc_now_iso(),
         "status": "llm_split_review_written" if not error else "llm_split_review_failed",
         "model": selected_model,
         "source_l2_count": len(sources),
-        "latency_ms": latency_ms,
-        "accepted_split_count": len(validation["accepted_split_candidates"]),
-        "review_only_count": len(validation["review_only"]),
-        "rejected_count": len(validation["rejected"]),
+        "batch_count": len(batches),
+        "latency_ms": total_latency_ms,
+        "accepted_split_count": len(accepted),
+        "review_only_count": len(review_only),
+        "rejected_count": len(rejected),
         "source_l2_ids": [source["source_l2_id"] for source in sources],
-        **validation,
+        "accepted_split_candidates": accepted,
+        "review_only": review_only,
+        "rejected": rejected,
+        "batches": batch_reports,
         "usage_metadata": usage_metadata,
+        "batch_usage_metadata": usage_rows,
         "error": error,
     }
+    report_path = root / "l2" / "llm_split_review_proposals.json"
+    if merge_existing and report_path.exists():
+        report = _merge_with_existing_report(report, load_json(report_path))
     write_json(root / "l2" / "llm_split_review_proposals.json", report)
     write_text(root / "l2" / "llm_split_review_proposals.md", _format_report_md(report))
-    write_json(
-        api_dir / "0002_l2_focused_split_review.json",
-        {
-            "schema_version": 1,
-            "created_at_utc": utc_now_iso(),
-            "stage": "l2_focused_split_review",
-            "model": selected_model,
-            "prompt": prompt,
-            "raw_response": raw_text,
-            "parsed_json": parsed,
-            "latency_ms": latency_ms,
-            "usage_metadata": usage_metadata,
-            "error": error,
-        },
-    )
     return report
 
 
@@ -409,6 +540,17 @@ def main() -> None:
     parser.add_argument("--model", default="")
     parser.add_argument("--source-l2-id", action="append", default=[])
     parser.add_argument("--sample-limit", type=int, default=12)
+    parser.add_argument(
+        "--max-sources-per-call",
+        type=int,
+        default=0,
+        help="Optional batching cap for focused split-review prompts. 0 means one call.",
+    )
+    parser.add_argument(
+        "--merge-existing",
+        action="store_true",
+        help="Merge this review pass into an existing llm_split_review_proposals.json, replacing only reviewed sources.",
+    )
     args = parser.parse_args()
     report = propose_focused_split_review(
         run_root=args.run_root,
@@ -417,6 +559,8 @@ def main() -> None:
         source_l2_ids=args.source_l2_id,
         review_source_path=args.review_source,
         sample_limit=args.sample_limit,
+        max_sources_per_call=args.max_sources_per_call,
+        merge_existing=args.merge_existing,
     )
     print(
         "[optimization:v2] focused split review complete: "

@@ -78,6 +78,7 @@ _BROAD_LABEL_TOKENS = {
 }
 
 _REVIEW_ONLY_MITIGATION_MAX_L1 = 10
+_COHERENT_REVIEW_ONLY_MITIGATION_MAX_L1 = 15
 
 
 def _issue(severity: str, code: str, message: str, **extra: Any) -> dict[str, Any]:
@@ -156,6 +157,13 @@ def _review_only_dispositions(run_root: Path) -> dict[str, dict[str, Any]]:
             continue
         source_l2_id = str(row.get("source_l2_id", "") or "")
         reason = str(row.get("reason", "") or "").strip()
+        disposition = str(row.get("review_disposition", "") or "").strip().lower()
+        if disposition not in {
+            "coherent_no_split",
+            "incoherent_no_durable_topic",
+            "needs_manual_review",
+        }:
+            disposition = "needs_manual_review"
         representative_l1_ids = [
             str(obj_id)
             for obj_id in row.get("representative_l1_ids", []) or []
@@ -165,6 +173,7 @@ def _review_only_dispositions(run_root: Path) -> dict[str, dict[str, Any]]:
             dispositions[source_l2_id] = {
                 "source": "llm_focused_split_review",
                 "reason": reason,
+                "review_disposition": disposition,
                 "representative_l1_ids": representative_l1_ids,
             }
     return dispositions
@@ -198,7 +207,17 @@ def _audit_l2_node(
     split_mitigation = "materialized_child_l2_context" if l2_id in mitigated_source_ids else "none"
     review_disposition_mitigation = "none"
     review_disposition = review_only_dispositions.get(l2_id)
-    if review_disposition and len(obj_ids) <= _REVIEW_ONLY_MITIGATION_MAX_L1:
+    if (
+        review_disposition
+        and review_disposition.get("review_disposition") == "coherent_no_split"
+        and len(obj_ids) <= _COHERENT_REVIEW_ONLY_MITIGATION_MAX_L1
+    ):
+        review_disposition_mitigation = "llm_review_only_coherent_topic"
+    elif (
+        review_disposition
+        and review_disposition.get("review_disposition") != "incoherent_no_durable_topic"
+        and len(obj_ids) <= _REVIEW_ONLY_MITIGATION_MAX_L1
+    ):
         review_disposition_mitigation = "llm_review_only_small_topic"
     if (
         split_mitigation == "none"

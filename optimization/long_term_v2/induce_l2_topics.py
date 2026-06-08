@@ -12,6 +12,7 @@ from optimization.long_term_v2.profiles import (
     profile_role_artifact_terms,
     profile_stopwords,
     profile_type_like_labels,
+    profile_weak_phrase_terms,
 )
 from optimization.long_term_v2.schemas import L2_SCHEMA_VERSION
 from optimization.long_term_v2.text_utils import jaccard, normalize_phrase, slugify, tokens
@@ -29,11 +30,13 @@ def _is_bad_label(label: str, *, profile: dict[str, Any]) -> bool:
     clean = normalize_phrase(label)
     parts = clean.split()
     generic_labels = profile_generic_topic_labels(profile)
+    weak_phrase_terms = profile_weak_phrase_terms(profile)
     return (
         clean in profile_type_like_labels(profile)
         or clean in profile_rejected_topic_labels(profile)
         or clean in generic_labels
         or (len(parts) == 1 and parts[0] in generic_labels)
+        or bool(set(parts) & weak_phrase_terms)
     )
 
 
@@ -202,6 +205,7 @@ def _semantic_signature(terms: list[str], *, profile: dict[str, Any]) -> set[str
         | profile_rejected_topic_labels(profile)
         | profile_type_like_labels(profile)
         | profile_role_artifact_tokens(profile)
+        | profile_weak_phrase_terms(profile)
     )
     signature = set(tokens(" ".join(terms), stopwords=stopword_set))
     if str(profile.get("topic_key_language", "") or "").lower().startswith("en"):

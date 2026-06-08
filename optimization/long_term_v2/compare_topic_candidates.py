@@ -23,6 +23,11 @@ def _topic_quality_issues(run_root: Path) -> list[dict[str, Any]]:
     return [issue for issue in report.get("issues", []) or [] if isinstance(issue, dict)]
 
 
+def _validation_issues(run_root: Path) -> list[dict[str, Any]]:
+    report = _load_optional_json(run_root / "validation" / "l2_validation_report.json", {"issues": []})
+    return [issue for issue in report.get("issues", []) or [] if isinstance(issue, dict)]
+
+
 def _unlinked_objects(run_root: Path) -> list[dict[str, Any]]:
     report = _load_optional_json(run_root / "l2" / "unlinked_l1_report.json", {"unlinked_objects": []})
     return [row for row in report.get("unlinked_objects", []) or [] if isinstance(row, dict)]
@@ -43,12 +48,13 @@ def _safe_float(value: Any) -> float:
 def _run_metrics(run_root: Path) -> dict[str, Any]:
     manifest = _load_optional_json(run_root / "manifest.json", {})
     quality_issues = _topic_quality_issues(run_root)
+    validation_issues = _validation_issues(run_root)
     unlinked = _unlinked_objects(run_root)
     merge_reviews = _merge_reviews(run_root)
     broad_count = sum(1 for issue in quality_issues if issue.get("code") == "broad_l2_mixed_signatures")
     function_word_label_count = sum(
         1
-        for issue in quality_issues
+        for issue in quality_issues + validation_issues
         if str(issue.get("code", "")).endswith("_label") or str(issue.get("code", "")).endswith("_child_l2_label")
     )
     explained_review_only = sum(1 for row in unlinked if str(row.get("reason", "") or "").strip())

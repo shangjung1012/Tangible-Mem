@@ -154,9 +154,11 @@ def _candidate_run(root: Path, name: str, *, broad_count: int, review_only: list
 class _FakeSplitReviewModels:
     def __init__(self) -> None:
         self.prompt = ""
+        self.prompts: list[str] = []
 
     def generate_content(self, *, model: str, contents: str, config: dict) -> object:
         self.prompt = contents
+        self.prompts.append(contents)
         payload = json.loads(contents)
         source = payload["sources"][0]
         reps = [row["obj_id"] for row in source["timeline_sample"][:2]]
@@ -287,6 +289,85 @@ class OptimizationL2L3ScalingTests(unittest.TestCase):
             self.assertNotIn("L2-data-source", broad_source_ids)
             summary = report["topic_summaries"][0]
             self.assertEqual(summary["review_disposition_mitigation"], "llm_review_only_small_topic")
+
+    def test_topic_quality_audit_treats_coherent_review_only_as_mitigation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "coherent_review_only"
+            summaries = [
+                f"Audio marker procedure event {idx} repeatedly discussed beep markers for transcription orientation."
+                for idx in range(13)
+            ]
+            events = [
+                {"obj_id": f"L1-{index:03d}", "meeting_id": "M001", "summary": summary}
+                for index, summary in enumerate(summaries)
+            ]
+            _write_json(
+                run_root / "l2" / "l2_view.json",
+                {
+                    "l2_nodes": [
+                        {
+                            "l2_id": "L2-annotation-procedure",
+                            "label": "annotation procedure",
+                            "linked_obj_ids": [row["obj_id"] for row in events],
+                            "timeline_digest": events,
+                            "top_semantic_terms": [{"term": f"marker procedure term {index}"} for index in range(13)],
+                        }
+                    ]
+                },
+            )
+            _write_json(run_root / "l3" / "l3_view.json", {"l3_parents": []})
+            _write_json(
+                run_root / "l2" / "llm_split_review_proposals.json",
+                {
+                    "review_only": [
+                        {
+                            "source_l2_id": "L2-annotation-procedure",
+                            "review_disposition": "coherent_no_split",
+                            "reason": "This is one coherent repeated topic; a split would create tiny edge cases.",
+                            "representative_l1_ids": ["L1-000", "L1-001"],
+                        }
+                    ]
+                },
+            )
+
+            report = audit_topic_quality(run_root=run_root)
+
+            broad_source_ids = {
+                issue.get("l2_id")
+                for issue in report["issues"]
+                if issue.get("code") == "broad_l2_mixed_signatures"
+            }
+            self.assertNotIn("L2-annotation-procedure", broad_source_ids)
+            summary = report["topic_summaries"][0]
+            self.assertEqual(summary["review_disposition_mitigation"], "llm_review_only_coherent_topic")
+
+    def test_topic_quality_audit_does_not_mitigate_incoherent_review_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = _minimal_run_root(Path(tmp))
+            _write_json(
+                run_root / "l2" / "llm_split_review_proposals.json",
+                {
+                    "review_only": [
+                        {
+                            "source_l2_id": "L2-data-source",
+                            "review_disposition": "incoherent_no_durable_topic",
+                            "reason": "The label is a discourse phrase and the linked evidence has no shared durable topic.",
+                            "representative_l1_ids": ["L1-001", "L1-002"],
+                        }
+                    ]
+                },
+            )
+
+            report = audit_topic_quality(run_root=run_root)
+
+            broad_source_ids = {
+                issue.get("l2_id")
+                for issue in report["issues"]
+                if issue.get("code") == "broad_l2_mixed_signatures"
+            }
+            self.assertIn("L2-data-source", broad_source_ids)
+            summary = report["topic_summaries"][0]
+            self.assertEqual(summary["review_disposition_mitigation"], "none")
 
     def test_topic_quality_audit_does_not_mitigate_large_llm_review_only_topic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -615,6 +696,121 @@ class OptimizationL2L3ScalingTests(unittest.TestCase):
             self.assertEqual(report["source_l2_ids"], ["L2-data-source"])
             self.assertIn("L2-data-source", client.models.prompt)
 
+    def test_focused_split_review_batches_large_review_queue(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_root = _minimal_run_root(root)
+            l2_view_path = run_root / "l2" / "l2_view.json"
+            l2_view = load_json(l2_view_path)
+            second = {**l2_view["l2_nodes"][0], "l2_id": "L2-recording-setup", "label": "recording setup"}
+            second["timeline_digest"] = [
+                {**row, "obj_id": row["obj_id"].replace("L1-00", "L1-10")}
+                for row in second["timeline_digest"]
+            ]
+            second["linked_obj_ids"] = [row["obj_id"] for row in second["timeline_digest"]]
+            l2_view["l2_nodes"].append(second)
+            _write_json(l2_view_path, l2_view)
+            review_source = run_root / "topic_quality" / "manual_topic_review_queue.json"
+            _write_json(
+                review_source,
+                {
+                    "items": [
+                        {"code": "needs_topic_review", "l2_id": "L2-data-source"},
+                        {"code": "needs_topic_review", "l2_id": "L2-recording-setup"},
+                    ]
+                },
+            )
+            client = _FakeSplitReviewClient()
+
+            report = propose_focused_split_review(
+                run_root=run_root,
+                profile=load_profile(MENTOR_PROFILE),
+                model="fake-model",
+                client=client,
+                review_source_path=review_source,
+                sample_limit=4,
+                max_sources_per_call=1,
+            )
+
+            self.assertEqual(report["source_l2_count"], 2)
+            self.assertEqual(report["batch_count"], 2)
+            self.assertEqual(report["accepted_split_count"], 2)
+            self.assertEqual(len(client.models.prompts), 2)
+            self.assertEqual(report["batches"][0]["source_l2_count"], 1)
+            self.assertTrue((run_root / "api_calls" / "0002_l2_focused_split_review_batch_001.json").exists())
+            self.assertTrue((run_root / "api_calls" / "0002_l2_focused_split_review_batch_002.json").exists())
+
+    def test_focused_split_review_can_use_validation_weak_child_label_queue(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_root = _minimal_run_root(root)
+            review_source = run_root / "validation" / "manual_review_queue.json"
+            _write_json(
+                review_source,
+                {
+                    "items": [
+                        {
+                            "code": "weak_child_l2_label",
+                            "source_l2_id": "L2-data-source",
+                            "child_l2_id": "L2-data-source-basically-ascii-file",
+                            "label": "basically ascii file",
+                        }
+                    ]
+                },
+            )
+            client = _FakeSplitReviewClient()
+
+            report = propose_focused_split_review(
+                run_root=run_root,
+                profile=load_profile(MENTOR_PROFILE),
+                model="fake-model",
+                client=client,
+                review_source_path=review_source,
+                sample_limit=4,
+            )
+
+            self.assertEqual(report["source_l2_ids"], ["L2-data-source"])
+            self.assertEqual(report["accepted_split_count"], 1)
+
+    def test_focused_split_review_can_merge_existing_review_dispositions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_root = _minimal_run_root(root)
+            _write_json(
+                run_root / "l2" / "llm_split_review_proposals.json",
+                {
+                    "source_l2_ids": ["L2-old-review-only"],
+                    "accepted_split_candidates": [],
+                    "review_only": [
+                        {
+                            "source_l2_id": "L2-old-review-only",
+                            "reason": "Prior pass found this topic coherent enough to leave unsplit.",
+                            "representative_l1_ids": ["L1-OLD-001", "L1-OLD-002"],
+                        }
+                    ],
+                    "rejected": [],
+                    "usage_metadata": {"total_token_count": 100},
+                },
+            )
+            review_source = run_root / "topic_quality" / "manual_topic_review_queue.json"
+            _write_json(review_source, {"items": [{"code": "needs_topic_review", "l2_id": "L2-data-source"}]})
+
+            report = propose_focused_split_review(
+                run_root=run_root,
+                profile=load_profile(MENTOR_PROFILE),
+                model="fake-model",
+                client=_FakeSplitReviewClient(),
+                review_source_path=review_source,
+                sample_limit=4,
+                merge_existing=True,
+            )
+
+            self.assertEqual(report["accepted_split_count"], 1)
+            self.assertEqual(report["review_only_count"], 1)
+            self.assertTrue(report["merged_existing_report"])
+            self.assertIn("L2-old-review-only", report["source_l2_ids"])
+            self.assertIn("L2-data-source", report["source_l2_ids"])
+
     def test_focused_split_review_accepts_topics_wrapped_response(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -683,6 +879,69 @@ class OptimizationL2L3ScalingTests(unittest.TestCase):
                                     "label": "table microphone placement",
                                     "assignment_criteria": ["rare table microphone"],
                                     "representative_l1_ids": ["L1-TINY-4"],
+                                },
+                            ],
+                        }
+                    ]
+                },
+            )
+
+            report = apply_split_review_candidates(
+                source_run_root=source,
+                out_root=Path(tmp) / "optimization" / "runs" / "candidate",
+                clean=True,
+            )
+
+            self.assertEqual(report["applied_split_count"], 0)
+            self.assertEqual(report["skipped_splits"][0]["reason"], "tiny_candidate_child")
+
+    def test_apply_split_review_skips_even_but_tiny_children(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "optimization" / "runs" / "source"
+            timeline = [
+                {
+                    "obj_id": f"L1-SMALL-{index}",
+                    "meeting_id": "M001",
+                    "meeting_date": "2026-01-01",
+                    "summary": "Alpha data handling evidence." if index < 2 else "Beta recording workflow evidence.",
+                }
+                for index in range(4)
+            ]
+            _write_json(
+                source / "l2" / "l2_view.json",
+                {
+                    "l2_nodes": [
+                        {
+                            "l2_id": "L2-small-topic",
+                            "label": "small topic",
+                            "linked_obj_ids": [row["obj_id"] for row in timeline],
+                            "timeline_digest": timeline,
+                        }
+                    ]
+                },
+            )
+            _write_json(source / "l2" / "l2_index.json", {})
+            _write_json(source / "l3" / "l3_view.json", {"l3_parents": []})
+            _write_json(source / "l3" / "l3_index.json", {})
+            _write_json(source / "l3" / "l2_merge_review.json", {"merge_reviews": []})
+            _write_json(
+                source / "l2" / "llm_split_review_proposals.json",
+                {
+                    "accepted_split_candidates": [
+                        {
+                            "source_l2_id": "L2-small-topic",
+                            "confidence": 0.9,
+                            "rationale": "The split is balanced but too small for durable L3 materialization.",
+                            "child_candidates": [
+                                {
+                                    "label": "alpha data handling",
+                                    "assignment_criteria": ["alpha data handling"],
+                                    "representative_l1_ids": ["L1-SMALL-0"],
+                                },
+                                {
+                                    "label": "beta recording workflow",
+                                    "assignment_criteria": ["beta recording workflow"],
+                                    "representative_l1_ids": ["L1-SMALL-2"],
                                 },
                             ],
                         }

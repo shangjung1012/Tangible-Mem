@@ -105,7 +105,7 @@ def _separability_failure(assignments: list[list[dict[str, Any]]]) -> dict[str, 
     max_count = max(counts) if counts else 0
     if non_empty < 2:
         return {"reason": "low_assignment_separability", "child_sizes": counts}
-    if total >= 5 and any(0 < count < 3 for count in counts):
+    if any(0 < count < 3 for count in counts):
         return {"reason": "tiny_candidate_child", "child_sizes": counts}
     if max_count > 35:
         return {"reason": "candidate_child_still_oversized", "child_sizes": counts}

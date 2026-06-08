@@ -17,6 +17,7 @@ from optimization.long_term_v2.profiles import (
     profile_stopwords,
     profile_type_like_labels,
     profile_weak_child_terms,
+    profile_weak_phrase_terms,
 )
 from optimization.long_term_v2.schemas import L3_SCHEMA_VERSION
 from optimization.long_term_v2.text_utils import jaccard, ngrams, slugify, tokens, token_sequences
@@ -90,6 +91,7 @@ def _split_separability(children: list[dict[str, Any]], *, source_event_count: i
     max_share = max_count / max(source_event_count, 1)
     max_allowed = _max_materialized_child_size(profile)
     weak_terms = profile_weak_child_terms(profile)
+    weak_phrase_terms = profile_weak_phrase_terms(profile)
     generic_terms = profile_generic_topic_labels(profile)
     child_terms = [_child_term_set(child, profile=profile) for child in children]
     max_label_overlap = 0.0
@@ -102,7 +104,12 @@ def _split_separability(children: list[dict[str, Any]], *, source_event_count: i
         label = str(child.get("label", "") or "").strip().lower()
         if child.get("manual_review_required"):
             manual_review_child_count += 1
-        if not term_set or label in generic_terms or term_set.issubset(weak_terms | generic_terms):
+        if (
+            not term_set
+            or label in generic_terms
+            or term_set.issubset(weak_terms | generic_terms)
+            or bool(term_set & weak_phrase_terms)
+        ):
             weak_label_count += 1
     score = 1.0
     reason_codes: list[str] = []
@@ -172,10 +179,17 @@ def _child_candidates_for_node(node: dict[str, Any], profile: dict[str, Any]) ->
     }
     parent_tokens = set(tokens(str(node.get("label", "") or ""), **token_kwargs))
     weak_single_terms = profile_weak_child_terms(profile)
+    weak_phrase_terms = profile_weak_phrase_terms(profile)
     counts: Counter[str] = Counter()
     for row in node.get("top_semantic_terms", []) or []:
         term = _normalize_child_term(str(row.get("term", "") or ""), profile=profile)
-        if _is_usable_child_term(term, profile=profile, weak_single_terms=weak_single_terms, parent_tokens=parent_tokens):
+        if _is_usable_child_term(
+            term,
+            profile=profile,
+            weak_single_terms=weak_single_terms,
+            weak_phrase_terms=weak_phrase_terms,
+            parent_tokens=parent_tokens,
+        ):
             counts[term] += int(row.get("object_count", 1) or 1) * 10
     for event in node.get("timeline_digest", []) or []:
         summary = str(event.get("summary", "") or "")
@@ -193,7 +207,13 @@ def _child_candidates_for_node(node: dict[str, Any], profile: dict[str, Any]) ->
         terms = [
             term
             for term in terms
-            if _is_usable_child_term(term, profile=profile, weak_single_terms=weak_single_terms, parent_tokens=parent_tokens)
+            if _is_usable_child_term(
+                term,
+                profile=profile,
+                weak_single_terms=weak_single_terms,
+                weak_phrase_terms=weak_phrase_terms,
+                parent_tokens=parent_tokens,
+            )
         ]
         counts.update(terms)
 
@@ -301,6 +321,7 @@ def _is_usable_child_term(
     *,
     profile: dict[str, Any],
     weak_single_terms: set[str],
+    weak_phrase_terms: set[str],
     parent_tokens: set[str],
 ) -> bool:
     if not term or len(term) > 48:
@@ -315,6 +336,8 @@ def _is_usable_child_term(
     if term in profile_generic_topic_labels(profile):
         return False
     term_tokens = set(parts)
+    if term_tokens & weak_phrase_terms:
+        return False
     if parent_tokens.issuperset(term_tokens):
         return False
     if parent_tokens and parent_tokens.issubset(term_tokens) and len(term_tokens - parent_tokens) <= 1:

@@ -848,6 +848,33 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
         self.assertFalse(labels & {"you", "we", "so", "of", "it", "is", "in", "which", "ok"}, labels)
         self.assertTrue(any("annotation data" in label or "corpus design" in label for label in labels), labels)
 
+    def test_weak_conversation_phrases_do_not_become_l2_labels(self) -> None:
+        profile = load_profile(REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "isci_meeting.yaml")
+        objects = [
+            _obj(
+                f"L1-SYN-{idx:03d}",
+                "finding",
+                "gonna gonna gonna read read allow allow",
+                evidence="gonna gonna read read allow allow",
+                importance=0.75,
+                topics=["gonna", "read different line", "allow participant"],
+            )
+            for idx in range(1, 7)
+        ]
+        tree = {
+            "tree_version": 1,
+            "last_updated_utc": "2026-05-28T00:00:00Z",
+            "project_profile": {},
+            "phases": [],
+            "meetings": [_meeting("SYN", "2026-05-01", objects)],
+        }
+
+        semantic = build_semantic_key_index(tree, profile)
+        l2 = assign_l2_topics(tree=tree, semantic_key_index=semantic, profile=profile)
+        labels = {node["label"] for node in l2["l2_nodes"]}
+
+        self.assertFalse(labels, labels)
+
     def test_icsi_profile_keeps_singletons_as_review_not_durable_l2(self) -> None:
         profile = load_profile(REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "isci_meeting.yaml")
         tree = {
@@ -1395,6 +1422,7 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                             {
                                 "l3_id": "L3-recording-setup",
                                 "label": "recording setup",
+                                "source_l2_id": "L2-recording-setup",
                                 "child_l2_nodes": [
                                     {
                                         "child_l2_id": "L2-recording-setup-stuff-gets-broken",
@@ -1419,6 +1447,84 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                 any(issue["code"] == "rejected_child_l2_label" for issue in validation["manual_review_queue"]),
                 validation["manual_review_queue"],
             )
+
+    def test_validation_flags_weak_phrase_child_l2_label_with_source_l2_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "weak_child_label"
+            (run_root / "input_snapshot").mkdir(parents=True, exist_ok=True)
+            (run_root / "semantic_keys").mkdir(parents=True, exist_ok=True)
+            (run_root / "l2").mkdir(parents=True, exist_ok=True)
+            (run_root / "l3").mkdir(parents=True, exist_ok=True)
+            linked_ids = [f"L1-{index:03d}" for index in range(6)]
+            (run_root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "source_l1_count": 6,
+                        "profile_path": str(REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "mentor_mentee.yaml"),
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "input_snapshot" / "tree.json").write_text(json.dumps({"meetings": []}), encoding="utf-8")
+            (run_root / "semantic_keys" / "semantic_key_index.json").write_text(
+                json.dumps({"objects": {obj_id: {} for obj_id in linked_ids}}),
+                encoding="utf-8",
+            )
+            (run_root / "l2" / "l2_view.json").write_text(
+                json.dumps(
+                    {
+                        "l2_nodes": [
+                            {
+                                "l2_id": "L2-annotation-tool",
+                                "label": "annotation tool",
+                                "linked_obj_ids": linked_ids,
+                                "representative_l1_ids": linked_ids[:3],
+                                "creation_rationale": "Recurring evidence supports this topic.",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l2" / "l2_index.json").write_text(
+                json.dumps({obj_id: {"rationale": "Assigned from evidence.", "score_breakdown": {}} for obj_id in linked_ids}),
+                encoding="utf-8",
+            )
+            (run_root / "l3" / "l3_view.json").write_text(
+                json.dumps(
+                    {
+                        "l3_parents": [
+                            {
+                                "l3_id": "L3-annotation-tool",
+                                "label": "annotation tool",
+                                "source_l2_id": "L2-annotation-tool",
+                                "child_l2_nodes": [
+                                    {
+                                        "child_l2_id": "L2-annotation-tool-basically-ascii-file",
+                                        "label": "basically ascii file",
+                                        "linked_obj_ids": linked_ids,
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l3" / "l3_index.json").write_text(
+                json.dumps({obj_id: {"child_l2_id": "L2-annotation-tool-basically-ascii-file"} for obj_id in linked_ids}),
+                encoding="utf-8",
+            )
+
+            validation = validate_run(run_root=run_root)
+
+            weak_items = [
+                issue
+                for issue in validation["manual_review_queue"]
+                if issue["code"] == "weak_child_l2_label"
+            ]
+            self.assertEqual(len(weak_items), 1, validation["manual_review_queue"])
+            self.assertEqual(weak_items[0]["source_l2_id"], "L2-annotation-tool")
 
     def test_focused_split_review_only_targets_needs_split_review_sources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1637,7 +1743,7 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             (source_root / "manifest.json").write_text(
                 json.dumps(
                     {
-                        "source_l1_count": 4,
+                        "source_l1_count": 6,
                         "l2_topic_count": 1,
                         "l3_parent_count": 0,
                         "l3_assigned_l1_count": 0,
@@ -1650,6 +1756,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                 {"obj_id": "L1-002", "meeting_id": "M02", "meeting_date": "2026-05-02", "summary": "Worker coordination failure modes were reviewed."},
                 {"obj_id": "L1-003", "meeting_id": "M03", "meeting_date": "2026-05-03", "summary": "Routing policy metrics were added."},
                 {"obj_id": "L1-004", "meeting_id": "M04", "meeting_date": "2026-05-04", "summary": "Worker coordination debugging was assigned."},
+                {"obj_id": "L1-005", "meeting_id": "M05", "meeting_date": "2026-05-05", "summary": "Routing policy fallback rules were documented."},
+                {"obj_id": "L1-006", "meeting_id": "M06", "meeting_date": "2026-05-06", "summary": "Worker coordination owner handoff was clarified."},
             ]
             (source_root / "l2" / "l2_view.json").write_text(
                 json.dumps(
@@ -1710,17 +1818,17 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(parent["source_l2_id"], "L2-agentic-pipeline")
             self.assertEqual(len(parent["child_l2_nodes"]), 2)
             child_counts = {child["label"]: len(child["linked_obj_ids"]) for child in parent["child_l2_nodes"]}
-            self.assertEqual(child_counts["routing policy"], 2)
-            self.assertEqual(child_counts["worker coordination"], 2)
+            self.assertEqual(child_counts["routing policy"], 3)
+            self.assertEqual(child_counts["worker coordination"], 3)
             candidate_index = load_json(candidate_root / "l3" / "l3_index.json")
-            self.assertEqual(set(candidate_index), {"L1-001", "L1-002", "L1-003", "L1-004"})
+            self.assertEqual(set(candidate_index), {"L1-001", "L1-002", "L1-003", "L1-004", "L1-005", "L1-006"})
             candidate_review = load_json(candidate_root / "l3" / "l2_merge_review.json")
             self.assertFalse(
                 any(row.get("source_l2_id") == "L2-agentic-pipeline" and row.get("action") == "needs_split_review" for row in candidate_review["merge_reviews"])
             )
             candidate_manifest = load_json(candidate_root / "manifest.json")
             self.assertEqual(candidate_manifest["l3_parent_count"], 1)
-            self.assertEqual(candidate_manifest["l3_assigned_l1_count"], 4)
+            self.assertEqual(candidate_manifest["l3_assigned_l1_count"], 6)
             self.assertEqual(candidate_manifest["split_review_candidate"]["applied_split_count"], 1)
             self.assertTrue((candidate_root / "l3" / "applied_split_review_candidates.json").exists())
 
@@ -1800,6 +1908,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                 {"obj_id": "L1-002", "summary": "The team tracked token count changes for the control workflow."},
                 {"obj_id": "L1-003", "summary": "The team investigated stale decision regressions in the control workflow."},
                 {"obj_id": "L1-004", "summary": "The team investigated false positive retrieval in the control workflow."},
+                {"obj_id": "L1-005", "summary": "The team compared retrieval latency charts for the control workflow."},
+                {"obj_id": "L1-006", "summary": "The team traced false positive retrieval diagnostics in the control workflow."},
             ]
             (source_root / "l2" / "l2_view.json").write_text(
                 json.dumps(
@@ -1833,12 +1943,12 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                                     {
                                         "label": "performance tracking",
                                         "assignment_criteria": ["latency charts", "token count"],
-                                        "representative_l1_ids": ["L1-001", "L1-002"],
+                                        "representative_l1_ids": ["L1-001", "L1-002", "L1-005"],
                                     },
                                     {
                                         "label": "failure diagnostics",
                                         "assignment_criteria": ["stale decision", "false positive retrieval"],
-                                        "representative_l1_ids": ["L1-003", "L1-004"],
+                                        "representative_l1_ids": ["L1-003", "L1-004", "L1-006"],
                                     },
                                 ],
                                 "confidence": 0.82,
@@ -1857,7 +1967,7 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(report["applied_split_count"], 1)
             parent = load_json(candidate_root / "l3" / "l3_view.json")["l3_parents"][0]
             child_sizes = {child["label"]: len(child["linked_obj_ids"]) for child in parent["child_l2_nodes"]}
-            self.assertEqual(child_sizes, {"performance tracking": 2, "failure diagnostics": 2})
+            self.assertEqual(child_sizes, {"performance tracking": 3, "failure diagnostics": 3})
             candidate_index = load_json(candidate_root / "l3" / "l3_index.json")
             self.assertEqual(candidate_index["L1-001"]["child_l2_label"], "performance tracking")
             self.assertEqual(candidate_index["L1-004"]["child_l2_label"], "failure diagnostics")
