@@ -16,6 +16,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from memory_observatory.services.experiment_runner import _generate_answer
 from memory_observatory.services.token_utils import estimate_tokens, usage_metadata_to_tokens
+from optimization.long_term_v2.effective_view import load_effective_topic_surface
 from optimization.long_term_v2.evaluate_answer_quality import evaluate_answer_quality
 from optimization.long_term_v2.evaluate_retrieval import _rank_l1
 from optimization.long_term_v2.io_utils import ensure_optimization_output, load_json, utc_now_iso, write_json, write_text
@@ -105,12 +106,11 @@ def _load_observatory_rows(*, baseline_run_root: Path, queries: list[dict[str, A
 
 
 def _l2_by_id(run_root: Path) -> dict[str, dict[str, Any]]:
-    l2_view = load_json(run_root / "l2" / "l2_view.json")
+    l2_view = load_effective_topic_surface(run_root)["l2_view"]
     return {str(node.get("l2_id")): node for node in l2_view.get("l2_nodes", []) or []}
 
 
-def _child_l3_by_obj(run_root: Path) -> dict[str, dict[str, Any]]:
-    l3_view = load_json(run_root / "l3" / "l3_view.json")
+def _child_l3_by_obj_from_view(l3_view: dict[str, Any]) -> dict[str, dict[str, Any]]:
     output: dict[str, dict[str, Any]] = {}
     for parent in l3_view.get("l3_parents", []) or []:
         for child in parent.get("child_l2_nodes", []) or []:
@@ -123,6 +123,10 @@ def _child_l3_by_obj(run_root: Path) -> dict[str, dict[str, Any]]:
                     "timeline_digest": child.get("timeline_digest", []) or [],
                 }
     return output
+
+
+def _child_l3_by_obj(run_root: Path) -> dict[str, dict[str, Any]]:
+    return _child_l3_by_obj_from_view(load_effective_topic_surface(run_root)["l3_view"])
 
 
 def _build_v2_context(
@@ -139,10 +143,11 @@ def _build_v2_context(
     manifest = load_json(run_root / "manifest.json")
     profile = load_profile(str(manifest.get("profile_path")))
     selected_l1 = _rank_l1(query, l1_index, top_k=max_l1, profile=profile)
-    l2_index = load_json(run_root / "l2" / "l2_index.json")
-    l2_nodes = _l2_by_id(run_root)
-    l3_index = load_json(run_root / "l3" / "l3_index.json")
-    child_by_obj = _child_l3_by_obj(run_root)
+    effective_surface = load_effective_topic_surface(run_root)
+    l2_index = effective_surface["l2_index"]
+    l2_nodes = {str(node.get("l2_id")): node for node in effective_surface["l2_view"].get("l2_nodes", []) or []}
+    l3_index = effective_surface["l3_index"]
+    child_by_obj = _child_l3_by_obj_from_view(effective_surface["l3_view"])
 
     grouped: dict[str, dict[str, Any]] = {}
     for seed in selected_l1:
@@ -249,6 +254,11 @@ def _build_v2_context(
                 if obj_id in l3_index and isinstance(l3_index[obj_id], dict)
             }
         ),
+        "effective_topic_surface": {
+            "has_topic_review": effective_surface["has_topic_review"],
+            "suppressed_l2_count": effective_surface["suppressed_l2_count"],
+            "suppressed_l2_index_count": effective_surface["suppressed_l2_index_count"],
+        },
     }
     return context, trace
 

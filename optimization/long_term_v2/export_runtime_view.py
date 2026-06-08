@@ -10,6 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from optimization.long_term_v2.effective_view import load_effective_topic_surface
 from optimization.long_term_v2.io_utils import load_json, tree_hash, utc_now_iso, write_json
 
 
@@ -151,24 +152,25 @@ def export_runtime_view(run_root: Path | str, *, clean: bool = False) -> dict[st
         runtime_root / "input_snapshot" / "tree.json",
         {"meetings": []},
     )
-    l2_view = _copy_json_if_exists(
-        root / "l2" / "l2_view.json",
-        runtime_root / "l2" / "l2_view.json",
-        {"schema_version": 1, "l2_nodes": []},
-    )
-    l2_index = _copy_json_if_exists(
-        root / "l2" / "l2_index.json",
-        runtime_root / "l2" / "l2_index.json",
-        {},
-    )
+    effective_surface = load_effective_topic_surface(root)
+    l2_view = effective_surface["l2_view"]
+    l2_index = effective_surface["l2_index"]
+    write_json(runtime_root / "l2" / "l2_view.json", l2_view)
+    write_json(runtime_root / "l2" / "l2_index.json", l2_index)
+    if (root / "topic_review" / "effective_topic_index.json").exists():
+        _copy_json_if_exists(
+            root / "topic_review" / "effective_topic_index.json",
+            runtime_root / "topic_review" / "effective_topic_index.json",
+            {},
+        )
     _copy_json_if_exists(
         root / "l2" / "l2_secondary_links.json",
         runtime_root / "l2" / "l2_secondary_links.json",
         {"schema_version": 1, "links": []},
     )
 
-    v2_l3_view = load_json(root / "l3" / "l3_view.json") if (root / "l3" / "l3_view.json").exists() else {}
-    v2_l3_index = load_json(root / "l3" / "l3_index.json") if (root / "l3" / "l3_index.json").exists() else {}
+    v2_l3_view = effective_surface["l3_view"]
+    v2_l3_index = effective_surface["l3_index"]
     runtime_l3_view = _convert_l3_view(v2_l3_view if isinstance(v2_l3_view, dict) else {})
     runtime_l3_index = _convert_l3_index(v2_l3_index if isinstance(v2_l3_index, dict) else {})
     runtime_l3_promotions = _convert_l3_promotions(v2_l3_view if isinstance(v2_l3_view, dict) else {})
@@ -188,6 +190,11 @@ def export_runtime_view(run_root: Path | str, *, clean: bool = False) -> dict[st
         "l2_index_count": len(l2_index) if isinstance(l2_index, dict) else 0,
         "l3_parent_count": len(runtime_l3_view.get("l3_nodes", [])),
         "l3_index_count": len(runtime_l3_index),
+        "effective_topic_surface": {
+            "has_topic_review": effective_surface["has_topic_review"],
+            "suppressed_l2_count": effective_surface["suppressed_l2_count"],
+            "suppressed_l2_index_count": effective_surface["suppressed_l2_index_count"],
+        },
         "canonical_mutation": False,
     }
     write_json(runtime_root / "manifest.json", manifest)

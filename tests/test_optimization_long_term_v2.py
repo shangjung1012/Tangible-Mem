@@ -21,10 +21,12 @@ from optimization.long_term_v2.extract_semantic_keys import (  # noqa: E402
 )
 from optimization.long_term_v2.evaluate_retrieval import evaluate_retrieval, _rank_l1, _semantic_topic_hit  # noqa: E402
 from optimization.long_term_v2.evaluate_answer_quality import evaluate_answer_quality  # noqa: E402
+from optimization.long_term_v2.effective_view import load_effective_topic_surface  # noqa: E402
 from optimization.long_term_v2.finalize_manual_review import finalize_manual_review  # noqa: E402
 from optimization.long_term_v2.io_utils import load_json  # noqa: E402
 from optimization.long_term_v2.apply_split_review_candidates import apply_split_review_candidates  # noqa: E402
-from optimization.long_term_v2.run_answer_quality_eval import _context_token_usage  # noqa: E402
+from optimization.long_term_v2.export_runtime_view import export_runtime_view  # noqa: E402
+from optimization.long_term_v2.run_answer_quality_eval import _build_v2_context, _context_token_usage  # noqa: E402
 from optimization.long_term_v2.maturity_certification import (  # noqa: E402
     _suite_focused_split_review_summary,
     certify_maturity,
@@ -154,6 +156,62 @@ def _write_share_root(root: Path, tree: dict | None = None) -> None:
     root.mkdir(parents=True, exist_ok=True)
     payload = tree or _share_tree()
     (root / "tree.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _write_effective_surface_fixture(run_root: Path, *, profile_path: Path | None = None) -> None:
+    raw_l2_view = {
+        "l2_nodes": [
+            {
+                "l2_id": "L2-keep",
+                "label": "recording setup",
+                "linked_obj_ids": ["L1-KEEP"],
+                "timeline_digest": [
+                    {
+                        "obj_id": "L1-KEEP",
+                        "meeting_id": "BMR-001",
+                        "meeting_date": "2026-01-01",
+                        "summary": "The team discussed recording setup and headset microphone placement.",
+                    }
+                ],
+                "current_state": "Recording setup remains an active equipment topic.",
+                "evolution_summary": "The discussion links headset microphone placement to recording reliability.",
+            },
+            {
+                "l2_id": "L2-suppress",
+                "label": "go ahead",
+                "linked_obj_ids": ["L1-SUPPRESS"],
+                "timeline_digest": [
+                    {
+                        "obj_id": "L1-SUPPRESS",
+                        "meeting_id": "BMR-001",
+                        "meeting_date": "2026-01-01",
+                        "summary": "The team said go ahead before moving to an unrelated item.",
+                    }
+                ],
+                "current_state": "This is not a durable topic.",
+                "evolution_summary": "This phrase is a discourse transition.",
+            },
+        ]
+    }
+    raw_l2_index = {
+        "L1-KEEP": {"l2_id": "L2-keep", "l2_label": "recording setup"},
+        "L1-SUPPRESS": {"l2_id": "L2-suppress", "l2_label": "go ahead"},
+    }
+    (run_root / "l2").mkdir(parents=True)
+    (run_root / "l3").mkdir(parents=True)
+    (run_root / "topic_review").mkdir(parents=True)
+    (run_root / "manifest.json").write_text(
+        json.dumps({"profile_path": str(profile_path)} if profile_path else {}),
+        encoding="utf-8",
+    )
+    (run_root / "l2" / "l2_view.json").write_text(json.dumps(raw_l2_view), encoding="utf-8")
+    (run_root / "l2" / "l2_index.json").write_text(json.dumps(raw_l2_index), encoding="utf-8")
+    (run_root / "l3" / "l3_view.json").write_text(json.dumps({"l3_parents": []}), encoding="utf-8")
+    (run_root / "l3" / "l3_index.json").write_text(json.dumps({}), encoding="utf-8")
+    (run_root / "topic_review" / "effective_topic_index.json").write_text(
+        json.dumps({"suppressed_l2_ids": ["L2-suppress"]}),
+        encoding="utf-8",
+    )
 
 
 class _FakeResponse:
@@ -301,6 +359,198 @@ class _FakeChildSpecificSplitReviewClient:
 
 
 class OptimizationLongTermV2Tests(unittest.TestCase):
+    def test_effective_topic_surface_filters_suppressed_l2_and_index_without_mutating_raw(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "effective_surface"
+            raw_l2_view = {
+                "l2_nodes": [
+                    {"l2_id": "L2-keep", "label": "recording setup", "linked_obj_ids": ["L1-001"]},
+                    {"l2_id": "L2-suppress", "label": "go ahead", "linked_obj_ids": ["L1-002"]},
+                ]
+            }
+            raw_l2_index = {
+                "L1-001": {"l2_id": "L2-keep", "l2_label": "recording setup"},
+                "L1-002": {"l2_id": "L2-suppress", "l2_label": "go ahead"},
+            }
+            (run_root / "l2").mkdir(parents=True)
+            (run_root / "l3").mkdir(parents=True)
+            (run_root / "topic_review").mkdir(parents=True)
+            (run_root / "l2" / "l2_view.json").write_text(json.dumps(raw_l2_view), encoding="utf-8")
+            (run_root / "l2" / "l2_index.json").write_text(json.dumps(raw_l2_index), encoding="utf-8")
+            (run_root / "l3" / "l3_view.json").write_text(json.dumps({"l3_parents": []}), encoding="utf-8")
+            (run_root / "l3" / "l3_index.json").write_text(json.dumps({}), encoding="utf-8")
+            (run_root / "topic_review" / "effective_topic_index.json").write_text(
+                json.dumps({"suppressed_l2_ids": ["L2-suppress"]}),
+                encoding="utf-8",
+            )
+
+            surface = load_effective_topic_surface(run_root)
+
+            self.assertEqual([node["l2_id"] for node in surface["l2_view"]["l2_nodes"]], ["L2-keep"])
+            self.assertEqual(set(surface["l2_index"]), {"L1-001"})
+            self.assertEqual(surface["suppressed_l2_ids"], ["L2-suppress"])
+            self.assertEqual(set(surface["suppressed_l2_index"]), {"L1-002"})
+            self.assertEqual(load_json(run_root / "l2" / "l2_view.json"), raw_l2_view)
+
+    def test_evaluate_retrieval_uses_effective_topic_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            share = root / "share"
+            _write_share_root(
+                share,
+                {
+                    "tree_version": 1,
+                    "last_updated_utc": "2026-01-01T00:00:00Z",
+                    "project_profile": {},
+                    "phases": [],
+                    "meetings": [
+                        _meeting(
+                            "BMR-001",
+                            "2026-01-01",
+                            [
+                                _obj(
+                                    "L1-KEEP",
+                                    "finding",
+                                    "The team discussed recording setup and headset microphone placement.",
+                                    topics=["recording setup"],
+                                ),
+                                _obj(
+                                    "L1-SUPPRESS",
+                                    "finding",
+                                    "The team said go ahead before moving to an unrelated item.",
+                                    topics=["go ahead"],
+                                ),
+                            ],
+                        )
+                    ],
+                },
+            )
+            run_root = root / "optimization" / "runs" / "effective_retrieval"
+            (run_root / "l2").mkdir(parents=True)
+            (run_root / "l3").mkdir(parents=True)
+            (run_root / "topic_review").mkdir(parents=True)
+            (run_root / "manifest.json").write_text(json.dumps({}), encoding="utf-8")
+            (run_root / "l2" / "l2_view.json").write_text(
+                json.dumps(
+                    {
+                        "l2_nodes": [
+                            {"l2_id": "L2-keep", "label": "recording setup", "linked_obj_ids": ["L1-KEEP"]},
+                            {"l2_id": "L2-suppress", "label": "go ahead", "linked_obj_ids": ["L1-SUPPRESS"]},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l2" / "l2_index.json").write_text(
+                json.dumps(
+                    {
+                        "L1-KEEP": {"l2_id": "L2-keep", "l2_label": "recording setup"},
+                        "L1-SUPPRESS": {"l2_id": "L2-suppress", "l2_label": "go ahead"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l3" / "l3_view.json").write_text(json.dumps({"l3_parents": []}), encoding="utf-8")
+            (run_root / "l3" / "l3_index.json").write_text(json.dumps({}), encoding="utf-8")
+            (run_root / "topic_review" / "effective_topic_index.json").write_text(
+                json.dumps({"suppressed_l2_ids": ["L2-suppress"]}),
+                encoding="utf-8",
+            )
+            queries = run_root / "queries.jsonl"
+            queries.write_text(
+                json.dumps(
+                    {
+                        "query": "go ahead recording setup",
+                        "expected_obj_ids": ["L1-KEEP", "L1-SUPPRESS"],
+                        "expected_l2_ids": ["L2-suppress"],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = evaluate_retrieval(
+                run_root=run_root,
+                queries_path=queries,
+                share_mem_root=share,
+                top_k_l1=10,
+            )
+
+            row = report["queries"][0]
+            self.assertIn("L1-SUPPRESS", {seed["obj_id"] for seed in row["selected_l1"]})
+            self.assertNotIn("L2-suppress", row["selected_l2_ids"])
+            self.assertFalse(row["expected_l2_hit"])
+
+    def test_answer_quality_v2_context_uses_effective_topic_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            share = root / "share"
+            _write_share_root(
+                share,
+                {
+                    "tree_version": 1,
+                    "last_updated_utc": "2026-01-01T00:00:00Z",
+                    "project_profile": {},
+                    "phases": [],
+                    "meetings": [
+                        _meeting(
+                            "BMR-001",
+                            "2026-01-01",
+                            [
+                                _obj(
+                                    "L1-KEEP",
+                                    "finding",
+                                    "The team discussed recording setup and headset microphone placement.",
+                                    topics=["recording setup"],
+                                ),
+                                _obj(
+                                    "L1-SUPPRESS",
+                                    "finding",
+                                    "The team said go ahead before moving to an unrelated item.",
+                                    topics=["go ahead"],
+                                ),
+                            ],
+                        )
+                    ],
+                },
+            )
+            run_root = root / "optimization" / "runs" / "effective_context"
+            _write_effective_surface_fixture(
+                run_root,
+                profile_path=REPO_ROOT / "optimization" / "long_term_v2" / "profiles" / "mentor_mentee.yaml",
+            )
+
+            context, trace = _build_v2_context(
+                query="go ahead recording setup",
+                run_root=run_root,
+                share_mem_root=share,
+                max_l1=10,
+            )
+
+            self.assertIn("L1-SUPPRESS", {seed["obj_id"] for seed in trace["selected_l1"]})
+            self.assertIn("[L2-keep]", context)
+            self.assertNotIn("[L2-suppress]", context)
+            self.assertNotIn("go ahead\n  matched_l1_ids", context)
+
+    def test_runtime_export_uses_effective_topic_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "runtime_effective"
+            _write_effective_surface_fixture(run_root)
+            (run_root / "input_snapshot").mkdir(parents=True)
+            (run_root / "input_snapshot" / "tree.json").write_text(
+                json.dumps({"meetings": []}),
+                encoding="utf-8",
+            )
+
+            manifest = export_runtime_view(run_root, clean=True)
+
+            runtime_l2 = load_json(run_root / "runtime" / "l2" / "l2_view.json")
+            runtime_index = load_json(run_root / "runtime" / "l2" / "l2_index.json")
+            self.assertEqual([node["l2_id"] for node in runtime_l2["l2_nodes"]], ["L2-keep"])
+            self.assertEqual(set(runtime_index), {"L1-KEEP"})
+            self.assertEqual(manifest["l2_topic_count"], 1)
+            self.assertEqual(manifest["effective_topic_surface"]["suppressed_l2_count"], 1)
+
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

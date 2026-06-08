@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from optimization.long_term_v2.effective_view import load_effective_topic_surface
 from optimization.long_term_v2.io_utils import load_json, utc_now_iso, write_json, write_text
 from share_mem.store import build_l1_index, load_share_tree
 
@@ -31,12 +32,11 @@ def compare_with_baseline(
     root = Path(run_root)
     baseline_l2_index_path = Path(baseline_l2_root) / "l2_index.json"
     baseline_l3_index_path = Path(baseline_l3_root) / "l3_index.json"
-    v2_l2_index_path = root / "l2" / "l2_index.json"
-    v2_l3_index_path = root / "l3" / "l3_index.json"
     baseline_l2_index = load_json(baseline_l2_index_path) if baseline_l2_index_path.exists() else {}
     baseline_l3_index = load_json(baseline_l3_index_path) if baseline_l3_index_path.exists() else {}
-    v2_l2_index = load_json(v2_l2_index_path) if v2_l2_index_path.exists() else {}
-    v2_l3_index = load_json(v2_l3_index_path) if v2_l3_index_path.exists() else {}
+    effective_surface = load_effective_topic_surface(root)
+    v2_l2_index = effective_surface["l2_index"]
+    v2_l3_index = effective_surface["l3_index"]
     l1_index = build_l1_index(load_share_tree(share_mem_root))
     high_ids = {
         obj_id
@@ -63,6 +63,11 @@ def compare_with_baseline(
         "v2_l2_count": len(set(row.get("l2_id", "") for row in v2_l2_index.values() if isinstance(row, dict))),
         "baseline_l3_assigned_l1": len(baseline_l3_index),
         "v2_l3_assigned_l1": len(v2_l3_index),
+        "effective_topic_surface": {
+            "has_topic_review": effective_surface["has_topic_review"],
+            "suppressed_l2_count": effective_surface["suppressed_l2_count"],
+            "suppressed_l2_index_count": effective_surface["suppressed_l2_index_count"],
+        },
         "high_importance_l1_count": len(high_ids),
         "baseline_high_importance_linked_rate": round(len(baseline_high_linked) / max(len(high_ids), 1), 4),
         "v2_high_importance_linked_rate": round(len(v2_high_linked) / max(len(high_ids), 1), 4),

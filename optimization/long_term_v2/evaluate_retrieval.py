@@ -11,6 +11,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from optimization.long_term_v2.io_utils import load_json, utc_now_iso, write_json, write_text
+from optimization.long_term_v2.effective_view import load_effective_topic_surface
 from optimization.long_term_v2.profiles import (
     load_profile,
     profile_max_cjk_token_chars,
@@ -162,8 +163,9 @@ def evaluate_retrieval(
     profile_path = manifest.get("profile_path")
     if profile_path and Path(str(profile_path)).exists():
         profile = load_profile(str(profile_path))
-    l2_index = load_json(root / "l2" / "l2_index.json") if (root / "l2" / "l2_index.json").exists() else {}
-    l3_index = load_json(root / "l3" / "l3_index.json") if (root / "l3" / "l3_index.json").exists() else {}
+    effective_surface = load_effective_topic_surface(root)
+    l2_index = effective_surface["l2_index"]
+    l3_index = effective_surface["l3_index"]
     results: list[dict[str, Any]] = []
     recall_values: list[float] = []
     l2_hits = 0
@@ -257,6 +259,12 @@ def evaluate_retrieval(
         "generated_at_utc": utc_now_iso(),
         "run_root": str(root.resolve()),
         "queries_path": str(Path(queries_path).resolve()),
+        "effective_topic_surface": {
+            "has_topic_review": effective_surface["has_topic_review"],
+            "active_l2_count": effective_surface["active_l2_count"],
+            "suppressed_l2_count": effective_surface["suppressed_l2_count"],
+            "suppressed_l2_index_count": effective_surface["suppressed_l2_index_count"],
+        },
         "summary": summary,
         "queries": results,
     }
