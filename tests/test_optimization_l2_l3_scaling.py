@@ -9,6 +9,7 @@ from optimization.long_term_v2.audit_topic_quality import audit_topic_quality
 from optimization.long_term_v2.apply_split_review_candidates import apply_split_review_candidates
 from optimization.long_term_v2.cross_dataset_suite import run_cross_dataset_suite
 from optimization.long_term_v2.compare_topic_candidates import compare_topic_candidates
+from optimization.long_term_v2.finalize_topic_review import finalize_topic_review
 from optimization.long_term_v2.io_utils import load_json
 from optimization.long_term_v2.llm_split_review import propose_focused_split_review
 from optimization.long_term_v2.build_view import build_view
@@ -368,6 +369,112 @@ class OptimizationL2L3ScalingTests(unittest.TestCase):
             self.assertIn("L2-data-source", broad_source_ids)
             summary = report["topic_summaries"][0]
             self.assertEqual(summary["review_disposition_mitigation"], "none")
+
+    def test_finalize_topic_review_suppresses_incoherent_review_only_without_mutating_l2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = _minimal_run_root(Path(tmp))
+            before_l2 = load_json(run_root / "l2" / "l2_view.json")
+            _write_json(
+                run_root / "l2" / "llm_split_review_proposals.json",
+                {
+                    "review_only": [
+                        {
+                            "source_l2_id": "L2-data-source",
+                            "review_disposition": "incoherent_no_durable_topic",
+                            "reason": "The label is a discourse phrase and linked evidence has no shared durable topic.",
+                            "representative_l1_ids": ["L1-001", "L1-002"],
+                        }
+                    ]
+                },
+            )
+
+            report = finalize_topic_review(run_root=run_root)
+
+            decisions = load_json(run_root / "topic_review" / "topic_review_decisions.json")
+            effective = load_json(run_root / "topic_review" / "effective_topic_index.json")
+            self.assertEqual(report["suppressed_l2_count"], 1)
+            self.assertEqual(decisions["decisions"][0]["source_l2_id"], "L2-data-source")
+            self.assertEqual(decisions["decisions"][0]["action"], "suppress_from_durable_l2")
+            self.assertIn("incoherent_no_durable_topic", decisions["decisions"][0]["reason_codes"])
+            self.assertEqual(effective["suppressed_l2_ids"], ["L2-data-source"])
+            self.assertEqual(effective["suppressed_l1_count"], 4)
+            self.assertEqual(load_json(run_root / "l2" / "l2_view.json"), before_l2)
+
+    def test_finalize_topic_review_suppresses_tiny_split_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = _minimal_run_root(Path(tmp))
+            _write_json(
+                run_root / "l3" / "applied_split_review_candidates.json",
+                {
+                    "skipped_splits": [
+                        {
+                            "source_l2_id": "L2-data-source",
+                            "reason": "tiny_candidate_child",
+                            "child_sizes": [2, 3, 1],
+                        }
+                    ]
+                },
+            )
+
+            finalize_topic_review(run_root=run_root)
+
+            decisions = load_json(run_root / "topic_review" / "topic_review_decisions.json")
+            self.assertEqual(decisions["decisions"][0]["action"], "suppress_from_durable_l2")
+            self.assertIn("tiny_candidate_child", decisions["decisions"][0]["reason_codes"])
+
+    def test_finalize_topic_review_does_not_suppress_coherent_review_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = _minimal_run_root(Path(tmp))
+            _write_json(
+                run_root / "l2" / "llm_split_review_proposals.json",
+                {
+                    "review_only": [
+                        {
+                            "source_l2_id": "L2-data-source",
+                            "review_disposition": "coherent_no_split",
+                            "reason": "This is a coherent topic and should remain as one L2.",
+                            "representative_l1_ids": ["L1-001", "L1-002"],
+                        }
+                    ]
+                },
+            )
+
+            report = finalize_topic_review(run_root=run_root)
+
+            self.assertEqual(report["suppressed_l2_count"], 0)
+            effective = load_json(run_root / "topic_review" / "effective_topic_index.json")
+            self.assertEqual(effective["suppressed_l2_ids"], [])
+            self.assertEqual(effective["active_l2_ids"], ["L2-data-source"])
+
+    def test_topic_quality_audit_applies_topic_review_suppression_to_effective_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = _minimal_run_root(Path(tmp))
+            _write_json(
+                run_root / "l2" / "llm_split_review_proposals.json",
+                {
+                    "review_only": [
+                        {
+                            "source_l2_id": "L2-data-source",
+                            "review_disposition": "incoherent_no_durable_topic",
+                            "reason": "The label is a discourse phrase and linked evidence has no shared durable topic.",
+                            "representative_l1_ids": ["L1-001", "L1-002"],
+                        }
+                    ]
+                },
+            )
+            finalize_topic_review(run_root=run_root)
+
+            report = audit_topic_quality(
+                run_root=run_root,
+                topic_review_decisions=run_root / "topic_review" / "topic_review_decisions.json",
+            )
+
+            self.assertGreater(report["raw_warning_count"], 0)
+            self.assertGreater(report["suppressed_warning_count"], 0)
+            self.assertEqual(report["unresolved_warning_count"], 0)
+            self.assertEqual(report["warning_count"], 0)
+            self.assertEqual(report["manual_review_count"], 0)
+            self.assertTrue(report["suppressed_issues"])
 
     def test_topic_quality_audit_does_not_mitigate_large_llm_review_only_topic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

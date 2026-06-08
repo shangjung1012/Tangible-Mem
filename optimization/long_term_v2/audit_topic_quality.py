@@ -179,6 +179,31 @@ def _review_only_dispositions(run_root: Path) -> dict[str, dict[str, Any]]:
     return dispositions
 
 
+def _topic_review_suppressions(
+    *,
+    run_root: Path,
+    topic_review_decisions: Path | str | None = None,
+) -> dict[str, dict[str, Any]]:
+    path = Path(topic_review_decisions) if topic_review_decisions is not None else run_root / "topic_review" / "topic_review_decisions.json"
+    if not path.exists():
+        return {}
+    payload = load_json(path)
+    suppressions: dict[str, dict[str, Any]] = {}
+    for row in payload.get("decisions", []) or []:
+        if not isinstance(row, dict):
+            continue
+        if row.get("action") != "suppress_from_durable_l2":
+            continue
+        source_l2_id = str(row.get("source_l2_id", "") or "")
+        if source_l2_id:
+            suppressions[source_l2_id] = row
+    return suppressions
+
+
+def _issue_l2_id(issue: dict[str, Any]) -> str:
+    return str(issue.get("l2_id", "") or issue.get("source_l2_id", "") or "")
+
+
 def _audit_l2_node(
     node: dict[str, Any],
     *,
@@ -321,7 +346,12 @@ def _audit_l3_view(l3_view: dict[str, Any]) -> tuple[list[dict[str, Any]], list[
     return issues, summaries
 
 
-def audit_topic_quality(*, run_root: Path | str, out: Path | str | None = None) -> dict[str, Any]:
+def audit_topic_quality(
+    *,
+    run_root: Path | str,
+    out: Path | str | None = None,
+    topic_review_decisions: Path | str | None = None,
+) -> dict[str, Any]:
     root = Path(run_root)
     out_dir = Path(out) if out is not None else root / "topic_quality"
     l2_view = load_json(root / "l2" / "l2_view.json")
@@ -329,8 +359,12 @@ def audit_topic_quality(*, run_root: Path | str, out: Path | str | None = None) 
     l3_view = load_json(l3_path) if l3_path.exists() else {"l3_parents": []}
     mitigated_source_ids = _healthy_split_source_ids(l3_view)
     review_only_dispositions = _review_only_dispositions(root)
+    suppressions = _topic_review_suppressions(
+        run_root=root,
+        topic_review_decisions=topic_review_decisions,
+    )
 
-    issues: list[dict[str, Any]] = []
+    raw_issues: list[dict[str, Any]] = []
     topic_summaries: list[dict[str, Any]] = []
     for node in l2_view.get("l2_nodes", []) or []:
         if not isinstance(node, dict):
@@ -340,10 +374,26 @@ def audit_topic_quality(*, run_root: Path | str, out: Path | str | None = None) 
             mitigated_source_ids=mitigated_source_ids,
             review_only_dispositions=review_only_dispositions,
         )
-        issues.extend(node_issues)
+        raw_issues.extend(node_issues)
         topic_summaries.append(summary)
     l3_issues, child_summaries = _audit_l3_view(l3_view)
-    issues.extend(l3_issues)
+    raw_issues.extend(l3_issues)
+
+    suppressed_issues: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+    for issue in raw_issues:
+        l2_id = _issue_l2_id(issue)
+        suppression = suppressions.get(l2_id)
+        if suppression:
+            suppressed_issues.append(
+                {
+                    **issue,
+                    "suppression_reason_codes": suppression.get("reason_codes", []) or [],
+                    "suppression_source": suppression.get("source", ""),
+                }
+            )
+        else:
+            issues.append(issue)
 
     manual_queue = [
         issue
@@ -352,6 +402,10 @@ def audit_topic_quality(*, run_root: Path | str, out: Path | str | None = None) 
     ]
     severe_count = sum(1 for issue in issues if issue["severity"] == "severe")
     warning_count = sum(1 for issue in issues if issue["severity"] == "warning")
+    raw_severe_count = sum(1 for issue in raw_issues if issue["severity"] == "severe")
+    raw_warning_count = sum(1 for issue in raw_issues if issue["severity"] == "warning")
+    suppressed_severe_count = sum(1 for issue in suppressed_issues if issue["severity"] == "severe")
+    suppressed_warning_count = sum(1 for issue in suppressed_issues if issue["severity"] == "warning")
     report = {
         "schema_version": 1,
         "generated_at_utc": utc_now_iso(),
@@ -359,6 +413,18 @@ def audit_topic_quality(*, run_root: Path | str, out: Path | str | None = None) 
         "severe_count": severe_count,
         "warning_count": warning_count,
         "issue_count": len(issues),
+        "raw_severe_count": raw_severe_count,
+        "raw_warning_count": raw_warning_count,
+        "raw_issue_count": len(raw_issues),
+        "suppressed_severe_count": suppressed_severe_count,
+        "suppressed_warning_count": suppressed_warning_count,
+        "suppressed_issue_count": len(suppressed_issues),
+        "unresolved_severe_count": severe_count,
+        "unresolved_warning_count": warning_count,
+        "unresolved_issue_count": len(issues),
+        "suppression_count": len(suppressions),
+        "suppression_decisions": list(suppressions.values()),
+        "suppressed_issues": suppressed_issues,
         "issues": issues,
         "topic_summaries": topic_summaries,
         "child_l2_summaries": child_summaries,
@@ -371,6 +437,8 @@ def audit_topic_quality(*, run_root: Path | str, out: Path | str | None = None) 
         "",
         f"- severe issues: {severe_count}",
         f"- warnings: {warning_count}",
+        f"- raw warnings before topic-review suppression: {raw_warning_count}",
+        f"- suppressed warnings: {suppressed_warning_count}",
         f"- manual review items: {len(manual_queue)}",
         "",
         "## Review Items",
@@ -386,8 +454,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Audit optimization v2 L2/L3 topic quality.")
     parser.add_argument("--run-root", required=True)
     parser.add_argument("--out", default="")
+    parser.add_argument("--topic-review-decisions", default="")
     args = parser.parse_args()
-    report = audit_topic_quality(run_root=args.run_root, out=args.out or None)
+    report = audit_topic_quality(
+        run_root=args.run_root,
+        out=args.out or None,
+        topic_review_decisions=args.topic_review_decisions or None,
+    )
     print(
         "[optimization:v2] topic audit complete: "
         f"severe={report['severe_count']} warnings={report['warning_count']} "
