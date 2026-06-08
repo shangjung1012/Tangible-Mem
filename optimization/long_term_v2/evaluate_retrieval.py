@@ -202,6 +202,16 @@ def evaluate_retrieval(
             for obj_id in selected_ids
             if obj_id in l3_index and isinstance(l3_index[obj_id], dict)
         }
+        suppressed_l2_index = effective_surface.get("suppressed_l2_index", {}) or {}
+        selected_suppressed_l1_ids = sorted(selected_ids & set(suppressed_l2_index))
+        selected_suppressed_l2_ids = sorted(
+            {
+                str(suppressed_l2_index[obj_id].get("l2_id", ""))
+                for obj_id in selected_suppressed_l1_ids
+                if isinstance(suppressed_l2_index.get(obj_id), dict)
+                and str(suppressed_l2_index[obj_id].get("l2_id", ""))
+            }
+        )
         l2_hit = bool(expected_l2 & selected_l2) if expected_l2 else bool(selected_l2)
         semantic_l2_hit = (
             _semantic_label_hit(
@@ -238,6 +248,10 @@ def evaluate_retrieval(
                 "selected_l2_labels": sorted(selected_l2_labels),
                 "selected_l3_ids": sorted(selected_l3),
                 "selected_l3_labels": sorted(selected_l3_labels),
+                "suppressed_l2_ids_available": effective_surface["suppressed_l2_ids"],
+                "suppressed_selected_l1_count": len(selected_suppressed_l1_ids),
+                "selected_suppressed_l1_ids": selected_suppressed_l1_ids,
+                "selected_suppressed_l2_ids": selected_suppressed_l2_ids,
                 "expected_obj_recall_at_context": round(obj_recall, 4),
                 "expected_l2_hit": l2_hit,
                 "expected_l2_semantic_hit": semantic_l2_hit,

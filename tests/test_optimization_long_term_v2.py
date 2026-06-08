@@ -481,6 +481,46 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertNotIn("L2-suppress", row["selected_l2_ids"])
             self.assertFalse(row["expected_l2_hit"])
 
+    def test_retrieval_report_records_suppressed_topic_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            share = root / "share"
+            _write_share_root(
+                share,
+                {
+                    "tree_version": 1,
+                    "last_updated_utc": "2026-01-01T00:00:00Z",
+                    "project_profile": {},
+                    "phases": [],
+                    "meetings": [
+                        _meeting(
+                            "BMR-001",
+                            "2026-01-01",
+                            [
+                                _obj("L1-KEEP", "finding", "The team discussed recording setup.", topics=["recording setup"]),
+                                _obj("L1-SUPPRESS", "finding", "The team said go ahead before changing topic.", topics=["go ahead"]),
+                            ],
+                        )
+                    ],
+                },
+            )
+            run_root = root / "optimization" / "runs" / "suppressed_metadata"
+            _write_effective_surface_fixture(run_root)
+            queries = run_root / "queries.jsonl"
+            queries.write_text(
+                json.dumps({"query": "go ahead recording setup", "expected_obj_ids": ["L1-KEEP", "L1-SUPPRESS"]}) + "\n",
+                encoding="utf-8",
+            )
+
+            report = evaluate_retrieval(run_root=run_root, queries_path=queries, share_mem_root=share, top_k_l1=10)
+
+            row = report["queries"][0]
+            self.assertEqual(report["effective_topic_surface"]["suppressed_l2_count"], 1)
+            self.assertEqual(row["suppressed_l2_ids_available"], ["L2-suppress"])
+            self.assertEqual(row["suppressed_selected_l1_count"], 1)
+            self.assertEqual(row["selected_suppressed_l1_ids"], ["L1-SUPPRESS"])
+            self.assertEqual(row["selected_suppressed_l2_ids"], ["L2-suppress"])
+
     def test_answer_quality_v2_context_uses_effective_topic_surface(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -550,6 +590,158 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(set(runtime_index), {"L1-KEEP"})
             self.assertEqual(manifest["l2_topic_count"], 1)
             self.assertEqual(manifest["effective_topic_surface"]["suppressed_l2_count"], 1)
+
+    def test_curate_icsi_queries_uses_effective_active_topics(self) -> None:
+        from optimization.long_term_v2.curate_icsi_eval_queries import curate_icsi_eval_queries
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            share = root / "share"
+            _write_share_root(
+                share,
+                {
+                    "tree_version": 1,
+                    "last_updated_utc": "2026-01-01T00:00:00Z",
+                    "project_profile": {},
+                    "phases": [],
+                    "meetings": [
+                        _meeting(
+                            "BMR-001",
+                            "2026-01-01",
+                            [
+                                _obj("L1-AUDIO", "finding", "Audio channel quality affected transcription confidence.", topics=["audio channel quality"]),
+                                _obj("L1-ROOM", "finding", "Room recording setup used headset microphones.", topics=["recording setup"]),
+                                _obj("L1-GO", "finding", "The team said go ahead before moving to an unrelated item.", topics=["go ahead"]),
+                            ],
+                        ),
+                        _meeting(
+                            "BMR-002",
+                            "2026-01-02",
+                            [
+                                _obj("L1-AUDIO-2", "finding", "Audio channel calibration was checked again.", topics=["audio channel quality"]),
+                                _obj("L1-ROOM-2", "finding", "Recording setup changed participant microphone placement.", topics=["recording setup"]),
+                            ],
+                        ),
+                    ],
+                },
+            )
+            run_root = root / "optimization" / "runs" / "query_curator"
+            (run_root / "l2").mkdir(parents=True)
+            (run_root / "l3").mkdir(parents=True)
+            (run_root / "topic_review").mkdir(parents=True)
+            (run_root / "l2" / "l2_view.json").write_text(
+                json.dumps(
+                    {
+                        "l2_nodes": [
+                            {
+                                "l2_id": "L2-audio-channel-quality",
+                                "label": "audio channel quality",
+                                "linked_obj_ids": ["L1-AUDIO", "L1-AUDIO-2"],
+                                "timeline_digest": [
+                                    {"obj_id": "L1-AUDIO", "meeting_id": "BMR-001", "meeting_date": "2026-01-01", "summary": "Audio channel quality affected transcription confidence."},
+                                    {"obj_id": "L1-AUDIO-2", "meeting_id": "BMR-002", "meeting_date": "2026-01-02", "summary": "Audio channel calibration was checked again."},
+                                ],
+                            },
+                            {
+                                "l2_id": "L2-recording-setup",
+                                "label": "recording setup",
+                                "linked_obj_ids": ["L1-ROOM", "L1-ROOM-2"],
+                                "timeline_digest": [
+                                    {"obj_id": "L1-ROOM", "meeting_id": "BMR-001", "meeting_date": "2026-01-01", "summary": "Room recording setup used headset microphones."},
+                                    {"obj_id": "L1-ROOM-2", "meeting_id": "BMR-002", "meeting_date": "2026-01-02", "summary": "Recording setup changed participant microphone placement."},
+                                ],
+                            },
+                            {
+                                "l2_id": "L2-go-ahead",
+                                "label": "go ahead",
+                                "linked_obj_ids": ["L1-GO"],
+                                "timeline_digest": [
+                                    {"obj_id": "L1-GO", "meeting_id": "BMR-001", "meeting_date": "2026-01-01", "summary": "The team said go ahead before moving to an unrelated item."},
+                                ],
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l2" / "l2_index.json").write_text(
+                json.dumps(
+                    {
+                        "L1-AUDIO": {"l2_id": "L2-audio-channel-quality", "l2_label": "audio channel quality"},
+                        "L1-AUDIO-2": {"l2_id": "L2-audio-channel-quality", "l2_label": "audio channel quality"},
+                        "L1-ROOM": {"l2_id": "L2-recording-setup", "l2_label": "recording setup"},
+                        "L1-ROOM-2": {"l2_id": "L2-recording-setup", "l2_label": "recording setup"},
+                        "L1-GO": {"l2_id": "L2-go-ahead", "l2_label": "go ahead"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (run_root / "l3" / "l3_view.json").write_text(json.dumps({"l3_parents": []}), encoding="utf-8")
+            (run_root / "l3" / "l3_index.json").write_text(json.dumps({}), encoding="utf-8")
+            (run_root / "topic_review" / "effective_topic_index.json").write_text(
+                json.dumps({"suppressed_l2_ids": ["L2-go-ahead"]}),
+                encoding="utf-8",
+            )
+
+            out = root / "queries.jsonl"
+            report = curate_icsi_eval_queries(run_root=run_root, share_mem_root=share, out=out, max_queries=5)
+
+            rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+            labels = {label for row in rows for label in row.get("expected_l2_labels", [])}
+            self.assertIn("audio channel quality", labels)
+            self.assertIn("recording setup", labels)
+            self.assertNotIn("go ahead", labels)
+            self.assertTrue(all(row.get("query") for row in rows))
+            self.assertTrue(all(row.get("expected_obj_ids") for row in rows))
+            self.assertEqual(report["suppressed_l2_count"], 1)
+
+    def test_manual_review_active_l2_writes_effective_review_sections(self) -> None:
+        from optimization.long_term_v2.manual_review_active_l2 import build_active_l2_manual_review
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            share = root / "share"
+            _write_share_root(
+                share,
+                {
+                    "tree_version": 1,
+                    "last_updated_utc": "2026-01-01T00:00:00Z",
+                    "project_profile": {},
+                    "phases": [],
+                    "meetings": [
+                        _meeting(
+                            "BMR-001",
+                            "2026-01-01",
+                            [
+                                _obj("L1-KEEP", "finding", "The team discussed recording setup.", importance=0.91, topics=["recording setup"]),
+                                _obj("L1-SUPPRESS", "finding", "The team said go ahead before changing topic.", importance=0.88, topics=["go ahead"]),
+                            ],
+                        )
+                    ],
+                },
+            )
+            run_root = root / "optimization" / "runs" / "manual_review"
+            _write_effective_surface_fixture(run_root)
+
+            report = build_active_l2_manual_review(
+                run_root=run_root,
+                share_mem_root=share,
+                out=root / "review",
+                top_l2_limit=10,
+                random_l1_limit=5,
+                high_importance_limit=5,
+            )
+
+            self.assertIn("top_largest_active_l2", report)
+            self.assertIn("suppressed_l2", report)
+            self.assertIn("random_linked_l1", report)
+            self.assertIn("high_importance_l1_sample", report)
+            self.assertIn("review_schema", report)
+            self.assertEqual([row["l2_id"] for row in report["top_largest_active_l2"]], ["L2-keep"])
+            self.assertEqual([row["l2_id"] for row in report["suppressed_l2"]], ["L2-suppress"])
+            self.assertIn("correct", report["review_schema"]["allowed_decisions"])
+            self.assertTrue((root / "review" / "active_l2_manual_review.json").exists())
+            self.assertTrue((root / "review" / "active_l2_manual_review.md").exists())
 
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
