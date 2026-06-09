@@ -143,6 +143,72 @@ class OptimizationRuntimeExportTests(unittest.TestCase):
             self.assertTrue((root / "runtime" / "l2" / "l2_secondary_links.json").exists())
             self.assertTrue((root / "runtime" / "l3" / "l3_promotions.json").exists())
 
+    def test_shadow_readiness_reports_complete_runtime_export(self) -> None:
+        from optimization.long_term_v2.export_runtime_view import export_runtime_view
+        from optimization.long_term_v2.shadow_runtime_readiness import run_shadow_readiness_report
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_v2_run(root)
+            export_runtime_view(root, clean=True)
+            queries_path = root / "queries.jsonl"
+            queries_path.write_text(
+                json.dumps(
+                    {
+                        "query_id": "q001",
+                        "query": "How does evidence-first retrieval work?",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = run_shadow_readiness_report(
+                run_root=root,
+                queries_path=queries_path,
+                out=root / "shadow_report",
+                max_queries=1,
+            )
+
+            self.assertEqual(report["decision"], "shadow_ready")
+            self.assertEqual(report["missing_runtime_file_count"], 0)
+            self.assertEqual(report["optimization_resolver"]["backend"], "optimization_v2")
+            self.assertEqual(report["fallback_resolver"]["backend"], "canonical")
+            self.assertFalse(report["canonical_mutation"])
+            self.assertEqual(len(report["sample_traces"]), 1)
+            self.assertIn("Global Topic Map", report["sample_traces"][0]["context_preview"])
+            self.assertIn("L1 Evidence Seeds", report["sample_traces"][0]["context_preview"])
+            self.assertTrue((root / "shadow_report" / "summary.json").exists())
+            self.assertTrue((root / "shadow_report" / "summary.md").exists())
+
+    def test_shadow_readiness_blocks_incomplete_runtime_export(self) -> None:
+        from optimization.long_term_v2.shadow_runtime_readiness import run_shadow_readiness_report
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_json(root / "runtime" / "input_snapshot" / "tree.json", {"meetings": []})
+            queries_path = root / "queries.jsonl"
+            queries_path.write_text(
+                json.dumps({"query_id": "q001", "query": "anything"}) + "\n",
+                encoding="utf-8",
+            )
+
+            report = run_shadow_readiness_report(
+                run_root=root,
+                queries_path=queries_path,
+                out=root / "shadow_report",
+                max_queries=1,
+            )
+
+            self.assertEqual(report["decision"], "not_ready")
+            self.assertGreater(report["missing_runtime_file_count"], 0)
+            self.assertIn("runtime/l2/l2_view.json", report["missing_runtime_files"])
+            self.assertEqual(report["optimization_resolver"]["backend"], "canonical")
+            self.assertEqual(
+                report["optimization_resolver"]["fallback_reason"],
+                "optimization_v2_runtime_incomplete",
+            )
+
 
 class MemoryContextBackendTests(unittest.TestCase):
     def test_default_long_term_backend_uses_canonical_paths(self) -> None:
