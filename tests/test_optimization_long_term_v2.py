@@ -1030,6 +1030,97 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                 report["strategies"]["baseline"]["proxy_overall_score"],
             )
 
+    def test_icsi_full_context_uses_requested_line_scope(self) -> None:
+        from optimization.long_term_v2.run_icsi_answer_quality_comparison import build_first360_full_context
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            transcript_dir = root / "transcripts"
+            transcript_dir.mkdir()
+            (transcript_dir / "Bmr001.txt").write_text("\n".join(f"line {idx}" for idx in range(1, 8)), encoding="utf-8")
+            (transcript_dir / "Bmr002.txt").write_text("\n".join(f"other {idx}" for idx in range(1, 8)), encoding="utf-8")
+            share_root = root / "share_mem_effective"
+            _write_json(
+                share_root / "tree.json",
+                {
+                    "meetings": [
+                        {"meeting_id": "Bmr001_first360", "memory_objects": []},
+                    ]
+                },
+            )
+
+            context, meta = build_first360_full_context(
+                share_mem_root=share_root,
+                transcript_dir=transcript_dir,
+                max_lines_per_meeting=3,
+            )
+
+            self.assertIn("--- meeting Bmr001_first360 ---", context)
+            self.assertIn("line 1", context)
+            self.assertIn("line 3", context)
+            self.assertNotIn("line 4", context)
+            self.assertNotIn("other 1", context)
+            self.assertEqual(meta["included_meeting_count"], 1)
+            self.assertFalse(meta["token_truncated"])
+
+    def test_icsi_expected_answer_brief_uses_gold_l1_content(self) -> None:
+        from optimization.long_term_v2.run_icsi_answer_quality_comparison import build_expected_answer_brief
+
+        share_tree = {
+            "meetings": [
+                {
+                    "meeting_id": "Bmr001_first360",
+                    "meeting_date": "2026-06-01",
+                    "memory_objects": [
+                        {
+                            "obj_id": "L1-Bmr001-001",
+                            "content": "The team discussed microphone placement for recording setup.",
+                            "evidence": "speaker evidence about microphone placement",
+                            "type": "finding",
+                        }
+                    ],
+                }
+            ]
+        }
+        query = {
+            "expected_obj_ids": ["L1-Bmr001-001"],
+            "expected_l2_labels": ["recording equipment and setup"],
+        }
+
+        brief = build_expected_answer_brief(query, share_tree)
+
+        self.assertIn("recording equipment and setup", brief)
+        self.assertIn("L1-Bmr001-001", brief)
+        self.assertIn("microphone placement", brief)
+
+    def test_icsi_answer_quality_runner_uses_gate_compatible_strategy_names(self) -> None:
+        from optimization.long_term_v2.run_icsi_answer_quality_comparison import STRATEGY_NAMES
+
+        self.assertEqual(STRATEGY_NAMES["full_context"], "full_context")
+        self.assertEqual(STRATEGY_NAMES["rag_baseline"], "rag_baseline")
+        self.assertEqual(STRATEGY_NAMES["optimization_v2"], "optimization_v2_deterministic")
+
+    def test_icsi_compact_report_marks_v2_win_against_available_baselines(self) -> None:
+        from optimization.long_term_v2.run_icsi_answer_quality_comparison import _compact_report
+
+        report = {
+            "status": "warning",
+            "gate_reasons": ["missing_canonical_layered"],
+            "summary": {
+                "full_context": {"average_overall_score": 0.5, "average_context_tokens": 1000},
+                "rag_baseline": {"average_overall_score": 0.6, "average_context_tokens": 600},
+                "optimization_v2_deterministic": {"average_overall_score": 0.75, "average_context_tokens": 300},
+            },
+            "failure_case_count": 0,
+            "dimensions": [],
+        }
+
+        compact = _compact_report(report, raw_run_root=Path("optimization") / "runs" / "demo")
+
+        self.assertEqual(compact["icsi_available_baseline_decision"], "optimization_v2_wins_available_baselines")
+        self.assertGreater(compact["pairwise_overall_delta"]["optimization_v2_minus_rag"], 0)
+        self.assertLess(compact["pairwise_context_token_delta"]["optimization_v2_minus_full_context"], 0)
+
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
