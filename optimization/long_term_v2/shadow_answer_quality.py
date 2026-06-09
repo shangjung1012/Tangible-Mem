@@ -71,6 +71,7 @@ def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "query_id": str(row.get("query_id") or ""),
         "query": str(row.get("query") or ""),
+        "query_type": str(row.get("query_type") or "").strip().lower(),
         "backend": _normal_backend(row.get("backend") or row.get("strategy")),
         "answer": str(row.get("answer") or ""),
         "retrieved_context": str(row.get("retrieved_context") or ""),
@@ -90,6 +91,15 @@ def summarize_shadow_answer_quality(
 ) -> dict[str, Any]:
     normalized = [_normalize_row(row) for row in rows if _normal_backend(row.get("backend") or row.get("strategy"))]
     query_ids = sorted({row["query_id"] for row in normalized if row["query_id"]})
+    query_type_by_id = {
+        row["query_id"]: row["query_type"] or "unspecified"
+        for row in normalized
+        if row["query_id"]
+    }
+    query_type_counts: dict[str, int] = {}
+    for query_id in query_ids:
+        query_type = query_type_by_id.get(query_id, "unspecified")
+        query_type_counts[query_type] = query_type_counts.get(query_type, 0) + 1
     by_backend: dict[str, list[dict[str, Any]]] = {}
     for row in normalized:
         by_backend.setdefault(row["backend"], []).append(row)
@@ -129,6 +139,27 @@ def summarize_shadow_answer_quality(
             - _safe_float((canonical.get("average_dimensions") or {}).get(dimension)),
             4,
         )
+    evolution_rows = [
+        row
+        for row in normalized
+        if row["query_type"] in {"evolution", "rationale", "design_rationale"}
+    ]
+    evolution_by_backend: dict[str, list[dict[str, Any]]] = {}
+    for row in evolution_rows:
+        evolution_by_backend.setdefault(row["backend"], []).append(row)
+    evolution_delta = 0.0
+    if evolution_by_backend.get("canonical") and evolution_by_backend.get("optimization_v2"):
+        evolution_delta = round(
+            _average([
+                _safe_float(row["dimensions"].get("topic_evolution"))
+                for row in evolution_by_backend["optimization_v2"]
+            ])
+            - _average([
+                _safe_float(row["dimensions"].get("topic_evolution"))
+                for row in evolution_by_backend["canonical"]
+            ]),
+            4,
+        )
 
     reasons: list[str] = []
     if not canonical:
@@ -146,7 +177,7 @@ def summarize_shadow_answer_quality(
         if diagnostic_canonical_baseline:
             if dimension_delta.get("evidence_grounding", 0.0) < -0.0001:
                 reasons.append("optimization_grounding_below_diagnostic_canonical")
-            if dimension_delta.get("topic_evolution", 0.0) < -0.0001:
+            if evolution_rows and evolution_delta < -0.0001:
                 reasons.append("optimization_evolution_below_diagnostic_canonical")
 
     decision = "answer_quality_pass" if not reasons else "answer_quality_needs_review"
@@ -162,6 +193,9 @@ def summarize_shadow_answer_quality(
         "backend_summary": backend_summary,
         "overall_delta": overall_delta,
         "dimension_delta": dimension_delta,
+        "relevant_query_type_counts": query_type_counts,
+        "evolution_query_count": len({row["query_id"] for row in evolution_rows}),
+        "evolution_dimension_delta": {"topic_evolution": evolution_delta},
     }
 
 
@@ -331,16 +365,34 @@ def _load_context(path: str) -> str:
     return source.read_text(encoding="utf-8", errors="replace")
 
 
+def _load_query_metadata(shadow_report: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    path = Path(str(shadow_report.get("queries_path") or ""))
+    if not path.exists():
+        return {}
+    metadata: dict[str, dict[str, Any]] = {}
+    for index, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), start=1):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        query_id = str(row.get("query_id") or row.get("question_id") or f"q{index:03d}")
+        metadata[query_id] = row
+    return metadata
+
+
 def _trace_rows_from_shadow_report(shadow_report: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    metadata = _load_query_metadata(shadow_report)
     for query in shadow_report.get("query_results", []) or []:
+        query_id = str(query.get("query_id", "") or "")
+        query_meta = metadata.get(query_id, {})
         for backend in ("canonical", "optimization_v2"):
             trace = ((query.get("backends") or {}).get(backend) or {})
             context = _load_context(str(trace.get("context_path") or ""))
             rows.append(
                 {
-                    "query_id": query.get("query_id", ""),
+                    "query_id": query_id,
                     "query": query.get("query", ""),
+                    "query_type": query_meta.get("query_type", ""),
                     "backend": backend,
                     "retrieved_context": context,
                     "trace": trace,
@@ -357,6 +409,7 @@ def run_shadow_answer_quality(
     canonical_is_gold_baseline: bool = False,
     diagnostic_canonical_baseline: bool = False,
     generate_answers: bool = False,
+    scored_rows_path: Path | str | None = None,
     model: str = "gemini-2.5-pro",
     judge_model: str = "gemini-2.5-pro",
     max_attempts: int = 4,
@@ -366,6 +419,30 @@ def run_shadow_answer_quality(
     raw_root = ensure_optimization_output(raw_out or report_root)
     shadow_report = load_json(shadow_qa_report)
     trace_rows = _trace_rows_from_shadow_report(shadow_report)
+    if scored_rows_path:
+        scored_payload = load_json(scored_rows_path)
+        scored_rows = list(scored_payload.get("rows", []) if isinstance(scored_payload, dict) else scored_payload)
+        metadata_by_id = {row["query_id"]: row for row in trace_rows}
+        for row in scored_rows:
+            query_id = str(row.get("query_id") or "")
+            if query_id in metadata_by_id and not row.get("query_type"):
+                row["query_type"] = metadata_by_id[query_id].get("query_type", "")
+        summary = summarize_shadow_answer_quality(
+            scored_rows,
+            canonical_is_gold_baseline=canonical_is_gold_baseline,
+            diagnostic_canonical_baseline=diagnostic_canonical_baseline,
+        )
+        summary.update(
+            {
+                "shadow_qa_report": str(Path(shadow_qa_report).resolve()),
+                "raw_run_root": str(raw_root.resolve()),
+                "scored_rows_path": str(Path(scored_rows_path).resolve()),
+                "skipped_row_count": 0,
+            }
+        )
+        write_json(report_root / "summary.json", summary)
+        write_text(report_root / "summary.md", _format_summary_md(summary))
+        return summary
     if not generate_answers:
         summary = {
             "schema_version": 1,
@@ -415,6 +492,7 @@ def run_shadow_answer_quality(
                 row = {
                     "query_id": query_id,
                     "query": trace_row.get("query", ""),
+                    "query_type": trace_row.get("query_type", ""),
                     "backend": backend,
                     "strategy": BACKEND_TO_STRATEGY.get(backend, backend),
                     "answer": answer_result["answer"],
@@ -505,6 +583,7 @@ def main() -> None:
     parser.add_argument("--diagnostic-canonical-baseline", action="store_true")
     parser.add_argument("--no-llm", action="store_true")
     parser.add_argument("--generate-answers", action="store_true")
+    parser.add_argument("--scored-rows", default=None)
     parser.add_argument("--model", default="gemini-2.5-pro")
     parser.add_argument("--judge-model", default="gemini-2.5-pro")
     parser.add_argument("--max-attempts", type=int, default=4)
@@ -517,6 +596,7 @@ def main() -> None:
         canonical_is_gold_baseline=args.canonical_is_gold_baseline,
         diagnostic_canonical_baseline=args.diagnostic_canonical_baseline,
         generate_answers=args.generate_answers and not args.no_llm,
+        scored_rows_path=args.scored_rows or None,
         model=args.model,
         judge_model=args.judge_model,
         max_attempts=args.max_attempts,

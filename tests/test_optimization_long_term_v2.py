@@ -4312,6 +4312,32 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
         self.assertEqual(summary["decision"], "answer_quality_pass")
         self.assertGreater(summary["overall_delta"]["optimization_minus_canonical"], 0)
 
+    def test_shadow_answer_quality_ignores_topic_evolution_gate_for_overview_queries(self) -> None:
+        from optimization.long_term_v2.shadow_answer_quality import summarize_shadow_answer_quality
+
+        rows = [
+            {
+                "query_id": "q001",
+                "query_type": "overview",
+                "backend": "canonical",
+                "overall_score": 0.82,
+                "dimensions": {"evidence_grounding": 0.8, "topic_evolution": 1.0, "hallucination_risk": 0.0},
+            },
+            {
+                "query_id": "q001",
+                "query_type": "overview",
+                "backend": "optimization_v2",
+                "overall_score": 0.90,
+                "dimensions": {"evidence_grounding": 1.0, "topic_evolution": 0.0, "hallucination_risk": 0.0},
+            },
+        ]
+
+        summary = summarize_shadow_answer_quality(rows, diagnostic_canonical_baseline=True)
+
+        self.assertEqual(summary["decision"], "answer_quality_pass")
+        self.assertEqual(summary["relevant_query_type_counts"]["overview"], 1)
+        self.assertNotIn("optimization_evolution_below_diagnostic_canonical", summary["reason_codes"])
+
     def test_label_polish_review_flags_artifact_like_labels_without_mutating_l2(self) -> None:
         from optimization.long_term_v2.label_polish_review import build_label_polish_review
 
@@ -4334,6 +4360,83 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertIn("weak_terminal_word", report["review_items"][0]["reason_codes"])
             self.assertEqual(load_json(run_root / "l2" / "l2_view.json"), l2_view)
 
+    def test_label_polish_finalization_writes_candidate_run_without_mutating_source(self) -> None:
+        from optimization.long_term_v2.finalize_label_polish_review import finalize_label_polish_review
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "optimization" / "runs" / "candidate6"
+            out = root / "optimization" / "runs" / "candidate7"
+            (source / "l2").mkdir(parents=True)
+            (source / "l3").mkdir(parents=True)
+            _write_json(
+                source / "l2" / "l2_view.json",
+                {
+                    "l2_nodes": [
+                        {"l2_id": "L2-go-ahead", "label": "go ahead", "linked_obj_ids": ["L1-A"]},
+                        {"l2_id": "L2-bug", "label": "bug", "linked_obj_ids": ["L1-B"]},
+                    ]
+                },
+            )
+            _write_json(
+                source / "l2" / "l2_index.json",
+                {
+                    "L1-A": {"l2_id": "L2-go-ahead", "l2_label": "go ahead"},
+                    "L1-B": {"l2_id": "L2-bug", "l2_label": "bug"},
+                },
+            )
+            _write_json(
+                source / "l3" / "l3_view.json",
+                {
+                    "l3_parents": [
+                        {
+                            "l3_id": "L3-ti-digit",
+                            "source_l2_id": "L2-ti-digit",
+                            "child_l2_nodes": [
+                                {
+                                    "child_l2_id": "L2-ti-digit-data-per",
+                                    "label": "data per",
+                                    "linked_obj_ids": ["L1-C"],
+                                }
+                            ],
+                        }
+                    ]
+                },
+            )
+            _write_json(
+                source / "l3" / "l3_index.json",
+                {"L1-C": {"parent_l3_id": "L3-ti-digit", "child_l2_id": "L2-ti-digit-data-per", "child_l2_label": "data per"}},
+            )
+            review = root / "optimization" / "reports" / "label_polish"
+            _write_json(
+                review / "label_polish_review_queue.json",
+                {
+                    "items": [
+                        {"l2_id": "L2-go-ahead", "label": "go ahead", "item_type": "l2_topic"},
+                        {"l2_id": "L2-bug", "label": "bug", "item_type": "l2_topic"},
+                        {
+                            "l2_id": "L2-ti-digit-data-per",
+                            "child_l2_id": "L2-ti-digit-data-per",
+                            "parent_l3_id": "L3-ti-digit",
+                            "label": "data per",
+                            "item_type": "child_l2_topic",
+                        },
+                    ]
+                },
+            )
+
+            report = finalize_label_polish_review(source_run_root=source, review_root=review, out_run_root=out, clean=True)
+
+            self.assertEqual(report["decision"], "label_polish_finalized")
+            self.assertIn("L2-go-ahead", report["suppressed_l2_ids"])
+            self.assertEqual(load_json(out / "topic_review" / "effective_topic_index.json")["suppressed_l2_ids"], ["L2-go-ahead"])
+            out_l2 = load_json(out / "l2" / "l2_view.json")
+            self.assertEqual(next(node for node in out_l2["l2_nodes"] if node["l2_id"] == "L2-bug")["label"], "adaptation count failure")
+            out_l3 = load_json(out / "l3" / "l3_view.json")
+            child = out_l3["l3_parents"][0]["child_l2_nodes"][0]
+            self.assertEqual(child["label"], "speaker adaptation data volume")
+            self.assertEqual(load_json(source / "l2" / "l2_view.json")["l2_nodes"][0]["label"], "go ahead")
+
     def test_promotion_gate_report_blocks_when_answer_quality_missing(self) -> None:
         from optimization.long_term_v2.promotion_gate_report import decide_promotion_status
 
@@ -4351,6 +4454,42 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
 
         self.assertEqual(decision["promotion_decision"], "do_not_promote")
         self.assertIn("missing_answer_quality_report", decision["blocking_reasons"])
+
+    def test_promotion_gate_allows_new_dataset_default_when_longer_scope_is_missing(self) -> None:
+        from optimization.long_term_v2.promotion_gate_report import decide_promotion_status
+
+        decision = decide_promotion_status(
+            shadow_reports=[{"summary": {"decision": "shadow_qa_pass"}}],
+            answer_quality_reports=[{"decision": "answer_quality_pass"}],
+            label_polish_report={"decision": "label_polish_review_needed", "review_item_count": 2},
+            longer_icsi_report={"decision": "blocked_missing_input", "accepted_scope_boundary": False},
+            tests_passed=True,
+            scans_passed=True,
+            canonical_mutation=False,
+        )
+
+        self.assertEqual(decision["promotion_decision"], "new_dataset_default_l2_l3")
+        self.assertEqual(decision["canonical_replacement_eligible"], False)
+        self.assertEqual(decision["legacy_archive_allowed"], False)
+        self.assertIn("longer_scope_not_available", decision["warning_reasons"])
+
+    def test_promotion_gate_accepts_finalized_label_polish(self) -> None:
+        from optimization.long_term_v2.promotion_gate_report import decide_promotion_status
+
+        decision = decide_promotion_status(
+            shadow_reports=[{"summary": {"decision": "shadow_qa_pass"}}],
+            answer_quality_reports=[{"decision": "answer_quality_pass"}],
+            label_polish_report={"decision": "label_polish_finalized", "unresolved_item_count": 0},
+            longer_icsi_report={"decision": "blocked_missing_input", "accepted_scope_boundary": False},
+            tests_passed=True,
+            scans_passed=True,
+            canonical_mutation=False,
+        )
+
+        self.assertEqual(decision["promotion_decision"], "new_dataset_default_l2_l3")
+        self.assertEqual(decision["legacy_archive_allowed"], False)
+        self.assertNotIn("label_polish_review_needed", decision["warning_reasons"])
+        self.assertNotIn("label_polish_report_invalid", decision["blocking_reasons"])
 
 
 if __name__ == "__main__":

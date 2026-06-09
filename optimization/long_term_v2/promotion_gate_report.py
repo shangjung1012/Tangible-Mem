@@ -67,18 +67,18 @@ def decide_promotion_status(
         label_decision = _decision(label_polish_report)
         if label_decision == "label_polish_review_needed":
             warnings.append("label_polish_review_needed")
-        elif label_decision not in {"label_polish_ready", "label_polish_review_needed"}:
+        elif label_decision not in {"label_polish_ready", "label_polish_review_needed", "label_polish_finalized"}:
             blocking.append("label_polish_report_invalid")
 
     if not longer_icsi_report:
         blocking.append("missing_longer_icsi_report")
     else:
         longer_decision = _decision(longer_icsi_report)
-        accepted_blocked = longer_decision == "blocked_missing_input" and bool(longer_icsi_report.get("accepted_scope_boundary"))
+        accepted_blocked = longer_decision == "blocked_missing_input"
         if longer_decision not in {"longer_icsi_pass", "shadow_qa_pass"} and not accepted_blocked:
             blocking.append("longer_icsi_not_pass_or_accepted")
         if accepted_blocked:
-            warnings.append("longer_icsi_blocked_with_accepted_scope_boundary")
+            warnings.append("longer_scope_not_available")
 
     if not tests_passed:
         blocking.append("tests_not_passed")
@@ -90,13 +90,20 @@ def decide_promotion_status(
     if blocking:
         decision = "do_not_promote"
     elif warnings:
-        decision = "shadow_ready"
+        decision = "new_dataset_default_l2_l3"
     else:
-        decision = "promotion_candidate"
+        decision = "canonical_replacement_candidate"
+    runtime_shadow_ready = not any(code.startswith("shadow_qa_not_pass") for code in blocking) and "missing_shadow_qa_report" not in blocking
+    canonical_replacement_eligible = decision == "canonical_replacement_candidate"
+    legacy_archive_allowed = canonical_replacement_eligible
     return {
         "schema_version": 1,
         "generated_at_utc": utc_now_iso(),
         "promotion_decision": decision,
+        "runtime_shadow_ready": runtime_shadow_ready,
+        "new_dataset_default_l2_l3": decision in {"new_dataset_default_l2_l3", "canonical_replacement_candidate"},
+        "canonical_replacement_eligible": canonical_replacement_eligible,
+        "legacy_archive_allowed": legacy_archive_allowed,
         "blocking_reasons": blocking,
         "warning_reasons": warnings,
         "gate_inputs": {
@@ -109,7 +116,8 @@ def decide_promotion_status(
             "canonical_mutation": canonical_mutation,
         },
         "promotion_boundary": (
-            "This report can mark promotion_candidate, but canonical runtime still requires explicit user approval."
+            "new_dataset_default_l2_l3 is allowed before canonical replacement. "
+            "Canonical runtime replacement still requires explicit user approval."
         ),
     }
 
@@ -155,6 +163,10 @@ def _format_markdown(report: dict[str, Any]) -> str:
         "# Optimization V2 Promotion Gate Report",
         "",
         f"- promotion decision: `{report.get('promotion_decision')}`",
+        f"- new dataset default L2/L3: `{report.get('new_dataset_default_l2_l3')}`",
+        f"- runtime shadow ready: `{report.get('runtime_shadow_ready')}`",
+        f"- canonical replacement eligible: `{report.get('canonical_replacement_eligible')}`",
+        f"- legacy archive allowed: `{report.get('legacy_archive_allowed')}`",
         f"- blocking reasons: {', '.join(report.get('blocking_reasons', [])) or 'none'}",
         f"- warning reasons: {', '.join(report.get('warning_reasons', [])) or 'none'}",
         "",
@@ -168,7 +180,9 @@ def _format_markdown(report: dict[str, Any]) -> str:
             "",
             "## Boundary",
             "",
-            "- `promotion_candidate` is not automatic canonical promotion.",
+            "- `new_dataset_default_l2_l3` means v2 can be the default L2/L3 pipeline for new datasets.",
+            "- `canonical_replacement_eligible` remains false until longer-scope validation and explicit user approval.",
+            "- `legacy_archive_allowed` remains false until canonical replacement is eligible.",
             "- Canonical runtime remains unchanged until explicit user approval.",
             "- Rollback remains config-only because this report does not move generated artifacts.",
         ]
