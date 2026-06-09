@@ -4288,6 +4288,70 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertTrue((run_root / "manifest.json").exists())
             self.assertFalse((share_root / "l2_view.json").exists())
 
+    def test_shadow_answer_quality_summary_compares_canonical_and_optimization(self) -> None:
+        from optimization.long_term_v2.shadow_answer_quality import summarize_shadow_answer_quality
+
+        rows = [
+            {
+                "query_id": "q001",
+                "backend": "canonical",
+                "overall_score": 0.70,
+                "dimensions": {"source_traceability": 0.8, "hallucination_risk": 0.1},
+            },
+            {
+                "query_id": "q001",
+                "backend": "optimization_v2",
+                "overall_score": 0.75,
+                "dimensions": {"source_traceability": 1.0, "hallucination_risk": 0.0},
+            },
+        ]
+
+        summary = summarize_shadow_answer_quality(rows, canonical_is_gold_baseline=True)
+
+        self.assertEqual(summary["query_count"], 1)
+        self.assertEqual(summary["decision"], "answer_quality_pass")
+        self.assertGreater(summary["overall_delta"]["optimization_minus_canonical"], 0)
+
+    def test_label_polish_review_flags_artifact_like_labels_without_mutating_l2(self) -> None:
+        from optimization.long_term_v2.label_polish_review import build_label_polish_review
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "label_polish"
+            l2_view = {
+                "l2_nodes": [
+                    {"l2_id": "L2-good", "label": "recording equipment setup", "linked_obj_ids": ["L1-A", "L1-B"]},
+                    {"l2_id": "L2-weak", "label": "data per", "linked_obj_ids": ["L1-C"]},
+                ]
+            }
+            (run_root / "l2").mkdir(parents=True)
+            _write_json(run_root / "l2" / "l2_view.json", l2_view)
+            _write_json(run_root / "l3" / "l3_view.json", {"l3_parents": []})
+
+            report = build_label_polish_review(run_root=run_root, out=run_root / "label_polish")
+
+            self.assertEqual(report["review_item_count"], 1)
+            self.assertEqual(report["review_items"][0]["l2_id"], "L2-weak")
+            self.assertIn("weak_terminal_word", report["review_items"][0]["reason_codes"])
+            self.assertEqual(load_json(run_root / "l2" / "l2_view.json"), l2_view)
+
+    def test_promotion_gate_report_blocks_when_answer_quality_missing(self) -> None:
+        from optimization.long_term_v2.promotion_gate_report import decide_promotion_status
+
+        decision = decide_promotion_status(
+            shadow_reports=[
+                {"summary": {"decision": "shadow_qa_pass"}},
+            ],
+            answer_quality_reports=[],
+            label_polish_report={"decision": "label_polish_ready", "review_item_count": 0},
+            longer_icsi_report={"decision": "blocked_missing_input", "accepted_scope_boundary": True},
+            tests_passed=True,
+            scans_passed=True,
+            canonical_mutation=False,
+        )
+
+        self.assertEqual(decision["promotion_decision"], "do_not_promote")
+        self.assertIn("missing_answer_quality_report", decision["blocking_reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()
