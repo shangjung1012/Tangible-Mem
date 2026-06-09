@@ -148,6 +148,7 @@ def apply_split_review_candidates(
     source_run_root: Path | str,
     out_root: Path | str,
     clean: bool = False,
+    source_l2_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     source = Path(source_run_root)
     out = Path(out_root)
@@ -164,7 +165,13 @@ def apply_split_review_candidates(
     proposals = load_json(out / "l2" / "llm_split_review_proposals.json")
 
     l2_by_id = {str(node.get("l2_id", "")): node for node in l2_view.get("l2_nodes", []) or []}
-    accepted = [row for row in proposals.get("accepted_split_candidates", []) or [] if isinstance(row, dict)]
+    allowed_source_ids = {str(value) for value in source_l2_ids or [] if str(value)}
+    accepted = [
+        row
+        for row in proposals.get("accepted_split_candidates", []) or []
+        if isinstance(row, dict)
+        and (not allowed_source_ids or str(row.get("source_l2_id", "") or "") in allowed_source_ids)
+    ]
     applied: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     parents = [
@@ -288,6 +295,7 @@ def apply_split_review_candidates(
         "status": "candidate_splits_applied" if applied else "no_candidate_splits_applied",
         "source_run_root": str(source.resolve()),
         "candidate_run_root": str(out.resolve()),
+        "source_l2_filter": sorted(allowed_source_ids),
         "applied_split_count": len(applied),
         "skipped_split_count": len(skipped),
         "applied_splits": applied,
@@ -336,11 +344,18 @@ def main() -> None:
     parser.add_argument("--source-run-root", required=True)
     parser.add_argument("--out-root", required=True)
     parser.add_argument("--clean", action="store_true")
+    parser.add_argument(
+        "--source-l2-id",
+        action="append",
+        default=[],
+        help="Restrict application to selected source L2 ids from a merged proposal report.",
+    )
     args = parser.parse_args()
     report = apply_split_review_candidates(
         source_run_root=args.source_run_root,
         out_root=args.out_root,
         clean=args.clean,
+        source_l2_ids=args.source_l2_id,
     )
     print(
         "[optimization:v2] split-review candidate application complete: "

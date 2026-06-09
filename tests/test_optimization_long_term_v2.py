@@ -950,6 +950,44 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertGreaterEqual(report["retrieval_metric_deltas"]["avg_expected_obj_recall_at_context"], 0)
             self.assertEqual(report["decision"], "candidate_kept_isolated")
 
+    def test_effective_topic_run_comparison_reports_applied_splits_as_improvement(self) -> None:
+        from optimization.long_term_v2.compare_effective_topic_runs import compare_effective_topic_runs
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline = root / "optimization" / "runs" / "baseline"
+            candidate = root / "optimization" / "runs" / "candidate"
+            for run_root in (baseline, candidate):
+                _write_json(
+                    run_root / "manifest.json",
+                    {"source_l1_count": 6, "linked_l1_count": 6, "l2_topic_count": 1, "l3_parent_count": 0},
+                )
+                _write_json(
+                    run_root / "l2" / "l2_view.json",
+                    {"l2_nodes": [{"l2_id": "L2-large", "label": "large topic", "linked_obj_ids": ["L1-A"]}]},
+                )
+                _write_json(run_root / "l2" / "l2_index.json", {"L1-A": {"l2_id": "L2-large", "l2_label": "large topic"}})
+                _write_json(run_root / "l3" / "l3_view.json", {"l3_parents": []})
+                _write_json(run_root / "l3" / "l3_index.json", {})
+                _write_json(
+                    run_root / "retrieval_eval_icsi_effective" / "retrieval_eval_report.json",
+                    {"summary": {"avg_expected_obj_recall_at_context": 0.6, "expected_l2_semantic_hit_rate": 1.0}},
+                )
+            _write_json(
+                candidate / "l3" / "applied_split_review_candidates.json",
+                {
+                    "applied_split_count": 1,
+                    "skipped_split_count": 0,
+                    "applied_splits": [{"source_l2_id": "L2-large", "child_count": 2}],
+                },
+            )
+
+            report = compare_effective_topic_runs(baseline=baseline, candidate=candidate)
+
+            self.assertEqual(report["applied_split_count"], 1)
+            self.assertIn("applied_focused_l2_splits", report["improvements"])
+            self.assertEqual(report["decision"], "candidate_shadow_ready")
+
     def test_icsi_answer_quality_proxy_compares_candidate_context_quality(self) -> None:
         from optimization.long_term_v2.evaluate_icsi_answer_quality import evaluate_icsi_answer_quality_proxy
 
@@ -985,9 +1023,11 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             )
 
             self.assertEqual(report["strategy_count"], 2)
+            self.assertIn("baseline", report["strategies"])
+            self.assertIn("candidate", report["strategies"])
             self.assertGreaterEqual(
-                report["strategies"]["optimization_v2_candidate5"]["proxy_overall_score"],
-                report["strategies"]["optimization_v2_candidate4"]["proxy_overall_score"],
+                report["strategies"]["candidate"]["proxy_overall_score"],
+                report["strategies"]["baseline"]["proxy_overall_score"],
             )
 
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:

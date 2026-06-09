@@ -58,8 +58,10 @@ def evaluate_icsi_answer_quality_proxy(
     candidate_run_root: Path | str,
     out: Path | str | None = None,
 ) -> dict[str, Any]:
-    baseline = _strategy_summary("optimization_v2_candidate4", Path(baseline_run_root))
-    candidate = _strategy_summary("optimization_v2_candidate5", Path(candidate_run_root))
+    baseline_root = Path(baseline_run_root)
+    candidate_root = Path(candidate_run_root)
+    baseline = _strategy_summary(baseline_root.name, baseline_root)
+    candidate = _strategy_summary(candidate_root.name, candidate_root)
     decision = "candidate_not_worse" if candidate["proxy_overall_score"] >= baseline["proxy_overall_score"] else "candidate_regressed"
     report = {
         "schema_version": 1,

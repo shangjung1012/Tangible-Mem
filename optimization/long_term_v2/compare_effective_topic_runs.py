@@ -45,6 +45,18 @@ def _metrics(run_root: Path) -> dict[str, Any]:
     }
 
 
+def _split_application(run_root: Path) -> dict[str, Any]:
+    report = _load_optional(run_root / "l3" / "applied_split_review_candidates.json", {})
+    applied = [row for row in report.get("applied_splits", []) or [] if isinstance(row, dict)]
+    skipped = [row for row in report.get("skipped_splits", []) or [] if isinstance(row, dict)]
+    return {
+        "applied_split_count": int(report.get("applied_split_count", len(applied)) or 0),
+        "skipped_split_count": int(report.get("skipped_split_count", len(skipped)) or 0),
+        "applied_splits": applied,
+        "skipped_splits": skipped,
+    }
+
+
 def _metric_delta(base: dict[str, Any], cand: dict[str, Any], key: str) -> float:
     try:
         return round(float(cand.get(key, 0.0) or 0.0) - float(base.get(key, 0.0) or 0.0), 4)
@@ -57,6 +69,7 @@ def compare_effective_topic_runs(*, baseline: Path | str, candidate: Path | str,
     candidate_root = Path(candidate)
     base_metrics = _metrics(baseline_root)
     candidate_metrics = _metrics(candidate_root)
+    split_application = _split_application(candidate_root)
     base_labels = _l2_labels(baseline_root)
     candidate_labels = _l2_labels(candidate_root)
     changed_labels = [
@@ -78,15 +91,30 @@ def compare_effective_topic_runs(*, baseline: Path | str, candidate: Path | str,
     for key in ("avg_expected_obj_recall_at_context", "expected_l2_semantic_hit_rate", "expected_l3_semantic_hit_rate"):
         if retrieval_deltas.get(key, 0.0) < -0.0001:
             regressions.append(f"retrieval_regressed_{key}")
-    decision = "candidate_kept_isolated" if not regressions else "candidate_rejected"
+    if split_application["skipped_split_count"] > 0:
+        regressions.append("split_application_skipped_candidates")
+    improvements: list[str] = []
+    if split_application["applied_split_count"] > 0:
+        improvements.append("applied_focused_l2_splits")
+    if regressions:
+        decision = "candidate_rejected"
+    elif improvements:
+        decision = "candidate_shadow_ready"
+    else:
+        decision = "candidate_kept_isolated"
     report = {
         "schema_version": 1,
         "generated_at_utc": utc_now_iso(),
         "baseline": base_metrics,
         "candidate": candidate_metrics,
+        "applied_split_count": split_application["applied_split_count"],
+        "skipped_split_count": split_application["skipped_split_count"],
+        "applied_splits": split_application["applied_splits"],
+        "skipped_splits": split_application["skipped_splits"],
         "changed_label_count": len(changed_labels),
         "changed_labels": changed_labels,
         "retrieval_metric_deltas": retrieval_deltas,
+        "improvements": improvements,
         "regressions": regressions,
         "decision": decision,
     }
@@ -103,6 +131,9 @@ def _format_md(report: dict[str, Any]) -> str:
         "",
         f"- decision: `{report['decision']}`",
         f"- changed labels: `{report['changed_label_count']}`",
+        f"- applied splits: `{report.get('applied_split_count', 0)}`",
+        f"- skipped splits: `{report.get('skipped_split_count', 0)}`",
+        f"- improvements: {', '.join(report.get('improvements', [])) or '`none`'}",
         f"- regressions: {', '.join(report['regressions']) or '`none`'}",
         "",
         "## Retrieval Metric Deltas",
@@ -114,6 +145,13 @@ def _format_md(report: dict[str, Any]) -> str:
         lines.extend(["", "## Changed Labels", ""])
         for row in report["changed_labels"]:
             lines.append(f"- `{row['l2_id']}`: `{row['baseline_label']}` -> `{row['candidate_label']}`")
+    if report.get("applied_splits"):
+        lines.extend(["", "## Applied Splits", ""])
+        for row in report["applied_splits"]:
+            lines.append(
+                f"- `{row.get('source_l2_id')}` -> `{row.get('parent_l3_id')}` "
+                f"({row.get('child_count')} children, {row.get('assigned_l1_count')} assigned L1)"
+            )
     return "\n".join(lines).rstrip() + "\n"
 
 

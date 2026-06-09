@@ -1154,6 +1154,106 @@ class OptimizationL2L3ScalingTests(unittest.TestCase):
             self.assertEqual(report["applied_split_count"], 0)
             self.assertEqual(report["skipped_splits"][0]["reason"], "tiny_candidate_child")
 
+    def test_apply_split_review_can_limit_sources_from_merged_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "optimization" / "runs" / "source"
+            target_events = [
+                {
+                    "obj_id": f"L1-TARGET-{index}",
+                    "meeting_id": "M001",
+                    "meeting_date": "2026-01-01",
+                    "summary": "Alpha workflow evidence." if index < 3 else "Beta workflow evidence.",
+                }
+                for index in range(6)
+            ]
+            extra_events = [
+                {
+                    "obj_id": f"L1-EXTRA-{index}",
+                    "meeting_id": "M001",
+                    "meeting_date": "2026-01-01",
+                    "summary": "Gamma setup evidence." if index < 3 else "Delta setup evidence.",
+                }
+                for index in range(6)
+            ]
+            _write_json(
+                source / "l2" / "l2_view.json",
+                {
+                    "l2_nodes": [
+                        {
+                            "l2_id": "L2-target",
+                            "label": "target topic",
+                            "linked_obj_ids": [row["obj_id"] for row in target_events],
+                            "timeline_digest": target_events,
+                        },
+                        {
+                            "l2_id": "L2-extra",
+                            "label": "extra topic",
+                            "linked_obj_ids": [row["obj_id"] for row in extra_events],
+                            "timeline_digest": extra_events,
+                        },
+                    ]
+                },
+            )
+            _write_json(source / "l2" / "l2_index.json", {})
+            _write_json(source / "l3" / "l3_view.json", {"l3_parents": []})
+            _write_json(source / "l3" / "l3_index.json", {})
+            _write_json(source / "l3" / "l2_merge_review.json", {"merge_reviews": []})
+            _write_json(
+                source / "l2" / "llm_split_review_proposals.json",
+                {
+                    "accepted_split_candidates": [
+                        {
+                            "source_l2_id": "L2-target",
+                            "confidence": 0.9,
+                            "rationale": "Target split should apply.",
+                            "child_candidates": [
+                                {
+                                    "label": "alpha workflow",
+                                    "assignment_criteria": ["alpha workflow"],
+                                    "representative_l1_ids": ["L1-TARGET-0"],
+                                },
+                                {
+                                    "label": "beta workflow",
+                                    "assignment_criteria": ["beta workflow"],
+                                    "representative_l1_ids": ["L1-TARGET-3"],
+                                },
+                            ],
+                        },
+                        {
+                            "source_l2_id": "L2-extra",
+                            "confidence": 0.9,
+                            "rationale": "Extra split is present in a merged report but is outside this run scope.",
+                            "child_candidates": [
+                                {
+                                    "label": "gamma setup",
+                                    "assignment_criteria": ["gamma setup"],
+                                    "representative_l1_ids": ["L1-EXTRA-0"],
+                                },
+                                {
+                                    "label": "delta setup",
+                                    "assignment_criteria": ["delta setup"],
+                                    "representative_l1_ids": ["L1-EXTRA-3"],
+                                },
+                            ],
+                        },
+                    ]
+                },
+            )
+
+            report = apply_split_review_candidates(
+                source_run_root=source,
+                out_root=Path(tmp) / "optimization" / "runs" / "candidate",
+                clean=True,
+                source_l2_ids=["L2-target"],
+            )
+
+            self.assertEqual(report["applied_split_count"], 1)
+            self.assertEqual(report["applied_splits"][0]["source_l2_id"], "L2-target")
+            self.assertEqual(report["skipped_split_count"], 0)
+            l3_view = load_json(Path(report["candidate_run_root"]) / "l3" / "l3_view.json")
+            source_ids = {parent.get("source_l2_id") for parent in l3_view["l3_parents"]}
+            self.assertEqual(source_ids, {"L2-target"})
+
 
 if __name__ == "__main__":
     unittest.main()
