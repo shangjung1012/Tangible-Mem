@@ -1121,6 +1121,102 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
         self.assertGreater(compact["pairwise_overall_delta"]["optimization_v2_minus_rag"], 0)
         self.assertLess(compact["pairwise_context_token_delta"]["optimization_v2_minus_full_context"], 0)
 
+    def test_shadow_qa_backend_specs_are_explicit(self) -> None:
+        from optimization.long_term_v2.shadow_mode_qa_config import default_backend_specs
+
+        specs = default_backend_specs(
+            optimization_run_root=Path("optimization/runs/demo"),
+        )
+
+        self.assertEqual(specs["canonical"]["backend_name"], "canonical")
+        self.assertEqual(specs["canonical"]["env"], {})
+        self.assertEqual(specs["optimization_v2"]["backend_name"], "optimization_v2")
+        self.assertEqual(specs["optimization_v2"]["env"]["LONG_TERM_BACKEND"], "optimization_v2")
+        self.assertEqual(
+            specs["optimization_v2"]["env"]["OPTIMIZATION_V2_RUN_ROOT"],
+            "optimization/runs/demo",
+        )
+
+    def test_shadow_qa_extracts_trace_features(self) -> None:
+        from optimization.long_term_v2.shadow_mode_qa import extract_trace_features
+
+        context = """
+=== Global Topic Map ===
+- L3 L3-data-quality: data quality
+  - child L2 L2-data-quality-audio: audio data quality
+
+=== L1 Evidence Seeds ===
+- [Bmr001_first360 | 2026-06-04 | L1-Bmr001_first360-001] type=finding importance=0.7 score=0.8
+  content: The group discussed audio quality.
+
+=== L2 / Child-L2 Evolution Context ===
+[L2-data-quality] data quality
+  parent L3: L3-data-quality data quality
+""".strip()
+
+        features = extract_trace_features(context)
+
+        self.assertTrue(features["has_global_topic_map"])
+        self.assertTrue(features["has_l1_evidence_seeds"])
+        self.assertTrue(features["has_l2_evolution_context"])
+        self.assertEqual(features["l1_ids"], ["L1-Bmr001_first360-001"])
+        self.assertIn("L2-data-quality", features["l2_ids"])
+        self.assertIn("L3-data-quality", features["l3_ids"])
+        self.assertGreater(features["context_char_count"], 100)
+        self.assertGreater(features["estimated_context_tokens"], 0)
+
+    def test_shadow_qa_pairwise_comparison_marks_shadow_trace_ready(self) -> None:
+        from optimization.long_term_v2.shadow_mode_qa import compare_backend_traces
+
+        canonical = {
+            "status": "ok",
+            "resolved_backend": "canonical",
+            "features": {
+                "has_global_topic_map": True,
+                "has_l1_evidence_seeds": True,
+                "has_l2_evolution_context": False,
+                "l1_ids": ["L1-A"],
+                "l2_ids": [],
+                "l3_ids": [],
+                "estimated_context_tokens": 2000,
+            },
+        }
+        shadow = {
+            "status": "ok",
+            "resolved_backend": "optimization_v2",
+            "features": {
+                "has_global_topic_map": True,
+                "has_l1_evidence_seeds": True,
+                "has_l2_evolution_context": True,
+                "l1_ids": ["L1-A", "L1-B"],
+                "l2_ids": ["L2-topic"],
+                "l3_ids": ["L3-family"],
+                "estimated_context_tokens": 1800,
+            },
+        }
+
+        comparison = compare_backend_traces(canonical, shadow)
+
+        self.assertEqual(comparison["decision"], "shadow_trace_ready")
+        self.assertEqual(comparison["l1_overlap_count"], 1)
+        self.assertGreater(comparison["shadow_l2_count"], 0)
+
+    def test_shadow_qa_summary_decision_requires_all_queries_ready(self) -> None:
+        from optimization.long_term_v2.shadow_mode_qa import summarize_shadow_qa
+
+        summary = summarize_shadow_qa(
+            query_results=[
+                {"comparison": {"decision": "shadow_trace_ready"}},
+                {"comparison": {"decision": "needs_review", "reason_codes": ["shadow_missing_l2_context"]}},
+            ]
+        )
+
+        self.assertEqual(summary["decision"], "needs_review")
+        self.assertEqual(summary["query_count"], 2)
+        self.assertEqual(summary["shadow_trace_ready_count"], 1)
+        self.assertEqual(summary["needs_review_count"], 1)
+        self.assertIn("shadow_missing_l2_context", summary["reason_code_counts"])
+
     def test_profile_and_calibration_write_only_to_requested_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

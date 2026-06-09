@@ -211,6 +211,37 @@ class OptimizationRuntimeExportTests(unittest.TestCase):
 
 
 class MemoryContextBackendTests(unittest.TestCase):
+    def test_shadow_qa_backend_trace_restores_environment(self) -> None:
+        from optimization.long_term_v2.shadow_mode_qa import temporary_backend_env
+
+        os.environ["LONG_TERM_BACKEND"] = "canonical"
+        with temporary_backend_env({"LONG_TERM_BACKEND": "optimization_v2"}):
+            self.assertEqual(os.environ["LONG_TERM_BACKEND"], "optimization_v2")
+
+        self.assertEqual(os.environ["LONG_TERM_BACKEND"], "canonical")
+
+    def test_shadow_qa_missing_optimization_runtime_reports_fallback(self) -> None:
+        from optimization.long_term_v2.shadow_mode_qa import run_backend_trace
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            trace = run_backend_trace(
+                query_id="q001",
+                query="What is the memory design?",
+                backend_spec={
+                    "backend_name": "optimization_v2",
+                    "expected_backend": "optimization_v2",
+                    "env": {
+                        "LONG_TERM_BACKEND": "optimization_v2",
+                        "OPTIMIZATION_V2_RUN_ROOT": temp_dir,
+                    },
+                },
+                max_context_chars=1000,
+                retrieval_mode="lexical",
+            )
+
+        self.assertEqual(trace["resolved_backend"], "canonical")
+        self.assertEqual(trace["fallback_reason"], "optimization_v2_runtime_incomplete")
+
     def test_default_long_term_backend_uses_canonical_paths(self) -> None:
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("LONG_TERM_BACKEND", None)
