@@ -31,8 +31,14 @@ def ensure_env_loaded() -> None:
     if _ENV_LOADED:
         return
     root_env = Path(__file__).resolve().parents[2] / ".env"
-    load_dotenv(root_env, override=True)
-    load_dotenv(override=True)
+    override = str(os.getenv("SHARE_MEM_DOTENV_OVERRIDE", "")).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    load_dotenv(root_env, override=override)
+    load_dotenv(override=override)
     _ENV_LOADED = True
 
 

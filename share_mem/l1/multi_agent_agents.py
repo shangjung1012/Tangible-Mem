@@ -323,12 +323,39 @@ def _resolve_call_timeout_s() -> int:
 def _resolve_max_attempts() -> int:
     raw_value = os.getenv("GEMINI_MULTI_AGENT_MAX_ATTEMPTS", "").strip()
     if not raw_value:
-        return 2
+        return 4
     try:
         attempts = int(raw_value)
     except ValueError:
-        return 2
+        return 4
     return max(1, attempts)
+
+
+def _env_float(name: str, default: float, *, minimum: float = 0.0) -> float:
+    raw_value = os.getenv(name, "").strip()
+    if not raw_value:
+        return default
+    try:
+        value = float(raw_value)
+    except ValueError:
+        return default
+    return max(minimum, value)
+
+
+def _is_resource_exhausted_error(exc: Exception) -> bool:
+    status_code = getattr(exc, "status_code", None)
+    if status_code == 429:
+        return True
+    message = str(exc).upper()
+    return "429" in message or "RESOURCE_EXHAUSTED" in message
+
+
+def _retry_wait_seconds(attempt: int, exc: Exception) -> float:
+    if _is_resource_exhausted_error(exc):
+        initial = _env_float("GEMINI_MULTI_AGENT_429_BACKOFF_INITIAL_S", 60.0)
+        maximum = _env_float("GEMINI_MULTI_AGENT_429_BACKOFF_MAX_S", 600.0, minimum=initial)
+        return min(maximum, initial * (2 ** max(0, attempt - 1)))
+    return min(10.0, 2.0 * attempt)
 
 
 def _is_retryable_llm_error(exc: Exception) -> bool:
@@ -508,7 +535,7 @@ class MultiAgentLLMRunner:
                 self.logger.append_event("llm_call:error", record)
                 last_error = exc
                 if attempt < max_attempts and _is_retryable_llm_error(exc):
-                    wait_s = min(10.0, 2.0 * attempt)
+                    wait_s = _retry_wait_seconds(attempt, exc)
                     self.logger.append_event(
                         "llm_call:retry",
                         {
@@ -517,6 +544,7 @@ class MultiAgentLLMRunner:
                             "max_attempts": max_attempts,
                             "wait_s": wait_s,
                             "previous_error_type": type(exc).__name__,
+                            "resource_exhausted": _is_resource_exhausted_error(exc),
                         },
                     )
                     time.sleep(wait_s)

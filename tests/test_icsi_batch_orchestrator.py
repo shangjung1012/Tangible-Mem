@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -198,6 +199,48 @@ class ICSIBatchOrchestratorTests(unittest.TestCase):
             self.assertEqual(status["summary"]["dry_run_count"], 1)
             self.assertTrue((expected_root / "batch_status.json").exists())
             self.assertTrue((expected_root / "run_manifest.json").exists())
+
+    def test_dry_run_records_effective_vertex_runtime_in_status_and_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            transcript_dir = root / "transcripts"
+            transcript_dir.mkdir()
+            (transcript_dir / "Bmr011.txt").write_text("[me001]: hello\n", encoding="utf-8")
+            config = BatchConfig(
+                transcript_dir=transcript_dir,
+                output_root=root / "out",
+                model="gemini-2.5-pro",
+                dry_run=True,
+            )
+
+            with (
+                patch("share_mem.run_icsi_batch.ensure_env_loaded"),
+                patch.dict(
+                    "os.environ",
+                    {
+                        "GOOGLE_GENAI_USE_VERTEXAI": "true",
+                        "GOOGLE_CLOUD_PROJECT": "icsirun2",
+                        "GOOGLE_CLOUD_LOCATION": "global",
+                        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/name/application_default_credentials.json",
+                        "GEMINI_MODEL": "gemini-2.5-pro",
+                    },
+                    clear=True,
+                ),
+            ):
+                status = run_batch(config)
+
+            runtime = status["runtime_environment"]
+            self.assertEqual(runtime["google_cloud_project"], "icsirun2")
+            self.assertEqual(runtime["google_cloud_location"], "global")
+            self.assertTrue(runtime["vertexai_enabled"])
+            self.assertTrue(runtime["application_credentials_configured"])
+            self.assertEqual(runtime["application_credentials_file"], "application_default_credentials.json")
+
+            manifest = json.loads((root / "out" / "run_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(
+                manifest["config"]["runtime_environment"]["google_cloud_project"],
+                "icsirun2",
+            )
 
 
     def test_batch_stops_after_target_success_count_without_starting_next_file(self) -> None:

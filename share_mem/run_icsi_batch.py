@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from optimization.output_roots import resolve_memory_run_root
 from optimization.run_manifest import write_run_manifest
+from share_mem.l1.io_utils import ensure_env_loaded, is_vertex_ai_enabled
 
 try:
     from .store import load_share_tree, refresh_share_mem_outputs
@@ -194,6 +196,21 @@ def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def effective_runtime_environment(model: str) -> dict[str, Any]:
+    ensure_env_loaded()
+    credentials_path = str(os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")).strip()
+    return {
+        "vertexai_enabled": is_vertex_ai_enabled(),
+        "google_cloud_project": str(os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip(),
+        "google_cloud_location": str(os.getenv("GOOGLE_CLOUD_LOCATION", "")).strip(),
+        "gemini_model": str(model or os.getenv("GEMINI_MODEL", "")).strip(),
+        "application_credentials_configured": bool(credentials_path),
+        "application_credentials_file": Path(credentials_path).name if credentials_path else "",
+        "dotenv_override_enabled": str(os.getenv("SHARE_MEM_DOTENV_OVERRIDE", "")).strip().lower()
+        in {"1", "true", "yes", "on"},
+    }
+
+
 def _clean_output(config: BatchConfig) -> None:
     for child in [
         config.share_mem_root,
@@ -337,6 +354,7 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
     transcripts = discover_transcripts(config)
     if not transcripts:
         raise RuntimeError(f"No transcripts matched {config.transcript_glob} under {config.transcript_dir}")
+    runtime_environment = effective_runtime_environment(config.model)
     write_run_manifest(
         run_root=config.output_root,
         dataset=config.dataset_profile,
@@ -362,6 +380,7 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
             "resume": config.resume,
             "continue_on_failure": config.continue_on_failure,
             "dry_run": config.dry_run,
+            "runtime_environment": runtime_environment,
         },
     )
 
@@ -370,6 +389,7 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
         {
             "schema_version": 1,
             "updated_at_utc": _utc_now_iso(),
+            "runtime_environment": runtime_environment,
             "config": {
                 "transcript_dir": str(config.transcript_dir),
                 "output_root": str(config.output_root),
@@ -435,6 +455,7 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
             "prepared_path": str(prepared_path),
             "source_sha256": source_hash,
             "command": command,
+            "runtime_environment": runtime_environment,
             "stdout_path": str(stdout_path),
             "stderr_path": str(stderr_path),
             "started_at_utc": _utc_now_iso(),
