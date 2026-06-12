@@ -4,11 +4,13 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from share_mem.run_icsi_batch import (
     BatchConfig,
     _load_status,
+    _run_command,
     build_bridge_command,
     build_filtered_share_tree,
     config_from_args,
@@ -281,6 +283,25 @@ class ICSIBatchOrchestratorTests(unittest.TestCase):
             path.write_text('\ufeff{"schema_version": 1, "runs": []}', encoding="utf-8")
 
             self.assertEqual(_load_status(path)["runs"], [])
+
+    def test_run_command_timeout_zero_disables_subprocess_timeout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch(
+                "share_mem.run_icsi_batch.subprocess.run",
+                return_value=SimpleNamespace(returncode=0),
+            ) as run_mock:
+                status, return_code, error = _run_command(
+                    command=["python", "--version"],
+                    timeout_seconds=0,
+                    stdout_path=root / "stdout.log",
+                    stderr_path=root / "stderr.log",
+                )
+
+            self.assertEqual(status, "succeeded")
+            self.assertEqual(return_code, 0)
+            self.assertEqual(error, "")
+            self.assertIsNone(run_mock.call_args.kwargs["timeout"])
 
     def test_build_filtered_share_tree_keeps_raw_tree_unchanged(self) -> None:
         tree = {

@@ -325,6 +325,7 @@ def _run_command(
 ) -> tuple[str, int | None, str]:
     stdout_path.parent.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
+    subprocess_timeout = timeout_seconds if timeout_seconds > 0 else None
     with stdout_path.open("w", encoding="utf-8") as stdout, stderr_path.open("w", encoding="utf-8") as stderr:
         try:
             completed = subprocess.run(
@@ -333,7 +334,7 @@ def _run_command(
                 stdout=stdout,
                 stderr=stderr,
                 text=True,
-                timeout=timeout_seconds,
+                timeout=subprocess_timeout,
                 check=False,
             )
         except subprocess.TimeoutExpired:
