@@ -364,6 +364,185 @@ class _FakeChildSpecificSplitReviewClient:
     models = _FakeChildSpecificSplitReviewModels()
 
 
+class _FakeL3ChildReviewResponse:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.usage_metadata = {"prompt_token_count": 13, "total_token_count": 21}
+
+
+class _FakeL3ChildReviewModels:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def generate_content(self, **kwargs):
+        prompt = str(kwargs.get("contents", ""))
+        payload = json.loads(prompt)
+        children = payload["children"]
+        self.calls.append({"model": kwargs.get("model"), "children": [child["child_l2_id"] for child in children]})
+        reviews = []
+        for child in children:
+            child_id = child["child_l2_id"]
+            old_label = child["old_label"]
+            supporting = [row["obj_id"] for row in child["representative_l1"][:2]]
+            if child_id.endswith("-reject"):
+                decision = "reject_split"
+                new_label = ""
+            elif child_id.endswith("-relabel"):
+                decision = "relabel"
+                new_label = "recording quality constraints"
+            else:
+                decision = "keep"
+                new_label = old_label
+            reviews.append(
+                {
+                    "parent_l3_id": child["parent_l3_id"],
+                    "parent_l3_label": child["parent_l3_label"],
+                    "child_l2_id": child_id,
+                    "old_label": old_label,
+                    "decision": decision,
+                    "new_label": new_label,
+                    "definition": f"Evidence-backed review for {old_label}.",
+                    "inclusion_criteria": ["linked L1 evidence supports this child topic"],
+                    "exclusion_criteria": ["evidence that belongs only to the parent topic"],
+                    "supporting_l1_ids": supporting,
+                    "off_topic_l1_ids": [],
+                    "coherence_score": 0.82,
+                    "label_support_score": 0.84,
+                    "specificity_score": 0.76,
+                    "confidence": 0.8,
+                    "rationale": f"The representative evidence supports {old_label}.",
+                }
+            )
+        return _FakeL3ChildReviewResponse(json.dumps({"reviews": reviews}))
+
+
+class _FakeL3ChildReviewClient:
+    def __init__(self) -> None:
+        self.models = _FakeL3ChildReviewModels()
+
+
+class _ArrayWrappedL3ChildReviewModels(_FakeL3ChildReviewModels):
+    def generate_content(self, **kwargs):
+        response = super().generate_content(**kwargs)
+        return _FakeL3ChildReviewResponse(json.dumps([json.loads(response.text)]))
+
+
+class _ArrayWrappedL3ChildReviewClient:
+    def __init__(self) -> None:
+        self.models = _ArrayWrappedL3ChildReviewModels()
+
+
+class _InvalidL3ChildReviewModels:
+    def generate_content(self, **_kwargs):
+        return _FakeL3ChildReviewResponse(
+            json.dumps(
+                {
+                    "reviews": [
+                        {
+                            "child_l2_id": "L2-parent-child-relabel",
+                            "decision": "relabel",
+                            "new_label": "",
+                            "supporting_l1_ids": ["L1-NOT-IN-CHILD"],
+                            "confidence": 0.9,
+                            "rationale": "",
+                        }
+                    ]
+                }
+            )
+        )
+
+
+class _InvalidL3ChildReviewClient:
+    models = _InvalidL3ChildReviewModels()
+
+
+def _write_l3_review_fixture(run_root: Path, *, child_count: int = 25) -> None:
+    (run_root / "input_snapshot").mkdir(parents=True)
+    (run_root / "l2").mkdir(parents=True)
+    (run_root / "l3").mkdir(parents=True)
+    meetings = []
+    objects = []
+    child_nodes = []
+    l3_index = {}
+    l2_nodes = []
+    l2_index = {}
+    for child_index in range(child_count):
+        if child_index == 0:
+            suffix = "relabel"
+            label = "certainly doing two"
+        elif child_index == 1:
+            suffix = "reject"
+            label = "pretty big"
+        else:
+            suffix = f"child-{child_index:02d}"
+            label = f"coherent child {child_index:02d}"
+        child_id = f"L2-parent-{suffix}"
+        linked_obj_ids = []
+        timeline = []
+        for obj_index in range(2):
+            obj_id = f"L1-{child_index:02d}-{obj_index:02d}"
+            linked_obj_ids.append(obj_id)
+            content = f"Evidence item {obj_index} for {label} under recording data quality."
+            objects.append(
+                _obj(
+                    obj_id,
+                    "finding",
+                    content,
+                    topics=["recording data quality", label],
+                )
+            )
+            timeline.append(
+                {
+                    "obj_id": obj_id,
+                    "meeting_id": "BMR-001",
+                    "meeting_date": "2026-01-01",
+                    "summary": content,
+                }
+            )
+            l3_index[obj_id] = {
+                "parent_l3_id": "L3-parent",
+                "parent_l3_label": "recording data quality",
+                "child_l2_id": child_id,
+                "child_l2_label": label,
+            }
+            l2_index[obj_id] = {"l2_id": "L2-parent", "l2_label": "recording data quality"}
+        child_nodes.append(
+            {
+                "child_l2_id": child_id,
+                "label": label,
+                "linked_obj_ids": linked_obj_ids,
+                "event_count": len(linked_obj_ids),
+                "timeline_digest": timeline,
+                "current_state": f"Child topic {label}.",
+                "confidence": 0.72,
+            }
+        )
+    l2_nodes.append({"l2_id": "L2-parent", "label": "recording data quality", "linked_obj_ids": sorted(l2_index)})
+    meetings.append(_meeting("BMR-001", "2026-01-01", objects))
+    _write_json(
+        run_root / "input_snapshot" / "tree.json",
+        {"tree_version": 1, "last_updated_utc": "2026-01-01T00:00:00Z", "phases": [], "meetings": meetings},
+    )
+    _write_json(run_root / "manifest.json", {"schema_version": 1, "profile_path": ""})
+    _write_json(run_root / "l2" / "l2_view.json", {"l2_nodes": l2_nodes})
+    _write_json(run_root / "l2" / "l2_index.json", l2_index)
+    _write_json(
+        run_root / "l3" / "l3_view.json",
+        {
+            "schema_version": 1,
+            "l3_parents": [
+                {
+                    "l3_id": "L3-parent",
+                    "label": "recording data quality",
+                    "source_l2_id": "L2-parent",
+                    "child_l2_nodes": child_nodes,
+                }
+            ],
+        },
+    )
+    _write_json(run_root / "l3" / "l3_index.json", l3_index)
+
+
 class OptimizationLongTermV2Tests(unittest.TestCase):
     def test_effective_topic_surface_filters_suppressed_l2_and_index_without_mutating_raw(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -4490,6 +4669,126 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
         self.assertEqual(decision["legacy_archive_allowed"], False)
         self.assertNotIn("label_polish_review_needed", decision["warning_reasons"])
         self.assertNotIn("label_polish_report_invalid", decision["blocking_reasons"])
+
+    def test_l3_child_review_batches_all_children_and_writes_api_logs(self) -> None:
+        from optimization.long_term_v2.review_l3_children import review_l3_children
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "l3_review"
+            _write_l3_review_fixture(run_root, child_count=25)
+            client = _FakeL3ChildReviewClient()
+
+            report = review_l3_children(run_root=run_root, batch_size=12, model="fake-model", client=client, clean=True)
+
+            self.assertEqual(report["child_count"], 25)
+            self.assertEqual(report["api_call_count"], 3)
+            self.assertEqual(len(client.models.calls), 3)
+            reviewed_ids = [child_id for call in client.models.calls for child_id in call["children"]]
+            self.assertEqual(len(reviewed_ids), 25)
+            self.assertEqual(set(reviewed_ids), set(report["reviewed_child_l2_ids"]))
+            api_logs = sorted((run_root / "api_calls" / "l3_child_review").glob("*.json"))
+            self.assertEqual(len(api_logs), 3)
+            first_log = load_json(api_logs[0])
+            self.assertIn("prompt", first_log)
+            self.assertIn("raw_response", first_log)
+            self.assertIn("parsed_json", first_log)
+            self.assertEqual(first_log["model"], "fake-model")
+            self.assertEqual(first_log["batch_child_l2_ids"], client.models.calls[0]["children"])
+
+    def test_l3_child_review_accepts_array_wrapped_reviews(self) -> None:
+        from optimization.long_term_v2.review_l3_children import review_l3_children
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "l3_review_wrapped"
+            _write_l3_review_fixture(run_root, child_count=4)
+
+            report = review_l3_children(
+                run_root=run_root,
+                batch_size=12,
+                model="fake-model",
+                client=_ArrayWrappedL3ChildReviewClient(),
+                clean=True,
+            )
+
+            self.assertEqual(report["invalid_review_count"], 0)
+            self.assertEqual(report["decision_counts"]["relabel"], 1)
+            self.assertEqual(report["decision_counts"]["reject_split"], 1)
+            self.assertEqual(report["decision_counts"]["keep"], 2)
+
+    def test_l3_child_review_effective_view_relabels_and_rejects_without_mutating_raw(self) -> None:
+        from optimization.long_term_v2.review_l3_children import review_l3_children
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "l3_effective"
+            _write_l3_review_fixture(run_root, child_count=4)
+            raw_l3_before = load_json(run_root / "l3" / "l3_view.json")
+
+            report = review_l3_children(
+                run_root=run_root,
+                batch_size=12,
+                model="fake-model",
+                client=_FakeL3ChildReviewClient(),
+                clean=True,
+            )
+
+            self.assertEqual(report["decision_counts"]["relabel"], 1)
+            self.assertEqual(report["decision_counts"]["reject_split"], 1)
+            self.assertEqual(load_json(run_root / "l3" / "l3_view.json"), raw_l3_before)
+            effective = load_json(run_root / "l3" / "effective_l3_view.json")
+            parent = effective["l3_parents"][0]
+            labels = [child["label"] for child in parent["child_l2_nodes"]]
+            self.assertIn("recording quality constraints", labels)
+            self.assertNotIn("certainly doing two", labels)
+            self.assertNotIn("pretty big", labels)
+            review_only_ids = [child["child_l2_id"] for child in parent["review_only_child_l2_nodes"]]
+            self.assertIn("L2-parent-reject", review_only_ids)
+            effective_index = load_json(run_root / "l3" / "effective_l3_index.json")
+            rejected_obj_ids = raw_l3_before["l3_parents"][0]["child_l2_nodes"][1]["linked_obj_ids"]
+            for obj_id in rejected_obj_ids:
+                self.assertEqual(effective_index[obj_id]["parent_l3_id"], "L3-parent")
+                self.assertEqual(effective_index[obj_id]["review_status"], "reject_split")
+                self.assertNotEqual(effective_index[obj_id].get("child_l2_label"), "pretty big")
+
+    def test_l3_child_review_invalid_output_becomes_human_review(self) -> None:
+        from optimization.long_term_v2.review_l3_children import review_l3_children
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "l3_invalid"
+            _write_l3_review_fixture(run_root, child_count=2)
+
+            report = review_l3_children(
+                run_root=run_root,
+                batch_size=12,
+                model="fake-model",
+                client=_InvalidL3ChildReviewClient(),
+                clean=True,
+            )
+
+            self.assertEqual(report["decision_counts"]["needs_human_review"], 2)
+            reviews = [json.loads(line) for line in (run_root / "l3" / "l3_child_label_review.jsonl").read_text(encoding="utf-8").splitlines()]
+            self.assertTrue(all(row["decision"] == "needs_human_review" for row in reviews))
+            self.assertTrue(all(row["validation_errors"] for row in reviews))
+            effective = load_json(run_root / "l3" / "effective_l3_view.json")
+            parent = effective["l3_parents"][0]
+            self.assertEqual(parent["child_l2_nodes"], [])
+            self.assertEqual(len(parent["review_only_child_l2_nodes"]), 2)
+
+    def test_effective_topic_surface_prefers_effective_l3_sidecar_when_present(self) -> None:
+        from optimization.long_term_v2.review_l3_children import review_l3_children
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "l3_loader"
+            _write_l3_review_fixture(run_root, child_count=4)
+            review_l3_children(run_root=run_root, batch_size=12, model="fake-model", client=_FakeL3ChildReviewClient(), clean=True)
+
+            surface = load_effective_topic_surface(run_root)
+
+            parent = surface["l3_view"]["l3_parents"][0]
+            labels = [child["label"] for child in parent["child_l2_nodes"]]
+            self.assertIn("recording quality constraints", labels)
+            self.assertNotIn("pretty big", labels)
+            self.assertTrue(surface["has_l3_child_review"])
+            self.assertGreater(surface["review_only_l3_child_count"], 0)
 
 
 if __name__ == "__main__":
