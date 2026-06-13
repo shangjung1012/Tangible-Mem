@@ -104,15 +104,30 @@ def load_effective_topic_surface(run_root: Path | str) -> dict[str, Any]:
     root = Path(run_root)
     raw_l2_view = _load_optional_json(root / "l2" / "l2_view.json", {"l2_nodes": []})
     raw_l2_index = _load_optional_json(root / "l2" / "l2_index.json", {})
+    corpus_theme_view_path = root / "l3" / "corpus_theme_view.json"
+    corpus_theme_index_path = root / "l3" / "corpus_theme_index.json"
     effective_l3_view_path = root / "l3" / "effective_l3_view.json"
     effective_l3_index_path = root / "l3" / "effective_l3_index.json"
+    has_corpus_theme_l3 = corpus_theme_view_path.exists() and corpus_theme_index_path.exists()
     has_l3_child_review = effective_l3_view_path.exists() and effective_l3_index_path.exists()
+    if has_corpus_theme_l3:
+        l3_view_path = corpus_theme_view_path
+        l3_index_path = corpus_theme_index_path
+        l3_surface_source = "corpus_theme_l3"
+    elif has_l3_child_review:
+        l3_view_path = effective_l3_view_path
+        l3_index_path = effective_l3_index_path
+        l3_surface_source = "l3_child_review"
+    else:
+        l3_view_path = root / "l3" / "l3_view.json"
+        l3_index_path = root / "l3" / "l3_index.json"
+        l3_surface_source = "raw_l3"
     raw_l3_view = _load_optional_json(
-        effective_l3_view_path if has_l3_child_review else root / "l3" / "l3_view.json",
+        l3_view_path,
         {"l3_parents": []},
     )
     raw_l3_index = _load_optional_json(
-        effective_l3_index_path if has_l3_child_review else root / "l3" / "l3_index.json",
+        l3_index_path,
         {},
     )
     suppressed_l2_ids = _suppressed_l2_ids(root)
@@ -128,7 +143,9 @@ def load_effective_topic_surface(run_root: Path | str) -> dict[str, Any]:
         "run_root": str(root.resolve()),
         "source": "optimization_v2_effective_topic_surface",
         "has_topic_review": bool(suppressed_l2_ids),
+        "has_corpus_theme_l3": has_corpus_theme_l3,
         "has_l3_child_review": has_l3_child_review,
+        "l3_surface_source": l3_surface_source,
         "suppressed_l2_ids": suppressed_l2_ids,
         "suppressed_l3_parent_ids": sorted(suppressed_parent_ids),
         "l2_view": l2_view,

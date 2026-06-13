@@ -65,6 +65,7 @@ class BatchConfig:
     start_after: str = ""
     target_success_count: int | None = None
     resume: bool = False
+    resume_partial_l1: bool = False
     continue_on_failure: bool = False
     dry_run: bool = False
     clean: bool = False
@@ -147,6 +148,11 @@ def prepare_transcript_input(
 
 
 def build_bridge_command(config: BatchConfig, transcript_path: Path) -> list[str]:
+    research_run_id = (
+        latest_partial_research_run_id(config.share_mem_root / "research_logs", transcript_path.stem)
+        if config.resume_partial_l1
+        else ""
+    )
     command = [
         config.python_executable,
         "-m",
@@ -182,7 +188,38 @@ def build_bridge_command(config: BatchConfig, transcript_path: Path) -> list[str
         command.append("--multi-agent-previous-context")
     if config.use_dataset_guidance:
         command.append("--use-dataset-guidance")
+    if research_run_id:
+        command.extend(["--research-run-id", research_run_id])
     return command
+
+
+def latest_partial_research_run_id(research_log_root: Path, meeting_id: str) -> str:
+    if not research_log_root.exists():
+        return ""
+    suffix = f"_{meeting_id}_multi_agent"
+    candidates = [path for path in research_log_root.iterdir() if path.is_dir() and path.name.endswith(suffix)]
+    if not candidates:
+        return ""
+
+    def sort_key(path: Path) -> tuple[float, str]:
+        status_path = path / "status.json"
+        try:
+            mtime = status_path.stat().st_mtime if status_path.exists() else path.stat().st_mtime
+        except OSError:
+            mtime = 0.0
+        return (mtime, path.name)
+
+    for path in sorted(candidates, key=sort_key, reverse=True):
+        status_path = path / "status.json"
+        if not status_path.exists():
+            continue
+        try:
+            status = json.loads(status_path.read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if status.get("status") != "succeeded":
+            return path.name
+    return ""
 
 
 def _load_status(path: Path) -> dict[str, Any]:
@@ -379,6 +416,7 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
             "start_after": config.start_after,
             "target_success_count": config.target_success_count,
             "resume": config.resume,
+            "resume_partial_l1": config.resume_partial_l1,
             "continue_on_failure": config.continue_on_failure,
             "dry_run": config.dry_run,
             "runtime_environment": runtime_environment,
@@ -409,6 +447,7 @@ def run_batch(config: BatchConfig) -> dict[str, Any]:
                 "start_after": config.start_after,
                 "target_success_count": config.target_success_count,
                 "resume": config.resume,
+                "resume_partial_l1": config.resume_partial_l1,
                 "continue_on_failure": config.continue_on_failure,
                 "dry_run": config.dry_run,
             },
@@ -536,6 +575,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--start-after", default="")
     parser.add_argument("--target-success-count", type=int, default=None)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--resume-partial-l1",
+        action="store_true",
+        help=(
+            "When rerunning in the same output root, reuse the latest non-succeeded "
+            "multi-agent research run for the meeting and load completed L1 batch checkpoints."
+        ),
+    )
     parser.add_argument("--continue-on-failure", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--clean", action="store_true")
@@ -575,6 +622,7 @@ def config_from_args(args: argparse.Namespace) -> BatchConfig:
         start_after=str(args.start_after),
         target_success_count=args.target_success_count,
         resume=bool(args.resume),
+        resume_partial_l1=bool(args.resume_partial_l1),
         continue_on_failure=bool(args.continue_on_failure),
         dry_run=bool(args.dry_run),
         clean=bool(args.clean),

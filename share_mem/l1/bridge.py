@@ -217,6 +217,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--research-run-id",
+        default="",
+        help=(
+            "Optional existing multi-agent research run id to reuse for partial "
+            "L1 resume. When empty, a fresh timestamped run id is created."
+        ),
+    )
+    parser.add_argument(
         "--timestamp",
         default="",
         help="Meeting timestamp (ISO 8601). Auto-generated if empty.",
@@ -262,6 +270,17 @@ def main(argv: list[str] | None = None) -> None:
         transcript_path,
         requested_profile=args.dataset_profile,
     )
+    research_log_dir = Path(args.research_log_dir).resolve()
+    research_run_id = str(args.research_run_id or "").strip()
+    if research_run_id:
+        expected_suffix = f"_{meeting_id}_multi_agent"
+        if not research_run_id.endswith(expected_suffix):
+            raise RuntimeError(
+                f"research-run-id {research_run_id!r} does not match meeting {meeting_id!r}"
+            )
+        research_run_dir = research_log_dir / research_run_id
+        if not research_run_dir.exists():
+            raise RuntimeError(f"research-run-id directory not found: {research_run_dir}")
     prior_context_pack = build_prior_context_pack(
         tree=tree,
         meeting_id=meeting_id,
@@ -280,7 +299,7 @@ def main(argv: list[str] | None = None) -> None:
         meeting_date=meeting_date,
         existing_topics=existing_topics,
         prior_context_pack=prior_context_pack,
-        research_log_dir=Path(args.research_log_dir).resolve(),
+        research_log_dir=research_log_dir,
         window_size=args.multi_agent_window_size,
         lookback_lines=args.multi_agent_lookback_lines,
         lookahead_lines=args.multi_agent_lookahead_lines,
@@ -293,6 +312,7 @@ def main(argv: list[str] | None = None) -> None:
             content_language=args.content_language,
             force=args.use_dataset_guidance,
         ),
+        run_id=research_run_id or None,
     )
     memory_objects = multi_agent_result.memory_objects
 

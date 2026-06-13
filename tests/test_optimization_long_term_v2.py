@@ -432,6 +432,78 @@ class _ArrayWrappedL3ChildReviewClient:
         self.models = _ArrayWrappedL3ChildReviewModels()
 
 
+class _FakeCorpusThemeResponse:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.usage_metadata = {"prompt_token_count": 31, "total_token_count": 55}
+
+
+class _FakeCorpusThemeModels:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def generate_content(self, **kwargs):
+        payload = json.loads(str(kwargs.get("contents", "")))
+        self.calls.append({"model": kwargs.get("model"), "l2_ids": [row["l2_id"] for row in payload["l2_topics"]]})
+        return _FakeCorpusThemeResponse(
+            json.dumps(
+                {
+                    "themes": [
+                        {
+                            "label": "transcript segmentation and idea-unit coverage",
+                            "definition": "How the project splits transcript evidence into usable idea units.",
+                            "inclusion_criteria": ["transcript splitting", "chunking", "idea unit boundaries"],
+                            "exclusion_criteria": ["answer scoring"],
+                            "supporting_l2_ids": ["L2-idea-unit-generation", "L2-chunking-strategy"],
+                            "representative_l1_ids": ["L1-seg-001", "L1-chunk-001"],
+                            "confidence": 0.88,
+                            "rationale": "Two L2 topics describe the same recurring research problem from different angles.",
+                        },
+                        {
+                            "label": "memory evaluation strategy",
+                            "definition": "How the project evaluates memory retrieval and answer quality.",
+                            "inclusion_criteria": ["baseline comparison", "answer quality scoring"],
+                            "exclusion_criteria": ["transcript segmentation"],
+                            "supporting_l2_ids": ["L2-baseline-comparison", "L2-answer-quality-scoring"],
+                            "representative_l1_ids": ["L1-eval-001", "L1-score-001"],
+                            "confidence": 0.83,
+                            "rationale": "Evaluation topics share benchmarks, scoring, and comparison evidence.",
+                        },
+                    ]
+                }
+            )
+        )
+
+
+class _FakeCorpusThemeClient:
+    def __init__(self) -> None:
+        self.models = _FakeCorpusThemeModels()
+
+
+class _InvalidCorpusThemeModels:
+    def generate_content(self, **_kwargs):
+        return _FakeCorpusThemeResponse(
+            json.dumps(
+                {
+                    "themes": [
+                        {
+                            "label": "data",
+                            "definition": "Generic bucket.",
+                            "supporting_l2_ids": ["L2-missing"],
+                            "representative_l1_ids": ["L1-missing"],
+                            "confidence": 0.95,
+                            "rationale": "Unsupported generic proposal.",
+                        }
+                    ]
+                }
+            )
+        )
+
+
+class _InvalidCorpusThemeClient:
+    models = _InvalidCorpusThemeModels()
+
+
 class _InvalidL3ChildReviewModels:
     def generate_content(self, **_kwargs):
         return _FakeL3ChildReviewResponse(
@@ -541,6 +613,87 @@ def _write_l3_review_fixture(run_root: Path, *, child_count: int = 25) -> None:
         },
     )
     _write_json(run_root / "l3" / "l3_index.json", l3_index)
+
+
+def _write_corpus_theme_fixture(run_root: Path) -> None:
+    (run_root / "input_snapshot").mkdir(parents=True)
+    (run_root / "l2").mkdir(parents=True)
+    (run_root / "l3").mkdir(parents=True)
+    topic_specs = [
+        (
+            "L2-idea-unit-generation",
+            "idea-unit generation",
+            [
+                ("L1-seg-001", "The team discussed creating idea units from transcript evidence."),
+                ("L1-seg-002", "Idea unit generation should preserve line coverage and context."),
+            ],
+        ),
+        (
+            "L2-chunking-strategy",
+            "chunking strategy",
+            [
+                ("L1-chunk-001", "The team compared fixed chunks with semantic transcript boundaries."),
+                ("L1-chunk-002", "Chunking strategy affects whether idea-unit evidence stays complete."),
+            ],
+        ),
+        (
+            "L2-baseline-comparison",
+            "baseline comparison",
+            [
+                ("L1-eval-001", "The team compared full context, RAG, and layered memory baselines."),
+                ("L1-eval-002", "Baseline comparison should include token cost and retrieval coverage."),
+            ],
+        ),
+        (
+            "L2-answer-quality-scoring",
+            "answer quality scoring",
+            [
+                ("L1-score-001", "Answer quality scoring should check factuality and evidence grounding."),
+                ("L1-score-002", "The evaluator scores topic evolution and source traceability."),
+            ],
+        ),
+    ]
+    objects: list[dict] = []
+    l2_nodes: list[dict] = []
+    l2_index: dict[str, dict] = {}
+    for l2_id, label, rows in topic_specs:
+        linked = []
+        timeline = []
+        for obj_id, content in rows:
+            linked.append(obj_id)
+            objects.append(_obj(obj_id, "finding", content, topics=[label]))
+            l2_index[obj_id] = {"l2_id": l2_id, "l2_label": label}
+            timeline.append(
+                {
+                    "meeting_id": "G-001",
+                    "meeting_date": "2026-01-01",
+                    "obj_id": obj_id,
+                    "summary": content,
+                    "importance": 0.75,
+                }
+            )
+        l2_nodes.append(
+            {
+                "l2_id": l2_id,
+                "label": label,
+                "definition": f"Evidence-backed topic about {label}.",
+                "linked_obj_ids": linked,
+                "timeline_digest": timeline,
+                "top_semantic_terms": [{"term": label, "object_count": len(linked)}],
+                "current_state": f"Current state for {label}.",
+                "evolution_summary": f"Evolution summary for {label}.",
+                "confidence": 0.8,
+            }
+        )
+    _write_json(
+        run_root / "input_snapshot" / "tree.json",
+        {"tree_version": 1, "last_updated_utc": "2026-01-01T00:00:00Z", "phases": [], "meetings": [_meeting("G-001", "2026-01-01", objects)]},
+    )
+    _write_json(run_root / "manifest.json", {"schema_version": 1, "profile_path": ""})
+    _write_json(run_root / "l2" / "l2_view.json", {"l2_nodes": l2_nodes})
+    _write_json(run_root / "l2" / "l2_index.json", l2_index)
+    _write_json(run_root / "l3" / "l3_view.json", {"schema_version": 1, "l3_parents": []})
+    _write_json(run_root / "l3" / "l3_index.json", {})
 
 
 class OptimizationLongTermV2Tests(unittest.TestCase):
@@ -662,6 +815,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             )
 
             row = report["queries"][0]
+            self.assertEqual(report["effective_topic_surface"]["l3_surface_source"], "raw_l3")
+            self.assertFalse(report["effective_topic_surface"]["has_corpus_theme_l3"])
             self.assertIn("L1-SUPPRESS", {seed["obj_id"] for seed in row["selected_l1"]})
             self.assertNotIn("L2-suppress", row["selected_l2_ids"])
             self.assertFalse(row["expected_l2_hit"])
@@ -775,6 +930,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(set(runtime_index), {"L1-KEEP"})
             self.assertEqual(manifest["l2_topic_count"], 1)
             self.assertEqual(manifest["effective_topic_surface"]["suppressed_l2_count"], 1)
+            self.assertEqual(manifest["effective_topic_surface"]["l3_surface_source"], "raw_l3")
+            self.assertFalse(manifest["effective_topic_surface"]["has_corpus_theme_l3"])
 
     def test_curate_icsi_queries_uses_effective_active_topics(self) -> None:
         from optimization.long_term_v2.curate_icsi_eval_queries import curate_icsi_eval_queries
@@ -797,6 +954,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                                 _obj("L1-AUDIO", "finding", "Audio channel quality affected transcription confidence.", topics=["audio channel quality"]),
                                 _obj("L1-ROOM", "finding", "Room recording setup used headset microphones.", topics=["recording setup"]),
                                 _obj("L1-GO", "finding", "The team said go ahead before moving to an unrelated item.", topics=["go ahead"]),
+                                _obj("L1-LITTLE", "finding", "The team discussed a little bit of setup before the main agenda.", topics=["little bit"]),
+                                _obj("L1-PROPOSAL", "proposal", "An alternative proposal was mentioned without becoming a durable topic.", topics=["alternative proposal"]),
                             ],
                         ),
                         _meeting(
@@ -805,6 +964,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                             [
                                 _obj("L1-AUDIO-2", "finding", "Audio channel calibration was checked again.", topics=["audio channel quality"]),
                                 _obj("L1-ROOM-2", "finding", "Recording setup changed participant microphone placement.", topics=["recording setup"]),
+                                _obj("L1-LITTLE-2", "finding", "A little bit more setup discussion happened before the main annotation topic.", topics=["little bit"]),
+                                _obj("L1-PROPOSAL-2", "proposal", "Another alternative proposal was discussed as an option.", topics=["alternative proposal"]),
                             ],
                         ),
                     ],
@@ -844,6 +1005,24 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                                     {"obj_id": "L1-GO", "meeting_id": "BMR-001", "meeting_date": "2026-01-01", "summary": "The team said go ahead before moving to an unrelated item."},
                                 ],
                             },
+                            {
+                                "l2_id": "L2-little-bit",
+                                "label": "little bit",
+                                "linked_obj_ids": ["L1-LITTLE", "L1-LITTLE-2"],
+                                "timeline_digest": [
+                                    {"obj_id": "L1-LITTLE", "meeting_id": "BMR-001", "meeting_date": "2026-01-01", "summary": "The team discussed a little bit of setup before the main agenda."},
+                                    {"obj_id": "L1-LITTLE-2", "meeting_id": "BMR-002", "meeting_date": "2026-01-02", "summary": "A little bit more setup discussion happened before the main annotation topic."},
+                                ],
+                            },
+                            {
+                                "l2_id": "L2-alternative-proposal",
+                                "label": "alternative proposal",
+                                "linked_obj_ids": ["L1-PROPOSAL", "L1-PROPOSAL-2"],
+                                "timeline_digest": [
+                                    {"obj_id": "L1-PROPOSAL", "meeting_id": "BMR-001", "meeting_date": "2026-01-01", "summary": "An alternative proposal was mentioned without becoming a durable topic."},
+                                    {"obj_id": "L1-PROPOSAL-2", "meeting_id": "BMR-002", "meeting_date": "2026-01-02", "summary": "Another alternative proposal was discussed as an option."},
+                                ],
+                            },
                         ]
                     }
                 ),
@@ -857,6 +1036,10 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
                         "L1-ROOM": {"l2_id": "L2-recording-setup", "l2_label": "recording setup"},
                         "L1-ROOM-2": {"l2_id": "L2-recording-setup", "l2_label": "recording setup"},
                         "L1-GO": {"l2_id": "L2-go-ahead", "l2_label": "go ahead"},
+                        "L1-LITTLE": {"l2_id": "L2-little-bit", "l2_label": "little bit"},
+                        "L1-LITTLE-2": {"l2_id": "L2-little-bit", "l2_label": "little bit"},
+                        "L1-PROPOSAL": {"l2_id": "L2-alternative-proposal", "l2_label": "alternative proposal"},
+                        "L1-PROPOSAL-2": {"l2_id": "L2-alternative-proposal", "l2_label": "alternative proposal"},
                     }
                 ),
                 encoding="utf-8",
@@ -876,6 +1059,8 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertIn("audio channel quality", labels)
             self.assertIn("recording setup", labels)
             self.assertNotIn("go ahead", labels)
+            self.assertNotIn("little bit", labels)
+            self.assertNotIn("alternative proposal", labels)
             self.assertTrue(all(row.get("query") for row in rows))
             self.assertTrue(all(row.get("expected_obj_ids") for row in rows))
             self.assertEqual(report["suppressed_l2_count"], 1)
@@ -4695,6 +4880,67 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertEqual(first_log["model"], "fake-model")
             self.assertEqual(first_log["batch_child_l2_ids"], client.models.calls[0]["children"])
 
+    def test_corpus_theme_induction_groups_related_l2_topics_without_mutating_raw_l3(self) -> None:
+        from optimization.long_term_v2.induce_corpus_themes import induce_corpus_themes
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "corpus_themes"
+            _write_corpus_theme_fixture(run_root)
+            raw_l3_before = load_json(run_root / "l3" / "l3_view.json")
+            client = _FakeCorpusThemeClient()
+
+            report = induce_corpus_themes(run_root=run_root, model="fake-model", client=client, clean=True)
+
+            self.assertEqual(report["accepted_theme_count"], 2)
+            self.assertEqual(report["rejected_theme_count"], 0)
+            self.assertEqual(len(client.models.calls), 1)
+            self.assertEqual(load_json(run_root / "l3" / "l3_view.json"), raw_l3_before)
+            theme_view = load_json(run_root / "l3" / "corpus_theme_view.json")
+            labels = [theme["label"] for theme in theme_view["l3_parents"]]
+            self.assertIn("transcript segmentation and idea-unit coverage", labels)
+            self.assertIn("memory evaluation strategy", labels)
+            theme_index = load_json(run_root / "l3" / "corpus_theme_index.json")
+            self.assertEqual(theme_index["L1-seg-001"]["parent_l3_label"], "transcript segmentation and idea-unit coverage")
+            self.assertEqual(theme_index["L1-score-001"]["parent_l3_label"], "memory evaluation strategy")
+
+    def test_corpus_theme_induction_rejects_unknown_references_and_generic_labels(self) -> None:
+        from optimization.long_term_v2.induce_corpus_themes import induce_corpus_themes
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "corpus_themes_invalid"
+            _write_corpus_theme_fixture(run_root)
+
+            report = induce_corpus_themes(run_root=run_root, model="fake-model", client=_InvalidCorpusThemeClient(), clean=True)
+
+            self.assertEqual(report["accepted_theme_count"], 0)
+            self.assertEqual(report["rejected_theme_count"], 1)
+            rejected = load_json(run_root / "l3" / "corpus_theme_rejected.json")
+            self.assertIn("unknown_l2_ids", rejected["rejected_themes"][0]["validation_errors"])
+            self.assertIn("generic_label", rejected["rejected_themes"][0]["validation_errors"])
+            theme_view = load_json(run_root / "l3" / "corpus_theme_view.json")
+            self.assertEqual(theme_view["l3_parents"], [])
+
+    def test_corpus_theme_induction_accepts_array_wrapped_theme_response(self) -> None:
+        from optimization.long_term_v2.induce_corpus_themes import induce_corpus_themes
+
+        class ArrayWrappedCorpusThemeModels(_FakeCorpusThemeModels):
+            def generate_content(self, **kwargs):
+                response = super().generate_content(**kwargs)
+                return _FakeCorpusThemeResponse(json.dumps([json.loads(response.text)]))
+
+        class ArrayWrappedCorpusThemeClient:
+            def __init__(self) -> None:
+                self.models = ArrayWrappedCorpusThemeModels()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "corpus_themes_wrapped"
+            _write_corpus_theme_fixture(run_root)
+
+            report = induce_corpus_themes(run_root=run_root, model="fake-model", client=ArrayWrappedCorpusThemeClient(), clean=True)
+
+            self.assertEqual(report["accepted_theme_count"], 2)
+            self.assertEqual(report["invalid_theme_count"], 0)
+
     def test_l3_child_review_accepts_array_wrapped_reviews(self) -> None:
         from optimization.long_term_v2.review_l3_children import review_l3_children
 
@@ -4789,6 +5035,54 @@ class OptimizationLongTermV2Tests(unittest.TestCase):
             self.assertNotIn("pretty big", labels)
             self.assertTrue(surface["has_l3_child_review"])
             self.assertGreater(surface["review_only_l3_child_count"], 0)
+
+    def test_effective_topic_surface_prefers_corpus_theme_l3_over_child_review_sidecar(self) -> None:
+        from optimization.long_term_v2.review_l3_children import review_l3_children
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_root = Path(tmp) / "optimization" / "runs" / "corpus_theme_loader"
+            _write_l3_review_fixture(run_root, child_count=4)
+            review_l3_children(run_root=run_root, batch_size=12, model="fake-model", client=_FakeL3ChildReviewClient(), clean=True)
+            _write_json(
+                run_root / "l3" / "corpus_theme_view.json",
+                {
+                    "schema_version": 1,
+                    "source": "optimization_v2_corpus_theme_induction",
+                    "l3_parents": [
+                        {
+                            "l3_id": "L3-corpus-001",
+                            "label": "corpus-level recording workflow",
+                            "linked_obj_ids": ["L1-00-00", "L1-00-01"],
+                            "supporting_l2_ids": ["L2-parent"],
+                            "child_l2_nodes": [
+                                {
+                                    "child_l2_id": "L2-parent",
+                                    "label": "recording data quality",
+                                    "linked_obj_ids": ["L1-00-00", "L1-00-01"],
+                                }
+                            ],
+                        }
+                    ],
+                },
+            )
+            _write_json(
+                run_root / "l3" / "corpus_theme_index.json",
+                {
+                    "L1-00-00": {
+                        "parent_l3_id": "L3-corpus-001",
+                        "parent_l3_label": "corpus-level recording workflow",
+                        "child_l2_id": "L2-parent",
+                        "child_l2_label": "recording data quality",
+                    }
+                },
+            )
+
+            surface = load_effective_topic_surface(run_root)
+
+            self.assertTrue(surface["has_corpus_theme_l3"])
+            self.assertEqual(surface["l3_view"]["l3_parents"][0]["label"], "corpus-level recording workflow")
+            self.assertEqual(surface["l3_index"]["L1-00-00"]["parent_l3_id"], "L3-corpus-001")
+            self.assertFalse(any(parent.get("label") == "recording data quality" for parent in surface["l3_view"]["l3_parents"]))
 
 
 if __name__ == "__main__":

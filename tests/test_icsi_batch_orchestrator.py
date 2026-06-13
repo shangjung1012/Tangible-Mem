@@ -15,6 +15,7 @@ from share_mem.run_icsi_batch import (
     build_filtered_share_tree,
     config_from_args,
     discover_transcripts,
+    latest_partial_research_run_id,
     parse_args,
     prepare_transcript_input,
     run_batch,
@@ -45,6 +46,48 @@ class ICSIBatchOrchestratorTests(unittest.TestCase):
         self.assertIn("--multi-agent-window-size", command)
         self.assertIn("120", command)
         self.assertIn("--include-legacy-type", command)
+
+    def test_bridge_command_can_reuse_latest_partial_l1_research_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_root = root / "out"
+            run_dir = output_root / "share_mem" / "research_logs" / "20260612T000000Z_Bmr002_multi_agent"
+            run_dir.mkdir(parents=True)
+            (run_dir / "status.json").write_text(
+                json.dumps({"status": "failed"}), encoding="utf-8"
+            )
+            config = BatchConfig(
+                transcript_dir=root / "transcripts",
+                output_root=output_root,
+                model="gemini-2.5-pro",
+                resume_partial_l1=True,
+            )
+
+            command = build_bridge_command(config, Path("Bmr002.txt"))
+
+            self.assertIn("--research-run-id", command)
+            self.assertIn("20260612T000000Z_Bmr002_multi_agent", command)
+
+    def test_latest_partial_research_run_ignores_succeeded_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            older = root / "20260612T000000Z_Bmr002_multi_agent"
+            newer = root / "20260612T010000Z_Bmr002_multi_agent"
+            other = root / "20260612T010000Z_Bmr003_multi_agent"
+            for path, status in [
+                (older, "failed"),
+                (newer, "succeeded"),
+                (other, "failed"),
+            ]:
+                path.mkdir(parents=True)
+                (path / "status.json").write_text(
+                    json.dumps({"status": status}), encoding="utf-8"
+                )
+
+            self.assertEqual(
+                latest_partial_research_run_id(root, "Bmr002"),
+                older.name,
+            )
 
     def test_prepare_transcript_input_writes_line_limited_experiment_copy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -22,7 +22,15 @@ class ResearchLogger:
         self.api_calls_dir.mkdir(parents=True, exist_ok=True)
         self.events_path = self.run_dir / "graph_events.jsonl"
         self.api_calls_jsonl_path = self.api_calls_dir / "api_calls.jsonl"
-        self._api_call_seq = 0
+        self._api_call_seq = self._existing_api_call_seq()
+
+    def _existing_api_call_seq(self) -> int:
+        max_seq = 0
+        for path in self.api_calls_dir.glob("*.json"):
+            prefix = path.name.split("_", 1)[0]
+            if prefix.isdigit():
+                max_seq = max(max_seq, int(prefix))
+        return max_seq
 
     def write_json(self, filename: str, data: Any) -> None:
         path = self.run_dir / filename

@@ -12,7 +12,37 @@ if str(REPO_ROOT) not in sys.path:
 
 from optimization.long_term_v2.effective_view import load_effective_topic_surface
 from optimization.long_term_v2.io_utils import load_json, utc_now_iso, write_json, write_text
+from optimization.long_term_v2.profiles import (
+    load_profile,
+    profile_generic_topic_labels,
+    profile_rejected_topic_labels,
+    profile_type_like_labels,
+    profile_weak_phrase_terms,
+)
 from share_mem.store import build_l1_index, load_share_tree
+
+
+DEFAULT_EVAL_WEAK_PHRASE_TERMS = {
+    "bit",
+    "little",
+    "pretty",
+    "go",
+    "ahead",
+    "know",
+    "thing",
+    "things",
+}
+
+DEFAULT_EVAL_TYPE_TERMS = {
+    "argument",
+    "decision",
+    "finding",
+    "issue",
+    "proposal",
+    "question",
+    "result",
+    "todo",
+}
 
 
 def _event_obj_ids(node: dict[str, Any]) -> list[str]:
@@ -63,10 +93,30 @@ def _question_for(label: str, *, query_type: str) -> str:
     return f"What did the ICSI BMR meetings discuss about {label}?"
 
 
+def _is_eval_candidate_label(label: str, *, profile: dict[str, Any]) -> bool:
+    clean = str(label).strip().lower().replace("_", " ")
+    if not clean:
+        return False
+    terms = set(clean.split())
+    type_like = profile_type_like_labels(profile) | DEFAULT_EVAL_TYPE_TERMS
+    rejected = profile_rejected_topic_labels(profile)
+    generic = profile_generic_topic_labels(profile)
+    if clean in type_like or terms & type_like:
+        return False
+    if clean in rejected or terms & rejected:
+        return False
+    if clean in generic or terms & generic:
+        return False
+    if terms & (profile_weak_phrase_terms(profile) | DEFAULT_EVAL_WEAK_PHRASE_TERMS):
+        return False
+    return True
+
+
 def _query_rows(
     *,
     nodes: list[dict[str, Any]],
     l1_index: dict[str, dict[str, Any]],
+    profile: dict[str, Any],
     max_queries: int,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
@@ -75,6 +125,8 @@ def _query_rows(
         label = str(node.get("label", "") or "").strip()
         l2_id = str(node.get("l2_id", "") or "").strip()
         if not label or not l2_id:
+            continue
+        if not _is_eval_candidate_label(label, profile=profile):
             continue
         reps = _representative_obj_ids(node, l1_index)
         if not reps:
@@ -103,7 +155,7 @@ def _query_rows(
 
 def _format_report(rows: list[dict[str, Any]], *, l1_index: dict[str, dict[str, Any]], report: dict[str, Any]) -> str:
     lines = [
-        "# ICSI BMR First360 Retrieval Query Review",
+        "# ICSI BMR Retrieval Query Review",
         "",
         f"- generated at: `{report['generated_at_utc']}`",
         f"- query count: `{report['query_count']}`",
@@ -142,6 +194,11 @@ def curate_icsi_eval_queries(
     root = Path(run_root)
     l1_index = build_l1_index(load_share_tree(share_mem_root))
     surface = load_effective_topic_surface(root)
+    manifest = load_json(root / "manifest.json") if (root / "manifest.json").exists() else {}
+    profile: dict[str, Any] = {}
+    profile_path = manifest.get("profile_path")
+    if profile_path and Path(str(profile_path)).exists():
+        profile = load_profile(str(profile_path))
     nodes = [
         node
         for node in surface["l2_view"].get("l2_nodes", []) or []
@@ -154,7 +211,7 @@ def curate_icsi_eval_queries(
             str(node.get("label", "") or ""),
         )
     )
-    rows = _query_rows(nodes=nodes, l1_index=l1_index, max_queries=max_queries)
+    rows = _query_rows(nodes=nodes, l1_index=l1_index, profile=profile, max_queries=max_queries)
     out_path = Path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(

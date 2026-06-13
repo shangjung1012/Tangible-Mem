@@ -192,6 +192,9 @@ def export_runtime_view(run_root: Path | str, *, clean: bool = False) -> dict[st
         "l3_index_count": len(runtime_l3_index),
         "effective_topic_surface": {
             "has_topic_review": effective_surface["has_topic_review"],
+            "has_corpus_theme_l3": effective_surface.get("has_corpus_theme_l3", False),
+            "has_l3_child_review": effective_surface.get("has_l3_child_review", False),
+            "l3_surface_source": effective_surface.get("l3_surface_source", "raw_l3"),
             "suppressed_l2_count": effective_surface["suppressed_l2_count"],
             "suppressed_l2_index_count": effective_surface["suppressed_l2_index_count"],
         },

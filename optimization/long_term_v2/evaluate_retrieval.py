@@ -275,6 +275,9 @@ def evaluate_retrieval(
         "queries_path": str(Path(queries_path).resolve()),
         "effective_topic_surface": {
             "has_topic_review": effective_surface["has_topic_review"],
+            "has_corpus_theme_l3": effective_surface.get("has_corpus_theme_l3", False),
+            "has_l3_child_review": effective_surface.get("has_l3_child_review", False),
+            "l3_surface_source": effective_surface.get("l3_surface_source", "raw_l3"),
             "active_l2_count": effective_surface["active_l2_count"],
             "suppressed_l2_count": effective_surface["suppressed_l2_count"],
             "suppressed_l2_index_count": effective_surface["suppressed_l2_index_count"],

@@ -34,6 +34,8 @@ from share_mem.l1.multi_agent_pipeline import (  # noqa: E402
     build_continuation_batches,
     build_previous_batch_context,
     idea_units_for_batch,
+    load_l1_batch_checkpoint,
+    write_l1_batch_checkpoint,
     refine_cross_window_boundaries,
     run_multi_agent_l1_pipeline,
 )
@@ -46,6 +48,7 @@ from share_mem.l1.multi_agent_state import (  # noqa: E402
     IdeaUnit,
     L1Candidate,
     L1_MULTI_AGENT_TYPE_ORDER,
+    L1_MULTI_AGENT_V2_TYPE_ORDER,
     SegmentProposal,
     TranscriptLine,
     WindowPlan,
@@ -248,6 +251,90 @@ class FakePipelineRunner:
 
 
 class MultiAgentPipelineTests(unittest.TestCase):
+    def test_l1_batch_checkpoint_round_trips_and_rejects_signature_mismatch(self) -> None:
+        batch = {
+            "batch_id": "B-001",
+            "segment_ids": ["S-001"],
+            "unit_ids": ["U-001"],
+        }
+        units = [
+            IdeaUnit(
+                unit_id="U-001",
+                segment_id="S-001",
+                line_start=1,
+                line_end=2,
+                text="The team agreed to preserve partial L1 checkpoints.",
+                completeness="complete",
+            )
+        ]
+        candidates = [
+            L1Candidate(
+                candidate_id="C-B-001-decision-001",
+                type="decision",
+                source_unit_ids=["U-001"],
+                content="The pipeline should preserve completed L1 extraction batches.",
+                importance=0.72,
+                confidence=0.88,
+                rationale="The unit states an agreed execution policy.",
+                related_topics=["checkpointing"],
+                extraction_scope="B-001",
+                segment_ids=["S-001"],
+                legacy_type="decision",
+            )
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            write_l1_batch_checkpoint(
+                run_dir=run_dir,
+                batch=batch,
+                batch_units=units,
+                agent_type_order=L1_MULTI_AGENT_V2_TYPE_ORDER,
+                taxonomy="v2-memory-roles",
+                include_legacy_type=True,
+                content_language="english",
+                candidates=candidates,
+                fallback_reports=[],
+            )
+
+            loaded = load_l1_batch_checkpoint(
+                run_dir=run_dir,
+                batch=batch,
+                batch_units=units,
+                agent_type_order=L1_MULTI_AGENT_V2_TYPE_ORDER,
+                taxonomy="v2-memory-roles",
+                include_legacy_type=True,
+                content_language="english",
+            )
+            self.assertIsNotNone(loaded)
+            loaded_candidates, loaded_fallbacks = loaded or ([], [])
+            self.assertEqual(len(loaded_candidates), 1)
+            self.assertEqual(loaded_candidates[0].candidate_id, candidates[0].candidate_id)
+            self.assertEqual(loaded_candidates[0].legacy_type, "decision")
+            self.assertEqual(loaded_fallbacks, [])
+
+            changed_units = [
+                IdeaUnit(
+                    unit_id="U-001",
+                    segment_id="S-001",
+                    line_start=1,
+                    line_end=2,
+                    text="Different text should invalidate the checkpoint.",
+                    completeness="complete",
+                )
+            ]
+            self.assertIsNone(
+                load_l1_batch_checkpoint(
+                    run_dir=run_dir,
+                    batch=batch,
+                    batch_units=changed_units,
+                    agent_type_order=L1_MULTI_AGENT_V2_TYPE_ORDER,
+                    taxonomy="v2-memory-roles",
+                    include_legacy_type=True,
+                    content_language="english",
+                )
+            )
+
     def test_transport_disconnects_are_retryable(self) -> None:
         try:
             import httpx

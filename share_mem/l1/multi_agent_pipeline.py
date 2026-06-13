@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections import Counter
 from dataclasses import dataclass
@@ -22,6 +24,7 @@ from .multi_agent_logger import ResearchLogger
 from .multi_agent_reducer import reduce_l1_patch, resolve_cross_type_conflicts
 from .multi_agent_state import (
     IdeaUnit,
+    L1Candidate,
     L1_MULTI_AGENT_TYPES,
     L1_MULTI_AGENT_V2_TYPES,
     SegmentProposal,
@@ -59,6 +62,8 @@ SEMANTIC_IDEA_REPAIR_ISSUES = {
     "too_many_units",
     "uncovered_line_ranges",
 }
+L1_BATCH_CHECKPOINT_VERSION = 1
+L1_BATCH_CHECKPOINT_DIR = "l1_batch_checkpoints"
 
 
 @dataclass(frozen=True)
@@ -611,6 +616,222 @@ def build_run_id(meeting_id: str) -> str:
     return f"{clean_time}_{meeting_id}_multi_agent"
 
 
+def _json_hash(payload: Any) -> str:
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def l1_batch_signature(
+    *,
+    batch: dict[str, Any],
+    batch_units: list[IdeaUnit],
+    agent_type_order: tuple[str, ...],
+    taxonomy: str,
+    include_legacy_type: bool,
+    content_language: str,
+) -> str:
+    return _json_hash(
+        {
+            "batch_id": str(batch.get("batch_id", "")),
+            "segment_ids": [str(item) for item in batch.get("segment_ids", [])],
+            "unit_ids": [
+                {
+                    "unit_id": unit.unit_id,
+                    "segment_id": unit.segment_id,
+                    "line_start": unit.line_start,
+                    "line_end": unit.line_end,
+                    "text": unit.text,
+                    "completeness": unit.completeness,
+                }
+                for unit in batch_units
+            ],
+            "agent_type_order": list(agent_type_order),
+            "taxonomy": taxonomy,
+            "include_legacy_type": bool(include_legacy_type),
+            "content_language": content_language,
+        }
+    )
+
+
+def _batch_checkpoint_path(run_dir: Path, batch_id: str) -> Path:
+    safe_batch_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(batch_id)).strip("_")
+    return run_dir / L1_BATCH_CHECKPOINT_DIR / f"{safe_batch_id or 'batch'}.json"
+
+
+def _candidate_from_plain(row: dict[str, Any]) -> L1Candidate:
+    return L1Candidate(
+        candidate_id=str(row.get("candidate_id", "")),
+        type=str(row.get("type", "")),
+        source_unit_ids=[str(item) for item in row.get("source_unit_ids", [])],
+        content=str(row.get("content", "")),
+        importance=float(row.get("importance", 0.0) or 0.0),
+        confidence=float(row.get("confidence", 0.0) or 0.0),
+        rationale=str(row.get("rationale", "")),
+        related_topics=[str(item) for item in row.get("related_topics", [])],
+        extraction_scope=str(row.get("extraction_scope", "")),
+        segment_ids=[str(item) for item in row.get("segment_ids", [])],
+        legacy_type=str(row.get("legacy_type", "")),
+    )
+
+
+def _window_plan_from_plain(row: dict[str, Any]) -> WindowPlan:
+    return WindowPlan(
+        start_line=int(row["start_line"]),
+        end_line=int(row["end_line"]),
+        lookback_lines=int(row.get("lookback_lines", 0)),
+        lookahead_lines=int(row.get("lookahead_lines", 0)),
+        reason=str(row.get("reason", "")),
+    )
+
+
+def _segment_from_plain(row: dict[str, Any]) -> SegmentProposal:
+    return SegmentProposal(
+        segment_id=str(row["segment_id"]),
+        line_start=int(row["line_start"]),
+        line_end=int(row["line_end"]),
+        topic_label=str(row.get("topic_label", "")),
+        needs_more_context=bool(row.get("needs_more_context", False)),
+    )
+
+
+def _idea_unit_from_plain(row: dict[str, Any]) -> IdeaUnit:
+    return IdeaUnit(
+        unit_id=str(row["unit_id"]),
+        segment_id=str(row["segment_id"]),
+        line_start=int(row["line_start"]),
+        line_end=int(row["line_end"]),
+        text=str(row.get("text", "")),
+        completeness=str(row.get("completeness", "")),
+        uncertainty_note=str(row.get("uncertainty_note", "")),
+    )
+
+
+def load_pre_l1_artifacts(run_dir: Path) -> dict[str, Any] | None:
+    required = {
+        "window_plans": "window_plans.json",
+        "initial_segments": "initial_segments.json",
+        "segments": "segments.json",
+        "segment_coverage_validation": "segment_coverage_validation.json",
+        "segment_coarsening": "segment_coarsening.json",
+        "boundary_refinement": "boundary_refinement.json",
+        "idea_units": "idea_units.json",
+        "idea_unit_quality_validation": "idea_unit_quality_validation.json",
+        "continuation_merges": "continuation_merges.json",
+        "extraction_batches": "extraction_batches.json",
+    }
+    paths = {key: run_dir / filename for key, filename in required.items()}
+    if any(not path.exists() for path in paths.values()):
+        return None
+    try:
+        raw = {
+            key: json.loads(path.read_text(encoding="utf-8-sig"))
+            for key, path in paths.items()
+        }
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None
+    try:
+        return {
+            "window_plans": [_window_plan_from_plain(row) for row in raw["window_plans"]],
+            "initial_segments": [
+                _segment_from_plain(row) for row in raw["initial_segments"]
+            ],
+            "segments": [_segment_from_plain(row) for row in raw["segments"]],
+            "coverage_reports": raw["segment_coverage_validation"],
+            "coarsening_reports": raw["segment_coarsening"],
+            "boundary_refinement_reports": raw["boundary_refinement"],
+            "idea_units": [_idea_unit_from_plain(row) for row in raw["idea_units"]],
+            "idea_unit_quality_reports": raw["idea_unit_quality_validation"],
+            "continuation_decisions": raw["continuation_merges"],
+            "extraction_batches": raw["extraction_batches"],
+        }
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def load_l1_batch_checkpoint(
+    *,
+    run_dir: Path,
+    batch: dict[str, Any],
+    batch_units: list[IdeaUnit],
+    agent_type_order: tuple[str, ...],
+    taxonomy: str,
+    include_legacy_type: bool,
+    content_language: str,
+) -> tuple[list[L1Candidate], list[dict[str, Any]]] | None:
+    batch_id = str(batch.get("batch_id", ""))
+    path = _batch_checkpoint_path(run_dir, batch_id)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    expected_signature = l1_batch_signature(
+        batch=batch,
+        batch_units=batch_units,
+        agent_type_order=agent_type_order,
+        taxonomy=taxonomy,
+        include_legacy_type=include_legacy_type,
+        content_language=content_language,
+    )
+    if payload.get("schema_version") != L1_BATCH_CHECKPOINT_VERSION:
+        return None
+    if payload.get("status") != "complete":
+        return None
+    if payload.get("signature") != expected_signature:
+        return None
+    candidates = [
+        _candidate_from_plain(row)
+        for row in payload.get("candidates", [])
+        if isinstance(row, dict)
+    ]
+    fallback_reports = [
+        row for row in payload.get("fallback_reports", []) if isinstance(row, dict)
+    ]
+    return candidates, fallback_reports
+
+
+def write_l1_batch_checkpoint(
+    *,
+    run_dir: Path,
+    batch: dict[str, Any],
+    batch_units: list[IdeaUnit],
+    agent_type_order: tuple[str, ...],
+    taxonomy: str,
+    include_legacy_type: bool,
+    content_language: str,
+    candidates: list[L1Candidate],
+    fallback_reports: list[dict[str, Any]],
+    generated_from: str = "pipeline",
+) -> Path:
+    batch_id = str(batch.get("batch_id", ""))
+    path = _batch_checkpoint_path(run_dir, batch_id)
+    payload = {
+        "schema_version": L1_BATCH_CHECKPOINT_VERSION,
+        "status": "complete",
+        "generated_from": generated_from,
+        "batch_id": batch_id,
+        "signature": l1_batch_signature(
+            batch=batch,
+            batch_units=batch_units,
+            agent_type_order=agent_type_order,
+            taxonomy=taxonomy,
+            include_legacy_type=include_legacy_type,
+            content_language=content_language,
+        ),
+        "agent_type_order": list(agent_type_order),
+        "taxonomy": taxonomy,
+        "include_legacy_type": bool(include_legacy_type),
+        "content_language": content_language,
+        "candidate_count": len(candidates),
+        "candidates": [candidate.__dict__ for candidate in candidates],
+        "fallback_reports": fallback_reports,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
 def _avg(values: list[float]) -> float:
     if not values:
         return 0.0
@@ -1156,10 +1377,11 @@ def run_multi_agent_l1_pipeline(
     include_legacy_type: bool = False,
     content_language: str = "traditional_zh",
     dataset_guidance: str = "",
+    run_id: str | None = None,
 ) -> MultiAgentPipelineResult:
     taxonomy = normalize_taxonomy(taxonomy)
     agent_type_order = type_order_for_taxonomy(taxonomy)
-    run_id = build_run_id(meeting_id)
+    run_id = run_id or build_run_id(meeting_id)
     logger = ResearchLogger(research_log_dir, run_id)
     lines = parse_transcript_lines(transcript)
     max_line = lines[-1].line_id if lines else 0
@@ -1298,235 +1520,258 @@ def run_multi_agent_l1_pipeline(
         )
         logger.write_json("prior_context_pack.json", prior_context_pack or {})
         mark_completed("run_meta:written")
-        mark_started("context_planner:start")
-        logger.append_event("context_planner:start", {"line_count": len(lines)})
-
-        window_plans = plan_context_windows(
-            lines,
-            window_size=window_size,
-            lookback_lines=lookback_lines,
-            lookahead_lines=lookahead_lines,
-        )
-        logger.write_json("window_plans.json", window_plans)
-        logger.append_event("context_planner:done", {"windows": len(window_plans)})
-        mark_completed("context_planner:done")
-
-        all_segments = []
-        coverage_reports = []
-        coarsening_reports = []
-        for plan in window_plans:
-            mark_started(f"segmentation_agent:{plan.start_line}-{plan.end_line}")
+        pre_l1_artifacts = load_pre_l1_artifacts(logger.run_dir) if run_id else None
+        if pre_l1_artifacts is not None:
+            window_plans = pre_l1_artifacts["window_plans"]
+            initial_segments = pre_l1_artifacts["initial_segments"]
+            all_segments = pre_l1_artifacts["segments"]
+            coverage_reports = pre_l1_artifacts["coverage_reports"]
+            coarsening_reports = pre_l1_artifacts["coarsening_reports"]
+            boundary_refinement_reports = pre_l1_artifacts["boundary_refinement_reports"]
+            all_idea_units = pre_l1_artifacts["idea_units"]
+            idea_unit_quality_reports = pre_l1_artifacts["idea_unit_quality_reports"]
+            continuation_decisions = pre_l1_artifacts["continuation_decisions"]
+            extraction_batches = pre_l1_artifacts["extraction_batches"]
             logger.append_event(
-                "segmentation_agent:start",
-                {"start_line": plan.start_line, "end_line": plan.end_line},
-            )
-            segments = segmentation_agent(
-                runner,
-                meeting_id=meeting_id,
-                plan=plan,
-                transcript_lines=lines,
-                dataset_guidance=dataset_guidance,
-            )
-            repaired_segments, coverage_report = repair_segment_coverage(plan, segments)
-            coarsened_segments, coarsening_report = coarsen_segments_for_window(
-                plan,
-                repaired_segments,
-            )
-            coverage_reports.append(coverage_report)
-            coarsening_reports.append(coarsening_report)
-            all_segments.extend(coarsened_segments)
-            logger.append_event(
-                "segmentation_agent:done",
+                "pre_l1_artifacts:loaded",
                 {
-                    "segments": len(segments),
-                    "output_segments": len(repaired_segments),
-                    "coarsened_segments": len(coarsened_segments),
-                    "coverage_rate": coverage_report["coverage_rate"],
-                    "repairs": len(coverage_report["repair_segment_ids"]),
+                    "windows": len(window_plans),
+                    "segments": len(all_segments),
+                    "idea_units": len(all_idea_units),
+                    "extraction_batches": len(extraction_batches),
                 },
             )
-            mark_completed(f"segmentation_agent:{plan.start_line}-{plan.end_line}:done")
-        initial_segments = list(all_segments)
-        boundary_refinement_reports: list[dict[str, Any]] = []
+            mark_completed("pre_l1_artifacts:loaded")
+        else:
+            mark_started("context_planner:start")
+            logger.append_event("context_planner:start", {"line_count": len(lines)})
 
-        def refine_boundary_span(
-            left: SegmentProposal,
-            right: SegmentProposal,
-            plan: WindowPlan,
-            reason: str,
-        ) -> tuple[list[SegmentProposal], dict[str, Any]]:
-            mark_started(f"boundary_refinement:{left.segment_id}+{right.segment_id}")
-            logger.append_event(
-                "boundary_refinement:start",
-                {
-                    "left_segment_id": left.segment_id,
-                    "right_segment_id": right.segment_id,
-                    "start_line": plan.start_line,
-                    "end_line": plan.end_line,
-                    "reason": reason,
-                },
+            window_plans = plan_context_windows(
+                lines,
+                window_size=window_size,
+                lookback_lines=lookback_lines,
+                lookahead_lines=lookahead_lines,
             )
-            refined_raw = segmentation_agent(
-                runner,
-                meeting_id=meeting_id,
-                plan=plan,
-                transcript_lines=lines,
-                dataset_guidance=dataset_guidance,
-            )
-            repaired_refined, refined_coverage = repair_segment_coverage(plan, refined_raw)
-            coarsened_refined, refined_coarsening = coarsen_segments_for_window(
-                plan,
-                repaired_refined,
-            )
-            logger.append_event(
-                "boundary_refinement:done",
-                {
-                    "left_segment_id": left.segment_id,
-                    "right_segment_id": right.segment_id,
-                    "raw_segments": len(refined_raw),
-                    "output_segments": len(coarsened_refined),
-                    "coverage_rate": refined_coverage["coverage_rate"],
-                },
-            )
-            mark_completed(f"boundary_refinement:{left.segment_id}+{right.segment_id}:done")
-            return coarsened_refined, {
-                "raw_segments": len(refined_raw),
-                "coverage": refined_coverage,
-                "coarsening": refined_coarsening,
-            }
+            logger.write_json("window_plans.json", window_plans)
+            logger.append_event("context_planner:done", {"windows": len(window_plans)})
+            mark_completed("context_planner:done")
 
-        all_segments, boundary_refinement_reports = refine_cross_window_boundaries(
-            all_segments,
-            transcript_lines=lines,
-            refine_span=refine_boundary_span,
-        )
-        logger.write_json("initial_segments.json", initial_segments)
-        logger.write_json("boundary_refinement.json", boundary_refinement_reports)
-        logger.write_json("segments.json", all_segments)
-        logger.write_json("segment_coverage_validation.json", coverage_reports)
-        logger.write_json("segment_coarsening.json", coarsening_reports)
-        mark_completed("boundary_refinement_artifacts:written")
-
-        all_idea_units = []
-        idea_unit_quality_reports = []
-        for segment in all_segments:
-            mark_started(f"idea_unit_agent:{segment.segment_id}")
-            logger.append_event("idea_unit_agent:start", {"segment_id": segment.segment_id})
-            units = idea_unit_agent(
-                runner,
-                segment=segment,
-                transcript_lines=lines,
-                dataset_guidance=dataset_guidance,
-            )
-            diagnostic_units, diagnostic_report = repair_idea_units_for_segment(
-                segment=segment,
-                units=units,
-                transcript_lines=lines,
-                deterministic_fallback=False,
-            )
-            semantic_repair = {
-                "attempted": False,
-                "used_semantic_output": False,
-                "input_units": len(units),
-                "output_units": 0,
-                "non_memory_context_ranges": 0,
-            }
-            repair_source_units = units
-            non_memory_ranges: list[dict[str, Any]] = []
-            if _needs_semantic_idea_repair(diagnostic_report):
-                semantic_repair["attempted"] = True
-                mark_started(f"idea_unit_repair_agent:{segment.segment_id}")
+            all_segments = []
+            coverage_reports = []
+            coarsening_reports = []
+            for plan in window_plans:
+                mark_started(f"segmentation_agent:{plan.start_line}-{plan.end_line}")
                 logger.append_event(
-                    "idea_unit_repair_agent:start",
+                    "segmentation_agent:start",
+                    {"start_line": plan.start_line, "end_line": plan.end_line},
+                )
+                segments = segmentation_agent(
+                    runner,
+                    meeting_id=meeting_id,
+                    plan=plan,
+                    transcript_lines=lines,
+                    dataset_guidance=dataset_guidance,
+                )
+                repaired_segments, coverage_report = repair_segment_coverage(plan, segments)
+                coarsened_segments, coarsening_report = coarsen_segments_for_window(
+                    plan,
+                    repaired_segments,
+                )
+                coverage_reports.append(coverage_report)
+                coarsening_reports.append(coarsening_report)
+                all_segments.extend(coarsened_segments)
+                logger.append_event(
+                    "segmentation_agent:done",
                     {
-                        "segment_id": segment.segment_id,
-                        "issues": len(diagnostic_report["issues"]),
-                        "diagnostic_output_units": len(diagnostic_units),
+                        "segments": len(segments),
+                        "output_segments": len(repaired_segments),
+                        "coarsened_segments": len(coarsened_segments),
+                        "coverage_rate": coverage_report["coverage_rate"],
+                        "repairs": len(coverage_report["repair_segment_ids"]),
                     },
                 )
-                try:
-                    semantic_units, non_memory_ranges = idea_unit_repair_agent(
-                        runner,
-                        segment=segment,
-                        transcript_lines=lines,
-                        current_units=units,
-                        validation_report=diagnostic_report,
-                        dataset_guidance=dataset_guidance,
-                    )
-                    if semantic_units or non_memory_ranges:
-                        repair_source_units = semantic_units
-                        semantic_repair["used_semantic_output"] = True
-                    semantic_repair["output_units"] = len(semantic_units)
-                    semantic_repair["non_memory_context_ranges"] = len(non_memory_ranges)
-                    logger.append_event(
-                        "idea_unit_repair_agent:done",
-                        {
-                            "segment_id": segment.segment_id,
-                            "output_units": len(semantic_units),
-                            "non_memory_context_ranges": len(non_memory_ranges),
-                        },
-                    )
-                    mark_completed(f"idea_unit_repair_agent:{segment.segment_id}:done")
-                except Exception as exc:
-                    semantic_repair["error"] = str(exc)
-                    logger.append_event(
-                        "idea_unit_repair_agent:error",
-                        {
-                            "segment_id": segment.segment_id,
-                            "error": str(exc),
-                            "fallback": "deterministic_validator_repair",
-                        },
-                    )
-                    mark_completed(
-                        f"idea_unit_repair_agent:{segment.segment_id}:fallback_after_error"
-                    )
-            repaired_units, quality_report = repair_idea_units_for_segment(
-                segment=segment,
-                units=repair_source_units,
-                transcript_lines=lines,
-                non_memory_ranges=non_memory_ranges,
-                deterministic_fallback=True,
-            )
-            if semantic_repair["attempted"]:
-                semantic_repair["final_output_units"] = len(repaired_units)
-                semantic_repair["deterministic_fallback_after_repair"] = any(
-                    repair.get("action")
-                    in {
-                        "add_fallback_for_uncovered_lines",
-                        "fallback_for_empty_segment",
-                        "replace_with_line_chunks",
-                        "compact_overfragmented_units",
-                    }
-                    for repair in quality_report.get("repairs", [])
-                )
-                quality_report["initial_validation_report"] = diagnostic_report
-            quality_report["semantic_repair"] = semantic_repair
-            idea_unit_quality_reports.append(quality_report)
-            all_idea_units.extend(repaired_units)
-            logger.append_event(
-                "idea_unit_agent:done",
-                {
-                    "segment_id": segment.segment_id,
-                    "units": len(units),
-                    "output_units": len(repaired_units),
-                    "issues": len(quality_report["issues"]),
-                    "repairs": len(quality_report["repairs"]),
-                },
-            )
-            mark_completed(f"idea_unit_agent:{segment.segment_id}:done")
-        logger.write_json("idea_units.json", all_idea_units)
-        logger.write_json("idea_unit_quality_validation.json", idea_unit_quality_reports)
-        mark_completed("idea_unit_artifacts:written")
+                mark_completed(f"segmentation_agent:{plan.start_line}-{plan.end_line}:done")
+            initial_segments = list(all_segments)
+            boundary_refinement_reports: list[dict[str, Any]] = []
 
-        extraction_batches, continuation_decisions = build_continuation_batches(
-            all_segments,
-            transcript_lines=lines,
-            idea_units=all_idea_units,
-        )
-        logger.write_json("continuation_merges.json", continuation_decisions)
-        logger.write_json("extraction_packets.json", extraction_batches)
-        logger.write_json("extraction_batches.json", extraction_batches)
-        mark_completed("extraction_packets:written")
+            def refine_boundary_span(
+                left: SegmentProposal,
+                right: SegmentProposal,
+                plan: WindowPlan,
+                reason: str,
+            ) -> tuple[list[SegmentProposal], dict[str, Any]]:
+                mark_started(f"boundary_refinement:{left.segment_id}+{right.segment_id}")
+                logger.append_event(
+                    "boundary_refinement:start",
+                    {
+                        "left_segment_id": left.segment_id,
+                        "right_segment_id": right.segment_id,
+                        "start_line": plan.start_line,
+                        "end_line": plan.end_line,
+                        "reason": reason,
+                    },
+                )
+                refined_raw = segmentation_agent(
+                    runner,
+                    meeting_id=meeting_id,
+                    plan=plan,
+                    transcript_lines=lines,
+                    dataset_guidance=dataset_guidance,
+                )
+                repaired_refined, refined_coverage = repair_segment_coverage(plan, refined_raw)
+                coarsened_refined, refined_coarsening = coarsen_segments_for_window(
+                    plan,
+                    repaired_refined,
+                )
+                logger.append_event(
+                    "boundary_refinement:done",
+                    {
+                        "left_segment_id": left.segment_id,
+                        "right_segment_id": right.segment_id,
+                        "raw_segments": len(refined_raw),
+                        "output_segments": len(coarsened_refined),
+                        "coverage_rate": refined_coverage["coverage_rate"],
+                    },
+                )
+                mark_completed(f"boundary_refinement:{left.segment_id}+{right.segment_id}:done")
+                return coarsened_refined, {
+                    "raw_segments": len(refined_raw),
+                    "coverage": refined_coverage,
+                    "coarsening": refined_coarsening,
+                }
+
+            all_segments, boundary_refinement_reports = refine_cross_window_boundaries(
+                all_segments,
+                transcript_lines=lines,
+                refine_span=refine_boundary_span,
+            )
+            logger.write_json("initial_segments.json", initial_segments)
+            logger.write_json("boundary_refinement.json", boundary_refinement_reports)
+            logger.write_json("segments.json", all_segments)
+            logger.write_json("segment_coverage_validation.json", coverage_reports)
+            logger.write_json("segment_coarsening.json", coarsening_reports)
+            mark_completed("boundary_refinement_artifacts:written")
+
+            all_idea_units = []
+            idea_unit_quality_reports = []
+            for segment in all_segments:
+                mark_started(f"idea_unit_agent:{segment.segment_id}")
+                logger.append_event("idea_unit_agent:start", {"segment_id": segment.segment_id})
+                units = idea_unit_agent(
+                    runner,
+                    segment=segment,
+                    transcript_lines=lines,
+                    dataset_guidance=dataset_guidance,
+                )
+                diagnostic_units, diagnostic_report = repair_idea_units_for_segment(
+                    segment=segment,
+                    units=units,
+                    transcript_lines=lines,
+                    deterministic_fallback=False,
+                )
+                semantic_repair = {
+                    "attempted": False,
+                    "used_semantic_output": False,
+                    "input_units": len(units),
+                    "output_units": 0,
+                    "non_memory_context_ranges": 0,
+                }
+                repair_source_units = units
+                non_memory_ranges: list[dict[str, Any]] = []
+                if _needs_semantic_idea_repair(diagnostic_report):
+                    semantic_repair["attempted"] = True
+                    mark_started(f"idea_unit_repair_agent:{segment.segment_id}")
+                    logger.append_event(
+                        "idea_unit_repair_agent:start",
+                        {
+                            "segment_id": segment.segment_id,
+                            "issues": len(diagnostic_report["issues"]),
+                            "diagnostic_output_units": len(diagnostic_units),
+                        },
+                    )
+                    try:
+                        semantic_units, non_memory_ranges = idea_unit_repair_agent(
+                            runner,
+                            segment=segment,
+                            transcript_lines=lines,
+                            current_units=units,
+                            validation_report=diagnostic_report,
+                            dataset_guidance=dataset_guidance,
+                        )
+                        if semantic_units or non_memory_ranges:
+                            repair_source_units = semantic_units
+                            semantic_repair["used_semantic_output"] = True
+                        semantic_repair["output_units"] = len(semantic_units)
+                        semantic_repair["non_memory_context_ranges"] = len(non_memory_ranges)
+                        logger.append_event(
+                            "idea_unit_repair_agent:done",
+                            {
+                                "segment_id": segment.segment_id,
+                                "output_units": len(semantic_units),
+                                "non_memory_context_ranges": len(non_memory_ranges),
+                            },
+                        )
+                        mark_completed(f"idea_unit_repair_agent:{segment.segment_id}:done")
+                    except Exception as exc:
+                        semantic_repair["error"] = str(exc)
+                        logger.append_event(
+                            "idea_unit_repair_agent:error",
+                            {
+                                "segment_id": segment.segment_id,
+                                "error": str(exc),
+                                "fallback": "deterministic_validator_repair",
+                            },
+                        )
+                        mark_completed(
+                            f"idea_unit_repair_agent:{segment.segment_id}:fallback_after_error"
+                        )
+                repaired_units, quality_report = repair_idea_units_for_segment(
+                    segment=segment,
+                    units=repair_source_units,
+                    transcript_lines=lines,
+                    non_memory_ranges=non_memory_ranges,
+                    deterministic_fallback=True,
+                )
+                if semantic_repair["attempted"]:
+                    semantic_repair["final_output_units"] = len(repaired_units)
+                    semantic_repair["deterministic_fallback_after_repair"] = any(
+                        repair.get("action")
+                        in {
+                            "add_fallback_for_uncovered_lines",
+                            "fallback_for_empty_segment",
+                            "replace_with_line_chunks",
+                            "compact_overfragmented_units",
+                        }
+                        for repair in quality_report.get("repairs", [])
+                    )
+                    quality_report["initial_validation_report"] = diagnostic_report
+                quality_report["semantic_repair"] = semantic_repair
+                idea_unit_quality_reports.append(quality_report)
+                all_idea_units.extend(repaired_units)
+                logger.append_event(
+                    "idea_unit_agent:done",
+                    {
+                        "segment_id": segment.segment_id,
+                        "units": len(units),
+                        "output_units": len(repaired_units),
+                        "issues": len(quality_report["issues"]),
+                        "repairs": len(quality_report["repairs"]),
+                    },
+                )
+                mark_completed(f"idea_unit_agent:{segment.segment_id}:done")
+            logger.write_json("idea_units.json", all_idea_units)
+            logger.write_json("idea_unit_quality_validation.json", idea_unit_quality_reports)
+            mark_completed("idea_unit_artifacts:written")
+
+            extraction_batches, continuation_decisions = build_continuation_batches(
+                all_segments,
+                transcript_lines=lines,
+                idea_units=all_idea_units,
+            )
+            logger.write_json("continuation_merges.json", continuation_decisions)
+            logger.write_json("extraction_packets.json", extraction_batches)
+            logger.write_json("extraction_batches.json", extraction_batches)
+            mark_completed("extraction_packets:written")
 
         raw_candidates = []
         batch_fallback_reports = []
@@ -1542,7 +1787,42 @@ def run_multi_agent_l1_pipeline(
             )
             if previous_context_enabled:
                 previous_context_by_batch[str(batch["batch_id"])] = previous_context
+            checkpoint = load_l1_batch_checkpoint(
+                run_dir=logger.run_dir,
+                batch=batch,
+                batch_units=batch_units,
+                agent_type_order=agent_type_order,
+                taxonomy=taxonomy,
+                include_legacy_type=include_legacy_type,
+                content_language=content_language,
+            )
+            if checkpoint is not None:
+                batch_candidates, checkpoint_fallback_reports = checkpoint
+                raw_candidates.extend(batch_candidates)
+                batch_fallback_reports.extend(checkpoint_fallback_reports)
+                completed_batch_records.append(
+                    {
+                        "batch_id": str(batch["batch_id"]),
+                        "segment_ids": list(batch["segment_ids"]),
+                        "candidate_count": len(batch_candidates),
+                        "candidates": [
+                            candidate.__dict__ for candidate in batch_candidates
+                        ],
+                        "source": "l1_batch_checkpoint",
+                    }
+                )
+                logger.append_event(
+                    "l1_batch_checkpoint:loaded",
+                    {
+                        "extraction_scope": batch["batch_id"],
+                        "extraction_packet_id": batch["batch_id"],
+                        "candidates": len(batch_candidates),
+                    },
+                )
+                mark_completed(f"l1_batch_checkpoint:{batch['batch_id']}:loaded")
+                continue
             batch_candidates = []
+            batch_specific_fallback_reports: list[dict[str, Any]] = []
             for obj_type in agent_type_order:
                 mark_started(f"l1_{obj_type}_agent:{batch['batch_id']}")
                 logger.append_event(
@@ -1607,7 +1887,7 @@ def run_multi_agent_l1_pipeline(
                 )
                 batch_candidates.extend(fallback_candidates)
                 batch_fallback_reports.append(
-                    {
+                    fallback_report := {
                         "batch_id": batch["batch_id"],
                         "extraction_packet_id": batch["batch_id"],
                         "segment_ids": batch["segment_ids"],
@@ -1616,6 +1896,7 @@ def run_multi_agent_l1_pipeline(
                         "reason": "typed_l1_agents_returned_no_candidates",
                     }
                 )
+                batch_specific_fallback_reports.append(fallback_report)
                 logger.append_event(
                     "l1_fallback_agent:done",
                     {
@@ -1625,6 +1906,25 @@ def run_multi_agent_l1_pipeline(
                     },
                 )
                 mark_completed(f"l1_fallback_agent:{batch['batch_id']}:done")
+            write_l1_batch_checkpoint(
+                run_dir=logger.run_dir,
+                batch=batch,
+                batch_units=batch_units,
+                agent_type_order=agent_type_order,
+                taxonomy=taxonomy,
+                include_legacy_type=include_legacy_type,
+                content_language=content_language,
+                candidates=batch_candidates,
+                fallback_reports=batch_specific_fallback_reports,
+            )
+            logger.append_event(
+                "l1_batch_checkpoint:written",
+                {
+                    "extraction_scope": batch["batch_id"],
+                    "extraction_packet_id": batch["batch_id"],
+                    "candidates": len(batch_candidates),
+                },
+            )
             raw_candidates.extend(batch_candidates)
             completed_batch_records.append(
                 {

@@ -1,0 +1,60 @@
+# Topic Quality Audit
+
+- severe issues: 0
+- warnings: 703
+- raw warnings before topic-review suppression: 703
+- suppressed warnings: 0
+- manual review items: 703
+
+## Review Items
+
+- `broad_l2_mixed_signatures` annotation protocol: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` annotation protocol: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` audio processing: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` audio processing: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` data collection: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` data collection: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` acoustic modeling: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` acoustic modeling: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` data quality: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` data quality: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` annotation tool: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` annotation tool: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` digit reading task: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` digit reading task: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` far field: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` far field: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` consent form: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` consent form: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` digit form: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` digit form: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` backed up: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` backed up: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` data collection protocol: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` data collection protocol: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` neural network: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` neural network: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` test set: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` test set: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` vendor management: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` vendor management: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` accent classification: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` accent classification: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` alternative proposal: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` alternative proposal: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` background noise: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` background noise: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` eh eh: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` eh eh: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` know how: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` know how: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` participant approval: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` participant approval: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` ti digit: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` ti digit: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` audio channel: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` audio channel: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` breath noise: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` breath noise: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
+- `broad_l2_mixed_signatures` close talking microphone: L2 appears to mix several weakly-overlapping semantic signatures.
+- `needs_topic_review` close talking microphone: Human or LLM-assisted topic review should inspect this L2 before larger promotion.
