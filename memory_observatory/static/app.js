@@ -86,17 +86,50 @@ function keyValueRows(rows) {
   ));
 }
 
+function topicLinkValue(link, labelKey, idKey) {
+  return link[labelKey] || link[idKey] || "";
+}
+
 function renderTopicLinkBlock(topicLink) {
   const link = topicLink || {};
+  const l2 = topicLinkValue(link, "l2_label", "l2_id");
+  const childL2 = topicLinkValue(link, "child_l2_label", "child_l2_id");
+  const parentL3 = topicLinkValue(link, "parent_l3_label", "parent_l3_id");
+  const path = [
+    parentL3 ? { label: "L3 family", value: parentL3, class: "l3" } : null,
+    l2 ? { label: childL2 ? "Source L2" : "L2 topic", value: l2, class: "l2" } : null,
+    childL2 ? { label: "Assigned child L2", value: childL2, class: "l2" } : null,
+  ].filter(Boolean);
+  const confidence = link.confidence !== undefined ? fmtNumber(link.confidence) : "";
+  const assignmentReason = link.assignment_reason || link.l3_assignment_reason || "";
+
+  if (!path.length) {
+    return el("div", { class: "subpanel topic-link-panel" }, [
+      el("h3", { text: "Topic Links" }),
+      el("p", { class: "muted", text: "This L1 object is not linked to an L2/L3 topic yet." }),
+    ]);
+  }
+
   return el("div", { class: "subpanel" }, [
     el("h3", { text: "Topic Links" }),
-    keyValueRows([
-      { label: "L2", value: link.l2_label || link.l2_id },
-      { label: "L2 ID", value: link.l2_id },
-      { label: "Child L2", value: link.child_l2_label || link.child_l2_id },
-      { label: "Parent L3", value: link.parent_l3_label || link.parent_l3_id },
-      { label: "Reason", value: link.assignment_reason },
-      { label: "Confidence", value: link.confidence !== undefined ? fmtNumber(link.confidence) : "" },
+    el("div", { class: "topic-link-path" }, path.map((item) =>
+      el("div", { class: `topic-link-step ${item.class}` }, [
+        el("span", { class: "topic-link-step-label", text: item.label }),
+        el("strong", { text: item.value }),
+      ])
+    )),
+    el("div", { class: "topic-link-meta" }, [
+      confidence ? tag(`confidence ${confidence}`, "feedback") : null,
+      assignmentReason ? el("p", { text: assignmentReason }) : null,
+    ]),
+    el("details", { class: "topic-link-debug" }, [
+      el("summary", { text: "Technical IDs" }),
+      keyValueRows([
+        { label: "L2 ID", value: link.l2_id },
+        { label: "Child L2 ID", value: link.child_l2_id },
+        { label: "Parent L3 ID", value: link.parent_l3_id },
+        { label: "L3 score", value: link.l3_assignment_score !== undefined ? fmtNumber(link.l3_assignment_score) : "" },
+      ]),
     ]),
   ]);
 }
