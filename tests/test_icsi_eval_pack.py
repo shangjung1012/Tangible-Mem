@@ -6,7 +6,9 @@ import unittest
 from pathlib import Path
 
 from optimization.long_term_v2.create_icsi_eval_pack import create_icsi_eval_pack
+from optimization.long_term_v2.compare_icsi_systems_no_llm import compare_systems_no_llm
 from optimization.long_term_v2.evaluate_retrieval import _load_queries
+from optimization.long_term_v2.revise_icsi_eval_pack import revise_icsi_eval_pack
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -177,6 +179,203 @@ class IcsiEvalPackTests(unittest.TestCase):
             self.assertNotIn("go ahead", labels)
             self.assertNotIn("team decided", labels)
             self.assertEqual(labels, {"audio processing"})
+
+    def test_revised_eval_pack_applies_review_decisions_without_using_heldout_as_answer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pack = root / "optimization" / "reports" / "pack"
+            queries = [
+                {
+                    "query_id": "icsi-heldout-q001",
+                    "query_type": "evidence_lookup",
+                    "query": "accepted question",
+                    "answer_from_meetings": ["Bmr001"],
+                    "heldout_trigger_meetings": ["Bmr024"],
+                    "expected_obj_ids": ["L1-Bmr001-001"],
+                    "expected_source_obj_ids": ["L1-Bmr001-001"],
+                    "heldout_trigger_obj_ids": ["L1-Bmr024-001"],
+                    "source_evidence_preview": [{"obj_id": "L1-Bmr001-001", "content": "source"}],
+                    "heldout_trigger_preview": [{"obj_id": "L1-Bmr024-001", "content": "heldout"}],
+                    "provenance": {"manual_review_required": True},
+                    "status": "candidate_manual_review_required",
+                },
+                {
+                    "query_id": "icsi-heldout-q002",
+                    "query_type": "topic_evolution",
+                    "query": "weak evolution question",
+                    "answer_from_meetings": ["Bmr001"],
+                    "heldout_trigger_meetings": ["Bmr024"],
+                    "expected_obj_ids": ["L1-Bmr001-002"],
+                    "expected_source_obj_ids": ["L1-Bmr001-002"],
+                    "heldout_trigger_obj_ids": ["L1-Bmr024-002"],
+                    "source_evidence_preview": [{"obj_id": "L1-Bmr001-002", "content": "disk source"}],
+                    "heldout_trigger_preview": [{"obj_id": "L1-Bmr024-002", "content": "disk heldout"}],
+                    "provenance": {"manual_review_required": True},
+                    "status": "candidate_manual_review_required",
+                },
+                {
+                    "query_id": "icsi-heldout-q006",
+                    "query_type": "decision_rationale",
+                    "query": "noisy acoustic modeling question",
+                    "answer_from_meetings": ["Bmr002", "Bmr005"],
+                    "heldout_trigger_meetings": ["Bmr024"],
+                    "expected_obj_ids": ["L1-Bmr002-197", "L1-Bmr002-239", "L1-Bmr005-001"],
+                    "expected_source_obj_ids": ["L1-Bmr002-197", "L1-Bmr002-239", "L1-Bmr005-001"],
+                    "heldout_trigger_obj_ids": ["L1-Bmr024-006"],
+                    "source_evidence_preview": [
+                        {"obj_id": "L1-Bmr002-197", "content": "acoustic model training"},
+                        {"obj_id": "L1-Bmr002-239", "content": "Control-C process noise"},
+                        {"obj_id": "L1-Bmr005-001", "content": "digit-reading automation"},
+                    ],
+                    "heldout_trigger_preview": [{"obj_id": "L1-Bmr024-006", "content": "heldout trigger"}],
+                    "provenance": {"manual_review_required": True},
+                    "status": "candidate_manual_review_required",
+                },
+                {
+                    "query_id": "icsi-heldout-q005",
+                    "query_type": "corpus_process",
+                    "query": "broad annotation process question",
+                    "answer_from_meetings": ["Bmr002"],
+                    "heldout_trigger_meetings": ["Bmr024"],
+                    "expected_obj_ids": ["L1-Bmr002-093", "L1-Bmr002-094", "L1-Bmr002-095", "L1-Bmr002-114"],
+                    "expected_source_obj_ids": ["L1-Bmr002-093", "L1-Bmr002-094", "L1-Bmr002-095", "L1-Bmr002-114"],
+                    "heldout_trigger_obj_ids": ["L1-Bmr024-005"],
+                    "source_evidence_preview": [
+                        {"obj_id": "L1-Bmr002-093", "content": "Mississippi State tools"},
+                        {"obj_id": "L1-Bmr002-094", "content": "Mississippi State and XWaves"},
+                        {"obj_id": "L1-Bmr002-095", "content": "XWaves"},
+                        {"obj_id": "L1-Bmr002-114", "content": "Alembic Workbench free tool uncertainty"},
+                    ],
+                    "heldout_trigger_preview": [{"obj_id": "L1-Bmr024-005", "content": "heldout trigger"}],
+                    "provenance": {"manual_review_required": True},
+                    "status": "candidate_manual_review_required",
+                },
+            ]
+            pack.mkdir(parents=True)
+            (pack / "heldout_eval_queries.jsonl").write_text(
+                "\n".join(json.dumps(row, ensure_ascii=False) for row in queries) + "\n",
+                encoding="utf-8",
+            )
+            (pack / "review_decisions.jsonl").write_text(
+                "\n".join(
+                    [
+                        json.dumps(
+                            {
+                                "query_id": "icsi-heldout-q001",
+                                "decision": "accept",
+                                "severity": "none",
+                                "reason": "usable",
+                            },
+                            ensure_ascii=False,
+                        ),
+                        json.dumps(
+                            {
+                                "query_id": "icsi-heldout-q002",
+                                "decision": "revise",
+                                "severity": "minor",
+                                "reason": "single source meeting",
+                                "recommended_query": "What source-side evidence did the BMR meetings contain about disk space constraints and storage decisions?",
+                            },
+                            ensure_ascii=False,
+                        ),
+                        json.dumps(
+                            {
+                                "query_id": "icsi-heldout-q005",
+                                "decision": "revise",
+                                "severity": "minor",
+                                "reason": "narrow tool candidates",
+                                "recommended_query": "What annotation tool options and workflow requirements had been discussed before later transcription workflow changes?",
+                            },
+                            ensure_ascii=False,
+                        ),
+                        json.dumps(
+                            {
+                                "query_id": "icsi-heldout-q006",
+                                "decision": "revise",
+                                "severity": "minor",
+                                "reason": "remove noise",
+                                "recommended_query": "What source-side evidence discussed acoustic model training data and digit-reading automation?",
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = revise_icsi_eval_pack(
+                source_pack=pack / "heldout_eval_queries.jsonl",
+                decisions_path=pack / "review_decisions.jsonl",
+                out_dir=root / "optimization" / "reports" / "revised",
+            )
+
+            self.assertEqual(report["total_query_count"], 4)
+            self.assertEqual(report["revised_count"], 3)
+            self.assertEqual(report["accepted_unchanged_count"], 1)
+            rows = _load_queries(root / "optimization" / "reports" / "revised" / "approved_revised_heldout_eval_queries.jsonl")
+            by_id = {row["query_id"]: row for row in rows}
+            self.assertEqual(by_id["icsi-heldout-q002"]["query_type"], "evidence_lookup")
+            self.assertIn("disk space constraints", by_id["icsi-heldout-q002"]["query"])
+            self.assertNotIn("L1-Bmr002-239", by_id["icsi-heldout-q006"]["expected_obj_ids"])
+            self.assertNotIn("L1-Bmr002-239", by_id["icsi-heldout-q006"]["expected_source_obj_ids"])
+            self.assertIn("Mississippi State", by_id["icsi-heldout-q005"]["query"])
+            self.assertNotIn("L1-Bmr002-114", by_id["icsi-heldout-q005"]["expected_obj_ids"])
+            self.assertTrue(
+                all(
+                    obj_id.startswith("L1-Bmr00")
+                    for row in rows
+                    for obj_id in row["expected_obj_ids"]
+                )
+            )
+            self.assertTrue(
+                all(
+                    obj_id.startswith("L1-Bmr02")
+                    for row in rows
+                    for obj_id in row["heldout_trigger_obj_ids"]
+                )
+            )
+            self.assertEqual(by_id["icsi-heldout-q006"]["status"], "agent_revised_for_dry_run")
+
+    def test_no_llm_system_comparison_reports_recall_and_context_tradeoffs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run, share = _fixture(root)
+            queries = root / "optimization" / "reports" / "queries.jsonl"
+            queries.parent.mkdir(parents=True)
+            queries.write_text(
+                json.dumps(
+                    {
+                        "query_id": "q001",
+                        "query": "audio processing channel metadata",
+                        "expected_obj_ids": ["L1-Bmr001-001", "L1-Bmr002-001"],
+                        "expected_l2_labels": ["audio processing"],
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = compare_systems_no_llm(
+                run_root=run,
+                share_mem_root=share,
+                queries_path=queries,
+                out_dir=root / "optimization" / "reports" / "comparison",
+                rag_top_k=1,
+                layered_top_k_l1=4,
+            )
+
+            self.assertEqual(report["summary"]["query_count"], 1)
+            self.assertEqual(report["summary"]["strategies"], ["full_context_l1", "rag_l1_lexical", "optimization_v2_layered"])
+            self.assertEqual(report["summary"]["expected_l1_recall"]["full_context_l1"], 1.0)
+            self.assertLess(report["summary"]["expected_l1_recall"]["rag_l1_lexical"], 1.0)
+            self.assertGreaterEqual(report["summary"]["expected_l1_recall"]["optimization_v2_layered"], 1.0)
+            self.assertGreater(
+                report["summary"]["avg_context_tokens"]["full_context_l1"],
+                report["summary"]["avg_context_tokens"]["rag_l1_lexical"],
+            )
+            self.assertTrue((root / "optimization" / "reports" / "comparison" / "system_comparison_summary.md").exists())
 
 
 if __name__ == "__main__":
