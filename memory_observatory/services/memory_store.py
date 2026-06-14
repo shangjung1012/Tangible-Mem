@@ -9,9 +9,9 @@ from .topic_store import TopicStore
 
 
 class MemoryStore:
-    def __init__(self, repo_root: Path | str) -> None:
-        self.loader = ObservatoryDataLoader(repo_root)
-        self.topic_store = TopicStore(repo_root)
+    def __init__(self, repo_root: Path | str, dataset_id: str | None = "grace") -> None:
+        self.loader = ObservatoryDataLoader(repo_root, dataset_id=dataset_id)
+        self.topic_store = TopicStore(repo_root, dataset_id=dataset_id)
         self.feedback_store = FeedbackStore(self.loader.share_mem_root)
 
     def meetings(self) -> list[dict[str, Any]]:
@@ -82,4 +82,3 @@ class MemoryStore:
                 "retrieval_traces": [],
             },
         }
-

@@ -43,6 +43,17 @@ Read-only sources:
 - `long_term/eval/long_term_retrieval_queries.jsonl`
 - `long_term/eval/retrieval_eval_report.json`
 
+The UI also has a presentation-focused dataset switch:
+
+- `Grace` keeps the original behavior and reads the canonical sources above.
+- `ICSI` is read-only and artifact-backed. It reads L1 from
+  `optimization/reports/icsi_bmr_full_completed29_eval_pack_20260614/source_share_mem`,
+  L2/L3 from `optimization/runs/icsi_bmr_full_completed29_v2_20260614`, and
+  comparison metrics from
+  `optimization/reports/icsi_bmr_full_completed29_system_comparison_revised_20260614`.
+  The ICSI overview is intended for screenshot/demo use and does not run live
+  custom retrieval.
+
 Writable sidecars:
 
 - `share_mem/user_feedback/importance_adjustments.jsonl`

@@ -44,6 +44,98 @@ function card(title, body, tags = []) {
   ]);
 }
 
+function compactMetric(value, digits = 3) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "0.000";
+  return num.toFixed(digits);
+}
+
+function renderResultCell(value, emphasis = false) {
+  return el("td", { class: emphasis ? "result-emphasis" : "", text: String(value) });
+}
+
+function loadIcsiScaleResult(data) {
+  const evalSummary = data.evaluation_summary || {};
+  const surface = data.topic_surface_summary || {};
+  const full = evalSummary.full_context || {};
+  const rag = evalSummary.rag || {};
+  const layered = evalSummary.layered || {};
+  const tokenPct = evalSummary.layered_full_context_token_pct || 0;
+  const example = evalSummary.example_query || {};
+  const corpusLabel = `${data.meeting_count || "large"}-meeting ICSI BMR corpus`;
+  return el("div", { class: "icsi-dashboard" }, [
+    el("div", { class: "icsi-claim-panel" }, [
+      el("div", {}, [
+        el("div", { class: "label", text: "Evidence-grounded held-out evaluation" }),
+        el("h2", { text: "Layered Memory recovers much more evidence than RAG" }),
+        el("p", {
+          text: `On the ${corpusLabel}, Layered Memory retrieves ${compactMetric(layered.recall)} expected L1 evidence recall versus ${compactMetric(rag.recall)} for RAG top-20, while using about ${compactMetric(tokenPct, 1)}% of Full Context tokens.`,
+        }),
+      ]),
+      el("div", { class: "icsi-claim-metrics" }, [
+        card("Layered recall", compactMetric(layered.recall), [{ text: "L1 evidence", class: "feedback" }]),
+        card("RAG recall", compactMetric(rag.recall), [{ text: "top-20 chunks", class: "rag" }]),
+        card("Full Context", `${full.tokens_label || "575k"} tokens`, [{ text: "all L1", class: "warn" }]),
+        card("Layered cost", `${layered.tokens_label || "7.4k"} tokens`, [{ text: "focused context", class: "l2" }]),
+      ]),
+    ]),
+    el("div", { class: "icsi-result-grid" }, [
+      el("div", { class: "panel icsi-result-table-panel" }, [
+        el("h2", { text: "Scale Result" }),
+        el("table", { class: "result-table" }, [
+          el("thead", {}, [
+            el("tr", {}, [
+              el("th", { text: "System" }),
+              el("th", { text: "Recall" }),
+              el("th", { text: "Context Tokens" }),
+            ]),
+          ]),
+          el("tbody", {}, [
+            el("tr", {}, [
+              renderResultCell("Full Context"),
+              renderResultCell(compactMetric(full.recall)),
+              renderResultCell(full.tokens_label || "575k"),
+            ]),
+            el("tr", {}, [
+              renderResultCell("RAG top-20"),
+              renderResultCell(compactMetric(rag.recall)),
+              renderResultCell(rag.tokens_label || "2.4k"),
+            ]),
+            el("tr", { class: "layered-row" }, [
+              renderResultCell("Layered Memory", true),
+              renderResultCell(compactMetric(layered.recall), true),
+              renderResultCell(layered.tokens_label || "7.4k", true),
+            ]),
+          ]),
+        ]),
+        el("p", { class: "muted", text: "Full Context is strongest on recall but costly at large scale. RAG is cheap but loses expected evidence. Layered Memory keeps the trace focused while preserving more evidence." }),
+      ]),
+      el("div", { class: "panel icsi-topic-surface" }, [
+        el("h2", { text: "L2/L3 Surface" }),
+        el("div", { class: "cards mini-cards" }, [
+          card("+topic tokens", `+${Math.round(Number(surface.extra_tokens || 0))}`, [{ text: "small overhead", class: "feedback" }]),
+          card("L2 hit", compactMetric(surface.l2_hit || 0, 2), [{ text: "topic labels visible", class: "l2" }]),
+          card("L3 hit", compactMetric(surface.l3_hit || 0, 2), [{ text: "family labels visible", class: "l3" }]),
+        ]),
+        el("p", {
+          text: "The topic surface is not a replacement for evidence. It is a low-token navigation layer that helps a reviewer see why the selected L1 evidence belongs together.",
+        }),
+      ]),
+      el("div", { class: "panel icsi-evidence-trace" }, [
+        el("h2", { text: "Evidence Trace Example" }),
+        el("div", { class: "label", text: example.query_id || "held-out query" }),
+        el("p", { text: example.query || "Select ICSI to inspect held-out evidence retrieval at corpus scale." }),
+        keyValueRows([
+          { label: "Full Context recall", value: compactMetric(example.strategies?.full_context_l1?.expected_l1_recall ?? full.recall) },
+          { label: "RAG recall", value: compactMetric(example.strategies?.rag_l1_lexical?.expected_l1_recall ?? rag.recall) },
+          { label: "Layered recall", value: compactMetric(example.strategies?.optimization_v2_layered?.expected_l1_recall ?? layered.recall) },
+          { label: "Expected L1", value: (example.expected_obj_ids || []).join(", ") },
+        ]),
+      ]),
+    ]),
+  ]);
+}
+
 const STRATEGY_LABELS = {
   full_context: "Full context",
   rag_baseline: "RAG",
@@ -52,6 +144,17 @@ const STRATEGY_LABELS = {
 
 let currentRunQueries = [];
 let selectedQueryId = "";
+let selectedDataset = localStorage.getItem("observatoryDataset") || "icsi";
+let availableDatasets = [];
+
+function apiWithDataset(path) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}dataset=${encodeURIComponent(selectedDataset)}`;
+}
+
+function datasetMeta() {
+  return availableDatasets.find((item) => item.dataset_id === selectedDataset) || {};
+}
 
 function formatMetricValue(value, kind = "number") {
   const num = Number(value);
@@ -180,15 +283,58 @@ document.querySelectorAll(".nav").forEach((button) => {
   });
 });
 
+function syncDatasetSwitch() {
+  document.querySelectorAll("[data-dataset]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.dataset === selectedDataset);
+  });
+  document.body.dataset.dataset = selectedDataset;
+}
+
+async function loadDatasets() {
+  availableDatasets = await api("/api/datasets").catch(() => []);
+  if (!availableDatasets.some((item) => item.dataset_id === selectedDataset)) {
+    selectedDataset = availableDatasets.some((item) => item.dataset_id === "icsi") ? "icsi" : "grace";
+  }
+  localStorage.setItem("observatoryDataset", selectedDataset);
+  syncDatasetSwitch();
+}
+
+async function reloadDatasetViews() {
+  selectedMeetingId = "";
+  selectedObjectId = "";
+  currentTopicId = null;
+  await loadOverview();
+  await loadExplorer();
+  await loadTopics();
+  await loadFeedback();
+}
+
+document.querySelectorAll("[data-dataset]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    if (button.dataset.dataset === selectedDataset) return;
+    selectedDataset = button.dataset.dataset || "grace";
+    localStorage.setItem("observatoryDataset", selectedDataset);
+    syncDatasetSwitch();
+    await reloadDatasetViews();
+  });
+});
+
 async function loadOverview() {
-  const data = await api("/api/overview");
+  const data = await api(apiWithDataset("/api/overview"));
+  const isIcsi = data.dataset_id === "icsi";
+  $("#overviewTitle").textContent = isIcsi ? "ICSI Large-Corpus Memory Observatory" : "Evidence-first layered memory";
+  $("#overviewLede").textContent = isIcsi
+    ? `A presentation-focused view of ${data.meeting_count || "large-scale"} ICSI BMR meetings. It compares Full Context, RAG, and Layered Memory on evidence-grounded held-out queries, then shows how L1 evidence is organized into L2/L3 topic surfaces.`
+    : "This system does not directly RAG over transcripts. It first extracts traceable L1 evidence objects, organizes them into L2 / child-L2 topic context, and uses L3 topic families as navigation. Answers should be grounded by L1 evidence, with L2/L3 providing cross-meeting evolution.";
+  $("#overviewFlow").style.display = isIcsi ? "none" : "flex";
+  $("#icsiScaleResult").replaceChildren(...(isIcsi ? [loadIcsiScaleResult(data)] : []));
   const fields = [
     "meeting_count", "l1_object_count", "l2_topic_count", "linked_l1_count",
     "unlinked_l1_count", "materialized_l3_count", "child_l2_count",
     "l3_assigned_l1_count", "l3_unassigned_l1_count", "duplicate_assignment_count",
     "invalid_l3_index_count", "retrieval_eval_query_count", "retrieval_eval_run_count",
   ];
-  $("#overviewCards").replaceChildren(...fields.map((key) => card(key, String(data[key] ?? 0))));
+  $("#overviewCards").replaceChildren(...(isIcsi ? [] : fields.map((key) => card(key, String(data[key] ?? 0)))));
 }
 
 function traceModeLabel(mode) {
@@ -416,7 +562,7 @@ async function runTrace() {
 }
 
 async function loadExplorer() {
-  currentMeetings = await api("/api/meetings");
+  currentMeetings = await api(apiWithDataset("/api/meetings"));
   renderMeetings();
   if (currentMeetings[0]) await loadObjects(currentMeetings[0].meeting_id);
 }
@@ -439,7 +585,7 @@ function renderMeetings() {
 async function loadObjects(meetingId) {
   selectedMeetingId = meetingId;
   selectedObjectId = "";
-  currentObjects = await api(`/api/meetings/${meetingId}/objects`);
+  currentObjects = await api(apiWithDataset(`/api/meetings/${meetingId}/objects`));
   const types = [...new Set(currentObjects.map((obj) => obj.type).filter(Boolean))].sort();
   $("#objectTypeFilter").replaceChildren(
     el("option", { value: "", text: "all types" }),
@@ -487,7 +633,7 @@ function renderObjects() {
 });
 
 async function loadObjectDetail(objId) {
-  const data = await api(`/api/objects/${objId}`);
+  const data = await api(apiWithDataset(`/api/objects/${objId}`));
   selectedObjectId = objId;
   selectedFeedbackObject = data;
   $("#objectDetail").replaceChildren(renderObjectDetail(data));
@@ -517,7 +663,7 @@ let allTopicData = null;
 let currentTopicId = null;
 
 async function loadTopics() {
-  allTopicData = await api("/api/topics/l3");
+  allTopicData = await api(apiWithDataset("/api/topics/l3"));
   renderTopicTree();
 }
 
@@ -588,7 +734,7 @@ function renderL2TopicNode(node) {
 
 async function loadTopicDetail(l2Id) {
   currentTopicId = l2Id;
-  const data = await api(`/api/topics/l2/${encodeURIComponent(l2Id)}`);
+  const data = await api(apiWithDataset(`/api/topics/l2/${encodeURIComponent(l2Id)}`));
   const stats = [
     card("event_count", String(data.event_count || 0)),
     card("size_bucket", data.size_bucket || "unknown"),
@@ -726,6 +872,7 @@ function importanceEditor(obj, afterSave) {
 }
 
 async function saveImportanceFeedback(obj, userImportance, reasonCode, note) {
+  if (selectedDataset !== "grace") return;
   await api("/api/feedback/importance", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -745,7 +892,15 @@ async function saveImportanceFeedback(obj, userImportance, reasonCode, note) {
 let selectedFeedbackObject = null;
 
 async function loadFeedback() {
-  const objects = await api("/api/objects").catch(() => []);
+  if (selectedDataset !== "grace") {
+    $("#feedbackObjects").replaceChildren(el("p", {
+      class: "muted",
+      text: "ICSI mode is read-only for this screenshot workflow. Importance feedback remains available in Grace mode.",
+    }));
+    $("#feedbackSummary").textContent = JSON.stringify({ dataset: selectedDataset, read_only: true }, null, 2);
+    return;
+  }
+  const objects = await api(apiWithDataset("/api/objects")).catch(() => []);
   $("#feedbackObjects").replaceChildren(...objects.map((obj) => {
     const node = memoryCard(obj.obj_id, `${obj.type} | canonical ${fmtNumber(obj.canonical_importance)}`, obj.content_preview, obj.has_feedback ? ["feedback"] : []);
     node.classList.add("clickable-card");
@@ -970,8 +1125,13 @@ document.querySelectorAll("[data-demo-query]").forEach((button) => {
 $("#traceNoLlm").addEventListener("change", syncTracePlannerControl);
 syncTracePlannerControl();
 
-loadOverview();
-loadExplorer();
-loadTopics();
-loadFeedback();
-loadRuns();
+async function boot() {
+  await loadDatasets();
+  await loadOverview();
+  await loadExplorer();
+  await loadTopics();
+  await loadFeedback();
+  await loadRuns();
+}
+
+boot();

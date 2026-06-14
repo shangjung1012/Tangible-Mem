@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .datasets import DatasetConfig, resolve_dataset
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -50,16 +52,60 @@ def _normalize_eval_row(row: dict[str, Any], index: int) -> dict[str, Any]:
     return normalized
 
 
+def _normalize_child_l2_node(child: dict[str, Any]) -> dict[str, Any]:
+    row = dict(child)
+    child_id = row.get("l2_id") or row.get("child_l2_id")
+    if child_id:
+        row["l2_id"] = str(child_id)
+        row.setdefault("child_l2_id", str(child_id))
+    return row
+
+
+def _normalize_l3_node(node: dict[str, Any]) -> dict[str, Any]:
+    row = dict(node)
+    row["l3_id"] = str(row.get("l3_id") or row.get("parent_l3_id") or "")
+    row["label"] = str(row.get("label") or row.get("parent_l3_label") or row.get("l3_label") or row["l3_id"])
+    children = row.get("child_l2_nodes", []) or []
+    row["child_l2_nodes"] = [
+        _normalize_child_l2_node(child)
+        for child in children
+        if isinstance(child, dict)
+    ]
+    if "event_count" not in row:
+        linked_obj_ids = row.get("linked_obj_ids", []) or []
+        row["event_count"] = len(linked_obj_ids)
+    return row
+
+
+def _normalize_l3_view(data: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        return {}
+    row = dict(data)
+    nodes = row.get("l3_nodes")
+    if not isinstance(nodes, list):
+        nodes = row.get("l3_parents", [])
+    row["l3_nodes"] = [
+        _normalize_l3_node(node)
+        for node in (nodes or [])
+        if isinstance(node, dict)
+    ]
+    row.setdefault("materialized_l3_count", len(row["l3_nodes"]))
+    return row
+
+
 class ObservatoryDataLoader:
-    def __init__(self, repo_root: Path | str = REPO_ROOT) -> None:
+    def __init__(self, repo_root: Path | str = REPO_ROOT, dataset_id: str | None = "grace") -> None:
         self.repo_root = Path(repo_root)
+        self.dataset: DatasetConfig = resolve_dataset(self.repo_root, dataset_id)
 
     @property
     def share_mem_root(self) -> Path:
-        return self.repo_root / "share_mem"
+        return self.dataset.share_mem_root
 
     @property
     def transcript_root(self) -> Path:
+        if self.dataset.dataset_id == "icsi":
+            return self.repo_root / "meeting_recording" / "transcript" / "ISCI"
         return self.repo_root / "meeting_recording" / "transcript" / "grace"
 
     def path(self, *parts: str) -> Path:
@@ -93,37 +139,43 @@ class ObservatoryDataLoader:
         return {str(obj.get("obj_id", "")): obj for obj in self.iter_l1_objects() if obj.get("obj_id")}
 
     def load_l2_view(self) -> dict[str, Any]:
-        data = load_json(self.repo_root / "long_term" / "l2" / "l2_view.json", {})
+        data = load_json(self.dataset.l2_root / "l2_view.json", {})
         return data if isinstance(data, dict) else {}
 
     def load_l2_index(self) -> dict[str, Any]:
-        data = load_json(self.repo_root / "long_term" / "l2" / "l2_index.json", {})
+        data = load_json(self.dataset.l2_root / "l2_index.json", {})
         return data if isinstance(data, dict) else {}
 
     def load_l3_view(self) -> dict[str, Any]:
-        data = load_json(self.repo_root / "long_term" / "l3" / "l3_view.json", {})
-        return data if isinstance(data, dict) else {}
+        data = load_json(self.dataset.l3_root / "l3_view.json", {})
+        return _normalize_l3_view(data if isinstance(data, dict) else {})
 
     def load_l3_index(self) -> dict[str, Any]:
-        data = load_json(self.repo_root / "long_term" / "l3" / "l3_index.json", {})
+        data = load_json(self.dataset.l3_root / "l3_index.json", {})
         return data if isinstance(data, dict) else {}
 
     def load_l3_validation(self) -> dict[str, Any]:
-        data = load_json(
-            self.repo_root / "long_term" / "l3" / "validation" / "l3_validation_report.json",
-            {},
-        )
+        data = load_json(self.dataset.l3_validation_path, {})
         return data if isinstance(data, dict) else {}
 
     def load_l2_validation(self) -> dict[str, Any]:
-        data = load_json(
-            self.repo_root / "long_term" / "l2" / "validation" / "l2_validation_report.json",
-            {},
-        )
+        data = load_json(self.dataset.l2_validation_path, {})
         return data if isinstance(data, dict) else {}
 
     def load_retrieval_eval_report(self) -> dict[str, Any]:
-        data = load_json(self.repo_root / "long_term" / "eval" / "retrieval_eval_report.json", {})
+        data = load_json(self.dataset.retrieval_eval_report_path, {})
+        return data if isinstance(data, dict) else {}
+
+    def load_system_comparison_summary(self) -> dict[str, Any]:
+        if not self.dataset.system_comparison_path:
+            return {}
+        data = load_json(self.dataset.system_comparison_path, {})
+        return data if isinstance(data, dict) else {}
+
+    def load_topic_surface_ablation(self) -> dict[str, Any]:
+        if not self.dataset.topic_surface_ablation_path:
+            return {}
+        data = load_json(self.dataset.topic_surface_ablation_path, {})
         return data if isinstance(data, dict) else {}
 
     def load_eval_queries(self, path: Path | str | None = None) -> list[dict[str, Any]]:

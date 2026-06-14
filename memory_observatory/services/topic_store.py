@@ -15,8 +15,8 @@ def _as_float(value: Any, default: float = 0.0) -> float:
 
 
 class TopicStore:
-    def __init__(self, repo_root: Path | str) -> None:
-        self.loader = ObservatoryDataLoader(repo_root)
+    def __init__(self, repo_root: Path | str, dataset_id: str | None = "grace") -> None:
+        self.loader = ObservatoryDataLoader(repo_root, dataset_id=dataset_id)
         self.feedback_store = FeedbackStore(self.loader.share_mem_root)
 
     def l2_nodes(self) -> list[dict[str, Any]]:
@@ -42,6 +42,11 @@ class TopicStore:
             for l3 in self.l3_nodes()
             for node in (l3.get("child_l2_nodes", []) or [])
         }
+        promoted_source_ids.update(
+            str(l3.get("source_l2_id", "") or "")
+            for l3 in self.l3_nodes()
+            if l3.get("source_l2_id")
+        )
         l3_nodes: list[dict[str, Any]] = []
         for l3 in self.l3_nodes():
             row = dict(l3)
@@ -72,7 +77,8 @@ class TopicStore:
                 return self._enrich_l2_node(node, include_objects=True)
         for l3 in self.l3_nodes():
             for child in l3.get("child_l2_nodes", []) or []:
-                if child.get("l2_id") == l2_id:
+                child_id = child.get("l2_id") or child.get("child_l2_id")
+                if child_id == l2_id:
                     return self._enrich_l2_node(child, parent_l3=l3, include_objects=True)
         return None
 
@@ -85,13 +91,16 @@ class TopicStore:
     def topic_link_for_obj(self, obj_id: str) -> dict[str, Any]:
         l2 = self.l2_index().get(obj_id, {})
         l3 = self.l3_index().get(obj_id, {})
+        parent_l3_id = l3.get("l3_id") or l3.get("parent_l3_id")
+        parent_l3_label = l3.get("parent_l3_label") or l3.get("l3_label") or l3.get("label")
         return {
             "obj_id": obj_id,
             "l2_id": l2.get("l2_id"),
             "l2_label": l2.get("l2_label") or l2.get("label"),
             "assignment_reason": l2.get("assignment_reason"),
             "confidence": l2.get("confidence"),
-            "parent_l3_id": l3.get("l3_id"),
+            "parent_l3_id": parent_l3_id,
+            "parent_l3_label": parent_l3_label,
             "child_l2_id": l3.get("child_l2_id"),
             "child_l2_label": l3.get("child_l2_label"),
             "l3_assignment_reason": l3.get("assignment_reason"),
@@ -181,6 +190,7 @@ class TopicStore:
         row["content_preview"] = str(
             node.get("current_state")
             or node.get("timeline_digest_summary")
+            or node.get("definition")
             or node.get("split_reason")
             or ""
         )[:260]

@@ -176,6 +176,109 @@ def _fixture_repo(root: Path) -> None:
     )
 
 
+def _fixture_icsi_dataset(root: Path) -> None:
+    source_root = (
+        root
+        / "optimization"
+        / "reports"
+        / "icsi_bmr_full_completed29_eval_pack_20260614"
+        / "source_share_mem"
+    )
+    _write_json(
+        source_root / "tree.json",
+        {
+            "tree_version": 1,
+            "meetings": [
+                {
+                    "meeting_id": "Bmr001",
+                    "meeting_date": "",
+                    "source_file": "Bmr001.txt",
+                    "memory_objects": [
+                        {
+                            "obj_id": "L1-Bmr001-001",
+                            "meeting_id": "Bmr001",
+                            "type": "decision",
+                            "content": "The team selected a shared meeting recording protocol.",
+                            "evidence": "A shared recording protocol was adopted.",
+                            "importance": 0.78,
+                            "related_topics": ["recording protocol"],
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    run_root = root / "optimization" / "runs" / "icsi_bmr_full_completed29_v2_20260614"
+    _write_json(
+        run_root / "l2" / "l2_view.json",
+        {
+            "schema_version": 1,
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-recording-protocol",
+                    "label": "recording protocol",
+                    "linked_obj_ids": ["L1-Bmr001-001"],
+                    "meeting_ids": ["Bmr001"],
+                    "current_state": "The corpus has a shared recording protocol.",
+                }
+            ],
+        },
+    )
+    _write_json(
+        run_root / "l2" / "l2_index.json",
+        {
+            "L1-Bmr001-001": {
+                "obj_id": "L1-Bmr001-001",
+                "l2_id": "L2-recording-protocol",
+                "l2_label": "recording protocol",
+                "confidence": 0.9,
+            }
+        },
+    )
+    _write_json(run_root / "l3" / "l3_view.json", {"schema_version": 1, "l3_nodes": []})
+    _write_json(run_root / "l3" / "l3_index.json", {})
+    _write_json(run_root / "validation" / "l2_validation_report.json", {"severe_count": 0, "warning_count": 2})
+    _write_json(run_root / "validation" / "l3_validation_report.json", {"severe_count": 0, "warning_count": 0})
+    _write_json(
+        root
+        / "optimization"
+        / "reports"
+        / "icsi_bmr_full_completed29_system_comparison_revised_20260614"
+        / "system_comparison_summary.json",
+        {
+            "schema_version": 1,
+            "summary": {
+                "query_count": 20,
+                "expected_l1_recall": {
+                    "full_context_l1": 1.0,
+                    "rag_l1_lexical": 0.5583,
+                    "optimization_v2_layered": 0.8958,
+                },
+                "avg_context_tokens": {
+                    "full_context_l1": 575199.0,
+                    "rag_l1_lexical": 2369.95,
+                    "optimization_v2_layered": 7358.35,
+                },
+            },
+        },
+    )
+    _write_json(
+        root
+        / "optimization"
+        / "reports"
+        / "icsi_bmr_full_completed29_l2_l3_ablation_20260614"
+        / "icsi_l2_l3_ablation_no_llm.json",
+        {
+            "schema_version": 1,
+            "summary": {
+                "avg_token_delta_l2_l3": 105.75,
+                "avg_context_visible_l2_hit": {"l1_plus_l2_l3_surface": 1.0},
+                "avg_context_visible_l3_hit": {"l1_plus_l2_l3_surface": 0.85},
+            },
+        },
+    )
+
+
 class MemoryObservatoryTests(unittest.TestCase):
     def test_token_estimate_handles_english_chinese_and_mixed_text(self) -> None:
         self.assertGreater(estimate_tokens("memory retrieval baseline"), 0)
@@ -503,6 +606,41 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertEqual(payload["strategy"], "layered_memory")
             self.assertGreaterEqual(payload["metrics"]["selected_l1_count"], 1)
             self.assertIn("formatted_prompt_context", payload)
+
+    def test_dataset_switch_keeps_grace_default_and_loads_icsi_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+            client = TestClient(create_app(repo_root=root))
+
+            datasets = client.get("/api/datasets")
+            default_overview = client.get("/api/overview")
+            icsi_overview = client.get("/api/overview", params={"dataset": "icsi"})
+            icsi_meetings = client.get("/api/meetings", params={"dataset": "icsi"})
+            icsi_l2 = client.get("/api/topics/l2", params={"dataset": "icsi"})
+
+        self.assertEqual(datasets.status_code, 200)
+        self.assertEqual(default_overview.status_code, 200)
+        self.assertEqual(default_overview.json()["dataset_id"], "grace")
+        self.assertEqual(default_overview.json()["meeting_count"], 1)
+        self.assertEqual(icsi_overview.status_code, 200)
+        self.assertEqual(icsi_overview.json()["dataset_id"], "icsi")
+        self.assertEqual(icsi_overview.json()["meeting_count"], 1)
+        self.assertEqual(icsi_overview.json()["evaluation_summary"]["layered_recall"], 0.8958)
+        self.assertEqual(icsi_overview.json()["topic_surface_summary"]["extra_tokens"], 105.75)
+        self.assertEqual(icsi_meetings.json()[0]["meeting_id"], "Bmr001")
+        self.assertEqual(icsi_l2.json()[0]["label"], "recording protocol")
+
+    def test_invalid_dataset_returns_404(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            client = TestClient(create_app(repo_root=root))
+
+            response = client.get("/api/overview", params={"dataset": "missing"})
+
+        self.assertEqual(response.status_code, 404)
 
     def test_api_create_run_forwards_fairness_parameters(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

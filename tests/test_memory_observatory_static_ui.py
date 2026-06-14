@@ -6,6 +6,17 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class MemoryObservatoryStaticUiTests(unittest.TestCase):
+    def test_overview_has_dataset_switch_and_icsi_result_copy(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn("datasetSwitch", html)
+        self.assertIn("Grace", html)
+        self.assertIn("ICSI", html)
+        self.assertIn("ICSI Large-Corpus Memory Observatory", js)
+        self.assertIn("Layered Memory recovers much more evidence than RAG", js)
+        self.assertIn("loadIcsiScaleResult", js)
+
     def test_retrieval_trace_describes_l1_seed_search_modes(self) -> None:
         html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
 
