@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from optimization.long_term_v2.create_icsi_eval_pack import create_icsi_eval_pack
+from optimization.long_term_v2.evaluate_retrieval import _load_queries
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -116,6 +117,18 @@ def _fixture(root: Path) -> tuple[Path, Path]:
 
 
 class IcsiEvalPackTests(unittest.TestCase):
+    def test_retrieval_query_loader_accepts_utf8_sig_jsonl(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "queries.jsonl"
+            path.write_text(
+                json.dumps({"query_id": "q001", "query": "test"}, ensure_ascii=False) + "\n",
+                encoding="utf-8-sig",
+            )
+
+            rows = _load_queries(path)
+
+            self.assertEqual(rows, [{"query_id": "q001", "query": "test"}])
+
     def test_eval_pack_uses_heldout_as_trigger_and_source_as_answerable_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             run, share = _fixture(Path(tmp))

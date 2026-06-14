@@ -24,7 +24,7 @@ from share_mem.store import build_l1_index, load_share_tree
 
 def _load_queries(path: Path | str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
         if line.strip():
             rows.append(json.loads(line))
     return rows
