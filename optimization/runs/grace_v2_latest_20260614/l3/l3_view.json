@@ -1,0 +1,711 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-06-14T10:15:59Z",
+  "source": "optimization_long_term_v2_adaptive_promotion",
+  "adaptive_threshold": 20,
+  "l3_parents": [
+    {
+      "l3_id": "L3-literature-review",
+      "label": "literature review",
+      "source_l2_id": "L2-literature-review",
+      "promotion_reason": {
+        "event_count": 26,
+        "adaptive_threshold": 20,
+        "reason_codes": [
+          "oversized_relative_to_profile"
+        ]
+      },
+      "child_l2_nodes": [
+        {
+          "child_l2_id": "L2-literature-review-google-scholar",
+          "label": "google scholar",
+          "assignment_criteria": [
+            "google scholar"
+          ],
+          "split_reason": "Recurring subtopic term inside an oversized evidence-backed L2.",
+          "linked_obj_ids": [
+            "L1-0307-028",
+            "L1-0307-032",
+            "L1-0318-003",
+            "L1-0318-012",
+            "L1-0318-017",
+            "L1-0325-019",
+            "L1-0325-022",
+            "L1-0325-025",
+            "L1-0325-028",
+            "L1-0325-045",
+            "L1-0325-055",
+            "L1-0325-066",
+            "L1-0325-072",
+            "L1-0325-090",
+            "L1-0325-092"
+          ],
+          "event_count": 15,
+          "timeline_digest": [
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-028",
+              "summary": "由於評估是一個關鍵挑戰，團隊應研究參考論文如何評估其模型，因為可能存在可用的資料集或標準化測試。",
+              "importance": 0.6
+            },
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-032",
+              "summary": "現有的 Memory 系統輸出被批評為過於簡短、零碎且容易遺漏資訊，這成為尋找更完整、連貫的資料集的理由。",
+              "importance": 0.65
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-003",
+              "summary": "針對循序處理長文本的 agent 模型缺乏全域理解的問題，提議使用共享黑板（shared blackboard）架構來改善。",
+              "importance": 0.56
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-012",
+              "summary": "LOCOMO 論文的結果顯示其方法在 token 消耗上具有優勢，但在處理多跳（multi-hop）問題時，其表現不如 RAG。這揭示了效率與複雜查詢能力之間的權衡。",
+              "importance": 0.63
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-017",
+              "summary": "史丹佛大學的一個團隊也在進行與從螢幕截圖分析後續行為相關的研究，這被認為是相關的先前工作。",
+              "importance": 0.55
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-019",
+              "summary": "建議透過 Google Scholar 查詢 ICSI 資料集的引用文獻，特別是 2022 年之後的論文，以了解其在大型語言模型時代的應用情況。",
+              "importance": 0.59
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-022",
+              "summary": "文獻回顧發現，儘管 ICSI 會議資料集內容豐富且橫跨長時間，但學術界主要將其用於 NLP 研究（如語音轉文字），而非記憶相關研究，即使在大型語言模型時代（2022年後）也是如此。",
+              "importance": 0.57
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-025",
+              "summary": "團隊被指派去尋找一篇關於會議摘要、較新且更偏向應用的 IEEE 論文，該論文位於 Google Scholar 搜尋結果的第二頁。",
+              "importance": 0.52
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-028",
+              "summary": "團隊中有人提出了關於「train short infer long」這一概念含義的疑問，該概念在其他研究領域中出現，其在本專案中的適用性與意義尚待釐清。",
+              "importance": 0.51
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-045",
+              "summary": "團隊決定放棄樹狀結構的長期記憶體設計，因為它無法有效實現基於時間的權重衰減。取而代之的是，將採用一個按時間排序的線性結構。檢索機制將結合語義相似度和一個「Residency」分數來實現時間衰減，該分數會設定一個下限（floor），以防止關鍵的舊記憶完全消失。這個設計目標是在資訊淡忘與保留重要舊記憶之間取得平衡。",
+              "importance": 0.7
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-055",
+              "summary": "文獻中有一篇論文模仿人類記憶系統，將記憶體分為長期和短期記憶，此設計與「Generative Agent」或「Digital Human」等論文中的架構不同。",
+              "importance": 0.58
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-066",
+              "summary": "一篇模擬人類長期記憶權重的論文（可能名為 \"HumanDigital\"）因其潛在的高數據需求，其適用性受到質疑。",
+              "importance": 0.54
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-072",
+              "summary": "對於會議場景的 AI avatar，模仿打斷（interruption）行為是一項關鍵但困難的挑戰，因為標準的 LLM 不會產生這種行為。雖然有研究提出如「打斷標記」或兩階段模型等架構，但要準確複製何時打斷等細微行為仍然非常困難。",
+              "importance": 0.6
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-090",
+              "summary": "建議參考一篇關於非線性摘要的論文中的評估方法，該方法透過比對議程覆蓋範圍與專家摘要，來啟發專案中用於儲存會議成果的長期摘要結構設計。",
+              "importance": 0.62
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-092",
+              "summary": "一篇關於非線性會議摘要的論文所提出的方法有一個主要限制：它需要預先存在會議議程，這使得它不適用於沒有固定議程的討論。",
+              "importance": 0.64
+            }
+          ],
+          "current_state": "Child topic 'google scholar' has 15 assigned L1 evidence object(s). Latest evidence: 一篇關於非線性會議摘要的論文所提出的方法有一個主要限制：它需要預先存在會議議程，這使得它不適用於沒有固定議程的討論。",
+          "confidence": 0.72
+        },
+        {
+          "child_l2_id": "L2-literature-review-speech-annote-test",
+          "label": "speech annote test",
+          "assignment_criteria": [
+            "speech annote test"
+          ],
+          "split_reason": "Recurring subtopic term inside an oversized evidence-backed L2.",
+          "linked_obj_ids": [
+            "L1-0307-030",
+            "L1-0318-001",
+            "L1-0318-004",
+            "L1-0318-016",
+            "L1-0325-033",
+            "L1-0325-051",
+            "L1-0325-065",
+            "L1-0325-067",
+            "L1-0325-085",
+            "L1-0325-091",
+            "L1-0408-004"
+          ],
+          "event_count": 11,
+          "timeline_digest": [
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-030",
+              "summary": "因認為 Memory 系統輸出過於簡短零碎，團隊決定改變尋找更完整資料集的方法，將先徹底研究相關論文，再考慮聯繫作者。",
+              "importance": 0.67
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-001",
+              "summary": "LOCOMO 數據集包含一項測試，用於識別 agent 知識範圍之外無法回答的問題，但 MEMO 論文並未執行此測試。這引出了一個問題：我們的評估是否應該包含這種類型的測試。",
+              "importance": 0.64
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-004",
+              "summary": "針對一篇2024年論文提出的序列式 agent 模型（每個 agent 處理一個文本區塊並將其摘要傳遞給下一個），存在幾項批評。主要論點包括：1) 幻覺可能沿著 agent 鏈傳播並放大；2) 模型缺乏全域理解，凸顯了共享黑板（shared blackboard）等機制的必要性；3) 僅基於大小的隨機分塊方法可能會破壞句子結構並丟失語意。",
+              "importance": 0.63
+            },
+            {
+              "meeting_id": "0318",
+              "meeting_date": "2026-03-18",
+              "obj_id": "L1-0318-016",
+              "summary": "UCSD 的 MIRIX 論文評估基於圖像的記憶，其資料集包含從三名學生收集的 5,000 至 20,000 張螢幕截圖。評估使用 Gemini 和 visual RAG 等模型直接處理圖像，指標包含儲存大小，並使用 LLM 作為裁判。然而，其方法被發現存在不一致之處：基準模型僅運行一次，而 MIRIX 和 full-context 模型則運行三次。",
+              "importance": 0.58
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-033",
+              "summary": "在文獻回顧中發現，有多篇論文專注於長期會議記錄的摘要，其中一篇較新且以應用為導向的 IEEE 論文特別受到關注。",
+              "importance": 0.52
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-051",
+              "summary": "應研究「web cag」作為系統架構的潛在參考資料。",
+              "importance": 0.63
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-065",
+              "summary": "由於團隊自行進行的文獻搜尋未果，需要尋求關於記憶任務的相關資料或研究建議。",
+              "importance": 0.55
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-067",
+              "summary": "引用 ISCI 語料庫的既有研究大多專注於語音標註，而非與連貫會議相關的記憶任務，因此對當前研究的參考價值有限。",
+              "importance": 0.63
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-085",
+              "summary": "提案將重新定義專案的記憶體結構，並審閱 \"Digital Meme\" 論文，作為下一步的開發方向。",
+              "importance": 0.64
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-091",
+              "summary": "根據一篇相關論文，追蹤共識的重點應該是評估討論是否產生了正確、共同做出的決定，而不僅僅是追蹤主題的提及次數。",
+              "importance": 0.56
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-004",
+              "summary": "經釐清，目前選用的資料集先前曾被其他研究人員使用過，主要應用於自動語音辨識（ASR），並至少有一次被用於會議摘要。這推翻了團隊先前認為該資料集未被使用過的看法。",
+              "importance": 0.58
+            }
+          ],
+          "current_state": "Child topic 'speech annote test' has 11 assigned L1 evidence object(s). Latest evidence: 經釐清，目前選用的資料集先前曾被其他研究人員使用過，主要應用於自動語音辨識（ASR），並至少有一次被用於會議摘要。這推翻了團隊先前認為該資料集未被使用過的看法。",
+          "confidence": 0.72
+        }
+      ],
+      "confidence": 0.559
+    },
+    {
+      "l3_id": "L3-memory-architecture",
+      "label": "memory architecture",
+      "source_l2_id": "L2-memory-architecture",
+      "promotion_reason": {
+        "event_count": 25,
+        "adaptive_threshold": 20,
+        "reason_codes": [
+          "oversized_relative_to_profile"
+        ]
+      },
+      "child_l2_nodes": [
+        {
+          "child_l2_id": "L2-memory-architecture-long-term-memory",
+          "label": "long term memory",
+          "assignment_criteria": [
+            "long term memory"
+          ],
+          "split_reason": "Recurring subtopic term inside an oversized evidence-backed L2.",
+          "linked_obj_ids": [
+            "L1-0307-010",
+            "L1-0307-017",
+            "L1-0325-014",
+            "L1-0325-026",
+            "L1-0325-038",
+            "L1-0325-046",
+            "L1-0325-048",
+            "L1-0325-053",
+            "L1-0408-033",
+            "L1-0408-040",
+            "L1-0422-038",
+            "L1-0506-031",
+            "L1-0506-039",
+            "L1-0506-041",
+            "L1-0506-046"
+          ],
+          "event_count": 15,
+          "timeline_digest": [
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-010",
+              "summary": "長期記憶的設計願景是一個獨立的、粗粒度的結構，旨在追蹤整個研究專案的長期發展弧線、目標和主題，而非儲存詳細的會議內容。",
+              "importance": 0.68
+            },
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-017",
+              "summary": "主張長期記憶應設計為一個獨立的、粗粒度的結構，理由是其目標是追蹤整個研究專案在長達一年等長時間尺度下的宏觀發展弧線、目標與主題，而非儲存詳細的單次會話內容。",
+              "importance": 0.68
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-014",
+              "summary": "為了解決人格漂移 (personality drift) 問題，初步架構設計為兩步驟：首先生成記憶內容，然後將其傳遞給一個獨立的「Persona Memory」模組，以根據特定說話風格修改輸出。",
+              "importance": 0.74
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-026",
+              "summary": "團隊目前將記憶體（memory）相關工作的優先級置於人格（persona）之上，因為他們認為記憶體是更複雜的問題。因此，尚未比較短期（僅基於最近一次互動）與長期（穩定的 persona vector）的人格塑造方法。",
+              "importance": 0.66
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-038",
+              "summary": "團隊正在為其提出的記憶體架構尋求回饋。",
+              "importance": 0.55
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-046",
+              "summary": "由於測試顯示短期記憶可能變得過於龐大，團隊正在重新考慮其結構以界定其範疇。",
+              "importance": 0.6
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-048",
+              "summary": "為了解決短期記憶可能變得過於龐大的問題，建議分析最近一到兩次互動之間的差異，以此來界定其範圍。",
+              "importance": 0.59
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-053",
+              "summary": "提出一個想法，使用快取（cache）來突顯較新的資訊，並將此方法與 RAG 結合。",
+              "importance": 0.58
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-033",
+              "summary": "團隊正在定義 short-term (STM) 和 long-term memory (LTM) 的特性。一種觀點認為 STM 的節點數量更多、更詳細，而 LTM 則更偏向高層次和抽象，包含較低解析度的資訊。此區別對於設計檢索策略至關重要。",
+              "importance": 0.58
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-040",
+              "summary": "短期記憶（STM）與長期記憶（LTM）節點的特性與區別尚待定義。討論中探討了兩種可能性：LTM 節點較多但較簡單，或是 STM 節點更為繁多且詳細，而 LTM 則更偏向高層次摘要。",
+              "importance": 0.53
+            },
+            {
+              "meeting_id": "0422",
+              "meeting_date": "2026-04-22",
+              "obj_id": "L1-0422-038",
+              "summary": "短期記憶的功能是保留最近提及的具體要點，例如某個觀點在最近兩次被提出時的內容。它也包含待辦事項和最近討論過的主題歷史。",
+              "importance": 0.61
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-031",
+              "summary": "每個會議都會生成新的 L1 節點。相似的想法可以在單次會議的節點內合併，但不能跨會議合併，因為每個會議都被視為一個獨立的組織單位。",
+              "importance": 0.74
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-039",
+              "summary": "團隊最初的記憶體架構被確定為時間基礎（time-based），其靈感來自於 'TiM' 論文，目標是捕捉長期脈絡（long-term context）。目前的討論是對此決策的重新評估，探討時間基礎或主題基礎（topic-based）的結構何者更能達成目標。",
+              "importance": 0.67
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-041",
+              "summary": "專案面臨一個關鍵的記憶體架構設計決策：要採用以時間為基礎的結構，還是以主題為基礎的結構。以時間為基礎的方法將每個 L2 節點對應到單次會議，以保留清晰的時序脈絡。相對地，以主題為基礎的方法則根據語意主題組織 L1 想法單元，並在想法重現時更新現有節點，而非創建新節點。此決策是對原始時間基礎架構的重新評估。",
+              "importance": 0.64
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-046",
+              "summary": "團隊最初的記憶體架構是基於時間的，其靈感來自於 'TiM' (Time-based Memory) 論文，目標是捕捉長期的上下文（脈絡）。目前的討論是對此初始方法進行重新評估。",
+              "importance": 0.59
+            }
+          ],
+          "current_state": "Child topic 'long term memory' has 15 assigned L1 evidence object(s). Latest evidence: 團隊最初的記憶體架構是基於時間的，其靈感來自於 'TiM' (Time-based Memory) 論文，目標是捕捉長期的上下文（脈絡）。目前的討論是對此初始方法進行重新評估。",
+          "confidence": 0.72
+        },
+        {
+          "child_l2_id": "L2-memory-architecture-short-term-memory",
+          "label": "short term memory",
+          "assignment_criteria": [
+            "short term memory"
+          ],
+          "split_reason": "Recurring subtopic term inside an oversized evidence-backed L2.",
+          "linked_obj_ids": [
+            "L1-0307-012",
+            "L1-0325-007",
+            "L1-0325-043",
+            "L1-0325-047",
+            "L1-0325-049",
+            "L1-0325-054",
+            "L1-0408-038",
+            "L1-0408-047",
+            "L1-0506-029",
+            "L1-0506-045"
+          ],
+          "event_count": 10,
+          "timeline_digest": [
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-012",
+              "summary": "目前的「短期記憶」被定義為保留過去三次會議的資訊，因此它實際上已經作為一種跨會話的長期記憶形式在運作。",
+              "importance": 0.61
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-007",
+              "summary": "系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。",
+              "importance": 0.59
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-043",
+              "summary": "提出短期記憶 (Short-Term Memory) 的初始方案，旨在保留過去三次會議的資訊，並專注於待辦事項 (to-do items)。",
+              "importance": 0.56
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-047",
+              "summary": "如何設計一個長期記憶系統，既能實現基於時間的衰減，又能防止重要的舊資訊完全遺失？目前的提案是採用時間排序的線性結構，並結合語意相似度和「Residency」分數的檢索機制，但此設計仍待驗證與最終確定。",
+              "importance": 0.58
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-049",
+              "summary": "樹狀結構的記憶體架構被認為不適用於長期記憶，因為它們會打散記憶、喪失時間維度，從而無法實施基於時間的權重衰減（time-based weight decay）。",
+              "importance": 0.73
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-054",
+              "summary": "提出一個設計，採用單一、統一的記憶體系統，其中快取（cache）將作為短期記憶體的功能。",
+              "importance": 0.56
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-038",
+              "summary": "將資訊移入長期記憶的標準仍在討論中。單純的時間因素被認為不夠，團隊正在考慮結合重複頻率、存在時間長短以及「討論密度」等更複雜的指標。目標是確保長期記憶能反映專案的當前狀態，避免因僅存檔舊的短期記憶而導致資訊過時。",
+              "importance": 0.59
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-047",
+              "summary": "未來的關鍵任務是證明 LTM 架構的價值。這首先需要定義記憶體架構及其更新規則，並研究一個具體的假設：LTM 內容也應該存在於 STM 中。",
+              "importance": 0.64
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-029",
+              "summary": "長期記憶系統採用三層級結構：L1 是基礎記憶單元，L2 是對 L1 節點的摘要（例如，來自四次會議），L3 是所有上下文的最高層級摘要。",
+              "importance": 0.62
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-045",
+              "summary": "支持主題導向記憶體架構的論點是，它允許在單一 L1 節點內追蹤一個想法的完整演變歷史。當一個相似的想法被重新討論時，系統會更新現有的 L1 節點（而非創建新節點），並添加新的時間戳和內容版本，從而實現對想法演變的「回放」功能。",
+              "importance": 0.67
+            }
+          ],
+          "current_state": "Child topic 'short term memory' has 10 assigned L1 evidence object(s). Latest evidence: 支持主題導向記憶體架構的論點是，它允許在單一 L1 節點內追蹤一個想法的完整演變歷史。當一個相似的想法被重新討論時，系統會更新現有的 L1 節點（而非創建新節點），並添加新的時間戳和內容版本，從而實現對想法演變的「回放」功能。",
+          "confidence": 0.72
+        }
+      ],
+      "confidence": 0.557
+    },
+    {
+      "l3_id": "L3-data-quality",
+      "label": "data quality",
+      "source_l2_id": "L2-data-quality",
+      "promotion_reason": {
+        "event_count": 20,
+        "adaptive_threshold": 20,
+        "reason_codes": [
+          "oversized_relative_to_profile"
+        ]
+      },
+      "child_l2_nodes": [
+        {
+          "child_l2_id": "L2-data-quality-segment-start-time",
+          "label": "segment start time",
+          "assignment_criteria": [
+            "segment start time"
+          ],
+          "split_reason": "Recurring subtopic term inside an oversized evidence-backed L2.",
+          "linked_obj_ids": [
+            "L1-0307-039",
+            "L1-0325-010",
+            "L1-0325-063",
+            "L1-0408-002",
+            "L1-0408-009",
+            "L1-0429-041",
+            "L1-0429-046",
+            "L1-0429-126",
+            "L1-0506-021"
+          ],
+          "event_count": 9,
+          "timeline_digest": [
+            {
+              "meeting_id": "0307",
+              "meeting_date": "2026-03-07",
+              "obj_id": "L1-0307-039",
+              "summary": "確認本次會議錄音為部分錄音，從討論中研院實習議題時才開始。",
+              "importance": 0.58
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-010",
+              "summary": "ICSI 資料集中的時間戳（timestamps）尚未處理，需要進行加工。",
+              "importance": 0.57
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-063",
+              "summary": "由於內部會議錄音的對話連貫性不足且主題分散，團隊決定停止使用，轉而採用外部的 ISCI 語料庫，因其包含一系列連貫的研究討論內容。",
+              "importance": 0.71
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-002",
+              "summary": "需要確認 BMR 系列的會議錄音檔案中，討論是否都圍繞單一主題，或是在不同主題之間切換。",
+              "importance": 0.55
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-009",
+              "summary": "長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。",
+              "importance": 0.7
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-041",
+              "summary": "團隊需要修正現有的5次會議（總計約180分鐘）的逐字稿，因為其品質不佳，並考慮使用 LLM 來協助校正。",
+              "importance": 0.63
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-046",
+              "summary": "由於現有的五次會議逐字稿品質不佳，考慮使用 LLM 協助修正內容。",
+              "importance": 0.6
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-126",
+              "summary": "當 agent 在一個文本區塊中識別出多個主題時，其處理來源文本的具體機制尚不清楚。目前的作法似乎是針對每個主題，都使用整個文本區塊的內容進行 `write` 操作，而不是將來源文本分段，這引發了關於此方法精確性的問題。",
+              "importance": 0.55
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-021",
+              "summary": "為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。",
+              "importance": 0.59
+            }
+          ],
+          "current_state": "Child topic 'segment start time' has 9 assigned L1 evidence object(s). Latest evidence: 為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。",
+          "confidence": 0.72
+        },
+        {
+          "child_l2_id": "L2-data-quality-voice-conversion",
+          "label": "voice conversion",
+          "assignment_criteria": [
+            "voice conversion"
+          ],
+          "split_reason": "Recurring subtopic term inside an oversized evidence-backed L2.",
+          "linked_obj_ids": [
+            "L1-0325-008",
+            "L1-0325-018",
+            "L1-0325-032",
+            "L1-0325-050",
+            "L1-0408-001",
+            "L1-0408-005",
+            "L1-0429-004",
+            "L1-0429-042",
+            "L1-0429-056",
+            "L1-0506-018",
+            "L1-0506-026"
+          ],
+          "event_count": 11,
+          "timeline_digest": [
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-008",
+              "summary": "專案決定使用 ICSI 資料集進行實驗，因為它包含關於同一主題的長期研究會議（超過20個場次），被認為是目前最完整的版本。",
+              "importance": 0.68
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-018",
+              "summary": "由於真實會議數據的「雜亂」特性，為驗證 AI 記憶的準確性，團隊提出一個解決方案：手動檢索並審查原始會議片段以確認其相關性。",
+              "importance": 0.59
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-032",
+              "summary": "某個被討論的資料集，因其主要特點是包含平行的語音和文本資料，所以主要適用於語音轉換（voice conversion）等任務，而非會議摘要。",
+              "importance": 0.62
+            },
+            {
+              "meeting_id": "0325",
+              "meeting_date": "2026-03-25",
+              "obj_id": "L1-0325-050",
+              "summary": "團隊澄清並決定，快取（cache）的功用在於提升查詢效率（速度），而非判斷資訊的正確性或價值；資訊的正確性仍取決於其原始來源資料。",
+              "importance": 0.68
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-001",
+              "summary": "團隊已決定採用會議錄音資料集中的 BMR 系列進行研究。此系列包含約 29 個檔案，記錄了同一組人進行的連續性討論。",
+              "importance": 0.69
+            },
+            {
+              "meeting_id": "0408",
+              "meeting_date": "2026-04-08",
+              "obj_id": "L1-0408-005",
+              "summary": "儘管 BMR 系列的會議被認為是討論一個連續的主題，但目前仍不確定單一會議的討論是會持續聚焦於單一主題，還是會在不同主題之間轉換。",
+              "importance": 0.52
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-004",
+              "summary": "團隊不確定目前收集的5次會議（共180分鐘）的逐字稿數據量是否足以進行 LLM 實驗。",
+              "importance": 0.65
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-042",
+              "summary": "現有的180分鐘會議轉錄資料量可能不足以進行穩健的 LLM 評估，因此有必要尋求資料擴增策略，例如使用 LLM 生成更多對話，或利用現有的更大型會議資料集。",
+              "importance": 0.66
+            },
+            {
+              "meeting_id": "0429",
+              "meeting_date": "2026-04-29",
+              "obj_id": "L1-0429-056",
+              "summary": "提出一個假設，認為目前系統的優勢在於能夠過濾並避免儲存無關的對話填充詞，這點與較簡單的方法不同。",
+              "importance": 0.54
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-018",
+              "summary": "在標記 `idea unit` 的過程中，雖然並行運行的 agent 可能會給出多個類型標籤，但已建立一項約束：最終需將其解析為一個精確的標籤，僅在必要時才允許多達兩種。",
+              "importance": 0.61
+            },
+            {
+              "meeting_id": "0506",
+              "meeting_date": "2026-05-06",
+              "obj_id": "L1-0506-026",
+              "summary": "儘管多個並行 agent 可能會為同一個 `idea unit` 分配多種類型標籤，但存在一個限制，即最終必須將其解析為一個精確的標籤，最多只在必要時允許兩種。這個限制驅動了對 `candidate` 進行協調（reconciliation）的需求。",
+              "importance": 0.63
+            }
+          ],
+          "current_state": "Child topic 'voice conversion' has 11 assigned L1 evidence object(s). Latest evidence: 儘管多個並行 agent 可能會為同一個 `idea unit` 分配多種類型標籤，但存在一個限制，即最終必須將其解析為一個精確的標籤，最多只在必要時允許兩種。這個限制驅動了對 `candidate` 進行協調（reconciliation）的需求。",
+          "confidence": 0.72
+        }
+      ],
+      "confidence": 0.545
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-data-quality: data quality
+  - child L2 L2-data-quality-segment-start-time: segment start time
+  - child L2 L2-data-quality-voice-conversion: voice conversion
+- L3 L3-literature-review: literature review
+  - child L2 L2-literature-review-google-scholar: google scholar
+  - child L2 L2-literature-review-speech-annote-test: speech annote test
+- L3 L3-memory-architecture: memory architecture
+  - child L2 L2-memory-architecture-long-term-memory: long term memory
+  - child L2 L2-memory-architecture-short-term-memory: short term memory
+- Unpromoted L2 topics:
+  - L2-evaluation-criteria: evaluation criteria
+  - L2-bottom-up: bottom up
+  - L2-update-memory: update memory
+  - L2-memory-retrieval: memory retrieval
+  - L2-memory-update: memory update
+
+=== L1 Evidence Seeds ===
+- [0408 | 2026-04-08 | L1-0408-009] type=approach_change importance=0.7 score=0.5714
+  content: 長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。
+  evidence: [SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。 [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？ [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。...
+- [0408 | 2026-04-08 | L1-0408-055] type=argument importance=0.66 score=0.5634
+  content: 支持採用逐句處理並透過 function calling 進行記憶體更新的細粒度模型，理由是這種方法能實現更複雜的行為，例如在重新討論某個主題時，能將相關的 LTM 內容拉回 STM 中。
+  evidence: [SPEAKER_00]: 也就是要確定架構之間的關係和 update。還有 meeting transcription 的話，我覺得需要經過一個前處理，例如送一個句子、一個 idea unit 去 process，而不是整個丟進去。這其實是我剛剛想說的部分。最後我再講一個：剛剛那個 function calling，如果讓更新記憶時讓 Gemini 自己決定要用哪些記憶，它的參數可以包含時間範圍。 [SPEAKER_04]: 例如第一秒到最後一秒的時間先播給它。如果今天它想再看一次，就可以看第一秒到第三十秒的逐字稿。 [SPEAKER_04]: 也就是讓看記憶體的選擇可以再看一次。你的意思是進來後，我們把它拆成一句一句，...
+- [0422 | 2026-04-22 | L1-0422-006] type=approach_change importance=0.7 score=0.6919
+  content: 為了取代逐「輪」(turn)更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成「idea units」。第一種是迭代法：系統讀取固定行數的文本，並根據主題連續性逐步合併。第二種是預分割法：利用 LLM 判斷主題邊界，直接將文本分割成完整的 idea units。如果預分割法技術上可行，將不再需要迭代法。
+  evidence: [SPEAKER_00]: 那在什麼樣的情況不是走這個流，程我以為這個部分是你没有说要决定不决定，這件事情是每一个你得到每一个turn的时候你都要做这件事情的不是吗 [SPEAKER_00]: 什麼樣有沒有一個例子說，我如果假設說好現在我要我們現在今天的meeting完了我得到一個今天的逐字稿那我現在就要回去update我的memory對不對好那我現在逐字稿拿來然後假設其實剛剛講的是前端可能會可能不能用turn因為可能我們好幾個turn都在講同一件事情都是某一個idea某一個主題，那當然那個地方很簡單就是直接去判斷說下一句跟前一句是不是同一件事下一句跟前一句是不是同一件事，...
+- [0422 | 2026-04-22 | L1-0422-007] type=argument importance=0.67 score=0.5693
+  content: 支持採用動態逐字稿區塊（dynamic transcript chunking）機制的理由是，固定大小的區塊可能會破壞語義的完整性（例如，將問題與答案分開）。因此，應由 LLM 根據語義是否完整來自行決定區塊的大小。
+  evidence: [SPEAKER_02]: 應該說是要怎麼做應該說讀幾句應該是給LLM去判斷就是不一定要三句三句他其實也可以讀五句八句 [SPEAKER_01]: 他會自己看他後面要再往後讀幾句 [SPEAKER_00]: 所以說如果我讀了五句然後呢，我再讀下面五句 [SPEAKER_01]: 不一定他可能他可以讀五句，然後五句不夠可能再往後讀五句後面的三句 [SPEAKER_02]: 如果他這一句現在五句完假設你已經問了一個問題然後這個答案顯然還沒到一個就是完整回答的地方他就可以 [SPEAKER_03]: 這會讓 Gemini 自己決定，就是 Gemini 可以自己決定說 [SPEAKER_01]: 他現在五句他切在一個問題，...
+- [0429 | 2026-04-29 | L1-0429-019] type=argument importance=0.73 score=0.5832
+  content: 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次的結論層以提供更廣泛的上下文，並包含一個更詳細的 short-term memory 組件來追蹤近期的活動。
+  evidence: [SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼 [SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它分就是我們逐字搞進來我們不是一句一句一句然後就讓它拆成那個轉換成像那樣的資料我們是做我們會先抓它裡面的idea unit對對idea unit [SPEAKER_02]: 嗯ok然後現在所以RAG跟Full System的差別是在於RAG有什麼 [SPEAKER_01]: 呃RAG Full System Track 感覺就只是它是最簡單的處理方式啦它就只是切塊然後用語意去找相似度的那一塊是什麼然後我們是除了有切 idea unit 之外我們 idea uni...
+- [0429 | 2026-04-29 | L1-0429-122] type=approach_change importance=0.73 score=0.5832
+  content: 專案放棄了將完整逐字稿一次性提供給模型進行記憶更新的初始方法。原因是上下文長度過大，難以處理所需的 JSON 輸出格式，因此轉而採用分塊處理的策略。
+  evidence: [SPEAKER_02]: 那另外一個問題想要問好了為什麼不要整個transcription直接進去跟他說你把所有的需要update的memory都改一改 [SPEAKER_00]: 我們一開始就是這樣子但是這樣有幾個問題第一個就是context太大因為我們一定要固定成json嘛所以如果要他一次全部更新完那等下我先問你問題是說他要一次讀完整個獨自稿因為我現在在想的是說因為現在感覺是沒有切idea units這件事情
+- [0429 | 2026-04-29 | L1-0429-048] type=decision importance=0.7 score=0.5772
+  content: 決定進行一項消融研究 (ablation study) 來評估系統。該研究將比較完整系統與幾個基準線：僅 RAG、僅短期記憶、僅長期記憶。在所有實驗條件下，工作記憶 (working memory) 將作為一個恆定不變的組件，此舉旨在證明結合短期和長期記憶方法的合理性。
+  evidence: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。 [SPEAKER_02]: 拆成那個，轉換成像那樣的資料。我們是做，我們會先抓它裡面的 idea unit。對對，idea unit。嗯，OK，我現在，所以 RAG 跟 full system 的差別是在於，RAG 有什麼，呃，RAG、full system。...
+- [0429 | 2026-04-29 | L1-0429-035] type=argument importance=0.67 score=0.5712
+  content: 固定的 chunking 策略存在缺陷：若 chunk 過大（如 3 個 turn），可能錯誤地將多個想法合併到一個摘要中；若 chunk 過於零碎（如一個句子一個 chunk），則計算成本會過高。
+  evidence: [SPEAKER_02]: 那Large language top down我自己去看說我決定最後是幾個group對然後上次我本來以為的是我們在講是我們要用bottom up的方法那所以我們在討論一些trade off因為有人在切transcription的方式他們是切譬如說每三個term然後去產生一個小的summary然後再去iteratively去把它產生一個比較high level的summary這樣子轉出來的嘛 [SPEAKER_02]: 但那個方法我也會有問題就是你那個fixed number的turn裡面它有可能會有multiple的idea units在那個情況下它就是會被放成同一個summary它沒有辦法被拆開...
+- [0429 | 2026-04-29 | L1-0429-085] type=argument importance=0.66 score=0.5692
+  content: 目前的批次處理 prompt 被證明是失敗的，其具體證據是模型在處理完 1-40 行後，錯誤地從第 31 行開始下一個區塊。這個失敗不僅證明模型未遵循指示，導致資料重疊處理，也凸顯了當前流程缺乏可觀測性的問題。
+  evidence: [SPEAKER_02]: 欸，為什麼？等一下我看一下。為什麼 read transcript 第一個是 1 到 40 行，對，然後它之後我們下面是 31 到 80 行，那這樣 31 到 40 行不就重疊了？這個是 limit，這個是它一次讀 80 行。喔，但是對啊，因為第一個不是 1 到 40 行嗎？對，它第一次就是想讀 1 到 40 行，然後第二次它讀 31。它為什麼 start line 在 31 呢？ [SPEAKER_02]: 不然就是這個任務的流程可能要再更specific。比如說下一段的逐字稿看起來它就沒有照著我們 follow 的做啊，對不對？因為它剛剛 1 到 40 句，它下一段根本不該從 31 開始啊。...
+- [0429 | 2026-04-29 | L1-0429-034] type=open_issue importance=0.67 score=0.5584
+  content: 關於如何最有效地對逐字稿進行分塊（chunking）以進行處理，目前仍是一個待解決的設計問題。現有的固定大小分塊方法存在缺陷，例如可能將多個想法錯誤地合併，或因粒度過細（如單句分塊）而導致計算成本過高。為此，團隊提出了一種「動態分塊 (dynamic chunking)」的混合方法作為潛在解決方案，但其有效性尚待通過實驗評估來驗證。
+  evidence: [SPEAKER_02]: 那Large language top down我自己去看說我決定最後是幾個group對然後上次我本來以為的是我們在講是我們要用bottom up的方法那所以我們在討論一些trade off因為有人在切transcription的方式他們是切譬如說每三個term然後去產生一個小的summary然後再去iteratively去把它產生一個比較high level的summary這樣子轉出來的嘛 [SPEAKER_02]: 但那個方法我也會有問題就是你那個fixed number的turn裡面它有可能會有multiple的idea units在那個情況下它就是會被放成同一個summary它沒有辦法被拆開...
+- [0429 | 2026-04-29 | L1-0429-028] type=proposal importance=0.61 score=0.5464
+  content: 提出一種「動態分塊 (dynamic chunking)」方法來處理逐字稿，以取代固定大小的分塊策略。此方法將預測後續有多少對話會圍繞同一主題，並將它們組合成一個大小可變的區塊進行處理。具體實現方式可透過修改 LLM 的提示 (prompt)，使其根據當前內容決定下一個區塊要讀取多少行。
+  evidence: [SPEAKER_02]: 那Large language top down我自己去看說我決定最後是幾個group對然後上次我本來以為的是我們在講是我們要用bottom up的方法那所以我們在討論一些trade off因為有人在切transcription的方式他們是切譬如說每三個term然後去產生一個小的summary然後再去iteratively去把它產生一個比較high level的summary這樣子轉出來的嘛 [SPEAKER_02]: 但那個方法我也會有問題就是你那個fixed number的turn裡面它有可能會有multiple的idea units在那個情況下它就是會被放成同一個summary它沒有辦法被拆開...
+- [0506 | 2026-05-06 | L1-0506-001] type=approach_change importance=0.72 score=0.6998
+  content: 團隊確立了目前的文本處理採用由上而下（top-down）的架構：`Context Planner` 將固定大小的窗口（如 80 行）交給 `Segment Agent`，後者將其切分為 `segments`（較廣泛的相關主題），再進一步細分為 `idea units`（具體的觀點，如待辦事項或決策）。
+  evidence: [SPEAKER_01]: 就我們現在的做法是因為我們的context planner，我們一開始前面是一個context planner，就是我們的 transcript 進去然後context planner是我們寫好的code，然後它是讀 transcript 的然後現在是我們自己設定說好你現在這個context planner 一次就是看可能80行這樣 那看這八十行context planner 會去讀這八十行把八十行丟給後面的segment agent，所以這個 segment agent做的就是在這八十行裡面去分裡面有幾個語意的段落幾個segment 這樣所以現在有確定先去讓他做segment、...
+- [0506 | 2026-05-06 | L1-0506-005] type=open_issue importance=0.6 score=0.665
+  content: 目前的處理流程存在一個已知問題，即在處理過程中會遺漏部分逐字稿內容。這些遺漏的「間隙」（gaps）目前是透過將其作為低品質的原始文本 idea unit 加回來進行修補。團隊計劃在未來版本中加入一個正式的修復機制，但尚未實施。
+  evidence: [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered the gap就是它原本在抽ide...
+- [0506 | 2026-05-06 | L1-0506-010] type=proposal importance=0.6 score=0.665
+  content: 計劃在未來版本中加入一個修復機制，以處理因提示問題導致的逐字稿遺漏（gaps）。目前的做法是將遺漏的行作為原始文本、低品質的 idea unit 加回。
+  evidence: [SPEAKER_01]: 我們是切80行那這個 transcript因為它只有65行所以它就會直接送那進了segment agent以後它就會看1到17這是一個segment18到40是一個然後41到56是一個57到65是一個然後在這個 segment裡面它就會去這是它1到17行嘛第一個segment是1到17行那1到17行裡面它會去抽它的idea units就是從這上面17行抽下來像1到3行它可能就抽成一個4到5行抽成一個 然後第六行抽成一個這樣然後在抽idea units抽完以後我們會先去做verify就是看它有沒有漏掉的句子所以像這句它下面就有寫它是idea unit covered the gap就是它原本在抽ide...
+- [0506 | 2026-05-06 | L1-0506-040] type=decision importance=0.68 score=0.5752
+  content: 決定在展示記憶體系統時，將重點突顯幾個關鍵功能：'inspector' 工具、允許人類輸入重要性權重（與純 LLM 調整的系統不同），以及控制記憶體更新的公式。展示應以動態視覺化方式呈現，顯示記憶圖譜如何隨著新 idea units 的加入而更新。
+  evidence: [SPEAKER_02]: 嗯 所以有點要說我們現在想要把過去的 history假設說我們可以用視覺化動畫把它展示出來假設說我們就是要動畫五個 meeting 的時候這個 graph 它長的過程我覺得也許你如果要 present 的話用這種方式就譬如說我們現在有過去五個五個 meeting 的檔對 然後就是有一個動畫就顯示說它第一個 transcription 結束的時候 它會長成什麼樣子它會慢慢一個一個跑出來變一個節點然後長出變一個這樣的樹到第二個出來的時候它前面會怎麼樣update會長出什麼樣的樹我現在這個地方我還要再理解一下不過你們先試著先你們把它 visual 化把它畫出來我覺得畫出來之後應該會很容易可以去理解對然後也...
+- [0506 | 2026-05-06 | L1-0506-012] type=argument importance=0.66 score=0.5712
+  content: 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。
+  evidence: [SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個induct...
+- [0506 | 2026-05-06 | L1-0506-033] type=decision importance=0.65 score=0.5692
+  content: 決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去...
+- [0506 | 2026-05-06 | L1-0506-020] type=decision importance=0.64 score=0.5672
+  content: 決定目前系統在處理由 Whisper 依據語音停頓切分的逐字稿時，將依賴話語順序，而不使用 Whisper 可提供的時間戳記 (timestamps)。
+  evidence: [SPEAKER_02]: 然後剛剛講到剛剛講到label label都是什麼都是theme的label theme的label因為現在你先講一下現在的label現在的label就是是針對idea units就是最小的單位是idea units對然後它會是屬於某一個segment 這樣嗎 它會是屬於某個segment會對它會屬於所以它會它中間是有relationship的所以每一個segment ID它會對應它應該你應該是可以你去到某一串的idea units對就是一樣這樣就是這個 segment然後會看到這是segments然後會看到很多idea unit這些idea unit都是在這個 segment裡面然後會有對應得好的...
+- [0506 | 2026-05-06 | L1-0506-027] type=argument importance=0.63 score=0.5652
+  content: 即使是預先切分好的 `segments`，也需要進一步標記成 `idea units`，理由是為了捕捉 `segments` 內部可能存在的微小但重要的細節。
+  evidence: [SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他 [SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea un...
+- [0506 | 2026-05-06 | L1-0506-002] type=decision importance=0.62 score=0.5632
+  content: 團隊已定義 `segment` 與 `idea unit` 之間的區別：`segment` 是指一個較廣泛的相關主題（例如，關於海報設計的討論），而 `idea unit` 則是該主題內一個更小、更具體的組成部分（例如，一個待辦事項或一項決策）。
+  evidence: [SPEAKER_01]: 因為我們想像可能是說segment會是一個相關的段落就是他都在討論這件事情那idea unit可能是裡面有講到裡面可能to-do是什麼什麼decision是什麼就是比較細節的東西所以可能是idea [SPEAKER_02]: 應該說它的最小的單位都是idea units我們在meeting 的時候我們講的東西其實每一件事情就是都是一個一個的idea units那有些idea units 它是actionable的它是有一個to-do的有些可能不是有些就只是explain或是說討論所以我現在想像應該是比較是因為我覺得segment跟idea units目前我還是沒有很清楚知道 [SPEAKER_03]...
+- [0506 | 2026-05-06 | L1-0506-009] type=proposal importance=0.65 score=0.5583
+  content: 提出應考慮採用由下而上（bottom-up）的處理方法（從 idea unit 到主題），而非當前由上而下（top-down）的方法（從 segment 到 idea unit），因為前者被認為更自然。
+  evidence: [SPEAKER_02]: 那這裡整段話可能會是一個同一個segment但是那中間兩個可能會是兩個idea units但其實我大概知道老師在說的其實就是有點像是說我們說每一個idea units裡面它可能會有一些label對不對 它有可能是譬如說它的 theme 是什麼東西它的主題是跟海報相關然後它的也許它的 type 是什麼它是屬於 action或是它是屬於 explanation或是它是屬於 debate或是等等的對 然後我們現在可能是先從先去分 theme然後再去切再去切 對對對但我覺得我是我 我覺得Larjo跟Gertrude他可能沒有辦法分辨分辨說什麼樣叫做切一個theme因為通常我們theme你去看那個induct...
+- [0506 | 2026-05-06 | L1-0506-015] type=proposal importance=0.65 score=0.5583
+  content: 資料處理流程被定義為：將 `idea units` 發送給六個並行運行的 agent 進行分類。這些 agent 的輸出稱為 `candidates`，可能存在重複。接著，這些 `candidates` 會被整合 (reconcile)，並用於尋找和更新記憶節點。
+  evidence: [SPEAKER_01]: 這只是給他一個比較小的範圍比較不會就是變動可能他自己的幻想什麼的會比較小一點但這個因為我們最後是要抓小的點那如果我們已經直接就是先切了一點 segment那我們還需要去抓segment對應該是說他現在或是說你說我們還是需要去label他 [SPEAKER_02]: 我們最終他要去update那個memory對不對每一個idea units最終都要去找到一個對應的memory node去update的嘛就是看如果他現在目前沒有這個memory node我要create那如果有的話我要update是針對每一個idea units嗎但有update嗎不會吧 [SPEAKER_01]: 就是 idea un...
+- [0506 | 2026-05-06 | L1-0506-008] type=open_issue importance=0.61 score=0.5503
+  content: 處理流程的基本架構受到質疑，特別是關於是否有必要採用目前由上而下（top-down）的兩階段作法，即先切分出較廣泛的 `segments`（主題），再將其分解為 `idea units`（觀點）。有人認為，由下而上（bottom-up）的方法，也就是先識別 `idea units` 再將其組合成主題，可能更為自然。
+  evidence: [SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方...
+- [0506 | 2026-05-06 | L1-0506-007] type=open_issue importance=0.6 score=0.5483
+  content: 關於如何最有效地對逐字稿進行分段（segmentation）仍是個待解決的問題。過去的自適應窗口（adaptive window）實驗因效果不佳而被放棄。儘管有人提出了一種新的假設性自適應分段方法，但也有反對意見認為，下游的 LLM 有能力處理不完美的較大文本塊，因此追求完美分段的效益可能有限。目前的固定窗口方法主要是為了方便除錯，而整體由上而下（segment -> idea unit）的策略被認為不自然。
+  evidence: [SPEAKER_04]: 因為中間有真實的dataset 有切好了是嗎?就是譬如說這個 transcription 我們就是已經知道說現在這個算一段這個算一段這個算一段這是譬如說label 好的 dataset 也沒有預測它那個它的預測就沒有去驗證它預測對不對就只有讓它跑這個預測然後如果是只用預測的話其實反而結果會變差所以你可以看到那個verify 跟rejected 是一起就是rejected 數量變高然後verify 變少代表它的 拉出來東西的那個可信度變低我就是蠻好奇說你怎麼這個verify 跟rejected這個是怎麼測試的verify 跟rejected 是在這個關卡這裡會有verify的它會reject的幾種情況...
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-bottom-up] bottom up
+  matched L1: L1-0429-035, L1-0506-012, L1-0429-034, L1-0506-009, L1-0506-008, L1-0429-028
+  topic_size=12 selected_event_count=4 omitted_event_count=8
+  current_state: Current position: 採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。
+  evolution_summary: This topic began with L1-0429-028: 提出一種「動態分塊 (dynamic chunking)」方法來處理逐字稿，以取代固定大小的分塊策略。此方法將預測後續有多少對話會圍繞同一主題，並將它們組合成一個大小可變的區塊進行處理。具體實現方式可透過修改 LLM 的提示 (prompt)，...
+  latest_position: 採用由下而上（bottom-up）的方法將逐字稿切分成細粒度的 `idea units`，其理由是為了確保不會遺漏任何資訊。此方法的取捨是，雖然能捕捉所有細節，但也可能產生無語義的單位（如「嗯哼」），這些單位需要在後續步驟中被過濾掉。
+  timeline_digest:
+    - [2026-04-29 L1-0429-064] 團隊確認了逐字稿處理採用「由上而下」(top-down) 的方法。系統會讀取固定大小的文本區塊（約20行），並由 LLM 在其中識別出多個「物件」(objects) 或「想法單元」(idea units)。此方法與「由下而上」(bottom-up) 的策略（如逐句處理或迭代式摘要）形成對比，並澄清了團隊內部對現行方法的共識。
+    - [2026-04-29 L1-0429-028] 提出一種「動態分塊 (dynamic chunking)」方法來處理逐字稿，以取代固定大小的分塊策略。此方法將預測後續有多少對話會圍繞同一主題，並將它們組合成一個大小可變的區塊進行處理。具體實現方式可透過修改 LLM 的提示 (prompt)，使其根據當前內容決定下一個區塊要讀取多少行。
+    - [2026-05-06 L1-0506-012] 有人批評當前的由上而下（top-down）的分段策略（segment -> idea unit）不自然，認為由下而上（bottom-up）的方法（idea unit -> theme）可能更合理。
+    - [2026-05-06 L1-0506-008] 處理流程的基本架構受到質疑，特別是關於是否有必要採用目前由上而下（top-down）的兩階段作法，即先切分出較廣泛的 `segments`（主題），再將其分解為 `idea units`（觀點）。有人認為，由下而上（bottom-up）的方法，也就是先識別 `idea units` 再將其組合成主題，可能更為自然。
+
+[L2-data-quality-segment-start-time] segment start time
+  parent L3: L3-data-quality data quality
+  matched L1: L1-0408-009
+  topic_size=9 selected_event_count=8 omitted_event_count=1
+  current_state: Child topic 'segment start time' has 9 assigned L1 evidence object(s). Latest evidence: 為了解決驗證 `idea unit` 分割品質的開放問題，下一步是審查用於生成的 prompt。
+  timeline_digest:
+    - [2026-03-07 L1-0307-039] 確認本次會議錄音為部分錄音，從討論中研院實習議題時才開始。
+    - [2026-03-25 L1-0325-010] ICSI 資料集中的時間戳（timestamps）尚未處理，需要進行加工。
+    - [2026-03-25 L1-0325-063] 由於內部會議錄音的對話連貫性不足且主題分散，團隊決定停止使用，轉而採用外部的 ISCI 語料庫，因其包含一系列連貫的研究討論內容。
+    - [2026-04-08 L1-0408-002] 需要確認 BMR 系列的會議錄音檔案中，討論是否都圍繞單一主題，或是在不同主題之間切換。
+    - [2026-04-08 L1-0408-009] 長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。
+    - [2026-04-29 L1-0429-041] 團隊需要修正現有的5次會議（總計約
+...(truncated)

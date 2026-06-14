@@ -1,0 +1,126 @@
+=== Current Implementation State ===
+This section describes the current repo implementation / canonical handoff.
+For current-state questions, use this section over older meeting discussion when they conflict.
+- L1 source: share_mem/tree.json and share_mem/meetings/*.json are immutable meeting evidence.
+- L2 active view: long_term/l2/l2_view.json and long_term/l2/l2_index.json. The active L2 grouping is topic-based over immutable L1 objects, not four-meeting temporal batching and not one meeting per L2.
+- L3 promotion: long_term/l3/l3_view.json and long_term/l3/l3_index.json are sidecars that promote oversized L2 topic families and materialize child L2 nodes.
+- Retrieval: evidence-first layered retrieval starts from L1 seeds, then expands to relevant L2 / child-L2 / L3 navigation context.
+- Current counts: meetings=7, L1_objects=448, L2_topics=16, linked_L1=411, L3_families=3, child_L2=19, retrieval_budget_profile=generous_layered.
+
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-architecture: memory architecture
+  - child L2 L2-memory-architecture-long-term-memory: long term memory
+  - child L2 L2-memory-architecture-short-term-memory: short term memory
+- L3 L3-literature-review: literature review
+  - child L2 L2-literature-review-google-scholar: google scholar
+  - child L2 L2-literature-review-speech-annote-test: speech annote test
+- L3 L3-data-quality: data quality
+  - child L2 L2-data-quality-segment-start-time: segment start time
+  - child L2 L2-data-quality-voice-conversion: voice conversion
+- Unpromoted L2 topics:
+  - L2-long-term-memory: long term memory
+  - L2-short-term-memory: short term memory
+  - L2-memory-retrieval: memory retrieval
+  - L2-memory-update: memory update
+  - L2-bottom-up: bottom up
+
+=== L1 Evidence Seeds ===
+- [0307 | 2026-03-07 | L1-0307-013] type=decision importance=0.69 score=0.4438
+  content: 團隊需要設計並實作記憶的「檢索 (retrieve)」機制，這是目前記憶系統中缺失的關鍵部分，以便利用已儲存的記憶來生成輸出。
+  evidence: [SPEAKER_01]: 算是整個 meeting、整個 research 的總結。但我們還在想 long term 可以記什麼，例如 milestone 之類的。所以到最後，long term 跟 short term 應該會需要結合。 [SPEAKER_01]: 對不對？對。它就是要 update 的部分，也就是記進去。像我們 16、17 都是假設 17 的 meeting 完後要處理這件事。但從 18 開始，我們還沒有設計如何從記憶取出來，然後決定要講什麼。我們還沒有做這部分。現在做的比較像 update memory 的部分。它應該還有兩步：update 跟 retrieve。
+- [0325 | 2026-03-25 | L1-0325-056] type=decision importance=0.72 score=0.4937
+  content: 專案決定將研究重點放在檢索（retrieval）問題上。核心挑戰在於 agent 應如何權衡與組合來自工作、短期和長期三種記憶體的資訊，以生成最佳輸出。
+  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果
+- [0408 | 2026-04-08 | L1-0408-022] type=argument importance=0.67 score=0.5459
+  content: 針對讓 LLM 選擇檢索 STM 或 LTM 的提案，有人提出反對論點，認為這不必要。此論點以人腦類比，指出不同類型的記憶似乎是持續且同時活躍的。因此，建議採用另一種架構：由系統同時查詢 STM 和 LTM，再將兩者的內容合併後交給 LLM 生成回應。
+  evidence: [SPEAKER_00]: 那我們為什麼需要選擇短期跟長期？我們大腦運作時，短期記憶、長期記憶和工作記憶不是同時一直在動、一直被 update 嗎？你這樣等於是直接把它們混在一起嗎？ [SPEAKER_04]: 沒有。我現在是在思考，你剛剛說要取用短期還是長期，這是什麼意思。一開始有一種方法是，一句話進來，不管是老師或其他人講的，這句話會經過短期記憶，也會經過長期記憶，然後把取出的東西再結合這一句話送給 LLM。 [SPEAKER_04]: 然後 LLM 回一個東西出來，這個東西就是這個 agent 的回應。 [SPEAKER_04]: 那 TODO 查詢的時候，它不是應該先進來，然後去短期記憶和長期記憶找內容嗎？...
+- [0408 | 2026-04-08 | L1-0408-006] type=approach_change importance=0.73 score=0.5191
+  content: 檢索流程的設計是先將查詢與 L1 節點進行比對，然後取回匹配的 L1 及其對應的父層 L2 和 L3 摘要，以便同時提供具體細節和高層次的上下文。
+  evidence: [SPEAKER_03]: 我們第一層是每一次 meeting，四次 meeting 會整理成一個 L2。像這個 P001 經過四次之後，就進入階層式記憶。第一層所有的 leaf notes 是每一次 meeting 各自一個，四個往上會整理出一個 L2，所有 L2 再往上整理。 [SPEAKER_00]: 也就是 L2、L3 會隨著 L1 一起帶進來。它們都是在處理長期記憶。應該說，在長期記憶裡面有不同精細程度。L3 是最 high level 的。剛剛看 31 的話，以這個 agent 的大腦來說，它現在知道有五個大重點在這裡。再往下是 L2。 [SPEAKER_00]: L2 是月度的總結，也就是以月為單位的總結。...
+- [0408 | 2026-04-08 | L1-0408-020] type=argument importance=0.68 score=0.5091
+  content: 在記憶體檢索的架構上，有一種論點是採用由 LLM 驅動的方法。在此設計中，LLM 會透過 function calling 自行決定要呼叫短期記憶體 (STM) 還是長期記憶體 (LTM) 的檢索函式，這與在呼叫 LLM 前由系統預先擷取記憶體內容的作法不同。
+  evidence: [SPEAKER_04]: 我們剛剛講的是，不要把 transcription 直接整個丟進去，讓它 black box 運算。關於怎麼丟，我有一個想法。先說目前記憶有一個取用方式，就是 Gemini 有 function calling 的功能。原本我們可能是想先把記憶找到，再把記憶和目前說的話餵給 Gemini。 [SPEAKER_04]: 例如我講這句話，五個月前我們有討論類似內容，就會把這句話拿去餵記憶，記憶會回傳一個東西，再把這個東西和這句話一起餵給 Gemini。現在的做法是，你可以提供一個函數給 Gemini，讓 Gemini 自己判斷要不要呼叫這個函數。 [SPEAKER_04]: 等於現在的做法是，...
+- [0408 | 2026-04-08 | L1-0408-030] type=argument importance=0.62 score=0.4971
+  content: 應讓 LLM 透過 function calling 來決定要查詢短期記憶或長期記憶，而非使用固定的系統規則。理由是，選擇記憶體的決策邏輯本身很複雜，LLM 能夠處理更細微的查詢，甚至執行多步驟檢索（例如先查 LTM 再查 STM），從而提供更大的彈性與能力。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-031] type=argument importance=0.66 score=0.4856
+  content: 記憶檢索的一個關鍵設計選擇是：由系統使用固定規則（例如，同時查詢 short-term 和 long-term memory），還是由 LLM 透過 function calling 動態決定要查詢哪個記憶體。後者被認為更具彈性，因為決策邏輯本身很複雜，適合由 LLM 處理。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-021] type=proposal importance=0.65 score=0.4844
+  content: 提出一種由 LLM 驅動的記憶體檢索架構。在此設計中，LLM（例如 Gemini）會被賦予呼叫短期記憶體（STM）和長期記憶體（LTM）的函式能力。當收到使用者查詢時，由 LLM 自行決定是否以及呼叫哪個記憶體檢索函式，系統再根據函式呼叫的結果來生成最終回應。這與預先擷取記憶體內容再送入 LLM 的方法不同。
+  evidence: [SPEAKER_04]: 我們剛剛講的是，不要把 transcription 直接整個丟進去，讓它 black box 運算。關於怎麼丟，我有一個想法。先說目前記憶有一個取用方式，就是 Gemini 有 function calling 的功能。原本我們可能是想先把記憶找到，再把記憶和目前說的話餵給 Gemini。 [SPEAKER_04]: 例如我講這句話，五個月前我們有討論類似內容，就會把這句話拿去餵記憶，記憶會回傳一個東西，再把這個東西和這句話一起餵給 Gemini。現在的做法是，你可以提供一個函數給 Gemini，讓 Gemini 自己判斷要不要呼叫這個函數。 [SPEAKER_04]: 等於現在的做法是，...
+- [0408 | 2026-04-08 | L1-0408-046] type=proposal importance=0.64 score=0.4824
+  content: 目前的架構將短期記憶 (short-term memory, STM) 和長期記憶 (long-term memory, LTM) 視為兩個獨立的系統，它們從相同的來源資料獨立更新。此決定暫時解決了兩者之間的關係，同時也承認這種設計可能導致內容重複，且兩者之間的轉移機制仍是未解決的問題。
+  evidence: [SPEAKER_04]: 不一定吧，要看它久不久、重不重要。它其實應該都會在長期，但久了會慢慢不見。這樣的話，直接拿這一次的組織稿分別給短期和長期，不是也可以嗎？如果長期自己的更新方式，是自己判斷這份組織稿裡的東西能不能放進長期記憶，那就可以直接用同一份來源更新。 [SPEAKER_04]: 喔，我知道了。應該是那個學生要來彈那個。我等一下講一下。我們那時候有想過，確實可以從短期記憶直接問出一個結果，但好像沒有什麼必要性。 [SPEAKER_04]: 你可以直接從逐字稿分開餵就好，不一定要把短期產出的結果再餵給長期。比較像兩個分開的資料庫，一個保存比較多細節，一個保存比較大綱。假設有五次 meeting，...
+- [0408 | 2026-04-08 | L1-0408-024] type=argument importance=0.63 score=0.4796
+  content: 目前將短期記憶 (STM) 和長期記憶 (LTM) 視為獨立更新的系統，其主要缺點是可能導致兩個記憶體之間內容重複。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-026] type=proposal importance=0.65 score=0.465
+  content: 提出一種方法，在檢索前增加一個預處理步驟，由 LLM 決定要調用短期記憶體還是長期記憶體，而不是同時運行兩者。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-028] type=approach_change importance=0.62 score=0.4582
+  content: 提出一種基於規則的檢索策略，系統可透過分析查詢內容來決定使用哪個記憶體。例如，包含「上週的待辦事項」等明確時間範圍的查詢將導向短期記憶。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-023] type=open_issue importance=0.61 score=0.457
+  content: 關於 agent 如何從短期和長期記憶中檢索資訊，存在一個核心的設計決策點。目前有多種提案，包括：由系統根據固定規則決定（例如，同時查詢或基於查詢內容）、由 LLM 透過 function calling 決定查詢哪個記憶體，或是一個預設先查低解析度的長期記憶，再「放大」到高解析度短期記憶的流程。此決策尚未定案。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-054] type=argument importance=0.69 score=0.4527
+  content: 主張記憶項目的重要性（可由討論密度或檢索頻率決定）應使其能留存在長期記憶 (LTM) 中，即使它已不在短期記憶 (STM) 的近期範圍內。這確保了關鍵的舊記憶不會僅因時間流逝而遺失。
+  evidence: [SPEAKER_00]: 如果它持續被討論，你可以繼續記著；今天問的時候直接從 B 裡看，就可以看到這五次。另一個東西可能是最近的記憶區塊。假設這個東西進到 B 裡，然後到第 4 次開始討論另一個主題。 [SPEAKER_00]: 進去之後，這個地方也許就可以刪掉，因為它已經到 B 了。但如果問題是「上次討論的 B 是什麼情況？」這句話照理來說應該由短期記憶負責，不會由長期記憶負責。我還沒有很仔細想過過程，但我現在想的是，短期記憶可能會一直累積近期做了哪些事。 [SPEAKER_00]: 到某個時刻足夠強之後，它可能會變成長期記憶。就算接下來兩個月都沒有提到這個東西，因為當時連續密度非常高，所以印象很深，會儲存在長期記憶裡。...
+- [0408 | 2026-04-08 | L1-0408-032] type=argument importance=0.58 score=0.4502
+  content: 一個可行的檢索模型是，預設先搜尋解析度較低的長期記憶，然後再「放大」到相關的高細節短期記憶中。這個流程為從宏觀概覽到具體細節的導航提供了一個結構化方法，除非查詢明確指定了近期時間範圍。
+  evidence: [SPEAKER_00]: 這樣聽起來，長期記憶最後不是包含所有東西，只是精細度比較低嗎？那最直接的方法不是都先到長期記憶裡找，再看要 zoom in 到哪個短期記憶嗎？但如果它今天已經明確說上禮拜，那直接看短期就好了。
+- [0408 | 2026-04-08 | L1-0408-036] type=decision importance=0.73 score=0.4413
+  content: 團隊決定，短期記憶 (short-term memory) 和長期記憶 (long-term memory) 將獨立更新。此設計放棄了先前「短期記憶內容在淡忘或達到一定數量後會被整合進長期記憶」的假設，因為該模型會導致長期記憶無法反映專案的最新狀態。
+  evidence: [SPEAKER_00]: 但是長期會存任何一個短期記憶嗎？短期記憶的東西會越來越不見，對不對？ [SPEAKER_00]: 應該會變成長期的。過一段時間之後，它會消失在短期記憶裡，變成長期記憶的一部分。也不是變成長期，因為長期和短期是分開更新的。長期更新長期自己，短期更新短期自己。我原本也以為短期裡的東西消失後會塞進長期，但現在不是。因為如果它是同一層 agent，就像人類大腦一樣，長期、短期和工作記憶其實都是我的記憶。 [SPEAKER_00]: 記憶慢慢消失這件事，是指有些東西進到長期記憶，有些東西沒有被 long term catch 住，所以完全忘記。這樣很難判斷哪些東西被忘記。我原本以為是短期到一定節點數量後，...
+- [0422 | 2026-04-22 | L1-0422-025] type=finding importance=0.68 score=0.4788
+  content: 長期記憶採用三層級的分層結構。L1 是底層的個別記憶物件，L1 會被摘要成 L2（例如月度摘要），L2 再進一步摘要成 L3（整體脈絡摘要）。
+  evidence: [SPEAKER_03]: 這個ActionItem就是像這樣它就是一個一個Item一個一個Item它就沒有像 long term 一樣是樹狀的就是一個一個離散然後這個是這個是，我找一個例子 [SPEAKER_00]: 你是說短期記憶裡面才會有action item 長期記憶不會有action item [SPEAKER_02]: 因為長期比較特別是它會往上總結成L2跟L3就是它會有月度總結跟整個大脈絡總結，然後你在找到L1 match的時候它會往上帶出L2跟L3 [SPEAKER_02]: 理論上它就可以有脈絡的那個成分在這個裡面在這個過程中 [SPEAKER_00]: L1,2,3是什麼?...
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.4746
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的 [SPEAKER_00]: 譬如說長期就是短期這件事情我們不會去考慮飛到這件事情，短期的話我們就是 capture 我們現在的最重要的事情但是長期的話可能就是你那部分，...
+- [0422 | 2026-04-22 | L1-0422-016] type=argument importance=0.63 score=0.4641
+  content: 有觀點認為，讓每個傳入的 idea unit 同時更新短期和長期記憶是更合理的作法。
+  evidence: [SPEAKER_00]: 我覺得這比較make sense就是我反正每個Idea units來的時候我都會短期記憶裡面update一些東西，長期記憶裡面會update一些東西
+- [0422 | 2026-04-22 | L1-0422-012] type=open_issue importance=0.58 score=0.4588
+  content: 關於記憶體更新流程存在一個未決的設計問題：一個新的 idea unit 應該更新短期記憶體、長期記憶體，還是兩者都更新？目前的系統是兩者獨立更新，但有提案建議由一個 manager agent 來決定更新其中之一，而另一種觀點則認為同時更新兩者更合理。
+  evidence: [SPEAKER_00]: 我剛本來想的是我在猜因為我還是不太理解這個 tool calling的意思，那我剛想的是譬如說像剛剛我們一開始我們講說5月13號要那專題展，然後你們說5月5號對，好那這件事情它有沒有需要去update long term memory，對然後也許這這件事情它是比較短期是最近在講的東西，...
+- [0422 | 2026-04-22 | L1-0422-014] type=proposal importance=0.64 score=0.4513
+  content: 提出一個想法，認為讓每個傳入的 idea unit 同時更新短期 (short-term) 和長期 (long-term) 記憶是更合理的做法。
+  evidence: [SPEAKER_00]: 我覺得這比較make sense就是我反正每個Idea units來的時候我都會短期記憶裡面update一些東西，長期記憶裡面會update一些東西
+- [0422 | 2026-04-22 | L1-0422-015] type=argument importance=0.6 score=0.4386
+  content: 有論點主張，傳入的資訊應先經過分析，再決定要更新短期記憶還是長期記憶，而非兩者都更新。例如，一個近期的日期修正可能只適合更新短期記憶。
+  evidence: [SPEAKER_00]: 我剛本來想的是我在猜因為我還是不太理解這個 tool calling的意思，那我剛想的是譬如說像剛剛我們一開始我們講說5月13號要那專題展，然後你們說5月5號對，好那這件事情它有沒有需要去update long term memory，對然後也許這這件事情它是比較短期是最近在講的東西，...
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.4471
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分數可能回升而被重新激活。此舉旨在測試 agent 在保留長期資訊的同時，抑制過時或較不相關資訊的能力。
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。 [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，...
+- [0506 | 2026-05-06 | L1-0506-029] type=finding importance=0.62 score=0.4357
+  content: 長期記憶系統採用三層級結構：L1 是基礎記憶單元，L2 是對 L1 節點的摘要（例如，來自四次會議），L3 是所有上下文的最高層級摘要。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去...
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-retrieval] memory retrieval
+  matched L1: L1-0408-022
+  topic_size=6 selected_event_count=4 omitted_event_count=2
+  current_state: Current position: 記憶檢索（memory retrieval）的策略尚未確定，特別是關於應該優先按 segment 的主題進行搜索，還是按 idea unit 的分類類型（例如 To-do）進行搜索，這是一個關鍵的未決問題。
+  evolution_summary: This topic began with L1-0307-015: 將短期記憶限制在最近三個 session 的設計帶來一個懸而未決的問題：如何定義「距離」或「相關性」，以檢索超出此固定時間範圍的重要資訊。 Latest evidence is L1-0506-022: 記憶檢索（memory retrieval）的策略尚未確定，...
+  latest_position: 記憶檢索（memory retrieval）的策略尚未確定，特別是關於應該優先按 segment 的主題進行搜索，還是按 idea unit 的分類類型（例如 To-do）進行搜索，這是一個關鍵的未決問題。
+  timeline_digest:
+    - [2026-03-07 L1-0307-015] 將短期記憶限制在最近三個 session 的設計帶來一個懸而未決的問題：如何定義「距離」或「相關性」，以檢索超出此固定時間範圍的重要資訊。
+    - [2026-03-25 L1-0325-003] Agent 的回憶功能將改為播放相關的過去討論音訊片段，而非僅顯示文字。此功能將利用記憶物件中的時間戳來定位並播放原始音訊。
+    - [2026-04-08 L1-0408-022] 針對讓 LLM 選擇檢索 STM 或 LTM 的提案，有人提出反對論點，認為這不必要。此論點以人腦類比，指出不同類型的記憶似乎是持續且同時活躍的。因此，建議採用另一種架構：由系統同時查詢 STM 和 LTM，再將兩者的內容合併後交給 LLM 生成回應。
+    - [2026-05-06 L1-0506-022] 記憶檢索（memory retrieval）的策略尚未確定，特別是關於應該優先按 segment 的主題進行搜索，還是按 idea unit 的分類類型（例如 To-do）進行搜索，這是一個關鍵的未決問題。
+
+[L2-long-term-memory] long term memory
+  matched L1: L1-0422-039
+  topic_size=17 selected_event_count=4 omitted_event_count=13
+  current_state: Current position: 長期記憶系統已確定採用增量處理方式，逐部分讀取生成的逐字稿。在物件生成上，系統會先將資訊儲存為「候選者」(candidate)，然後檢查後續內容是否相關，若相關則進行合併。
+  evolution_summary: This topic began with L1-0307-019: 採用的架構是：短期記憶儲存近期的詳細資訊，然後定期處理並轉換成不同結構，成為長期記憶的一部分，最終可被檢索以影響即時輸出。 Latest evidence is L1-0429-021: 長期記憶系統已確定採用增量處理方式，逐部分讀取生成的逐字稿。在物件生成上，...
+  latest_position: 長期記憶系統已確定採用增量處理方式，逐部分讀取生成的逐字稿。在物件生成上，系統會先將資訊儲存為「候選者」(candidate)，然後檢查後續內容是否相關，若相關則進行合併。
+  timeline_digest:
+    - [2026-03-07 L1-0307-019] 採用的架構是：短期記憶儲存近期的詳細資訊，然後定期處理並轉換成不同結構，成為長期記憶的一部分，最終可被檢索以影響即時輸出。
+    - [2026-04-22 L1-0422-039] 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+    - [2026-04-22 L1-0422-010] 目前的系統架構決定，short-term memory 和 long-term memory 將分開獨立更新。每個記憶體處理過程都會接收完整的逐字稿，並在沒有互動的情況下各自進行更新。
+    - [2026-04-22 L1-0422-030] 團隊決定長期記憶 (long-term memory) 的當前設計目標是使其結構盡可能扁平化，而非採用可能允許與短期記憶合併的樹狀結構。

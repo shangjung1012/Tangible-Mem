@@ -1,0 +1,124 @@
+=== Current Implementation State ===
+This section describes the current repo implementation / canonical handoff.
+For current-state questions, use this section over older meeting discussion when they conflict.
+- L1 source: share_mem/tree.json and share_mem/meetings/*.json are immutable meeting evidence.
+- L2 active view: long_term/l2/l2_view.json and long_term/l2/l2_index.json. The active L2 grouping is topic-based over immutable L1 objects, not four-meeting temporal batching and not one meeting per L2.
+- L3 promotion: long_term/l3/l3_view.json and long_term/l3/l3_index.json are sidecars that promote oversized L2 topic families and materialize child L2 nodes.
+- Retrieval: evidence-first layered retrieval starts from L1 seeds, then expands to relevant L2 / child-L2 / L3 navigation context.
+- Current counts: meetings=7, L1_objects=448, L2_topics=16, linked_L1=411, L3_families=3, child_L2=19, retrieval_budget_profile=generous_layered.
+
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-literature-review: literature review
+  - child L2 L2-literature-review-google-scholar: google scholar
+  - child L2 L2-literature-review-speech-annote-test: speech annote test
+- L3 L3-memory-architecture: memory architecture
+  - child L2 L2-memory-architecture-long-term-memory: long term memory
+  - child L2 L2-memory-architecture-short-term-memory: short term memory
+- L3 L3-data-quality: data quality
+  - child L2 L2-data-quality-segment-start-time: segment start time
+  - child L2 L2-data-quality-voice-conversion: voice conversion
+- Unpromoted L2 topics:
+  - L2-prompt-engineering: prompt engineering
+  - L2-context-management: context management
+  - L2-function-calling: function calling
+  - L2-cost-management: cost management
+  - L2-api-key: api key
+
+=== L1 Evidence Seeds ===
+- [0307 | 2026-03-07 | L1-0307-001] type=approach_change importance=0.72 score=0.3242
+  content: 系統採用了一種遺忘機制，如果一個記憶項目在特定次數的近期會議（例如三次）內未被再次討論，該項目將被刪除。
+  evidence: [SPEAKER_01]: 上一次在 16 這個 meeting 的紀錄都要再往前推，它就會變成一週前、兩週前。可是它現在記錄的是 meeting ID，所以不行。以這個點來說，它的 meeting 現在是 16，更新後就會改成 17；沒有更新時就是 16。因為我們現在設定的是前三次，所以完成 16 之後，如果超過這個範圍就會被處理掉。 [SPEAKER_01]: 如果這個點在三次內都沒有被討論，它應該就會把它刪掉。
+- [0325 | 2026-03-25 | L1-0325-056] type=decision importance=0.72 score=0.3561
+  content: 專案決定將研究重點放在檢索（retrieval）問題上。核心挑戰在於 agent 應如何權衡與組合來自工作、短期和長期三種記憶體的資訊，以生成最佳輸出。
+  evidence: [SPEAKER_01]: 其實最大的問題是還是在retrieval上就是如果今天有working然後有short term 有long term [SPEAKER_01]: 這三個下來的話那我們今天因為我們現在是講的都是怎麼學update memory嘛那update沒什麼問題就是把它丟進去而已但是如果今天他agent實際要講話的時候他一定要用到這三個memory那他用的時候就是他取的時候比重是要怎麼取的效果比較好 [SPEAKER_04]: 因為我們最後出來會有三組結果
+- [0408 | 2026-04-08 | L1-0408-007] type=approach_change importance=0.77 score=0.3969
+  content: 採用了一種時間衰減機制來處理主題的重現。記憶節點的「recency」分數會隨時間衰減，但會根據其初始「importance」分數設定一個最低「下限值」(floor)。這可以防止重要的舊記憶完全消失，並在相關主題再次被提及時能夠被重新檢索。
+  evidence: [SPEAKER_00]: 這有點像那樣的概念。我們比較像是從葉節點往上帶內容。上次我們想處理的最有趣問題，是某些主題會慢慢不見，但在某個時刻又被提到，對不對？這裡我們有一個 type 是 open question，它會取那些當初未解的問題。 [SPEAKER_00]: 未解是怎麼定義？例如在 1 到 31 的錄音檔裡，第一次大家提出某個方法。透過這個流程，它某方面會變成一個 L1 節點，對嗎？針對那個 meeting 檔，它會是一個 L1 節點。假設接下來五次這個主題都沒有被提到，這個節點會怎麼變？ [SPEAKER_03]: 那它在我們的記憶結構裡會有什麼變動？它的 recency 會變低，...
+- [0408 | 2026-04-08 | L1-0408-009] type=approach_change importance=0.7 score=0.356
+  content: 長期記憶的提取流程將採用一組預先定義的六個類別：decision、TODO、method change、result、open question 和 argument。雖然未來這些類別可能成為可配置的參數，但目前這套分類是 L1 記憶物件的標準綱要。
+  evidence: [SPEAKER_03]: 這是我們目前會取的。目前取的有 decision、TODO、method change、result、open question、argument。 [SPEAKER_00]: 這些選項是怎麼選的？應該是初步評估哪些情況以後會比較容易用。所以 transcription 來了之後，是先根據每個 sentiment，然後去下 label 嗎？還是怎麼做？也就是一個 transcription 來了之後，我們怎麼 process？ [SPEAKER_03]: 第一件事情是整個丟進 LLM，然後 LLM 根據 prompt 去拉重點。它會一句一句分析，看有沒有符合我們這些類別。...
+- [0408 | 2026-04-08 | L1-0408-006] type=approach_change importance=0.73 score=0.3441
+  content: 檢索流程的設計是先將查詢與 L1 節點進行比對，然後取回匹配的 L1 及其對應的父層 L2 和 L3 摘要，以便同時提供具體細節和高層次的上下文。
+  evidence: [SPEAKER_03]: 我們第一層是每一次 meeting，四次 meeting 會整理成一個 L2。像這個 P001 經過四次之後，就進入階層式記憶。第一層所有的 leaf notes 是每一次 meeting 各自一個，四個往上會整理出一個 L2，所有 L2 再往上整理。 [SPEAKER_00]: 也就是 L2、L3 會隨著 L1 一起帶進來。它們都是在處理長期記憶。應該說，在長期記憶裡面有不同精細程度。L3 是最 high level 的。剛剛看 31 的話，以這個 agent 的大腦來說，它現在知道有五個大重點在這裡。再往下是 L2。 [SPEAKER_00]: L2 是月度的總結，也就是以月為單位的總結。...
+- [0422 | 2026-04-22 | L1-0422-020] type=decision importance=0.78 score=0.349
+  content: 決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。
+  evidence: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，...
+- [0422 | 2026-04-22 | L1-0422-001] type=approach_change importance=0.74 score=0.341
+  content: 記憶體更新流程已改為採用以 Gemini Tool Calling 為核心的架構。此方法將由 WhisperX 產生的逐字稿視為一個資料庫，讓 Gemini 動態決定要讀取多少行，避免了固定的資料分塊。Gemini 被賦予 `Read` 和 `Write` 兩個主要函式：`Read` 用於存取原始逐字稿和現有的記憶體資料庫 (DB)，而 `Write` 則用於更新一個獨立的、結構化的記憶體資料庫。
+  evidence: [SPEAKER_03]: 就是我們上次做的 Tool Calling 的意思就其實只是讓 Gemini 來可以決定他要怎麼用函數而不是一次全部喂他，就上次可能講得沒有很清楚就是我們使用 Tool Calling 的目的只是讓 Gemini 來可以決定他要用什麼函數，他要怎麼調用整個逐字稿 [SPEAKER_02]: 就是我如果把逐字稿轉成 Database 的形式的話他就可以決定他一次要調用幾行，然後如果他覺得調用的太少的話他可以再回去調用更長或是他想要調用之前的也可以，就可以算是規避掉切塊的這個問題，就是不會有那個資料要被區分怎麼切或怎麼去區分的問題。...
+- [0429 | 2026-04-29 | L1-0429-024] type=decision importance=0.65 score=0.3788
+  content: 系統的 `re-transcribe` 函數已決定使用約20行的固定大小文本塊（chunk）。此數值最初是任意設定的，但因其產生了可接受的結果而被保留，目前不會進行動態調整。
+  evidence: [SPEAKER_02]: 他現在這邊的後面指的是多後面就是後面一句話嗎還是 [SPEAKER_04]: 後面要看他每一次re-transcribe的時候會我看一下這個re-transcribe是只有讀 [SPEAKER_02]: 就是assuming他會是一個不斷一直讀的狀態 [SPEAKER_04]: re-transcribe的話他有一個input他的input就會是你現在要往前跳幾行的那個我看我之前跑的紀錄一次會先跑大概20幾行左右 [SPEAKER_02]: 那那個20幾行是怎麼決定的 [SPEAKER_01]: 20幾行20幾行20幾行是算是怎麼講算是我們初始算隨便給他一個值吧但是我們看他效果跑出來還ok就定然後我...
+- [0429 | 2026-04-29 | L1-0429-029] type=decision importance=0.76 score=0.3738
+  content: 團隊決定探索一種「動態分塊 (dynamic chunking)」方法。系統將不再使用固定大小的區塊，而是預測接下來有多少對話輪次屬於同一主題，並將它們組合成一個可變大小的區塊進行處理。此方法將與固定分塊方法進行比較。
+  evidence: [SPEAKER_02]: 然後我一直去merge merge merge但那個就是非常的compute時間要非常的大對然後對折衷的方式可能是說也許我看到這一句話我大概就知道說就是我們把那個fix拿掉它是dynamic它不要都是三都不要都是三個turn三個turn三個turn但是我現在看到這一句話我大概預估應該會是幾個turn都是在講這件事情我就往前跳然後把它變成一個block [SPEAKER_02]: 對 然後去把它弄起來就是我本來想的是我們是要用比較bottom up的方法那我們可能可以然後就那種動態去切就是我要怎麼去丟那個丟那個最小的單位去給language model去產生小summary然後去iterate產生一個...
+- [0429 | 2026-04-29 | L1-0429-133] type=approach_change importance=0.75 score=0.3718
+  content: 為了解決記憶節點因資訊混合而趨同（node convergence）的問題，團隊的解決方法已從最初考慮縮小輸入窗口的簡單策略，演變為對核心架構的探討。目前的討論集中在兩種不同的處理流程之間選擇：一種是明確地將逐字稿預先分割成獨立的「idea units」再進行處理；另一種則是依賴一個更智能的 `write_memory` 函數，使其能從較大的文本塊中隱含地、選擇性地提取相關資訊來更新特定節點。
+  evidence: [SPEAKER_02]: 因為我沒有看到你update function裡面有什麼constraint所以我比較好奇說所以這樣子update function它已經就是它今天update function裡面沒有我自己的處理就Gemini它要怎麼update這個東西它是已經就直接寫進去了它不會再做調整所以它裡面要填這裡面要填什麼東西是由Gemini決定的所以 [SPEAKER_02]: 所以就是剛剛那件事情是會發生的對不對就是兩個節點最後你改出來之後其實會其實基本上是一樣的意思都是在講海報裡面加上Precision Recruit那如果有可能會發生那解法的話應該會怎麼解比較好你覺得要怎麼解呢 [SPEAKER_00]: 嗯就...
+- [0429 | 2026-04-29 | L1-0429-054] type=open_issue importance=0.53 score=0.3689
+  content: 團隊對於系統如何在固定的20行文本塊內識別和創建不同長度的「物件」（objects）的具體機制尚不清楚，討論最終以需要審查程式碼來釐清，這表明物件的結構和創建邏輯是一個待解的疑問。
+  evidence: [SPEAKER_01]: 然後 create object 就是建立一個，它會先存成一個 candidate，然後在你後面再去讀到的時候，它會去看我現在這個 candidate 跟我後面的內容是不是相關。如果是相關的，它就合併在一起一起處理。它現在這邊的後面指的是多後面？就是後面一句話嗎？還是。 [SPEAKER_02]: 後面要看它每一次 read transcript 的時候會。我看一下這個 read transcript 是只有讀，就是 assuming 它會是一個不斷一直讀的狀態。read transcript 的話它有一個 input，它的 input 就會是你現在要往前跳幾行的那個。我看我之前跑的紀錄，...
+- [0429 | 2026-04-29 | L1-0429-062] type=finding importance=0.52 score=0.3669
+  content: 目前系統以約 20 行的固定大小文本塊 (chunk) 來處理逐字稿。在單一文本塊內，系統能夠識別出多個不同長度的 objects。
+  evidence: [SPEAKER_01]: 然後 create object 就是建立一個，它會先存成一個 candidate，然後在你後面再去讀到的時候，它會去看我現在這個 candidate 跟我後面的內容是不是相關。如果是相關的，它就合併在一起一起處理。它現在這邊的後面指的是多後面？就是後面一句話嗎？還是。 [SPEAKER_02]: 後面要看它每一次 read transcript 的時候會。我看一下這個 read transcript 是只有讀，就是 assuming 它會是一個不斷一直讀的狀態。read transcript 的話它有一個 input，它的 input 就會是你現在要往前跳幾行的那個。我看我之前跑的紀錄，...
+- [0429 | 2026-04-29 | L1-0429-050] type=finding importance=0.5 score=0.3629
+  content: 為了解決關於 `create_object` 函數和物件結構的模糊之處，會議結論是需要審查相關程式碼。
+  evidence: [SPEAKER_01]: 然後 create object 就是建立一個，它會先存成一個 candidate，然後在你後面再去讀到的時候，它會去看我現在這個 candidate 跟我後面的內容是不是相關。如果是相關的，它就合併在一起一起處理。它現在這邊的後面指的是多後面？就是後面一句話嗎？還是。 [SPEAKER_02]: 後面要看它每一次 read transcript 的時候會。我看一下這個 read transcript 是只有讀，就是 assuming 它會是一個不斷一直讀的狀態。read transcript 的話它有一個 input，它的 input 就會是你現在要往前跳幾行的那個。我看我之前跑的紀錄，...
+- [0429 | 2026-04-29 | L1-0429-060] type=finding importance=0.62 score=0.36
+  content: 提出了一項實驗設計，旨在比較動態分塊（dynamic chunking）與固定大小分塊（fixed-chunk）兩種方法。動態方法會根據當前內容預測主題的持續長度來決定讀取行數，而固定方法則使用固定的輪次數。為了公平比較，固定分塊的大小可以根據動態方法產生的平均分塊大小來設定。評估指標將包括請求次數（作為計算成本的代理）和結果品質。
+  evidence: [SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，...
+- [0429 | 2026-04-29 | L1-0429-027] type=open_issue importance=0.57 score=0.35
+  content: 系統中 `re-transcribe` 函數讀取固定大小約 20 行的區塊，此數值是任意設定的，並未動態調整。雖然目前的結果可接受，但這個參數並未經過優化，其對系統效能的影響仍是個待解決的設計問題。
+  evidence: [SPEAKER_02]: 他現在這邊的後面指的是多後面就是後面一句話嗎還是 [SPEAKER_04]: 後面要看他每一次re-transcribe的時候會我看一下這個re-transcribe是只有讀 [SPEAKER_02]: 就是assuming他會是一個不斷一直讀的狀態 [SPEAKER_04]: re-transcribe的話他有一個input他的input就會是你現在要往前跳幾行的那個我看我之前跑的紀錄一次會先跑大概20幾行左右 [SPEAKER_02]: 那那個20幾行是怎麼決定的 [SPEAKER_01]: 20幾行20幾行20幾行是算是怎麼講算是我們初始算隨便給他一個值吧但是我們看他效果跑出來還ok就定然後我...
+- [0429 | 2026-04-29 | L1-0429-065] type=decision importance=0.73 score=0.3409
+  content: 團隊決定進行一項實驗，比較「動態分塊 (dynamic chunking)」與「固定分塊 (fixed-chunk)」兩種方法。動態方法將根據主題連貫性預測要讀取的對話輪次數。為求公平比較，固定分塊的大小將設定為動態方法產生的平均分塊大小。評估將比較計算成本（以請求數量為代理指標）和輸出品質。...
+  evidence: [SPEAKER_00]: 其實如果是這樣子的話，你只要在 prompt 加說要讀幾行，可以根據目前讀到的行。 [SPEAKER_02]: 對，其實我想的就是這件事。然後想說如果可以，那一種的話就是說我們可以去看說它 compute 了幾次。 [SPEAKER_02]: 比如說假設總共有 200 個 turn 好了，然後用我們的方法，因為我們每一次開啟一個新的 idea unit 的時候，它都會先去計算說我現在要往前跳多少。對，那這樣的話，它可能比起 fixed 的話，fixed 的話其實第一件事你要到底切多少。fixed 最 fine-grained 的方法就是切每個 turn，...
+- [0429 | 2026-04-29 | L1-0429-108] type=approach_change importance=0.73 score=0.3409
+  content: 系統架構將從目前的單體式腳本（monolithic script）轉變為 Manager-Agent 模型。此變更的核心是實現關注點分離（separation of concerns）：一個「純粹的」Manager 僅負責分派任務，而具體的任務（如決定跳行、更新記憶體）則由專門化、可獨立測試的 Agent 執行。此舉旨在解決目前 Manager 職責混雜的問題，並提升系統的可控性、可測試性與可除錯性。
+  evidence: [SPEAKER_00]: 嗯所以我的就是好我知道這個agent所以我的呃這個我因為一開始一開始講的意思我以為是說就是呃剛剛就是我目前的做法是 [SPEAKER_00]: 怎麼說勒就是他不能控制那這樣子就可能會比較能控制嗎 [SPEAKER_02]: 可以啊像你的agent不是就可以你現在不就知道說我現在agent設定成怎麼樣我就會知道我的agent回傳是怎麼樣嗎 [SPEAKER_00]: 我說不是就是精細度的部分就是因為你一樣也是用一個AI去讓你去判斷說他今天要跳幾行啊他只是就我知道分 [SPEAKER_02]: 我剛剛講的不能控制不是說你的切東西跟intelligence上對不對我是說流程上面我能不能控制 [SPEAKE...
+- [0506 | 2026-05-06 | L1-0506-033] type=decision importance=0.65 score=0.4076
+  content: 決定將主題在單次會議中被提及的頻率，作為 LLM 賦予相關 idea units「importance」分數的標準之一。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去...
+- [0506 | 2026-05-06 | L1-0506-045] type=argument importance=0.67 score=0.3982
+  content: 支持主題導向記憶體架構的論點是，它允許在單一 L1 節點內追蹤一個想法的完整演變歷史。當一個相似的想法被重新討論時，系統會更新現有的 L1 節點（而非創建新節點），並添加新的時間戳和內容版本，從而實現對想法演變的「回放」功能。
+  evidence: [SPEAKER_02]: 我本來想像中的是會是譬如說假設是一個譬如說有一個agent譬如說有一個有一個manager好了他在處理他在開會然後他現在在每一個禮拜他想要去他會建構出他的他的memory那我想像中的譬如說 有一個節點他可能是會在講的是時間的考量時間所有東西是跟時間有關的我們先講最後的記憶體記憶的架構可能就跟時間然後跟event的type有關的東西然後有的是關於是譬如說參與的行政就是組織的人員參與的人員好這是一個 最high level的就是有這三件事情對那譬如在以時間上來看的話呢就是以時間上來看的話可能就會有L2的會是譬如說我想看時間 我本來也是這樣然後時間也許是一開始是一開始什麼都沒有嘛那可能是我們經過第一次會議...
+- [0506 | 2026-05-06 | L1-0506-029] type=finding importance=0.62 score=0.3639
+  content: 長期記憶系統採用三層級結構：L1 是基礎記憶單元，L2 是對 L1 節點的摘要（例如，來自四次會議），L3 是所有上下文的最高層級摘要。
+  evidence: [SPEAKER_02]: update 到 L1也就是它會加一個 L1 的 node 進去就對了對然後那它的相對應的 L2 是不是也要 update還是它是 tree最後整個 meeting 完之後它的 L2 他們的結構長怎樣我們看得出來嗎就假設說它可以就是其實我覺得像這種你可以直接 inspect然後可以看到內容我們先不管它內容準確怎麼樣至少它是個 inspectable 的一個流程那我現在想像的是說有沒有一個方式是可以看我現在目前 long term 假設是三個 layer 對那我可以看到目前的 譬如說 L3 現在有哪幾個東西那它現在的 L2 有哪些東西應該可以 就是我們有想要做這個對 而且那件事情的話你可能就要動態的去...
+- [0506 | 2026-05-06 | L1-0506-008] type=open_issue importance=0.61 score=0.3619
+  content: 處理流程的基本架構受到質疑，特別是關於是否有必要採用目前由上而下（top-down）的兩階段作法，即先切分出較廣泛的 `segments`（主題），再將其分解為 `idea units`（觀點）。有人認為，由下而上（bottom-up）的方法，也就是先識別 `idea units` 再將其組合成主題，可能更為自然。
+  evidence: [SPEAKER_02]: 我切怎麼切啊 因為其實idea units 它就是某一些定義啦就是說這些東西在講一個coherent的一個idea的話然後還有某一些我們好像現在plot是算是checkable的feel point你們到時候可能可以用一個slides你們可以到時候弄一個slides然後把每一個重要的plot都把它擺在那個地方 對 然後我們到時候就可以直接針對prompt看一下有沒有可以貼的地方再加一些 加一些 加一些你說在專題競賽前 這兩天我們先來討論一下在專題競賽的時候我覺得你們可以就是準備著一個有點像是backup那如果有人問說 孫怡這邊是怎麼切的對 然後你可以說那這邊的話我們有把所有的prompt放在這個地方...
+- [0506 | 2026-05-06 | L1-0506-017] type=approach_change importance=0.74 score=0.3538
+  content: 系統目前使用六種 agent 類型來標記 `idea units`：Method Change、To-Do、Result、Argument、Open Question 和 Decision。這被視為會議中常見類型的初始集合。
+  evidence: [SPEAKER_04]: 就是那些unit可以被標籤某一種type就type agent有抓到他們是哪一個type你剛剛說六個type六個agent是哪六個就是Method Change, To-Do, Result, Argument, Open Question然後還有一個是然後那些是在我們要update memory的時候去看說它是要去merge到哪一個類型的裡面 [SPEAKER_02]: Decision, To-Do, method change, result, argument,...
+- [0506 | 2026-05-06 | L1-0506-042] type=proposal importance=0.66 score=0.3449
+  content: 提出一種以時間為基礎的記憶體架構。在此模型中，每個 L2 節點代表一次會議，而 L1 節點則是該次會議中的具體想法單元。此方法為每次會議創建新的、獨立的節點，以保留一個清晰、不可變的時間軸，供 LLM 解讀。
+  evidence: [SPEAKER_04]: 我先問一下一次的Meeting的內容就可以產生三個階層的東西 可是這是一次好了這是可能是0307好了那這個0307裡面其實就會有很多很多個Object這樣然後每個Object都有各自的importance等一下你就畫它的結構長什麼樣子它的結構譬如說它就會所以它L2接下來的會是不同的日期嗎嗯就是那一場Meeting那一場Meeting然後裡面那一場Meeting裡面會有很多個Object這樣是我們剛剛更新的那個一場Meeting裡面的那些那種 [SPEAKER_02]: 應該是說他的L2內容會是像什麼樣 我們舉個例L2會是類似 假設我們來說我們現在在講party Planning好了我們在說我們在討論...
+- [0506 | 2026-05-06 | L1-0506-041] type=open_issue importance=0.64 score=0.3409
+  content: 專案面臨一個關鍵的記憶體架構設計決策：要採用以時間為基礎的結構，還是以主題為基礎的結構。以時間為基礎的方法將每個 L2 節點對應到單次會議，以保留清晰的時序脈絡。相對地，以主題為基礎的方法則根據語意主題組織 L1 想法單元，並在想法重現時更新現有節點，而非創建新節點。此決策是對原始時間基礎架構的重新評估。
+  evidence: [SPEAKER_04]: 我先問一下一次的Meeting的內容就可以產生三個階層的東西 可是這是一次好了這是可能是0307好了那這個0307裡面其實就會有很多很多個Object這樣然後每個Object都有各自的importance等一下你就畫它的結構長什麼樣子它的結構譬如說它就會所以它L2接下來的會是不同的日期嗎嗯就是那一場Meeting那一場Meeting然後裡面那一場Meeting裡面會有很多個Object這樣是我們剛剛更新的那個一場Meeting裡面的那些那種 [SPEAKER_02]: 應該是說他的L2內容會是像什麼樣 我們舉個例L2會是類似 假設我們來說我們現在在講party Planning好了我們在說我們在討論...
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-memory-architecture-short-term-memory] short term memory
+  parent L3: L3-memory-architecture memory architecture
+  matched L1: L1-0506-045, L1-0506-029
+  topic_size=10 selected_event_count=8 omitted_event_count=2
+  current_state: Child topic 'short term memory' has 10 assigned L1 evidence object(s). Latest evidence: 支持主題導向記憶體架構的論點是，它允許在單一 L1 節點內追蹤一個想法的完整演變歷史。當一個相似的想法被重新討論時，系統會更新現有的 L1 節點（而非創建新節點），並添加新的時間戳和內容版本，...
+  timeline_digest:
+    - [2026-03-07 L1-0307-012] 目前的「短期記憶」被定義為保留過去三次會議的資訊，因此它實際上已經作為一種跨會話的長期記憶形式在運作。
+    - [2026-03-25 L1-0325-007] 系統設計將永久儲存會議錄音的原始資料，而提取的記憶物件則作為可指向這些原始資料的摘要。
+    - [2026-03-25 L1-0325-043] 提出短期記憶 (Short-Term Memory) 的初始方案，旨在保留過去三次會議的資訊，並專注於待辦事項 (to-do items)。
+    - [2026-03-25 L1-0325-047] 如何設計一個長期記憶系統，既能實現基於時間的衰減，又能防止重要的舊資訊完全遺失？目前的提案是採用時間排序的線性結構，並結合語意相似度和「Residency」分數的檢索機制，但此設計仍待驗證與最終確定。
+    - [2026-03-25 L1-0325-049] 樹狀結構的記憶體架構被認為不適用於長期記憶，因為它們會打散記憶、喪失時間維度，從而無法實施基於時間的權重衰減（time-based weight decay）。
+    - [2026-03-25 L1-0325-054] 提出一個設計，採用單一、統一的記憶體系統，其中快取（cache）將作為短期記憶體的功能。
+    - [2026-05-06 L1-0506-029] 長期記憶系統採用三層級結構：L1 是基礎記憶單元，L2 是對 L1 節點的摘要（例如，來自四次會議），L3 是所有上下文的最高層級摘要。
+    - [2026-05-06 L1-0506-045] 支持主題導向記憶體架構的論點是，它允許在單一 L1 節點內追蹤一個想法的完整演變歷史。當一個相似的想法被重新討論時，系統會更新現有的 L1 節點（而非創建新節點），並添加新的時間戳和內容版本，從而實現對想法演變的「回放」功能。
+
+[L2-data-quality-segment-start-time] segment start time
+  parent L3: L3-data-quality data quality
+  matched L1: L1-0408-009
+  topic_size=9 selected_event_count=8 omitted_event_count=1
+  current_state: Child topic 'segment start time' has 9 assigned L1 evidence object
+...(truncated)

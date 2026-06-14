@@ -1,0 +1,119 @@
+=== Global Topic Map ===
+Low-resolution navigation context only; not standalone factual evidence.
+- L3 L3-memory-evaluation-strategy: memory evaluation strategy
+  - child L2 L2-overall-memory-system-evaluation: Overall Memory System Evaluation
+  - child L2 L2-memory-mechanism-evaluation-metrics: Memory Mechanism Evaluation & Metrics
+  - child L2 L2-evaluation-datasets-ground-truth: Evaluation Datasets & Ground Truth
+- L3 L3-memory-lifecycle: memory lifecycle
+  - child L2 L2-memory-retention-and-forgetting: memory retention and forgetting
+  - child L2 L2-importance-activation-and-recency: importance, activation, and recency
+  - child L2 L2-importance-feedback-and-editor: importance feedback and editor
+  - child L2 L2-topic-lifecycle-and-evolution: topic lifecycle and evolution
+- Unpromoted L2 topics:
+  - L2-data-fragmentation: data fragmentation
+
+=== L1 Evidence Seeds ===
+- [0307 | 2026-03-07 | L1-0307-027] type=argument importance=0.67 score=0.4124
+  content: 為了證明記憶體架構的價值，必須清楚地展示一個情境，在該情境中，長期記憶體能導致與基準 agent 不同的結果。
+  evidence: [SPEAKER_00]: 比如說跑過去之後，讓這些 model 互相比較，看誰回答得對。像某些過去發生的事情，就看它們怎麼回答。一般來說，因為這部分的 literature 我比較不熟，你們要看一下要怎麼證明。剛剛我們講的概念都聽起來很 make sense，也很 reasonable。 [SPEAKER_00]: 但要怎麼證明我們後面的確需要這些架構？別人可能會說搞不好用一般的 LLM 就好，你怎麼確定這個比較好？他們是怎麼證明的？我的想像是應該會有 history in dataset，也應該會有 benchmarking，但我不是很確定。 [SPEAKER_00]: 可以啊。但是如果可以的話，我也想看得出差異，...
+- [0318 | 2026-03-18 | L1-0318-015] type=finding importance=0.61 score=0.3996
+  content: LOCOMO (2024) 論文的評估方法是將其方法與「完整原始逐字稿」及「RAG」進行比較。它使用 LLM 作為裁判來進行二元正確性判斷，並將每個模型運行 10 次以計算平均分數。評估指標還包括延遲和 token 數量，研究發現，儘管 LOCOMO 在多跳問題上未超越 RAG，但其 token 消耗量較低。
+  evidence: [SPEAKER_02]: 然後就是它有從 full context，就是完全 raw 的逐字稿，餵進 LLM 回答；或是它有比有做 RAG 的，然後它還有比本來 LOCOMO 它自己就有去測市面上的 LLM 的 benchmark，就 LOCOMO 自己提供的測完的結果。 [SPEAKER_02]: 它 performance metrics 的方式是它用 LLM 去當評審，所以他會給 LLM。因為它用以前的像 BERT 的那種方法，它是算語意，但是它算語意的話會變成是，它裡面舉個例子是艾莉絲今年七歲，艾莉絲今年三歲，這兩個的分數會很高。就其實她答案完全錯，但分數會很高。所以它的方式是給 LLM 答案，...
+- [0325 | 2026-03-25 | L1-0325-057] type=decision importance=0.69 score=0.4008
+  content: 為評估三層記憶體架構的優越性，決定將「無三層記憶體結構的系統」設定為比較基準（baseline）。此基準相當於將完整對話記錄（full context）輸入模型，但目前被認為是不可行的。
+  evidence: [SPEAKER_02]: 就還有一個應該是說我怎麼去evaluate通常我們要怎麼去證明這件事情所以我們要claim說它是個long term然後它如果有因為我這個三層架構跟沒有三層架構這件事情 [SPEAKER_01]: 沒有三層架構的baseline應該也只能就整個逐字稿列出來然後它要自己記得而已吧 [SPEAKER_00]: 但他做不了這麼多就是把他全部拿一頓塞進去就對了 [SPEAKER_03]: 就算是現階段他們其他他們都沒有辦法做到那麼長篇的
+- [0408 | 2026-04-08 | L1-0408-022] type=argument importance=0.67 score=0.4213
+  content: 針對讓 LLM 選擇檢索 STM 或 LTM 的提案，有人提出反對論點，認為這不必要。此論點以人腦類比，指出不同類型的記憶似乎是持續且同時活躍的。因此，建議採用另一種架構：由系統同時查詢 STM 和 LTM，再將兩者的內容合併後交給 LLM 生成回應。
+  evidence: [SPEAKER_00]: 那我們為什麼需要選擇短期跟長期？我們大腦運作時，短期記憶、長期記憶和工作記憶不是同時一直在動、一直被 update 嗎？你這樣等於是直接把它們混在一起嗎？ [SPEAKER_04]: 沒有。我現在是在思考，你剛剛說要取用短期還是長期，這是什麼意思。一開始有一種方法是，一句話進來，不管是老師或其他人講的，這句話會經過短期記憶，也會經過長期記憶，然後把取出的東西再結合這一句話送給 LLM。 [SPEAKER_04]: 然後 LLM 回一個東西出來，這個東西就是這個 agent 的回應。 [SPEAKER_04]: 那 TODO 查詢的時候，它不是應該先進來，然後去短期記憶和長期記憶找內容嗎？...
+- [0408 | 2026-04-08 | L1-0408-046] type=proposal importance=0.64 score=0.4172
+  content: 目前的架構將短期記憶 (short-term memory, STM) 和長期記憶 (long-term memory, LTM) 視為兩個獨立的系統，它們從相同的來源資料獨立更新。此決定暫時解決了兩者之間的關係，同時也承認這種設計可能導致內容重複，且兩者之間的轉移機制仍是未解決的問題。
+  evidence: [SPEAKER_04]: 不一定吧，要看它久不久、重不重要。它其實應該都會在長期，但久了會慢慢不見。這樣的話，直接拿這一次的組織稿分別給短期和長期，不是也可以嗎？如果長期自己的更新方式，是自己判斷這份組織稿裡的東西能不能放進長期記憶，那就可以直接用同一份來源更新。 [SPEAKER_04]: 喔，我知道了。應該是那個學生要來彈那個。我等一下講一下。我們那時候有想過，確實可以從短期記憶直接問出一個結果，但好像沒有什麼必要性。 [SPEAKER_04]: 你可以直接從逐字稿分開餵就好，不一定要把短期產出的結果再餵給長期。比較像兩個分開的資料庫，一個保存比較多細節，一個保存比較大綱。假設有五次 meeting，...
+- [0408 | 2026-04-08 | L1-0408-024] type=argument importance=0.63 score=0.4133
+  content: 目前將短期記憶 (STM) 和長期記憶 (LTM) 視為獨立更新的系統，其主要缺點是可能導致兩個記憶體之間內容重複。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-030] type=argument importance=0.62 score=0.4113
+  content: 應讓 LLM 透過 function calling 來決定要查詢短期記憶或長期記憶，而非使用固定的系統規則。理由是，選擇記憶體的決策邏輯本身很複雜，LLM 能夠處理更細微的查詢，甚至執行多步驟檢索（例如先查 LTM 再查 STM），從而提供更大的彈性與能力。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-020] type=argument importance=0.68 score=0.4027
+  content: 在記憶體檢索的架構上，有一種論點是採用由 LLM 驅動的方法。在此設計中，LLM 會透過 function calling 自行決定要呼叫短期記憶體 (STM) 還是長期記憶體 (LTM) 的檢索函式，這與在呼叫 LLM 前由系統預先擷取記憶體內容的作法不同。
+  evidence: [SPEAKER_04]: 我們剛剛講的是，不要把 transcription 直接整個丟進去，讓它 black box 運算。關於怎麼丟，我有一個想法。先說目前記憶有一個取用方式，就是 Gemini 有 function calling 的功能。原本我們可能是想先把記憶找到，再把記憶和目前說的話餵給 Gemini。 [SPEAKER_04]: 例如我講這句話，五個月前我們有討論類似內容，就會把這句話拿去餵記憶，記憶會回傳一個東西，再把這個東西和這句話一起餵給 Gemini。現在的做法是，你可以提供一個函數給 Gemini，讓 Gemini 自己判斷要不要呼叫這個函數。 [SPEAKER_04]: 等於現在的做法是，...
+- [0408 | 2026-04-08 | L1-0408-021] type=proposal importance=0.65 score=0.3987
+  content: 提出一種由 LLM 驅動的記憶體檢索架構。在此設計中，LLM（例如 Gemini）會被賦予呼叫短期記憶體（STM）和長期記憶體（LTM）的函式能力。當收到使用者查詢時，由 LLM 自行決定是否以及呼叫哪個記憶體檢索函式，系統再根據函式呼叫的結果來生成最終回應。這與預先擷取記憶體內容再送入 LLM 的方法不同。
+  evidence: [SPEAKER_04]: 我們剛剛講的是，不要把 transcription 直接整個丟進去，讓它 black box 運算。關於怎麼丟，我有一個想法。先說目前記憶有一個取用方式，就是 Gemini 有 function calling 的功能。原本我們可能是想先把記憶找到，再把記憶和目前說的話餵給 Gemini。 [SPEAKER_04]: 例如我講這句話，五個月前我們有討論類似內容，就會把這句話拿去餵記憶，記憶會回傳一個東西，再把這個東西和這句話一起餵給 Gemini。現在的做法是，你可以提供一個函數給 Gemini，讓 Gemini 自己判斷要不要呼叫這個函數。 [SPEAKER_04]: 等於現在的做法是，...
+- [0408 | 2026-04-08 | L1-0408-031] type=argument importance=0.66 score=0.3987
+  content: 記憶檢索的一個關鍵設計選擇是：由系統使用固定規則（例如，同時查詢 short-term 和 long-term memory），還是由 LLM 透過 function calling 動態決定要查詢哪個記憶體。後者被認為更具彈性，因為決策邏輯本身很複雜，適合由 LLM 處理。
+  evidence: [SPEAKER_04]: 記憶使用方式就是拿這句話去對裡面的記憶。因為一句話會取出記憶，取出的記憶代表之前發生過什麼。它會用這句話 segment 的語意去對比裡面的內容，拉出一些資訊。你上次說要看短期還長期嗎？我以為兩個都可以看，原本應該是都看，再丟回去算。 [SPEAKER_04]: 現在的做法是先看要找短期還是長期。應該說，去看你的問題需要短期還是長期。如果我們自己做，一開始一定是把這句話餵給長期記憶，長期吐出一個東西；也餵給短期記憶，短期吐出一個東西，然後把這些東西一起丟給 LLM。 [SPEAKER_04]: 但現在 LLM，例如 Gemini，有一個功能是讓 LLM 自己決定想用哪個函數。你把函數名稱跟參數給它，...
+- [0408 | 2026-04-08 | L1-0408-036] type=decision importance=0.73 score=0.3921
+  content: 團隊決定，短期記憶 (short-term memory) 和長期記憶 (long-term memory) 將獨立更新。此設計放棄了先前「短期記憶內容在淡忘或達到一定數量後會被整合進長期記憶」的假設，因為該模型會導致長期記憶無法反映專案的最新狀態。
+  evidence: [SPEAKER_00]: 但是長期會存任何一個短期記憶嗎？短期記憶的東西會越來越不見，對不對？ [SPEAKER_00]: 應該會變成長期的。過一段時間之後，它會消失在短期記憶裡，變成長期記憶的一部分。也不是變成長期，因為長期和短期是分開更新的。長期更新長期自己，短期更新短期自己。我原本也以為短期裡的東西消失後會塞進長期，但現在不是。因為如果它是同一層 agent，就像人類大腦一樣，長期、短期和工作記憶其實都是我的記憶。 [SPEAKER_00]: 記憶慢慢消失這件事，是指有些東西進到長期記憶，有些東西沒有被 long term catch 住，所以完全忘記。這樣很難判斷哪些東西被忘記。我原本以為是短期到一定節點數量後，...
+- [0422 | 2026-04-22 | L1-0422-022] type=proposal importance=0.7 score=0.4164
+  content: 提出一個兩階段的評估策略。第一部分，將專案的動態分塊方法與基線方法（如固定大小、逐句分塊）進行基準測試。第二部分，將專案的結構化記憶系統（包含 long-term/short-term memory）與標準的 RAG 系統進行比較，以證明其優勢。
+  evidence: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，...
+- [0422 | 2026-04-22 | L1-0422-039] type=approach_change importance=0.78 score=0.406
+  content: 長期記憶體（long-term memory）架構的一個關鍵設計是引入「遺忘」機制，讓資訊的關聯性和重要性隨時間衰減，此為其與短期記憶體的區別之一。
+  evidence: [SPEAKER_00]: 我剛剛想的話你們可能也想的是說就是譬如說好我今天就我們我們必須要去說服別人說就是這個這個架構的優勢在哪裡 [SPEAKER_00]: 對那其中一個我覺得可能是長期那邊我們應該會有那個之前我們有那個 relevancy 還有那個 importance，那個部分是在長期才有的嘛對所以這樣一方可能有一些我們慢慢被 forget 的東西所以長期性它是可以慢慢去 forget 一些事情的 [SPEAKER_00]: 譬如說長期就是短期這件事情我們不會去考慮飛到這件事情，短期的話我們就是 capture 我們現在的最重要的事情但是長期的話可能就是你那部分，...
+- [0422 | 2026-04-22 | L1-0422-042] type=approach_change importance=0.78 score=0.406
+  content: 系統的遺忘機制設計已經確定。記憶會根據當前的相關性進行檢索，其重要性會隨時間更新。舊的主題會被「遺忘」，除非它們再次變得相關。為了防止關鍵資訊遺失，系統內建了一個安全機制：重要性分數高於特定閾值的記憶將永遠不會淡出。
+  evidence: [SPEAKER_00]: 我覺得如果是真的要demo的話你可以去看我們從第一次meeting裡面有沒有哪件事情那時候提到 [SPEAKER_00]: 然後這時候你就可以比較說今天我們用有不同架構的 memory 我們在 real time 講的時候，我們的 agent 他其實不會去有點像因為他不會 access 到一個我們一年前講的後來根本沒有再提到的東西但是如果是現在一般的 language model他可能就是說有喔這個有提過喔但是我們提過講到什麼東西 [SPEAKER_00]: 那這個 agent 他們會發現說在我們的定義裡面，它其實是不理解我們真實整個 evolution就這件事情我們提過沒有錯。...
+- [0422 | 2026-04-22 | L1-0422-040] type=argument importance=0.74 score=0.398
+  content: 針對系統可能遺忘重要資訊的疑慮，其設計的辯護是：遺忘並非隨機發生。記憶只有在與當前上下文無關時才被視為「遺忘」，且其重要性會隨時間更新。如果一個舊主題再次變得相關，它可以被重新喚醒。
+  evidence: [SPEAKER_01]: 我们那个时候调的时候我们会有一个公司去看它的importance跟relevance [SPEAKER_00]: 所以是不是可以去argue说for可以去比较就是时序性的去调动资讯会比较快速吗 [SPEAKER_00]: 有可能比較快速嗎就是我不需要去比對說還有哪一些就是某一些節點其實他已經forget了應該是某一個threshold，比如說我們用threshold到多少比如0.2以下那些節點我們就是assume他是目前已經被forget的東西。 [SPEAKER_02]: 但速度應該都蠻快的因為那個relevancy是靠語意跟關鍵字去找那個有技術就不用靠LLM他是有一個模型在跑，...
+- [0422 | 2026-04-22 | L1-0422-016] type=argument importance=0.63 score=0.3966
+  content: 有觀點認為，讓每個傳入的 idea unit 同時更新短期和長期記憶是更合理的作法。
+  evidence: [SPEAKER_00]: 我覺得這比較make sense就是我反正每個Idea units來的時候我都會短期記憶裡面update一些東西，長期記憶裡面會update一些東西
+- [0422 | 2026-04-22 | L1-0422-012] type=open_issue importance=0.58 score=0.3924
+  content: 關於記憶體更新流程存在一個未決的設計問題：一個新的 idea unit 應該更新短期記憶體、長期記憶體，還是兩者都更新？目前的系統是兩者獨立更新，但有提案建議由一個 manager agent 來決定更新其中之一，而另一種觀點則認為同時更新兩者更合理。
+  evidence: [SPEAKER_00]: 我剛本來想的是我在猜因為我還是不太理解這個 tool calling的意思，那我剛想的是譬如說像剛剛我們一開始我們講說5月13號要那專題展，然後你們說5月5號對，好那這件事情它有沒有需要去update long term memory，對然後也許這這件事情它是比較短期是最近在講的東西，...
+- [0422 | 2026-04-22 | L1-0422-020] type=decision importance=0.78 score=0.3854
+  content: 決定採用兩階段評估策略：首先，將動態分塊（dynamic chunking）方法與固定大小（fixed-size）和逐句（sentence-by-sentence）等基線進行基準比較；其次，將專案的結構化記憶體系統與標準的 RAG 系統進行比較，以證明其優勢。
+  evidence: [SPEAKER_00]: 我覺得你們我覺得可能如果說5月5號的話假設說這一個譬如說產生那個unit的那個方式假設那個是個蠻新的方法的話，你們可能可以就去比較就譬如說比較fixed size的fix的切的方法然後跟那個像我剛剛講一句一句切因為它應該都是有trade off如果是一句一句切的話你的時間也會比較長 [SPEAKER_00]: 你call function call的次數會比較多，但是它可能比較準對那一開始那種fixed切的話就是你基本上你就是切調過去就是沒有辦法切到正確的，那我們的方法的話那可能就是說會有幾個function call那最後結果會是怎麼樣子有沒有比較好那是其中一個地方，...
+- [0429 | 2026-04-29 | L1-0429-048] type=decision importance=0.7 score=0.4743
+  content: 決定進行一項消融研究 (ablation study) 來評估系統。該研究將比較完整系統與幾個基準線：僅 RAG、僅短期記憶、僅長期記憶。在所有實驗條件下，工作記憶 (working memory) 將作為一個恆定不變的組件，此舉旨在證明結合短期和長期記憶方法的合理性。
+  evidence: [SPEAKER_04]: 對，因為 working memory 是不管怎麼樣，就是你在對話的時候，我們會模仿它一直進來、進來、進來這樣。OK。那 RAG 這個地方跟其他最大的差別會是什麼？RAG 是直接去做語意向量檢索，它沒有去做資料上的整理。我們是有把它分，就是我們逐字稿進來，我們不是一句一句一句，然後就讓它。 [SPEAKER_02]: 拆成那個，轉換成像那樣的資料。我們是做，我們會先抓它裡面的 idea unit。對對，idea unit。嗯，OK，我現在，所以 RAG 跟 full system 的差別是在於，RAG 有什麼，呃，RAG、full system。...
+- [0429 | 2026-04-29 | L1-0429-037] type=decision importance=0.73 score=0.4597
+  content: 決定導入並評估一種「淡出」(fade-out) 機制。此機制將透過為每個記憶項目設定「重要性分數」來實現：分數低於某個閾值的資訊在一般對話中會被抑制，但若被反覆提及，其分數可能回升而被重新激活。此舉旨在測試 agent 在保留長期資訊的同時，抑制過時或較不相關資訊的能力。
+  evidence: [SPEAKER_02]: 那有沒有，也會去考慮到那個嗎？就是 fade-out 的東西，就是某一些其實是不重要的。我們有那個 relevance 跟 importance。對，就是我覺得蠻重要的一個點是要去 test 說，某一件東西它不應該在 short term、在 dialogue 的時候不應該要出現，但是它知道它忘記了，就是它知道它有這個東西，它是不記得，但是它在對話的時候它不會吐出這個東西。嗯，好。 [SPEAKER_02]: 然後因為我覺得這是一個還蠻特別的地方，因為過去的 agent 應該從來沒有人在測這件事情。就是有點像說，language model 在 real time、in situ 跟你回答的時候，...
+- [0429 | 2026-04-29 | L1-0429-010] type=proposal importance=0.65 score=0.4309
+  content: 提出一個三分類的 agent 評估計畫：1) 短期正確性，確保 agent 不會遺漏或捏造資訊；2) 長期主題演變的追蹤能力；3) 對過去決策背後原因的理解。短期正確性將透過比較 agent 輸出與標準答案來評分。
+  evidence: [SPEAKER_04]: 然后我们现在evaluate的question主要分三类一个是short term就是至少是要确定他短期短期的回答是正确的然后long term的evolution就是可能会问他说我们这整个某一件事情的研究的方法从过去到现在完整的演进是什么 [SPEAKER_04]: 然後還有一個是decision reasoning就是很會問他說我們為什麼現在是做這個決定當初是什麼討論讓我們今天這件事情決定這樣子嘛 [SPEAKER_02]: 所以這個evaluation的意思是說第二個的話它的重點是正確率嗎 [SPEAKER_04]: 對就是他不能漏掉context他不能漏掉其中某個meeting講過的東西就可...
+- [0429 | 2026-04-29 | L1-0429-038] type=proposal importance=0.64 score=0.4083
+  content: 提出一個包含三種類型問題的評估計畫：1) 短期問題（測試即時上下文準確性），2) 長期演變問題（追蹤主題在多次會議中的歷史），以及 3) 決策推理問題（解釋過去決策的理由）。
+  evidence: [SPEAKER_04]: 然後我們現在 evaluate 的 question 主要分三類，一個是 short-term，就是至少是要確定它短期的回答是正確的；然後 long-term 的 evolution，就是可能會問它說，我們這整個某一件事情的研究方法，從過去到現在完整的演進是什麼。 [SPEAKER_04]: 然後還有一個是 decision reasoning，就是會問它說，我們為什麼現在是做這個決定，當初是什麼討論讓我們今天做這件事情的決定。這樣子嘛。所以這個 evaluation 的意思是說，第二個的話，它的重點是正確率嗎？對。 [SPEAKER_04]: 就是它不能漏掉 context，...
+- [0429 | 2026-04-29 | L1-0429-007] type=decision importance=0.76 score=0.4039
+  content: 將實作一個針對不重要記憶的「淡出 (fade out)」機制。重要性分數低於某個閾值的記憶將變為「非活躍 (inactive)」狀態，不會出現在一般對話中，但可透過特殊函數調用來存取。如果重複提及使其分數增加，這些記憶可以被重新激活。
+  evidence: [SPEAKER_02]: 那有沒有那也會去考慮到那個嗎就是 fade out 的東西就是某一些其實是不重要我們有那個 relevance 跟 importance 對就是我覺得蠻重要的一個點是要去 test 說某一件東西他不應該在 short term在我不知道這是 dialogue 的時候不應該要出現但是他知道他忘記了就是他知道他有這個東西他是不記得但是他在對話的時候他不會突出這個東西 [SPEAKER_04]: 嗯嗯嗯好 [SPEAKER_02]: 然後呃因為我覺得這是一個還蠻特別的一個地方因為過去的agent應該從來沒有人在測這件事情就是有點像說language model在in turn在real time 跟你回答...
+- [0429 | 2026-04-29 | L1-0429-019] type=argument importance=0.73 score=0.3979
+  content: 完整系統之所以優於標準 RAG 基準，是因為它不僅僅是進行文本分塊和語義搜索。相反地，完整系統會先將逐字稿結構化為「idea units」，在這些單元之上添加一個更高層次的結論層以提供更廣泛的上下文，並包含一個更詳細的 short-term memory 組件來追蹤近期的活動。
+  evidence: [SPEAKER_02]: OK OK那RAG這個地方跟其他最大的差別會是什麼 [SPEAKER_02]: RAG是直接去做語意向量解鎖它沒有去做資料上的整理我們是有把它分就是我們逐字搞進來我們不是一句一句一句然後就讓它拆成那個轉換成像那樣的資料我們是做我們會先抓它裡面的idea unit對對idea unit [SPEAKER_02]: 嗯ok然後現在所以RAG跟Full System的差別是在於RAG有什麼 [SPEAKER_01]: 呃RAG Full System Track 感覺就只是它是最簡單的處理方式啦它就只是切塊然後用語意去找相似度的那一塊是什麼然後我們是除了有切 idea unit 之外我們 idea uni...
+
+=== L2 / Child-L2 Evolution Context ===
+
+[L2-overall-memory-system-evaluation] Overall Memory System Evaluation
+  parent L3: L3-memory-evaluation-strategy memory evaluation strategy
+  matched L1: L1-0429-048
+  topic_size=12 selected_event_count=8 omitted_event_count=4
+  current_state: Overall Memory System Evaluation: latest state from 2026-04-29 L1-0429-063 is 團隊已確定評估策略，將進行消融研究 (ablation study) 來比較完整系統與多個基準線的效能，包括僅使用 RAG、僅使用短期記憶體，以及僅使用長期記憶體。在所有實驗條件下，...
+  evolution_summary: Overall Memory System Evaluation evolved from 2026-03-18 L1-0318-008: 在評估的脈絡下，「Temporal Reasoning」被定義為針對特定會議或對話片段生成摘要或大綱的任務。 to 2026-04-29 L1-0429-063: 團隊已確定評估策略，...
+  latest_position: 團隊已確定評估策略，將進行消融研究 (ablation study) 來比較完整系統與多個基準線的效能，包括僅使用 RAG、僅使用短期記憶體，以及僅使用長期記憶體。在所有實驗條件下，工作記憶體 (working memory) 將維持不變。
+  key_rationale: Assignment criteria: evaluation plan; ablation; baseline
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evidence.
+  timeline_digest:
+    - [2026-03-18 L1-0318-008] 在評估的脈絡下，「Temporal Reasoning」被定義為針對特定會議或對話片段生成摘要或大綱的任務。
+    - [2026-03-25 L1-0325-069] 在評估 AI 分身的真實性時，決議不採用教授本人的自我評估，因其被認定為不可靠的指標。
+    - [2026-03-25 L1-0325-016] 需要設計一個評估方法，以證明新的人格記憶方法能有效抵抗「人格漂移」(personality drift)。
+    - [2026-03-25 L1-0325-027] 團隊提出了一種維持 AI 人格特質的方法，即僅使用最近的互動來提取常用語，但如何評估其有效性仍是一個挑戰。目前的評估標準被建議為「真人感」，並提出一個具體的「人在迴路」評估方法：讓原始發言者的學生來評估 agent 的語氣和感覺是否與本人相符。然而，評估方法尚未最終確定。
+    - [2026-04-08 L1-0408-003] 選擇 BMR 系列資料集是基於其特性非常適合長期記憶研究。該資料集包含同一組參與者就一個連續性主題進行的多次、依序的會議，且錄音長度較長，這為追蹤跨會議的對話脈絡和記憶演變提供了理想的基礎。
+    - [2026-04-29 L1-0429-048] 決定進行一項消融研究 (ablation study) 來評估系統。該研究將比較完整系統與幾個基準線：僅 RAG、僅短期記憶、僅長期記憶。在所有實驗條件下，工作記憶 (working memory) 將作為一個恆定不變的組件，此舉旨在證明結合短期和長期記憶方法的合理性。
+    - [2026-04-29 L1-0429-017] 計劃進行一項消融研究（ablation study），以證明結合短期和長期記憶的合理性。該研究將比較完整系統與三個基準：僅 RAG、僅短期記憶和僅長期記憶。在所有測試的系統架構中，Working Memory 將保持不變。
+    - [2026-04-29 L1-0429-063] 團隊已確定評估策略，將進行消融研究 (ablation study) 來比較完整系統與多個基準線的效能，包括僅使用 RAG、僅使用短期記憶體，以及僅使用長期記憶體。在所有實驗條件下，工作記憶體 (working memory) 將維持不變。
+
+[L2-memory-mechanism-evaluation-metrics] Memory Mechanism Evaluation & Metrics
+  parent L3: L3-memory-evaluation-strategy memory evaluation strategy
+  matched L1: L1-0429-010
+  topic_size=10 selected_event_count=8 omitted_event_count=2
+  current_state: Memory Mechanism Evaluation & Metrics: latest state from 2026-04-29 L1-0429-040 is 團隊需要研究並定義 LLM 的「長上下文 (long context)」的具體標準，可能是以 tokens 數量來衡量，以便能適當地評估其資料集的規模和模型的性能。...
+  evolution_summary: Memory Mechanism Evaluation & Metrics evolved from 2026-03-07 L1-0307-025: 團隊需要確定如何評估記憶架構的效能，並證明其優於標準 LLM。目前的挑戰是找到合適的評估方法，可能需要參考相關論文中的現有數據集或標準化測試，同時也需清楚展示長期記憶帶來的具體價值和行為差異。...
+  latest_position: 團隊需要研究並定義 LLM 的「長上下文 (long context)」的具體標準，可能是以 tokens 數量來衡量，以便能適當地評估其資料集的規模和模型的性能。
+  key_rationale: Assignment criteria: llm-as-judge; llm as judge; metric
+  open_tensions: No explicit unresolved tension is visible in the selected L1 evid
+...(truncated)
