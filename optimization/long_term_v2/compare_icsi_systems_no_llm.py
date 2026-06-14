@@ -157,7 +157,7 @@ def compare_systems_no_llm(
     queries_path: Path | str,
     out_dir: Path | str,
     rag_top_k: int = 20,
-    layered_top_k_l1: int = 80,
+    layered_top_k_l1: int = 60,
 ) -> dict[str, Any]:
     root = Path(run_root)
     out = ensure_optimization_output(out_dir)
@@ -264,7 +264,7 @@ def main() -> None:
     parser.add_argument("--queries", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--rag-top-k", type=int, default=20)
-    parser.add_argument("--layered-top-k-l1", type=int, default=80)
+    parser.add_argument("--layered-top-k-l1", type=int, default=60)
     args = parser.parse_args()
     report = compare_systems_no_llm(
         run_root=args.run_root,
