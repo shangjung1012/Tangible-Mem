@@ -60,7 +60,7 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("prompt budget", js)
         self.assertNotIn('section("Global Topic Map", JSON.stringify(data.global_topic_map', js)
 
-    def test_retrieval_trace_renders_router_short_term_and_demo_query_buttons(self) -> None:
+    def test_retrieval_trace_renders_long_term_scope_and_demo_query_buttons(self) -> None:
         html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
         js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
 
@@ -68,9 +68,10 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("目前 transcript segmentation / idea-unit", html)
         self.assertIn("function renderTraceRouter", js)
         self.assertIn("Router / Memory Layers", js)
-        self.assertIn("Short-Term Memory", js)
+        self.assertIn("Long-term memory", js)
         self.assertIn("data.router_result", js)
-        self.assertIn("short_term_context", js)
+        self.assertNotIn("Short-Term Memory", js)
+        self.assertNotIn("short_term_context", js)
 
     def test_retrieval_trace_uses_demo_safe_budget_without_debug_in_prompt(self) -> None:
         html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")

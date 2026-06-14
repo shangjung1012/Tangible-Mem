@@ -953,7 +953,7 @@ class MemoryObservatoryTests(unittest.TestCase):
             result["formatted_prompt_context"].index("=== L1 Evidence Seeds ==="),
         )
 
-    def test_layered_trace_exposes_router_and_short_term_context_for_current_queries(self) -> None:
+    def test_layered_trace_uses_long_term_only_scope_for_current_queries(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _fixture_repo(root)
@@ -969,9 +969,6 @@ class MemoryObservatoryTests(unittest.TestCase):
             ), patch(
                 "recall.format_recall_for_prompt",
                 return_value="=== L1 Evidence Seeds ===\nL1-0307-001",
-            ), patch(
-                "memory_observatory.services.retrieval_trace._retrieve_short_term_trace_context",
-                return_value="=== Short-Term Memory Retrieval ===\nactive transcript segmentation state",
             ):
                 from memory_observatory.services.retrieval_trace import RetrievalTraceService
 
@@ -980,10 +977,12 @@ class MemoryObservatoryTests(unittest.TestCase):
                     max_context_chars=0,
                 )
 
-        self.assertEqual(result["router_result"]["targets"], ["short_term", "long_term"])
-        self.assertIn("active transcript segmentation state", result["short_term_context"])
+        self.assertEqual(result["router_result"]["strategy"], "long_term_only")
+        self.assertEqual(result["router_result"]["targets"], ["long_term"])
+        self.assertNotIn("short_term_context", result)
         self.assertIn("=== Memory Router ===", result["formatted_prompt_context"])
-        self.assertIn("=== Short-Term Memory ===", result["formatted_prompt_context"])
+        self.assertIn("targets: long_term", result["formatted_prompt_context"])
+        self.assertNotIn("=== Short-Term Memory ===", result["formatted_prompt_context"])
 
     def test_layered_trace_context_truncation_marker_uses_plain_ellipsis(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

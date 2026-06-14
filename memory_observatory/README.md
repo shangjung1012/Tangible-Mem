@@ -4,6 +4,10 @@ Memory Observatory is a demo and inspection surface for the current memory
 artifacts. It is intentionally separate from the chat app and does not rewrite
 raw L1 evidence.
 
+The observatory uses long-term memory only. Retrieval trace and experiment
+surfaces read L1 evidence plus L2 / child-L2 / L3 long-term topic artifacts; they
+do not call or display short-term memory context.
+
 It shows three things:
 
 - how transcripts become immutable L1 evidence objects;
