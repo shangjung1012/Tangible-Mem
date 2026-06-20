@@ -52,11 +52,12 @@ The UI also has a presentation-focused dataset switch:
 - `Grace` keeps the original behavior and reads the canonical sources above.
 - `ICSI` is read-only and artifact-backed. It reads L1 from
   `optimization/reports/icsi_bmr_full_completed29_eval_pack_20260614/source_share_mem`,
-  L2/L3 from `optimization/runs/icsi_bmr_full_completed29_v2_20260614`, and
+  polished L2/L3 from
+  `optimization/runs/icsi_bmr_full_completed29_v2_20260614/runtime`, and
   comparison metrics from
   `optimization/reports/icsi_bmr_full_completed29_system_comparison_revised_20260614`.
-  The ICSI overview is intended for screenshot/demo use and does not run live
-  custom retrieval.
+  The ICSI overview and trace views are intended for screenshot/demo use and
+  run against these read-only sidecar artifacts.
 
 Writable sidecars:
 
@@ -125,15 +126,22 @@ uv run python memory_observatory/run_experiment.py \
   --max-context-chars 0
 ```
 
-The UI Retrieval Trace demo profile is `observatory_trace`: it keeps the
-evidence-first path visible with one compact L2 / child-L2 slice, but gives the
-selected timeline event enough text to explain the method or decision being
-shown. The underlying `RetrievalTraceService` service default is
-`generous_layered` when no explicit budget profile is passed. It allows more
-L1 seeds and topic timeline events for API callers and CLI experiments.
-`large_corpus_tight` remains available for large-corpus budget diagnostics, and
-`deep_layered` remains available for diagnostic runs where quality is more
-important than prompt size.
+The UI Retrieval Trace demo profile options are:
+
+- `observatory_trace` is the compact live-demo profile. It keeps the
+  evidence-first path visible with one compact L2 / child-L2 slice, but gives
+  the selected timeline event enough text to explain the method or decision
+  being shown.
+- `observatory_paper_trace` is the paper/screenshot profile. It keeps the same
+  evidence-first contract but widens L1 seeds, L2 summaries, topic events, and
+  global topic-map text so reviewers can inspect the actual topic context.
+
+The underlying `RetrievalTraceService` service default is `generous_layered`
+when no explicit budget profile is passed. It allows more L1 seeds and topic
+timeline events for API callers and CLI experiments. `large_corpus_tight`
+remains available for large-corpus budget diagnostics, and `deep_layered`
+remains available for diagnostic runs where quality is more important than
+prompt size.
 `--baseline-token-multiplier 5` means Full Context and RAG can use about 5x the
 Layered Memory context tokens for the same query.
 
@@ -229,7 +237,7 @@ Experiment Lab, and capture screenshots or check element overflow.
 ## Pages
 
 - Overview: memory pipeline and artifact statistics.
-- Demo Story: a presentation-focused Grace walkthrough showing topic memory,
+- Demo Story: a presentation-focused ICSI walkthrough showing topic memory,
   L1 evidence seeds, L2 evolution context, L3 navigation, and strategy contrast.
 - Retrieval Trace: query -> L1 evidence -> L2 / child-L2 -> L3 -> prompt context.
 - Memory Explorer: meeting, L1 object, evidence, topic link, and feedback browsing.

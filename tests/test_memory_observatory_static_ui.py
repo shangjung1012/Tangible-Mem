@@ -71,34 +71,59 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("prompt budget", js)
         self.assertNotIn('section("Global Topic Map", JSON.stringify(data.global_topic_map', js)
 
-    def test_retrieval_trace_renders_long_term_scope_and_demo_query_buttons(self) -> None:
+    def test_retrieval_trace_renders_icsi_demo_query_buttons_and_dataset(self) -> None:
         html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
         js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
 
         self.assertIn("data-demo-query", html)
-        self.assertIn("目前 transcript segmentation / idea-unit", html)
+        self.assertIn("audio processing", html)
+        self.assertIn("annotation tool workflow", html)
         self.assertIn("function renderTraceRouter", js)
         self.assertIn("Router / Memory Layers", js)
         self.assertIn("Long-term memory", js)
         self.assertIn("data.router_result", js)
+        self.assertIn("dataset=${selectedDataset}", js)
         self.assertNotIn("Short-Term Memory", js)
         self.assertNotIn("short_term_context", js)
+        self.assertNotIn("?桀?", html)
 
-    def test_retrieval_trace_uses_demo_safe_budget_without_debug_in_prompt(self) -> None:
+    def test_retrieval_trace_can_switch_compact_and_paper_profiles(self) -> None:
         html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
         js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
 
         self.assertIn("show debug panel", html)
-        self.assertIn('const budgetProfile = "observatory_trace"', js)
+        self.assertIn("traceBudgetProfile", html)
+        self.assertIn("observatory_trace", html)
+        self.assertIn("observatory_paper_trace", html)
+        self.assertIn('const budgetProfile = $("#traceBudgetProfile").value', js)
+        self.assertIn("const maxContextChars = budgetProfile === \"observatory_paper_trace\" ? 0 : 16000", js)
+        self.assertIn("max_context_chars=${maxContextChars}", js)
         self.assertIn("budget_profile=${budgetProfile}", js)
         self.assertIn("include_debug=false", js)
         self.assertIn("budget profile: ${budgetProfile}", js)
+        self.assertIn('$("#traceMode").value = "lexical"', js)
+
+    def test_presentation_story_uses_icsi_demo_query_and_dataset(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "presentation.html").read_text(encoding="utf-8")
+        js = (REPO_ROOT / "memory_observatory" / "static" / "presentation.js").read_text(encoding="utf-8")
+
+        self.assertIn("What context about delay-and-sum beamforming and close microphones", html)
+        self.assertIn("What context about delay-and-sum beamforming and close microphones", js)
+        self.assertIn("dataset=icsi", js)
+        self.assertIn("retrieval_mode=lexical", js)
+        self.assertIn("audio acquisition and signal processing", js)
+        self.assertIn("max_context_chars=0", js)
+        self.assertNotIn("idea units", html)
+        self.assertNotIn("idea units", js)
+        self.assertNotIn("dataset=grace", html)
+        self.assertNotIn("dataset=grace", js)
 
     def test_readme_documents_current_trace_and_experiment_defaults(self) -> None:
         readme = (REPO_ROOT / "memory_observatory" / "README.md").read_text(encoding="utf-8")
 
         self.assertIn("UI Retrieval Trace demo profile", readme)
         self.assertIn("observatory_trace", readme)
+        self.assertIn("observatory_paper_trace", readme)
         self.assertIn("service default", readme)
         self.assertIn("generous_layered", readme)
         self.assertIn("legacy run artifacts", readme.lower())

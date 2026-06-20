@@ -5,25 +5,28 @@ This walkthrough is the recommended Section 5 story and live demo flow.
 ## Demo Question
 
 ```text
-Why not feed the full transcript directly, and why split it into segments / idea units?
+What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?
 ```
 
-Use the Grace corpus for the cleanest walkthrough. ICSI can be shown later as
-evidence that the same inspection machinery can operate on a larger non-Grace
-dataset.
+Use the ICSI BMR corpus for the paper walkthrough. Grace remains useful as an
+internal sanity check, but the paper demo should avoid a self-referential memory
+system example.
 
 ## Storyline
 
 1. Start with the question.
 
-   The user asks a rationale/evolution question about the transcript processing
-   pipeline. This is intentionally not a simple keyword lookup.
+   The user asks a rationale/carryover question about audio-processing context.
+   This is intentionally not a simple keyword lookup: the system must connect
+   close microphones, delay-and-sum beamforming, and later audio-processing
+   discussions.
 
 2. Show L1 evidence seeds.
 
    Retrieval begins with source-grounded L1 evidence. The demo should highlight
-   evidence from meetings around the segment / idea-unit discussion, such as
-   0422, 0429, and 0506 when available in the trace.
+   evidence from BMR meetings, such as Bmr001 and Bmr011, where microphone
+   placement, beamforming, close-talking microphones, and audio-processing
+   constraints appear in source-grounded L1 objects.
 
    Message to say:
 
@@ -33,8 +36,9 @@ dataset.
 3. Show L2 / child-L2 topic evolution.
 
    The L1 seeds bring in topic context. This is where the system can show that
-   the discussion evolved from full-transcript or turn-based update concerns
-   toward segment and idea-unit extraction.
+   evidence about beamforming and microphone setup belongs to durable topics
+   such as `audio processing`, `close talking microphone`, and `hardware
+   limitation`.
 
    Message to say:
 
@@ -43,8 +47,8 @@ dataset.
 
 4. Show L3 navigation.
 
-   The parent L3 topic family shows that this rationale belongs to a broader
-   transcript segmentation / idea-unit coverage family. Emphasize that L3 is
+   The parent L3 topic family shows that this rationale belongs to the broader
+   `audio acquisition and signal processing` family. Emphasize that L3 is
    navigation context, not standalone evidence.
 
    Message to say:

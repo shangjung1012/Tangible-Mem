@@ -72,14 +72,20 @@ class TopicStore:
         }
 
     def get_l2(self, l2_id: str) -> dict[str, Any] | None:
+        base_node: dict[str, Any] | None = None
         for node in self.l2_nodes():
             if node.get("l2_id") == l2_id:
-                return self._enrich_l2_node(node, include_objects=True)
+                base_node = node
+                break
         for l3 in self.l3_nodes():
             for child in l3.get("child_l2_nodes", []) or []:
                 child_id = child.get("l2_id") or child.get("child_l2_id")
                 if child_id == l2_id:
-                    return self._enrich_l2_node(child, parent_l3=l3, include_objects=True)
+                    merged = dict(base_node or {})
+                    merged.update(child)
+                    return self._enrich_l2_node(merged, parent_l3=l3, include_objects=True)
+        if base_node:
+            return self._enrich_l2_node(base_node, include_objects=True)
         return None
 
     def get_l3(self, l3_id: str) -> dict[str, Any] | None:

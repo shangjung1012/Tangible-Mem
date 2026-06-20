@@ -56,8 +56,8 @@ def dataset_configs(repo_root: Path | str) -> dict[str, DatasetConfig]:
             / "reports"
             / "icsi_bmr_full_completed29_eval_pack_20260614"
             / "source_share_mem",
-            l2_root=icsi_run / "l2",
-            l3_root=icsi_run / "l3",
+            l2_root=icsi_run / "runtime" / "l2",
+            l3_root=icsi_run / "runtime" / "l3",
             runs_root=root / "memory_observatory" / "runs",
             l2_validation_path=icsi_run / "validation" / "l2_validation_report.json",
             l3_validation_path=icsi_run / "validation" / "l3_validation_report.json",

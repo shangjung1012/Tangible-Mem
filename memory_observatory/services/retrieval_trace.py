@@ -65,9 +65,10 @@ def _format_router_context(router_result: dict[str, Any]) -> str:
 
 
 class RetrievalTraceService:
-    def __init__(self, repo_root: Path | str) -> None:
+    def __init__(self, repo_root: Path | str, dataset_id: str | None = "grace") -> None:
         self.repo_root = Path(repo_root)
-        self.loader = ObservatoryDataLoader(self.repo_root)
+        self.loader = ObservatoryDataLoader(self.repo_root, dataset_id=dataset_id)
+        self.dataset = self.loader.dataset
         _ensure_long_term_path(self.repo_root)
 
     def _recall_params(self, budget_profile: str = "") -> dict[str, Any]:
@@ -131,12 +132,12 @@ class RetrievalTraceService:
             tree=tree,
             api_key=api_key,
             model_name=model_name,
-            l2_index_path=self.repo_root / "long_term" / "l2" / "l2_index.json",
-            l2_view_path=self.repo_root / "long_term" / "l2" / "l2_view.json",
-            l2_secondary_links_path=self.repo_root / "long_term" / "l2" / "l2_secondary_links.json",
-            l3_promotions_path=self.repo_root / "long_term" / "l3" / "l3_promotions.json",
-            l3_view_path=self.repo_root / "long_term" / "l3" / "l3_view.json",
-            l3_index_path=self.repo_root / "long_term" / "l3" / "l3_index.json",
+            l2_index_path=self.dataset.l2_root / "l2_index.json",
+            l2_view_path=self.dataset.l2_root / "l2_view.json",
+            l2_secondary_links_path=self.dataset.l2_root / "l2_secondary_links.json",
+            l3_promotions_path=self.dataset.l3_root / "l3_promotions.json",
+            l3_view_path=self.dataset.l3_root / "l3_view.json",
+            l3_index_path=self.dataset.l3_root / "l3_index.json",
             include_retrieval_debug=True,
             retrieval_mode=retrieval_mode,
             **params,
@@ -147,7 +148,11 @@ class RetrievalTraceService:
             l1_content_chars=320,
             l1_evidence_chars=420,
         )
-        current_state_context = current_state_context_for_query(query, self.repo_root)
+        current_state_context = (
+            current_state_context_for_query(query, self.repo_root)
+            if self.dataset.dataset_id == "grace"
+            else ""
+        )
         router_context = _format_router_context(router_result)
         prelude_parts = [router_context]
         if current_state_context:
@@ -181,6 +186,8 @@ class RetrievalTraceService:
         )
         return {
             "strategy": "layered_memory",
+            "dataset_id": self.dataset.dataset_id,
+            "dataset_label": self.dataset.label,
             "query": query,
             "retrieval_mode": retrieval_mode,
             "use_llm_planner": not no_llm,

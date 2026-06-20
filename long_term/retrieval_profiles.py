@@ -118,6 +118,24 @@ RETRIEVAL_BUDGET_PROFILES: dict[str, dict[str, Any]] = {
         "prefer_materialized_l3": True,
         "topic_size_penalty": 0.05,
     },
+    # Paper/screenshot-oriented Observatory profile. It keeps the same
+    # evidence-first retrieval contract as the compact demo profile, but widens
+    # L1 and L2/L3 context enough for reviewers to inspect actual topic
+    # evolution in screenshots.
+    "observatory_paper_trace": {
+        "top_k_raw": 80,
+        "max_l1_seeds_for_prompt": 20,
+        "max_global_topic_map_chars": 900,
+        "max_relevant_l2_summaries": 3,
+        "max_expanded_l2_topics": 2,
+        "max_sibling_child_l2_topics": 2,
+        "max_events_per_l2": 4,
+        "max_events_per_child_l2": 6,
+        "max_events_per_sibling_child_l2": 3,
+        "max_event_chars": 260,
+        "prefer_materialized_l3": True,
+        "topic_size_penalty": 0.05,
+    },
 }
 
 PROFILE_ALIASES = {
@@ -125,6 +143,7 @@ PROFILE_ALIASES = {
     "large": "large_corpus_tight",
     "trace": "observatory_trace",
     "demo": "observatory_trace",
+    "paper": "observatory_paper_trace",
     "deep": "deep_layered",
     "generous": "generous_layered",
     "runtime": "generous_layered",

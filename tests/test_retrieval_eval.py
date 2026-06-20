@@ -252,6 +252,19 @@ class RetrievalEvalTests(unittest.TestCase):
         self.assertGreaterEqual(profile["max_event_chars"], 220)
         self.assertLess(profile["max_event_chars"], 300)
 
+    def test_observatory_paper_trace_profile_expands_context_without_becoming_deep(self) -> None:
+        profile = retrieval_profiles.get_retrieval_budget_profile("observatory_paper_trace")
+
+        self.assertGreaterEqual(profile["top_k_raw"], 80)
+        self.assertGreaterEqual(profile["max_l1_seeds_for_prompt"], 16)
+        self.assertGreaterEqual(profile["max_global_topic_map_chars"], 800)
+        self.assertGreaterEqual(profile["max_relevant_l2_summaries"], 3)
+        self.assertGreaterEqual(profile["max_expanded_l2_topics"], 2)
+        self.assertGreaterEqual(profile["max_events_per_l2"], 4)
+        self.assertGreaterEqual(profile["max_events_per_child_l2"], 4)
+        self.assertLess(profile["max_l1_seeds_for_prompt"], 32)
+        self.assertLess(profile["max_events_per_child_l2"], 20)
+
     def test_eval_cli_budget_profile_overrides_grid_with_single_run(self) -> None:
         with patch.object(
             evaluate_retrieval,

@@ -19,7 +19,7 @@ const api = async (url) => {
   return res.json();
 };
 
-const QUERY = "為什麼不要把完整 transcription 一次丟進模型，而要切成 segment 和 idea units？";
+const QUERY = "What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?";
 
 function preview(text, n = 210) {
   const value = String(text || "").replace(/\s+/g, " ").trim();
@@ -28,40 +28,39 @@ function preview(text, n = 210) {
 
 function topicDescription(label) {
   const value = String(label || "").toLowerCase();
-  if (value.includes("fixed") || value.includes("dynamic")) return "How large transcript spans should be chunked before memory extraction.";
-  if (value.includes("generation")) return "How transcript spans become concrete idea-unit candidates.";
-  if (value.includes("classification")) return "How candidate units are typed before becoming memory objects.";
-  if (value.includes("granularity")) return "How fine-grained an idea unit should be.";
-  if (value.includes("core definition")) return "What distinguishes a segment from an idea unit.";
-  if (value.includes("window") || value.includes("boundary")) return "How the system chooses boundaries around coherent discussion.";
+  if (value.includes("audio")) return "How audio capture, channels, filtering, and signal processing are preserved across meetings.";
+  if (value.includes("annotation") || value.includes("transcription")) return "How annotation and transcription workflows become inspectable topic memory.";
+  if (value.includes("asr") || value.includes("speech recognition")) return "How ASR modeling context carries forward across BMR discussions.";
+  if (value.includes("corpus") || value.includes("data")) return "How corpus design and data-management decisions accumulate over time.";
+  if (value.includes("project") || value.includes("agenda")) return "How planning context stays visible without replacing L1 evidence.";
   if (value.includes("evidence")) return "How topic memory stays grounded in source transcript evidence.";
-  return "Durable child topic state built from linked L1 evidence.";
+  return "Durable topic state built from linked L1 evidence.";
 }
 
 function badge(text, cls = "") {
   return make("span", { class: `badge ${cls}`, text });
 }
 
-function findTranscriptFamily(data) {
+function findPresentationFamily(data) {
   const families = data.l3_nodes || [];
   return families.find((item) => {
     const haystack = `${item.l3_id || ""} ${item.label || ""}`.toLowerCase();
-    return haystack.includes("transcript") || haystack.includes("idea");
+    return haystack.includes("audio acquisition") || haystack.includes("signal processing") || haystack.includes("audio");
   }) || families[0] || {};
 }
 
 function renderTopicStory(data) {
-  const family = findTranscriptFamily(data);
+  const family = findPresentationFamily(data);
   const children = (family.child_l2_nodes || []).slice().sort((a, b) =>
     Number(b.event_count || 0) - Number(a.event_count || 0)
   );
   const featuredIds = [
-    "idea-unit",
-    "segmentation",
-    "window",
-    "chunk",
-    "boundary",
-    "evidence",
+    "audio",
+    "signal",
+    "processing",
+    "microphone",
+    "speech",
+    "asr",
   ];
   const childNodes = children.slice(0, 6).map((child) => {
     const label = child.label || child.l2_id || "";
@@ -83,7 +82,7 @@ function renderTopicStory(data) {
         badge(`${children.length} child L2`, "l2"),
         badge(`${family.event_count || 0} L1 events`, "l1"),
       ]),
-      make("h2", { text: family.label || "transcript segmentation and idea-unit coverage" }),
+      make("h2", { text: family.label || "audio acquisition and signal processing" }),
       make("div", { class: "id-line", text: family.l3_id || "" }),
       make("p", {
         class: "state",
@@ -133,7 +132,7 @@ function renderTopicItem(topic) {
 }
 
 function renderEvolutionStrip(seeds) {
-  const order = ["0408", "0422", "0429", "0506"];
+  const order = ["Bmr001", "Bmr002", "Bmr005", "Bmr011", "Bmr016"];
   const available = new Set((seeds || []).map((seed) => seed.meeting_id).filter(Boolean));
   const dates = order.filter((item) => available.has(item));
   const fallback = [...available].slice(0, 4);
@@ -259,8 +258,8 @@ function renderComparisonStory() {
 async function init() {
   try {
     const [topics, trace] = await Promise.all([
-      api("/api/topics/l3?dataset=grace"),
-      api(`/api/retrieval/trace?query=${encodeURIComponent(QUERY)}&retrieval_mode=hybrid&no_llm=true&include_debug=false&budget_profile=observatory_trace`),
+      api("/api/topics/l3?dataset=icsi"),
+      api(`/api/retrieval/trace?dataset=icsi&query=${encodeURIComponent(QUERY)}&retrieval_mode=lexical&no_llm=true&include_debug=false&budget_profile=observatory_paper_trace&max_context_chars=0`),
     ]);
     renderTopicStory(topics);
     renderTraceStory(trace);

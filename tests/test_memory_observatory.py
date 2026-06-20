@@ -237,6 +237,53 @@ def _fixture_icsi_dataset(root: Path) -> None:
     )
     _write_json(run_root / "l3" / "l3_view.json", {"schema_version": 1, "l3_nodes": []})
     _write_json(run_root / "l3" / "l3_index.json", {})
+    _write_json(
+        run_root / "runtime" / "l2" / "l2_view.json",
+        {
+            "schema_version": 1,
+            "l2_nodes": [
+                {
+                    "l2_id": "L2-recording-protocol-runtime",
+                    "label": "runtime recording protocol",
+                    "linked_obj_ids": ["L1-Bmr001-001"],
+                    "meeting_ids": ["Bmr001"],
+                    "current_state": "Runtime surface uses the polished ICSI topic view.",
+                }
+            ],
+        },
+    )
+    _write_json(
+        run_root / "runtime" / "l2" / "l2_index.json",
+        {
+            "L1-Bmr001-001": {
+                "obj_id": "L1-Bmr001-001",
+                "l2_id": "L2-recording-protocol-runtime",
+                "l2_label": "runtime recording protocol",
+                "confidence": 0.9,
+            }
+        },
+    )
+    _write_json(
+        run_root / "runtime" / "l3" / "l3_view.json",
+        {
+            "schema_version": 1,
+            "l3_nodes": [
+                {
+                    "l3_id": "L3-icsi-runtime-theme",
+                    "label": "runtime ICSI corpus theme",
+                    "child_l2_nodes": [
+                        {
+                            "l2_id": "L2-recording-protocol-runtime",
+                            "label": "runtime recording protocol",
+                            "linked_obj_ids": ["L1-Bmr001-001"],
+                            "current_state": "The polished L2 is also surfaced as an L3 child.",
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    _write_json(run_root / "runtime" / "l3" / "l3_index.json", {})
     _write_json(run_root / "validation" / "l2_validation_report.json", {"severe_count": 0, "warning_count": 2})
     _write_json(run_root / "validation" / "l3_validation_report.json", {"severe_count": 0, "warning_count": 0})
     _write_json(
@@ -630,7 +677,124 @@ class MemoryObservatoryTests(unittest.TestCase):
         self.assertEqual(icsi_overview.json()["evaluation_summary"]["layered_recall"], 0.8958)
         self.assertEqual(icsi_overview.json()["topic_surface_summary"]["extra_tokens"], 105.75)
         self.assertEqual(icsi_meetings.json()[0]["meeting_id"], "Bmr001")
-        self.assertEqual(icsi_l2.json()[0]["label"], "recording protocol")
+        self.assertEqual(icsi_l2.json()[0]["label"], "runtime recording protocol")
+
+    def test_icsi_dataset_config_uses_runtime_topic_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+
+            loader = ObservatoryDataLoader(root, dataset_id="icsi")
+
+        self.assertEqual(loader.dataset.l2_root.name, "l2")
+        self.assertEqual(loader.dataset.l2_root.parent.name, "runtime")
+        self.assertEqual(loader.dataset.l3_root.name, "l3")
+        self.assertEqual(loader.dataset.l3_root.parent.name, "runtime")
+
+    def test_topic_detail_prefers_l3_child_metadata_when_ids_overlap(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+
+            from memory_observatory.services.topic_store import TopicStore
+
+            detail = TopicStore(root, dataset_id="icsi").get_l2("L2-recording-protocol-runtime")
+
+        self.assertIsNotNone(detail)
+        self.assertEqual(detail["parent_l3_id"], "L3-icsi-runtime-theme")
+        self.assertEqual(detail["parent_l3_label"], "runtime ICSI corpus theme")
+
+    def test_retrieval_trace_api_forwards_dataset_to_trace_service(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+            client = TestClient(create_app(repo_root=root))
+            trace_payload = {
+                "strategy": "layered_memory",
+                "query": "What did ICSI decide about audio processing?",
+                "metrics": {"selected_l1_count": 1},
+                "formatted_prompt_context": "ICSI runtime trace",
+            }
+            with patch("memory_observatory.main.RetrievalTraceService") as service_cls:
+                service_cls.return_value.run_trace.return_value = trace_payload
+
+                response = client.get(
+                    "/api/retrieval/trace",
+                    params={
+                        "dataset": "icsi",
+                        "query": "What did ICSI decide about audio processing?",
+                        "retrieval_mode": "lexical",
+                        "no_llm": "true",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        service_cls.assert_called_once_with(root, dataset_id="icsi")
+        self.assertEqual(response.json()["formatted_prompt_context"], "ICSI runtime trace")
+
+    def test_retrieval_trace_api_forwards_context_char_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            client = TestClient(create_app(repo_root=root))
+            trace_payload = {
+                "strategy": "layered_memory",
+                "query": "memory retrieval",
+                "metrics": {"selected_l1_count": 1},
+                "formatted_prompt_context": "untruncated trace",
+            }
+            with patch("memory_observatory.main.RetrievalTraceService") as service_cls:
+                service_cls.return_value.run_trace.return_value = trace_payload
+
+                response = client.get(
+                    "/api/retrieval/trace",
+                    params={
+                        "query": "memory retrieval",
+                        "retrieval_mode": "lexical",
+                        "no_llm": "true",
+                        "max_context_chars": "0",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(service_cls.return_value.run_trace.call_args.kwargs["max_context_chars"], 0)
+
+    def test_retrieval_trace_service_uses_dataset_artifact_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+            captured: dict[str, Any] = {}
+
+            def fake_recall(**kwargs: Any) -> dict[str, Any]:
+                captured.update(kwargs)
+                return {
+                    "global_topic_map": {},
+                    "long_term_l1": [{"obj_id": "L1-Bmr001-001", "meeting_id": "Bmr001"}],
+                    "long_term_l2": [],
+                    "long_term_l3": [],
+                    "retrieval_debug": {"selected_l1_count": 1},
+                }
+
+            with patch("recall.recall", side_effect=fake_recall), patch(
+                "recall.format_recall_for_prompt",
+                return_value="ICSI trace context",
+            ):
+                from memory_observatory.services.retrieval_trace import RetrievalTraceService
+
+                result = RetrievalTraceService(root, dataset_id="icsi").run_trace(
+                    "What did ICSI decide about audio processing?",
+                    retrieval_mode="lexical",
+                    no_llm=True,
+                )
+
+        self.assertEqual(captured["tree"]["meetings"][0]["meeting_id"], "Bmr001")
+        self.assertIn("runtime", str(captured["l2_view_path"]))
+        self.assertIn("runtime", str(captured["l3_view_path"]))
+        self.assertEqual(result["dataset_id"], "icsi")
 
     def test_invalid_dataset_returns_404(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

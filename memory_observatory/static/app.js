@@ -35,7 +35,7 @@ const fmtNumber = (value, digits = 2) => {
 };
 
 const tag = (text, cls = "") => el("span", { class: `tag ${cls}`, text });
-const DEMO_TRACE_QUERY = "為什麼不要把完整 transcription 一次丟進模型，而要切成 segment 和 idea units？";
+const DEMO_TRACE_QUERY = "What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?";
 
 function card(title, body, tags = []) {
   return el("div", { class: "card" }, [
@@ -240,6 +240,11 @@ function renderTopicLinkBlock(topicLink) {
 
 function demoTopicDescription(label) {
   const value = String(label || "").toLowerCase();
+  if (value.includes("audio")) return "How audio capture, channels, filtering, and signal processing become durable meeting context.";
+  if (value.includes("annotation") || value.includes("transcription")) return "How annotation and transcription workflow decisions are preserved as inspectable topic memory.";
+  if (value.includes("asr") || value.includes("speech recognition")) return "How speech-recognition modeling context carries across BMR meetings.";
+  if (value.includes("corpus") || value.includes("data")) return "How corpus construction and data-management decisions accumulate over time.";
+  if (value.includes("project") || value.includes("agenda")) return "How planning and meeting-management context remains visible without becoming factual evidence.";
   if (value.includes("fixed") || value.includes("dynamic")) return "How much transcript text should be grouped before extraction.";
   if (value.includes("generation")) return "How transcript windows become concrete idea-unit candidates.";
   if (value.includes("classification")) return "How candidate units are typed before entering memory.";
@@ -250,8 +255,14 @@ function demoTopicDescription(label) {
   return "Durable child topic state built from linked L1 evidence.";
 }
 
-function findDemoTranscriptFamily(topics) {
+function findDemoFamily(topics) {
   const families = (topics || {}).l3_nodes || [];
+  if (selectedDataset === "icsi") {
+    return families.find((item) => {
+      const haystack = `${item.l3_id || ""} ${item.label || ""}`.toLowerCase();
+      return haystack.includes("audio acquisition") || haystack.includes("signal processing") || haystack.includes("audio");
+    }) || families[0] || {};
+  }
   return families.find((item) => {
     const haystack = `${item.l3_id || ""} ${item.label || ""}`.toLowerCase();
     return haystack.includes("transcript") || haystack.includes("idea");
@@ -344,24 +355,24 @@ function renderDemoQueryFlow(family, seeds, contexts, siblingLabels) {
     el("div", { class: "demo-query-map" }, [
       el("div", { class: "demo-flow-card query" }, [
         el("span", { text: "User query" }),
-        el("strong", { text: "Why split transcripts into segments / idea units?" }),
+        el("strong", { text: DEMO_TRACE_QUERY }),
       ]),
       el("div", { class: "demo-flow-arrow", text: "->" }),
       el("div", { class: "demo-flow-card l1" }, [
         el("span", { text: "Retrieved L1 evidence seeds" }),
-        el("strong", { text: dates.join(" / ") || "0422 / 0429 / 0506" }),
+        el("strong", { text: dates.join(" / ") || "Bmr001 / Bmr002" }),
         el("p", { text: "Source evidence from meetings, not a generated summary." }),
       ]),
       el("div", { class: "demo-flow-arrow", text: "->" }),
       el("div", { class: "demo-flow-card l2" }, [
         el("span", { text: "Matched L2 topic evolution" }),
-        el("strong", { text: primaryContext.label || "idea-unit generation methods" }),
-        el("p", { text: "Shows how the design rationale evolved across meetings." }),
+        el("strong", { text: primaryContext.label || "audio processing" }),
+        el("p", { text: "Shows how technical rationale and decisions remain tied to source evidence." }),
       ]),
       el("div", { class: "demo-flow-arrow", text: "->" }),
       el("div", { class: "demo-flow-card l3" }, [
         el("span", { text: "Parent L3 family" }),
-        el("strong", { text: family.label || "transcript segmentation and idea-unit coverage" }),
+        el("strong", { text: family.label || "audio acquisition and signal processing" }),
         el("p", { text: `${Math.max(siblingLabels.length, 0)} related topic node(s) visible as navigation.` }),
       ]),
     ]),
@@ -369,7 +380,7 @@ function renderDemoQueryFlow(family, seeds, contexts, siblingLabels) {
 }
 
 function selectDemoEvidenceSeeds(seeds) {
-  const preferredMeetings = ["0422", "0429", "0506"];
+  const preferredMeetings = selectedDataset === "icsi" ? ["Bmr001", "Bmr002", "Bmr005"] : ["0422", "0429", "0506"];
   const selected = [];
   for (const meetingId of preferredMeetings) {
     const found = seeds.find((seed) => seed.meeting_id === meetingId && !selected.includes(seed));
@@ -396,12 +407,12 @@ function renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels) {
     el("div", { class: "demo-single-grid" }, [
       el("div", { class: "demo-single-card query" }, [
         el("span", { text: "Teaser query" }),
-        el("strong", { text: "Why did we split transcripts into segments and idea units?" }),
-        el("p", { text: "A rationale question about design evolution." }),
+        el("strong", { text: DEMO_TRACE_QUERY }),
+        el("p", { text: "A rationale question about source-grounded corpus memory." }),
       ]),
       el("div", { class: "demo-single-card l1" }, [
         el("span", { text: "L1 evidence seeds" }),
-        el("strong", { text: selectedSeeds.map((seed) => seed.meeting_id).join(" / ") || "0422 / 0429 / 0506" }),
+        el("strong", { text: selectedSeeds.map((seed) => seed.meeting_id).join(" / ") || "Bmr001 / Bmr002" }),
         el("div", { class: "demo-seed-stack" }, selectedSeeds.map((seed) =>
           el("div", { class: "demo-seed-row" }, [
             tag(seed.meeting_id || "meeting", "l1"),
@@ -412,7 +423,7 @@ function renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels) {
       ]),
       el("div", { class: "demo-single-card l2" }, [
         el("span", { text: "L2 topic evolution" }),
-        el("strong", { text: context.label || "idea-unit generation methods" }),
+        el("strong", { text: context.label || "audio processing" }),
         el("p", { text: preview(contextText, 260) }),
         el("div", { class: "tag-row" }, [
           tag(`${context.selected_event_count || 0} selected event`, "l2"),
@@ -421,8 +432,8 @@ function renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels) {
       ]),
       el("div", { class: "demo-single-card l3" }, [
         el("span", { text: "Parent L3 topic family" }),
-        el("strong", { text: family.label || "transcript segmentation and idea-unit coverage" }),
-        el("p", { text: "Navigation context: shows this rationale belongs to a broader transcript segmentation / idea-unit coverage family." }),
+        el("strong", { text: family.label || "audio acquisition and signal processing" }),
+        el("p", { text: "Navigation context: shows this rationale belongs to a broader corpus-derived topic family." }),
         el("div", { class: "tag-row" }, relatedTopics.map((topic) => tag(topic, "l2"))),
       ]),
     ]),
@@ -430,7 +441,7 @@ function renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels) {
 }
 
 function renderDemoStory(topics, trace) {
-  const family = findDemoTranscriptFamily(topics);
+  const family = findDemoFamily(topics);
   const children = (family.child_l2_nodes || []).slice()
     .sort((a, b) => Number(b.event_count || 0) - Number(a.event_count || 0))
     .slice(0, 6);
@@ -455,7 +466,7 @@ function renderDemoStory(topics, trace) {
             tag(`${children.length} shown topic nodes`, "l2"),
             tag(`${family.event_count || 0} linked L1`, "l1"),
           ]),
-          el("strong", { text: family.label || family.l3_id || "transcript segmentation and idea-unit coverage" }),
+          el("strong", { text: family.label || family.l3_id || "audio acquisition and signal processing" }),
           el("span", { class: "label", text: family.l3_id || "" }),
           el("p", { text: "L3 is navigation context; factual claims still come from linked L1 evidence." }),
         ]),
@@ -511,8 +522,8 @@ async function loadDemoStory() {
   target.textContent = "Loading demo trace...";
   try {
     const [topics, trace] = await Promise.all([
-      api("/api/topics/l3?dataset=grace"),
-      api(`/api/retrieval/trace?query=${encodeURIComponent(DEMO_TRACE_QUERY)}&retrieval_mode=hybrid&no_llm=true&include_debug=false&budget_profile=observatory_trace`),
+      api(apiWithDataset("/api/topics/l3")),
+      api(`/api/retrieval/trace?dataset=${selectedDataset}&query=${encodeURIComponent(DEMO_TRACE_QUERY)}&retrieval_mode=lexical&no_llm=true&include_debug=false&budget_profile=observatory_paper_trace&max_context_chars=0`),
     ]);
     renderDemoStory(topics, trace);
   } catch (error) {
@@ -582,10 +593,6 @@ function syncDatasetSwitch() {
 
 async function loadDatasets() {
   availableDatasets = await api("/api/datasets").catch(() => []);
-  const hashTab = (window.location.hash || "").replace("#", "");
-  if (["demo", "trace", "topics"].includes(hashTab)) {
-    selectedDataset = "grace";
-  }
   if (!availableDatasets.some((item) => item.dataset_id === selectedDataset)) {
     selectedDataset = availableDatasets.some((item) => item.dataset_id === "icsi") ? "icsi" : "grace";
   }
@@ -598,6 +605,7 @@ async function reloadDatasetViews() {
   selectedObjectId = "";
   currentTopicId = null;
   await loadOverview();
+  await loadDemoStory();
   await loadExplorer();
   await loadTopics();
   await loadFeedback();
@@ -772,7 +780,7 @@ async function loadTraceL2Detail(traceItem) {
   const target = $("#traceL2Detail");
   if (!target || !traceItem || !traceItem.l2_id) return;
   target.replaceChildren(el("p", { class: "muted", text: "Loading L2 topic detail..." }));
-  const fullTopic = await api(`/api/topics/l2/${encodeURIComponent(traceItem.l2_id)}`);
+  const fullTopic = await api(apiWithDataset(`/api/topics/l2/${encodeURIComponent(traceItem.l2_id)}`));
   const matched = traceItem.matched_l1_ids || [];
   const linkedObjects = fullTopic.linked_l1_objects || [];
   target.replaceChildren(
@@ -820,8 +828,9 @@ async function runTrace() {
   const noLlm = $("#traceNoLlm").checked;
   const debug = $("#traceDebug").checked;
   const plannerModel = encodeURIComponent(noLlm ? "" : ($("#tracePlannerModel").value || ""));
-  const budgetProfile = "observatory_trace";
-  const data = await api(`/api/retrieval/trace?query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=false&planner_model=${plannerModel}&budget_profile=${budgetProfile}`);
+  const budgetProfile = $("#traceBudgetProfile").value || "observatory_trace";
+  const maxContextChars = budgetProfile === "observatory_paper_trace" ? 0 : 16000;
+  const data = await api(`/api/retrieval/trace?dataset=${selectedDataset}&query=${q}&retrieval_mode=${mode}&no_llm=${noLlm}&include_debug=false&planner_model=${plannerModel}&budget_profile=${budgetProfile}&max_context_chars=${maxContextChars}`);
   const out = $("#traceOutput");
   const planTags = [
     { text: traceModeLabel(data.retrieval_mode) },
@@ -1432,12 +1441,16 @@ async function boot() {
   if (hashTab === "trace") {
     $("#traceQuery").value = DEMO_TRACE_QUERY;
     $("#traceDebug").checked = false;
+    $("#traceMode").value = "lexical";
+    if ($("#traceBudgetProfile")) $("#traceBudgetProfile").value = "observatory_paper_trace";
     await runTrace();
   }
   if (hashTab === "topics") {
-    $("#topicSearch").value = "transcript";
+    $("#topicSearch").value = selectedDataset === "icsi" ? "audio" : "transcript";
     renderTopicTree();
-    await loadTopicDetail("L2-idea-unit-generation-methods").catch(() => {});
+    if (selectedDataset === "grace") {
+      await loadTopicDetail("L2-idea-unit-generation-methods").catch(() => {});
+    }
   }
 }
 

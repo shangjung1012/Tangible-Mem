@@ -231,19 +231,23 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
     @app.get("/api/retrieval/trace")
     def api_retrieval_trace(
         query: str = Query(..., min_length=1),
+        dataset: str = "grace",
         retrieval_mode: str = Query("hybrid", pattern="^(hybrid|lexical|semantic)$"),
         no_llm: bool = True,
         include_debug: bool = True,
         planner_model: str | None = None,
         budget_profile: str = "",
+        max_context_chars: int = 16000,
     ) -> dict[str, Any]:
-        return RetrievalTraceService(root).run_trace(
+        dataset_id = dataset_or_404(dataset)
+        return RetrievalTraceService(root, dataset_id=dataset_id).run_trace(
             query=query,
             retrieval_mode=retrieval_mode,
             no_llm=no_llm,
             include_debug=include_debug,
             planner_model_name=planner_model,
             budget_profile=budget_profile,
+            max_context_chars=max_context_chars,
         )
 
     @app.get("/api/feedback/importance")
