@@ -10,7 +10,8 @@ show in the Memory Observatory UI.
 |---|---|---|---|
 | `doc/taichi/figures/memory_observatory_system_overview.png` | Section 3 | System overview figure | The system treats memory as an inspectable pipeline from transcript evidence to topic context, retrieval trace, and sidecar correction. |
 | `doc/taichi/screenshots/observatory_presentation_icsi.png` | Section 5 | Walkthrough composite | The ICSI demo can show topic memory before the query, L1-first retrieval, L2/L3 context, and strategy comparison in one sequence. |
-| `doc/taichi/screenshots/observatory_trace_icsi_audio_processing.png` | Section 4.2 or 5 | Retrieval Trace screenshot | The UI exposes selected L1 evidence, L2/child-L2 context, L3 navigation, and formatted prompt context. |
+| `doc/taichi/screenshots/observatory_trace_icsi_focused.png` | Section 4.2 | Paper-focused Retrieval Trace figure | The UI exposes the inspectable retrieval flow as four readable panels: query/plan, L1 evidence, L2/L3 topic context, and formatted prompt context. |
+| `doc/taichi/screenshots/observatory_trace_icsi_audio_processing.png` | Backup / appendix | Full Retrieval Trace screenshot | The complete UI trace shows all retrieved evidence, selected L2/child-L2 context, L3 navigation, and formatted prompt context. |
 | `doc/taichi/screenshots/observatory_topic_observatory_icsi.png` | Section 4.3 | Topic Observatory screenshot | Reviewers can inspect L3 topic families, child L2 states, timeline events, linked L1 evidence, and oversized topic flags. |
 | `doc/taichi/screenshots/observatory_memory_explorer_icsi.png` | Section 4.1 or 4.4 | Memory Explorer screenshot | Reviewers can inspect object-level content, evidence, topic links, and feedback history without editing raw evidence. |
 
@@ -56,7 +57,7 @@ Why this example is better than the older Grace idea-unit example:
 
 - Select one or two figures for the main paper body; move the rest to appendix
   or presentation backup if page space is tight.
-- Decide whether Section 5 uses the full presentation composite or a smaller
-  sequence of Retrieval Trace + Topic Observatory screenshots.
+- Use the focused trace figure in the main body when page space is tight; keep
+  the full trace screenshot as backup evidence or appendix material.
 - Add figure captions that emphasize interaction affordances rather than
   algorithmic implementation details.

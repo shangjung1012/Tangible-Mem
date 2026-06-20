@@ -30,6 +30,20 @@ Recommended pages for screenshots:
 Use these for controlled screenshot capture when the live Observatory UI is too
 busy for a paper figure.
 
+## Paper Figures And Screenshots
+
+- `doc/taichi/figures/memory_observatory_system_overview.png`
+- `doc/taichi/screenshots/observatory_trace_icsi_focused.png`
+- `doc/taichi/screenshots/observatory_topic_observatory_icsi.png`
+- `doc/taichi/screenshots/observatory_memory_explorer_icsi.png`
+- `doc/taichi/screenshots/observatory_presentation_icsi.png`
+
+Use `observatory_trace_icsi_focused.png` for the main paper body. It is a
+cropped composite of the real ICSI Retrieval Trace and is more readable in a
+two-column paper than the full-height trace screenshot. Keep
+`observatory_trace_icsi_audio_processing.png` as backup evidence or appendix
+material.
+
 ## Static Diagrams
 
 - `docs/presentation_diagrams/grace_memory_architecture_diagrams.html`
@@ -88,6 +102,6 @@ Reason:
 ## Missing Or To Be Confirmed
 
 - Final ICSI completed-run root if newer than completed29 exists.
-- Final screenshots for paper figures.
+- Final title/conference metadata check in Overleaf `main.tex`.
 - Human-auditable answer-quality comparison beyond no-LLM retrieval diagnostics.
 - Term/L2/L3 decision audit exports if detailed reviewer appendix is needed.

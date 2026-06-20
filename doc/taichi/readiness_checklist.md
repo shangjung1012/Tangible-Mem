@@ -14,10 +14,15 @@ submitting the TAICHI paper.
 - [x] Mark discarded/wrong-project report as not usable.
 - [ ] Confirm whether `completed29` is still the final ICSI paper artifact or
   whether a newer completed run should replace it.
-- [ ] Capture paper-ready screenshots from Memory Observatory.
+- [x] Capture paper-ready ICSI screenshots from Memory Observatory.
+- [x] Create a focused Retrieval Trace figure for the main paper body.
 - [ ] Verify Demo Story page visually in browser.
 - [ ] Decide whether presentation capture assets should be committed as official
   paper/demo assets.
+- [ ] Resolve Overleaf citation warnings in Introduction / Related Work before
+  final submission build.
+- [ ] Confirm final paper title, conference metadata, and running header in
+  `main.tex`.
 
 ## P1: Required Before Strong Evaluation Claims
 
