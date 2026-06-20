@@ -1,0 +1,866 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.72in]{geometry}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fvextra}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{titlesec}
+
+\setmainfont{Arial}
+\setCJKmainfont{Microsoft JhengHei}
+\setCJKmonofont{Microsoft JhengHei}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black}
+\fvset{breaklines=true, breakanywhere=true, fontsize=\footnotesize}
+\setlist[itemize]{leftmargin=1.35em}
+\setlist[enumerate]{leftmargin=1.45em}
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\decision}[1]{\textbf{決策：}#1}
+\newcommand{\impact}[1]{\textbf{影響：}#1}
+\newcommand{\example}[1]{\textbf{例子：}#1}
+\newcommand{\smallgap}{\vspace{0.35em}}
+
+\title{\textbf{Optimization v2 決策目錄}\\
+\large 實作細節、Prompt、Threshold、公式與 Grace/ICSI 範例}
+\author{Virtual Mentor Memory System}
+\date{2026-06-15}
+
+\begin{document}
+\maketitle
+
+\section*{摘要}
+
+這份文件取代早期的 \code{optimization_v2_decision_catalog_20260603}。早期版本已經描述第一版 v2，但仍偏英文，且沒有完整列出每個會影響系統結果的判定細節。這一版改成中文主體，目的很明確：讓教授或評審可以逐條審查系統如何做決定。
+
+\smallgap
+\noindent 本文件會回答：
+\begin{itemize}
+  \item 什麼內容會從 transcript 變成 L1 evidence object？
+  \item 什麼 L1 會進入 L2？什麼 L1 會留在 unlinked / review-only？
+  \item \code{related_topics} 到底有沒有用？它的權重多大？
+  \item L2 label 怎麼選？公式是什麼？
+  \item 什麼 L2 會升成 L3？L3 child 怎麼拆？何時會停止或進 review？
+  \item Retrieval 是怎麼從 L1 找證據，再往上帶 L2/L3？
+  \item 系統有哪些 prompt？原文是什麼？中文意思是什麼？
+  \item Grace 和 ICSI 的具體例子如何對應到這些規則？
+\end{itemize}
+
+\smallgap
+\noindent\textbf{最重要的邊界：} optimization v2 不直接改 raw L1 evidence。raw L1 來自 \code{share_mem/} 或 ICSI 的 \code{share_mem_effective/} sidecar。v2 只在 \code{optimization/runs/} 和 \code{optimization/reports/} 裡產生衍生 artifacts。這代表「dump」不是刪掉 L1，而是不讓它進入 active L2/L3 surface，或把它標成 unlinked、review-only、suppressed、warning。
+
+\section{目前版本與參考輸出}
+
+\begin{longtable}{p{0.28\linewidth}rr}
+\toprule
+\textbf{項目} & \textbf{Grace 最新 v2} & \textbf{ICSI BMR 29 場 effective}\\
+\midrule
+Run root & \multicolumn{2}{p{0.55\linewidth}}{\code{optimization/runs/grace_v2_latest_20260614}；\code{optimization/runs/icsi_bmr_full_completed29_v2_20260614}}\\
+Profile & \code{mentor_mentee.yaml} & \code{isci_meeting.yaml}\\
+Build mode & deterministic & deterministic\\
+Build 時是否呼叫 LLM & 否 & 否\\
+Source L1 數 & 448 & 6,233\\
+Semantic key rows & 448 & 6,233\\
+L2 topic 數 & 49 & 530\\
+Linked L1 & 440 & 6,203\\
+Unlinked L1 & 8 & 30\\
+Raw materialized L3 parents & 3 & 65\\
+Runtime L3 parents & 3 & 6\\
+L3-assigned L1 & 71 & 2,683\\
+L2 severe / warning & 0 / 2 & 0 / 9\\
+L3 severe / warning & 0 / 2 & 0 / 9\\
+\bottomrule
+\end{longtable}
+
+\noindent ICSI 的 raw L3 和 runtime L3 數量不同是刻意設計。Raw L3 用來審查所有可能的 parent/child split；runtime L3 是給 retrieval / demo 用的壓縮版 topic-family surface，避免把 65 個 L3 全部塞進 retrieval context。
+
+\section{術語：Canonical、Optimization、Effective、Dump}
+
+\begin{longtable}{p{0.22\linewidth}p{0.70\linewidth}}
+\toprule
+\textbf{術語} & \textbf{定義}\\
+\midrule
+Canonical & 目前既有主線 artifacts，例如 \code{share_mem/}、\code{long_term/l2/}、\code{long_term/l3/}。optimization v2 預設不覆蓋它們。\\
+Optimization v2 & 新版 L2/L3 pipeline，位於 \code{optimization/long_term_v2/}。它讀 L1，產生新的 L2/L3 sidecar。\\
+Raw L1 & 原始 evidence object。這是證據來源，不應被 L2/L3 pipeline 任意改寫。\\
+Effective L1 & 經 sidecar gate 後的有效輸入。例如 ICSI 會使用 \code{filtered_share_mem} 或 \code{share_mem_effective}，避免 raw setup/noise 直接污染 L2/L3。\\
+Unlinked & L1 保留在 evidence root，但沒有被分到 durable L2。\\
+Review-only & 系統認為該項目可能有價值，但不夠安全自動放進 active L2/L3，需要人工審查。\\
+Suppressed & topic review sidecar 決定某 L2 不出現在 effective topic surface。raw topic 還在 run root，可回查。\\
+Dump & 本文口語上指「不進 active L2/L3」，不是刪除 raw L1。\\
+\bottomrule
+\end{longtable}
+
+\section{整體資料流}
+
+\begin{enumerate}
+  \item Transcript 由上游 \code{share_mem/l1} pipeline 轉成 L1 evidence objects。
+  \item 若是 ICSI 這種 noisy corpus，先用 sidecar gate 形成 effective L1 root。
+  \item optimization v2 讀取 L1 root，複製 input snapshot 並計算 hash。
+  \item 每個 L1 產生 semantic key row。
+  \item L2 induction 根據 semantic keys、content/evidence、importance、optional related topics 形成 durable topics。
+  \item 過大的 L2 才考慮升成 L3 topic family。
+  \item Runtime export 使用 effective topic surface：topic review sidecar、L3 child review sidecar、corpus-theme L3 sidecar 會影響最後 retrieval 看到的 L2/L3。
+  \item Retrieval 先找 L1 evidence seeds，再帶出 L2/L3 context。
+\end{enumerate}
+
+\section{L1：什麼會被抽成 evidence object}
+
+Optimization v2 不重跑 L1，但 L1 是整個系統的證據基礎，所以必須說清楚 upstream L1 的決策。
+
+\subsection{上游 L1 pipeline 的固定參數}
+
+\begin{longtable}{p{0.32\linewidth}p{0.22\linewidth}p{0.38\linewidth}}
+\toprule
+\textbf{決策點} & \textbf{Threshold / 值} & \textbf{意義}\\
+\midrule
+Grace chunk size & 24 transcript lines & Grace 中文 turn 較長，一個 line 常包含很多上下文，所以視窗較小。\\
+ICSI chunk size & 40 transcript lines & ICSI 英文 speaker turns 較短且碎，因此視窗較大。\\
+Issue episode gap & Grace 10；ICSI 15 lines & 同一問題相隔不遠時可以被視為同一 episode。\\
+Segmentation target & 通常 3--6 segments & segment 是 topic-coherent discussion，不是逐句切。\\
+Max segments per window & 10 & 只有明顯大主題切換時才允許這麼多。\\
+Preferred segment length & 10--24 primary-window lines & 防止過度切碎，也防止一段過大。\\
+Idea unit target & 通常 3--8 units / segment & 每個 unit 是一個可檢查 idea。\\
+Max idea units per segment & 12 & 只有一段內有很多 distinct durable claims 時使用。\\
+Extraction batch target & 10 idea units & typed L1 agents 讀 bounded packet。\\
+Max extraction batch & 14 idea units & 超過會切 batch。\\
+Batch overlap & 2 idea units & 避免 batch 邊界漏掉上下文。\\
+Typed L1 candidates & 通常 0--4，最多 6 & 避免把每個 idea unit 都重述成 L1。\\
+Fallback candidates & 最多 3 & typed agents 無候選時才啟用。\\
+Previous context & 前 2 batches，最多 8 items & 只能消歧，不是 evidence。\\
+Previous item chars & 160 chars & 避免 previous context 壓過 bounded evidence。\\
+Cross-window topic merge & Jaccard $\geq 0.30$ & topic label 相似時觸發跨 window refinement。\\
+Cross-window boundary merge & Jaccard $\geq 0.20$ & 邊界 transcript 相似時觸發 refinement。\\
+Cross-window idea-unit merge & Jaccard $\geq 0.20$ & idea unit 相似時觸發 refinement。\\
+Boundary refinement context & 16 lines lookback/lookahead & 重切跨 window 邊界時讀更多上下文。\\
+\bottomrule
+\end{longtable}
+
+\subsection{什麼內容會成為 L1}
+
+\decision{只有 durable long-term memory 會被提成 L1。}
+
+\begin{itemize}
+  \item 會保留：專案級 decision、method change、concrete follow-up、stable finding、unresolved research question、decision-supporting argument。
+  \item 會保留：會影響未來系統行為的 requirement / scope clarification。
+  \item 會保留：evaluation design、baseline、metric、full-context/RAG/ablation comparison 條件。
+  \item 會保留：模型能力判斷，若它影響 pipeline design 或 evaluation。
+  \item 會丟到非 L1 或低重要度：filler、acknowledgement、local wording clarification、社交話語、一句話 example、單純 setup/logistics。
+  \item 重要度規則：\(\geq 0.90\) 只給 project-level 或 future-steering items；\(0.50\)--\(0.70\) 用於有用但偏 local meeting context。
+\end{itemize}
+
+\subsection{L1 例子}
+
+\example{Grace L1-0422-006}
+\begin{quote}
+為了取代逐「輪」更新記憶體的簡單作法，團隊探討了兩種新的方法來預處理逐字稿以生成 idea units：迭代法與預分割法。
+\end{quote}
+\textbf{為什麼成為 L1：}這是 memory update pipeline 的方法改變，會影響後續設計，不是單次聊天內容。
+
+\smallgap
+\example{Grace L1-0307-034}
+\begin{quote}
+團隊成員需要協調統一資料檔案夾結構，以避免檔案重複。
+\end{quote}
+\textbf{為什麼可能不進 L2：}它是有效 L1，但在目前 corpus 中不是 recurring durable topic。v2 保留 evidence，但不硬塞進 L2。
+
+\smallgap
+\example{ICSI L1-Bmr002-094}
+\begin{quote}
+The project needs to select an annotation tool. Tools from Mississippi State and XWaves have been suggested as potential options.
+\end{quote}
+\textbf{為什麼成為 L1：}這是 annotation workflow 的工具選擇問題，對後續 corpus annotation 有持續影響。
+
+\section{ICSI Effective L1 Gate：為什麼不直接讀 raw share\_mem}
+
+\decision{ICSI L2/L3 優先讀 \code{filtered_share_mem} 或 \code{share_mem_effective}，不直接把 raw L1 全部視為 active evidence。}
+
+\begin{itemize}
+  \item raw L1 仍保留，方便審查。
+  \item effective L1 移除或降權 source-data-only、same-evidence duplicate、microphone inventory、kickoff metadata、speaker-code/filler 等項目。
+  \item 這不是為 ICSI 硬編答案，而是 mentor-mentee / research meeting 場景常見的 evidence hygiene：source data 和 durable memory 要分開。
+\end{itemize}
+
+\section{Semantic Key Layer：L1 如何變成可分群訊號}
+
+\subsection{輸入與輸出}
+
+每個 L1 object 會輸入：
+\[
+content,\ evidence,\ type,\ importance,\ related\_topics,\ related\_obj\_ids
+\]
+
+輸出 semantic key row：
+\begin{itemize}
+  \item \code{candidate_terms}
+  \item \code{semantic_facets}
+  \item \code{source_signals}
+  \item \code{confidence}
+\end{itemize}
+
+\subsection{Term candidate 的產生}
+
+\decision{v2 從 content/evidence 產生 1--3 gram terms，再用 profile stopwords/generic labels/type-like labels/reject labels 過濾。}
+
+若 profile 的 \code{topic_key_language} 是 English，且有英文 candidate，則排除 CJK candidate，避免 ICSI/Grace mixed text 把語言殘片當 topic key。
+
+\subsection{Term ranking 公式}
+
+對每個 candidate term：
+\[
+\begin{aligned}
+score &= 2.5 \cdot \min(count,4) + phrase\_bonus
+      + 0.25 \cdot \min(specific\_token\_count,3)\\
+score &\mathrel{-}= 0.9 \quad \text{if single token}\\
+score &\mathrel{-}= 2.5 \quad \text{if single token and generic}\\
+score &\mathrel{-}= 0.4 \quad \text{if multi-token but all generic}\\
+score &\mathrel{-}= 0.15 \cdot generic\_token\_count
+\end{aligned}
+\]
+
+\[
+phrase\_bonus =
+\begin{cases}
+1.6 & \text{三個以上 tokens}\\
+1.15 & \text{兩個 tokens}\\
+0 & \text{其他}
+\end{cases}
+\]
+
+排序時使用 \(-score\)、phrase 長度、字母序作 deterministic tie-break。
+
+\subsection{Semantic key confidence}
+
+\[
+confidence = \min(1.0,\ 0.25 + 0.08 \cdot \#facet\_terms)
+\]
+
+\impact{這個 confidence 不代表最終 topic 正確，只代表該 L1 產生的 semantic signals 是否足夠。}
+
+\section{L2：L1 什麼時候會被 assign}
+
+\subsection{Profile thresholds}
+
+\begin{longtable}{p{0.35\linewidth}p{0.25\linewidth}p{0.32\linewidth}}
+\toprule
+\textbf{參數} & \textbf{Grace / mentor\_mentee} & \textbf{ICSI}\\
+\midrule
+\code{min_topic_evidence} & 4 & 繼承 4\\
+\code{minimum_assignment_confidence} & 0.25 & 繼承 0.25\\
+\code{high_importance_threshold} & 0.70 & 繼承 0.70\\
+\code{max_l2_topic_share_before_specificity_penalty} & 0.18 & 繼承 0.18\\
+\code{allow_single_meeting_topic_if_high_importance} & true & false\\
+\code{review_only_min_assignment_confidence} & 0.25 default & 0.52\\
+\code{semantic_rescue_min_confidence} & 0.60 default & 0.68\\
+\code{max_review_only_l1_share} & 無硬限制 & 0.20\\
+\bottomrule
+\end{longtable}
+
+\subsection{Label selection 公式}
+
+對 L1 的每個 candidate label，令 \(df\) 為 document frequency、\(N\) 為 L1 總數、\(m\) 為 \code{min_topic_evidence}、\(max\_share=0.18\)：
+
+\[
+\begin{aligned}
+capped\_df &= \min(df, 3m)\\
+share &= \frac{df}{\max(N,1)}\\
+score &= 1.4 \cdot capped\_df + phrase\_bonus
+       + 0.2 \cdot \min(specific\_token\_count,3)\\
+score &\mathrel{+}= 2.0 \quad \text{if } df \geq m\\
+score &\mathrel{-}= 30.0 \cdot (share - max\_share) \quad \text{if } share > max\_share\\
+score &\mathrel{-}= 3.0 \quad \text{if single token}\\
+score &\mathrel{+}= 1.0 \quad \text{if from content or facet}\\
+score &\mathrel{+}= \max(0,\ 2.0 - 0.25\cdot rank) \quad \text{if content/facet phrase has two or more tokens}\\
+score &\mathrel{+}= 0.25 \quad \text{if only from related topics}
+\end{aligned}
+\]
+
+\[
+phrase\_bonus =
+\begin{cases}
+1.15 & \text{兩個 tokens}\\
+0.65 & \text{三個以上 tokens}\\
+0 & \text{其他}
+\end{cases}
+\]
+
+\decision{\code{related_topics} 有用，但不是主因。} content/facet signal 至少加 \(1.0\)，而 related topic only 只加 \(0.25\)。這避免新資料集被舊 topic vocabulary 強迫拉歪。
+
+\subsection{Assignment confidence 公式}
+
+\[
+confidence = \min\left(0.95,\ 0.2 + 0.35\cdot\frac{df}{m} + 0.25\cdot importance\right)
+\]
+
+若是 semantic rescue，使用：
+\[
+rescue\_score = 0.7 \cdot containment + 0.3 \cdot Jaccard(row\_signature,\ topic\_signature)
+\]
+\[
+containment = \frac{|shared\_terms|}{\min(|row\_signature|,\ |topic\_signature|)}
+\]
+\[
+rescue\_confidence = \min(0.82,\ 0.32 + 0.6\cdot rescue\_score + 0.12\cdot importance)
+\]
+
+Rescue 必須至少有兩個 shared terms，且 \(rescue\_score \geq 0.18\)。
+
+\subsection{Assign L2 的條件}
+
+L1 會被 assign 到 L2，通常需要同時滿足：
+\begin{enumerate}
+  \item 有通過 filter 的 candidate label。
+  \item label 的 \(df \geq min\_topic\_evidence\)，或該 L1 importance 足夠高且 profile 允許 single/high-importance topic。
+  \item assignment confidence \(\geq minimum\_assignment\_confidence\)。
+  \item label 不是 type-like、generic-only、reject label、weak phrase。
+  \item 如果是 singleton topic，profile 允許，否則轉 unlinked/review。
+\end{enumerate}
+
+\subsection{不進 L2 / dump 的條件}
+
+\begin{longtable}{p{0.30\linewidth}p{0.26\linewidth}p{0.36\linewidth}}
+\toprule
+\textbf{原因碼} & \textbf{觸發條件} & \textbf{結果}\\
+\midrule
+\code{no_repeated_or_high_confidence_semantic_key} & 沒有可用 label & L1 保留，但 unlinked。\\
+\code{candidate_topic_not_durable_enough} & \(df < m\) 且 importance 未達 high threshold & 不建立不耐久 L2。\\
+\code{low_assignment_confidence} & confidence 低於 minimum & unlinked 或 review。\\
+\code{review_only_low_assignment_confidence} & 有 recurring label 但低於 review-only 門檻 & 進 manual review，不進 active L2。\\
+\code{high_importance_ambiguous_topic_review} & 高 importance 但 topic ambiguous & 保留 evidence，要求人工判斷。\\
+\code{singleton_l2_not_durable_enough} & 該 L2 只有一個 L1，且 profile 不允許 & 不建立 singleton L2。\\
+\code{semantic_rescue_low_confidence_review} & rescue 有 overlap 但 confidence 不足 & review，不直接 assign。\\
+\bottomrule
+\end{longtable}
+
+\section{L2 Validation 與 Label Polish}
+
+\subsection{Validation severe 條件}
+
+\begin{itemize}
+  \item 缺少必要輸出：\code{manifest.json}、input snapshot、semantic key index、L2/L3 view/index。
+  \item L2 topic 沒有 \code{representative_l1_ids}。
+  \item L2 topic 沒有 \code{creation_rationale}。
+  \item L2 assignment 沒有 \code{rationale}。
+\end{itemize}
+
+\subsection{Validation warning 條件}
+
+\begin{itemize}
+  \item L1 text 似乎有 mojibake / private-use glyph。
+  \item semantic key count 和 source L1 count 不一致。
+  \item L2 label 是 type-like、generic、rejected、weak phrase。
+  \item L2 只有一個 linked L1。
+  \item assignment 用到 related topics，但 rationale 太弱。
+\end{itemize}
+
+\subsection{Label polish sidecar}
+
+Label polish 不直接改 raw L2/L3，而是產生 review queue。觸發條件：
+
+\begin{longtable}{p{0.28\linewidth}p{0.30\linewidth}p{0.34\linewidth}}
+\toprule
+\textbf{類別} & \textbf{例子 / 規則} & \textbf{結果}\\
+\midrule
+Type-like label & decision, proposal, argument, finding, action item, open issue & label review。\\
+Generic-only label & data, system, memory, discussion, topic, thing, process & label review。\\
+Single artifact label & uh, um, hmm, okay, yeah, go, ahead & suppress/review。\\
+Weak terminal word & label 結尾是 of, in, to, with, per 等 & label review。\\
+Weak start word & basically, maybe, probably, actually, just 等 & label review。\\
+Ambiguous short label & 長度 \(\leq 4\) 且不是全大寫 & label review。\\
+Missing representative L1 & label 沒有代表 evidence & severe/review。\\
+\bottomrule
+\end{longtable}
+
+\section{L3：L2 什麼時候升成 topic family}
+
+\subsection{Promotion threshold}
+
+L3 是 topic-family navigation，不是主要 evidence。只有 oversized L2 才會升。
+
+令 \(sizes\) 是所有 L2 的 linked-L1 counts：
+\[
+p85 = percentile(sizes, 0.85)
+\]
+
+若總 L1 \(\leq 50\)：
+\[
+threshold = \max(min\_absolute\_threshold,\ p85)
+\]
+
+若總 L1 \(> 50\)：
+\[
+threshold = \max(min\_absolute\_threshold,\ target\_child\_max,\ p85)
+\]
+
+目前校準值：
+\begin{itemize}
+  \item Grace: \code{l3_absolute_l1_threshold = 49}，target child size 6--20。
+  \item ICSI: \code{l3_absolute_l1_threshold = 131}，target child size 6--20。
+\end{itemize}
+
+\subsection{Target child count}
+
+\[
+adaptive\_child\_count = \left\lceil \frac{event\_count}{target\_child\_max} \right\rceil
+\]
+\[
+child\_count = clamp(adaptive\_child\_count,\ min\_child\_count,\ max\_child\_count)
+\]
+
+Default: \code{min_child_l2_count = 2}，\code{max_child_l2_count = 12}。
+
+\subsection{Child label 怎麼產生}
+
+\decision{v2 不使用舊版手寫 child taxonomy。}
+
+Child labels 來自：
+\begin{itemize}
+  \item parent L2 的 top semantic terms；
+  \item parent timeline summaries；
+  \item 2--3 gram candidates；
+  \item profile label filters / normalization aliases。
+\end{itemize}
+
+排序：
+\[
+rank\_score = count + 4 \cdot token\_count
+\]
+再用 phrase 長度與字母序 tie-break。
+
+\subsection{Event assign child 的規則}
+
+每個 parent L2 timeline event 會被分到最相符 child：
+\[
+score(event, child) = |tokens(event.summary) \cap tokens(child.assignment\_criteria)|
+\]
+
+若所有 child 分數都 \(\leq 0\)，用 deterministic round-robin fallback：
+\[
+child = candidates[index \bmod child\_count]
+\]
+
+\impact{這個 fallback 不是表示 child split 品質好；後續 separability validation 會擋掉低品質 split 或放進 review。}
+
+\subsection{Split separability score}
+
+Split 初始分數 \(1.0\)，再扣分：
+
+\begin{longtable}{p{0.45\linewidth}p{0.16\linewidth}p{0.31\linewidth}}
+\toprule
+\textbf{條件} & \textbf{扣分} & \textbf{原因碼}\\
+\midrule
+Non-empty children 少於 2 個 & 0.60 & \code{insufficient_non_empty_children}\\
+最大 child 佔比 \(\geq 0.80\) 且超過 max child size & 0.25 & \code{dominant_oversized_child}\\
+超過一半 children 為空，且最大 child 超大 & 0.15 & \code{too_many_empty_children}\\
+Sibling label overlap \(\geq 0.72\) & 0.25 & \code{high_sibling_label_overlap}\\
+Weak child labels & 最多 0.25 & \code{weak_child_labels}\\
+Manual-review child labels & 最多 0.25 & \code{manual_review_child_labels}\\
+\bottomrule
+\end{longtable}
+
+Minimum split separability:
+\begin{itemize}
+  \item mentor-mentee default: 0.35。
+  \item ICSI: 0.58。
+\end{itemize}
+
+\subsection{L3 不 materialize 的條件}
+
+\begin{itemize}
+  \item L2 event count 小於 adaptive threshold。
+  \item child candidates 不足，或 split quality 太差。
+  \item 大部分 evidence 仍落在同一 child，其他 child 只是 tiny edge cases。
+  \item child labels 是 generic/type-like/weak/rejected。
+  \item split separability 低於 profile threshold。
+\end{itemize}
+
+\section{Effective Topic Surface：最後 retrieval 看到什麼}
+
+Runtime 不是永遠直接讀 raw \code{l2_view.json} / \code{l3_view.json}。載入順序：
+
+\begin{enumerate}
+  \item L2：如果 \code{topic_review/effective_topic_index.json} 有 suppressed L2 ids，active L2 view 會過濾它們。
+  \item L3：若存在 \code{l3/corpus_theme_view.json} 和 \code{l3/corpus_theme_index.json}，優先使用 corpus-theme L3。
+  \item 若無 corpus-theme L3，但有 \code{effective_l3_view.json}，使用 L3 child review 後的 effective L3。
+  \item 否則使用 raw L3。
+\end{enumerate}
+
+優先序：
+\[
+corpus\_theme\_l3 > l3\_child\_review > raw\_l3
+\]
+
+\section{Retrieval：如何從 L1 往上帶 L2/L3}
+
+\subsection{L1 ranking 公式}
+
+Retrieval 先找 L1 evidence seeds。對 query \(q\)、L1 text \(t\)、topic labels \(r\)：
+\[
+base = \max(Jaccard(q,t),\ 0.95\cdot Jaccard(q,r))
+\]
+
+Phrase bonus:
+\[
+phrase\_bonus += 0.14 \quad \text{if topic phrase appears in query phrase}
+\]
+\[
+phrase\_bonus += 0.08 \quad \text{if topic tokens are subset of query tokens}
+\]
+
+Final score:
+\[
+score = base + \min(0.35,\ phrase\_bonus) + 0.015\cdot importance
+\]
+
+分數 \(\leq 0\) 的 L1 不會被選入候選。
+
+\subsection{Context construction}
+
+目前 ICSI comparison 使用：
+\begin{itemize}
+  \item RAG: top-k L1 = 20。
+  \item Optimization v2 layered: top-k L1 = 60。
+  \item Full context: 幾乎所有 L1，平均 4,715 L1。
+\end{itemize}
+
+Layered context 不是只列 L1，也會附：
+\begin{itemize}
+  \item selected L1 evidence seeds；
+  \item selected L2 labels / timelines；
+  \item selected L3 labels；
+  \item evidence grounding metadata。
+\end{itemize}
+
+\section{ICSI 評估結果}
+
+目前 ICSI 29 場使用 20 題 held-out evidence questions，這是 no-LLM retrieval/evidence comparison，不是最終 answer benchmark。
+
+\begin{longtable}{p{0.30\linewidth}rrr}
+\toprule
+\textbf{系統} & \textbf{Expected L1 recall} & \textbf{Avg context tokens} & \textbf{Avg selected L1}\\
+\midrule
+Full context L1 & 1.0000 & 575,199 & 4,715\\
+Traditional lexical RAG & 0.5583 & 2,369.95 & 20\\
+Optimization v2 layered & 0.8958 & 7,358.35 & 60\\
+\bottomrule
+\end{longtable}
+
+\noindent\textbf{解讀：}
+Full context recall 最高，因為它幾乎全塞；但 token 成本極高。RAG 很省，但漏掉很多 expected L1。Optimization v2 token 比 RAG 多，但 recall 明顯高，而且提供 L2/L3 context。
+
+\section{具體範例：Grace}
+
+\subsection{問題：為什麼要把 transcript 拆成 segment / idea units？}
+
+會被取出的關鍵 evidence：
+\begin{itemize}
+  \item \textbf{L1-0422-006}：為了取代逐 turn update，討論 idea units 的迭代法與預分割法。
+  \item \textbf{L1-0429-122}：放棄 full transcript 一次更新，因為 context 太大且 JSON output 難控制。
+  \item \textbf{L1-0506-001}：確立 context planner \(\rightarrow\) segment agent \(\rightarrow\) idea units。
+  \item \textbf{L1-0506-002}：定義 segment 和 idea unit 差異。
+\end{itemize}
+
+\textbf{L2/L3 的角色：}RAG 可能找到其中一段，但 L2/L3 可以把跨 0422、0429、0506 的演進串起來，說明從 full transcript / turn-based update 到 segment/idea-unit pipeline 的原因。
+
+\section{具體範例：ICSI}
+
+\subsection{Annotation tool}
+
+\begin{quote}
+\textbf{L1-Bmr002-094}：The project needs to select an annotation tool. Tools from Mississippi State and XWaves have been suggested.
+\end{quote}
+
+L2: \code{annotation tool}。Runtime L3: annotation and transcription workflow。
+
+\textbf{判斷原因：}這不是 Grace memory-system topic，而是 ICSI corpus annotation workflow 的 recurring evidence-backed topic。
+
+\subsection{Disk space}
+
+\begin{quote}
+\textbf{L1-Bmr024-097}：A decision was made to save all recorded data, including distant microphones, because disk space is inexpensive.
+\end{quote}
+
+L2: \code{disk space}。L3: corpus design and data management。
+
+\textbf{判斷原因：}這是 corpus storage policy，不是單純硬體聊天。
+
+\subsection{Resource allocation}
+
+\begin{quote}
+\textbf{L1-Bmr001-052}：Speaker location detection is feasible with available data, but who will write the software is unresolved.
+\end{quote}
+
+L2: \code{resource allocation}。L3: project planning and management。
+
+\textbf{判斷原因：}這是 unresolved implementation ownership，會影響後續 project planning。
+
+\section{Prompt 完整清單}
+
+\subsection{說明}
+
+Optimization v2 deterministic build 不呼叫 LLM。以下 prompt 分兩類：
+\begin{itemize}
+  \item 上游 L1 extraction prompt：用於 transcript \(\rightarrow\) L1。
+  \item Optimization v2 optional / diagnostic prompt：用於 label refinement、split review、L3 child review、answer generation、answer judging。
+\end{itemize}
+
+因為程式實際送出的 prompt 是英文，所以本節保留英文原文摘要，並附中文翻譯。
+
+\subsection{P-L1-1 Segmentation Agent}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+You are segmentation_agent for a long-term memory extraction pipeline.
+Return JSON only. Split the transcript window into topic-coherent segments.
+Use original line numbers.
+
+Create durable discussion segments, not sentence-level or checklist-like slices.
+Normally return 3-6 segments for this primary window.
+You may return up to 10 segments only when there are clear major topic shifts.
+Prefer 10-24 primary-window lines per segment.
+Do not split every small subpoint into a segment; downstream idea units will
+handle the smaller claims inside each durable segment.
+\end{Verbatim}
+
+\textbf{中文翻譯}：你是 segmentation agent。請只回 JSON，把 transcript window 切成 topic-coherent segments，保留原始行號。Segment 要是可長期使用的討論段，不是句子級或 checklist 級切片。一般 3--6 段，只有明顯大主題切換時最多 10 段，每段最好 10--24 行。
+
+\subsection{P-L1-2 Idea Unit Agent}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+You are idea_unit_agent. Convert this segment into compact idea units.
+Each unit should express one checkable idea that downstream L1 agents can share.
+Do not classify memory types here. Return JSON only.
+
+Normally return 3-8 idea units. You may return up to 12 only when the segment
+contains many distinct durable claims.
+Do not split every sentence into a separate unit.
+Preserve questions, objections, counterexamples, method exploration, evaluation
+criteria, comparison rationale, and unresolved design discussions when they
+affect future project decisions or memory behavior.
+\end{Verbatim}
+
+\textbf{中文翻譯}：你是 idea unit agent。請把 segment 轉成 compact idea units。每個 unit 要是一個可檢查、可讓下游 L1 agents 共用的 idea。此處不分類 memory type。一般 3--8 個，只有 segment 中有很多不同 durable claims 時最多 12 個。不要逐句切；要保留會影響未來決策或記憶行為的問題、反對、反例、方法探索、評估標準、比較理由與未解設計討論。
+
+\subsection{P-L1-3 Idea Unit Repair Agent}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+You are idea_unit_repair_agent. Repair idea-unit coverage for one segment.
+Return a full revised set of semantic idea units for the segment, not a patch.
+Return JSON only.
+
+The validator found issues in the first idea-unit pass. Your job is to avoid
+deterministic fallback by creating durable semantic units where there is useful
+project content, or marking true filler as non_memory_context_ranges.
+\end{Verbatim}
+
+\textbf{中文翻譯}：你是 idea unit repair agent。請修復某 segment 的 idea-unit coverage，回傳完整新版，不是 patch。validator 發現第一輪有問題，你的任務是在有用內容中建立 durable semantic units，或把真正 filler 標成 non-memory ranges。
+
+\subsection{P-L1-4 Typed L1 Agent}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+You are l1_{obj_type}_agent in a multi-agent long-term memory pipeline.
+Read only the bounded idea units below and propose only {obj_type} candidates.
+Do not infer from outside this extraction scope.
+Prior context may help disambiguate references, but it is never evidence.
+Every candidate must be supported by the bounded idea units below.
+
+Normally return 0-4 candidates. You may return up to 6 only when there are
+clearly distinct durable {obj_type} memories.
+
+Only output durable long-term memory:
+- keep project-level decisions, method changes, concrete follow-ups, stable
+  findings, unresolved research questions, or decision-supporting arguments
+- do not restate each idea unit as a candidate
+- do not output local clarifications, filler, examples, or one-line observations
+- use importance >= 0.90 only for project-level or future-steering items
+- use 0.50-0.70 for useful but local meeting-level context
+Return JSON only.
+\end{Verbatim}
+
+\textbf{中文翻譯}：你是某個 L1 類型的 agent。只能讀 bounded idea units，只提出該類型候選，不得從 scope 外推論。prior context 只能消歧，不能作 evidence。一般回傳 0--4 個，只有明確不同的 durable memories 時最多 6 個。只輸出長期有用的記憶；不要把每個 idea unit 重述成 candidate。
+
+\subsection{P-L1-5 General L1 Fallback Agent}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+You are general_l1_fallback_agent in a multi-agent long-term memory pipeline.
+This fallback runs only because the typed L1 agents produced no candidates.
+
+Read only the bounded idea units below. Propose a small number of durable L1
+candidates only if this extraction packet clearly contains one of the allowed
+types. Return an empty candidates list if the packet is purely filler,
+logistics, acknowledgements, or unclear.
+Return at most 3 candidates. Return JSON only.
+\end{Verbatim}
+
+\textbf{中文翻譯}：你是 general fallback agent。只有 typed L1 agents 沒有產生候選時才啟用。只讀 bounded idea units；只有 packet 明確包含允許的 durable L1 類型時才提出少量候選。若只是 filler、行政流程、附和或不清楚，回傳空清單。最多 3 個。
+
+\subsection{P-V2-1 L2 Label Refinement}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+Task: Refine evidence-derived L2 topic labels for a mentor-mentee research
+meeting memory system.
+
+Constraints:
+- Use only the provided L1 evidence summaries and semantic terms.
+- Do not invent project-specific labels that are not supported by evidence.
+- Prefer concise English noun phrases, usually 2 to 5 words.
+- Prefer stable noun labels over verb phrases.
+- Avoid labels that are merely L1 object types, generic buckets, or
+  implementation artifacts.
+- Keep a topic broad enough to cover its linked evidence but specific enough
+  to be useful for retrieval.
+\end{Verbatim}
+
+\textbf{中文翻譯}：請改善 evidence-derived L2 labels。只能使用提供的 L1 summaries 和 semantic terms；不能發明 evidence 不支持的 label；偏好 2--5 詞英文名詞片語；避免 type-like、generic bucket 或 implementation artifact；label 要能覆蓋 linked evidence，但仍具體到有助 retrieval。
+
+\subsection{P-V2-2 L2 Induction Review Proposal}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+Task: Review evidence-induced L2 topics and propose merge, split, or
+assignment-review candidates. Do not rewrite the source data.
+
+Constraints:
+- Use only topic labels, semantic terms, and representative L1 evidence.
+- Every proposal must cite representative_l1_ids.
+- Prefer no proposal over speculative proposals.
+- Do not propose Grace-specific taxonomy unless the evidence supports it.
+- Return JSON only.
+\end{Verbatim}
+
+\textbf{中文翻譯}：請審查 evidence-induced L2 topics，提出 merge、split 或 assignment-review 候選，但不能改 source data。每個 proposal 必須引用 representative L1 ids。寧可沒有 proposal，也不要猜測。除非 evidence 支持，不得提出 Grace-specific taxonomy。
+
+\subsection{P-V2-3 Focused Split Review}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+Task: For each oversized L2 that deterministic splitting could not safely
+materialize, propose evidence-backed child L2 labels or say review_only.
+
+Constraints:
+- Use only source_l2_id, semantic terms, and timeline_sample evidence.
+- Every split proposal must cite representative_l1_ids.
+- Every child must include assignment_criteria and representative_l1_ids that
+  distinguish it from sibling children.
+- For large sources, propose enough child candidates to avoid one dominant
+  residual bucket; if evidence does not support separable coverage, use
+  review_only.
+- Do not invent unsupported project-specific taxonomy.
+\end{Verbatim}
+
+\textbf{中文翻譯}：對 deterministic split 無法安全 materialize 的 oversized L2，請提出 evidence-backed child labels 或標成 review-only。每個 child 必須有 assignment criteria 和 representative L1 ids，能和 sibling 區分。若 evidence 不支持可分離覆蓋，就不要硬拆。
+
+\subsection{P-V2-4 L3 Child Label Review}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+Task: Review L3 child topics for an evidence-grounded long-term memory system.
+
+Instructions:
+- Use only the provided representative L1 content.
+- Do not invent a child topic that is not supported by the L1 evidence.
+- Judge whether each child is coherent and whether the label names the evidence.
+- Prefer concise English noun phrases for relabel decisions.
+- If evidence is mixed or the child is not coherent, choose reject_split or
+  needs_human_review.
+\end{Verbatim}
+
+\textbf{中文翻譯}：請審查 L3 child topics。只能使用提供的 representative L1 content。不能創造 evidence 不支持的 child topic。判斷 child 是否 coherent，以及 label 是否真的命名 evidence。若 evidence 混雜或 child 不 coherent，選 reject split 或 needs human review。
+
+\subsection{P-V2-5 Answer Generation}
+
+\textbf{原文}
+\begin{Verbatim}
+You are a meeting-memory QA assistant. Answer only from the provided context.
+If the context is insufficient, say what is missing. Cite meeting ids, L1 obj_ids,
+or transcript line ranges whenever possible. Keep the answer concise and factual.
+
+Context:
+{retrieved_context}
+
+Question:
+{query}
+
+Answer:
+\end{Verbatim}
+
+\textbf{中文翻譯}：你是 meeting-memory QA assistant。只能從 provided context 回答；如果 context 不足，說明缺什麼。可能時引用 meeting id、L1 obj id 或 transcript line range。回答要簡潔、事實性。
+
+\subsection{P-V2-6 Answer Judge}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+Use the expected answer as the primary gold standard. Use the retrieved context
+as supplementary grounding and traceability evidence. The retrieved context may
+be truncated for very large strategies such as full transcript, so do not mark
+factual_correctness as zero merely because a cited detail is absent from the
+excerpt.
+
+Dimensions:
+- factual_correctness
+- evidence_grounding
+- topic_evolution
+- completeness
+- conciseness
+- hallucination_risk
+- source_traceability
+\end{Verbatim}
+
+\textbf{中文翻譯}：expected answer 是主要 gold standard；retrieved context 是 grounding/traceability 的補充。full transcript 類策略 context 可能被截斷，所以不能只因 excerpt 沒看到細節就把 factual correctness 歸零。評分維度包含事實正確、證據支撐、topic evolution、完整性、簡潔性、幻覺風險、來源可追溯性。
+
+\subsection{P-V2-7 ICSI Answer Judge}
+
+\textbf{原文摘要}
+\begin{Verbatim}
+Use the expected gold evidence as the main target. Use the retrieved context
+excerpt only to assess grounding and traceability. The full-context strategy may
+have a very large retrieved context, so the excerpt can be incomplete; do not
+set factual_correctness to zero merely because the answer cites a detail outside
+the excerpt.
+
+topic_evolution: high when the answer captures evolution over time when the
+query asks for it; otherwise score neutral to high if not relevant.
+hallucination_risk: 0.0 means no unsupported fabrication risk; 1.0 means severe
+unsupported fabrication.
+\end{Verbatim}
+
+\textbf{中文翻譯}：ICSI 評分以 expected gold evidence 為主要目標。retrieved context excerpt 只用來輔助判斷 grounding 和 traceability。full context 可能太大而 excerpt 不完整，因此不能因 excerpt 缺某細節就把 factual correctness 歸零。topic evolution 只在問題要求演進時才應高要求；hallucination risk 是反向分數，0 代表沒有 unsupported fabrication。
+
+\section{Reproduction Commands}
+
+\begin{Verbatim}
+uv run python optimization/long_term_v2/build_view.py `
+  --share-mem-root share_mem `
+  --profile optimization/long_term_v2/profiles/mentor_mentee.yaml `
+  --out optimization/runs/grace_v2_latest_20260614 `
+  --mode deterministic `
+  --clean
+
+uv run python optimization/long_term_v2/build_view.py `
+  --share-mem-root memory_outputs/icsi/runs/bmr_full_completed29_eval_20260614/share_mem_effective `
+  --profile optimization/long_term_v2/profiles/isci_meeting.yaml `
+  --out optimization/runs/icsi_bmr_full_completed29_v2_20260614 `
+  --mode deterministic `
+  --clean
+
+uv run python optimization/long_term_v2/validate_view.py `
+  --run-root optimization/runs/icsi_bmr_full_completed29_v2_20260614
+\end{Verbatim}
+
+\section{結論}
+
+Optimization v2 目前可以清楚解釋每個主要決策：L1 是 evidence；semantic keys 是中介訊號；L2 是 durable topic；L3 是 oversized topic 的 navigation layer；retrieval 先找 L1，再帶 L2/L3。最重要的是，v2 不再依賴 Grace-specific hand-coded taxonomy，也不讓 \code{related_topics} 成為唯一 assignment source。剩餘工作主要是 label polish、split review、以及 runtime opt-in 的穩定驗證，而不是重新大改架構。
+
+\end{document}

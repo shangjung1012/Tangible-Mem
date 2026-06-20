@@ -1,68 +1,92 @@
 # Virtual Mentor
 
-Virtual Mentor is a meeting-memory QA agent. The current memory architecture is:
+Virtual Mentor is a meeting-memory QA and inspection system. The current
+architecture separates raw evidence, generated topic views, retrieval, and demo
+inspection surfaces:
 
 ```text
-short_term current context
-share_mem canonical L1 evidence
-long_term generated L2/L3 topic context
-app memory router
+meeting transcripts
+-> share_mem canonical L1 evidence
+-> long_term canonical generated L2/L3 topic context
+-> optimization v2 sidecar L2/L3 experiments
+-> app memory router / Memory Observatory
 ```
 
-`share_mem/` is the canonical L1 memory store. The multi-agent L1
-implementation lives under `share_mem/l1/`; `long_term/` owns generated L2/L3
-topic sidecars and recall. The old temporal `long_term/tree.json`, snapshots,
-and summarize/build-tree pipeline are archived under
-`long_term/archive/legacy_temporal_l2_l3/`.
+`share_mem/` is the canonical L1 evidence store. Raw L1 evidence should not be
+edited by hand. Generated topic views and feedback signals should be rebuilt or
+written as sidecars.
 
-Canonical architecture docs:
+## Current Delivery Status
 
-- Memory flow: [`doc/l1_l2_update_retrieve_flow.md`](doc/l1_l2_update_retrieve_flow.md)
-- Evaluation design: [`doc/evaluation_plan.md`](doc/evaluation_plan.md)
-- L1 store: [`share_mem/README.md`](share_mem/README.md)
-- Long-term L2/L3: [`long_term/README.md`](long_term/README.md)
-- Memory Observatory demo UI: [`memory_observatory/README.md`](memory_observatory/README.md)
+- `Memory Observatory` is the main demo and inspection UI for TAICHI-style
+  system presentation.
+- `optimization/long_term_v2` is the preferred L2/L3 pipeline for new datasets
+  such as ICSI. It is evidence-driven, profile-driven, and sidecar-first.
+- Canonical `long_term/l2` and `long_term/l3` remain the active legacy Grace
+  baseline unless runtime is explicitly switched to `optimization_v2`.
+- ICSI L2/L3 work should read effective/filtered L1 roots, not raw archived
+  `share_mem` roots.
 
-## 安裝
+## Key Documents
 
-1. Clone 專案
+- Architecture flow: `doc/l1_l2_update_retrieve_flow.md`
+- Folder responsibilities: `doc/project_folder_map.md`
+- TAICHI paper/demo planning: `doc/taichi/`
+- L1 store: `share_mem/README.md`
+- Long-term canonical L2/L3: `long_term/README.md`
+- Optimization v2: `optimization/README.md`
+- Memory Observatory: `memory_observatory/README.md`
+- Current handoff state: `codex.md`
+
+## Setup
+
 ```bash
 git clone https://github.com/shangjung1012/virtual-mentor.git
 cd virtual-mentor
-```
-
-2. 安裝依賴（使用 uv）
-```bash
 uv sync
 ```
 
-3. 設定環境變數
+Create a local `.env` only for credentials and local runtime settings. Do not
+commit `.env`.
 
-建立 `.env` 檔案並填入你的 API Key：
-```
-GEMINI_API_KEY=your_api_key_here
-# optional: 要輪流使用多把 Gemini key 時，改用這行
-GEMINI_API_KEYS=key_1,key_2,key_3
-# optional: 預設生成模型（bridge / summarize / planner / gate）
+Common variables:
+
+```text
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_CLOUD_PROJECT=<project-id>
+GOOGLE_CLOUD_LOCATION=global
+GOOGLE_APPLICATION_CREDENTIALS=<path-to-adc-json>
 GEMINI_MODEL=gemini-2.5-pro
-# optional: planner-only model for long-term recall planning
 GEMINI_PLANNER_MODEL=gemini-2.5-flash
-# optional: 長期記憶 semantic retrieval 使用的 embedding 模型
-GEMINI_EMBED_MODEL=text-embedding-004
 ```
 
-## 使用方式
+## Run The Chat App
 
-執行主程式：
 ```bash
 uv run app/main.py
 ```
 
-與 Virtual Mentor 對話，輸入 `exit`, `quit` 或 `q` 結束。
+## Run The Memory Observatory Demo
 
-對話記錄會自動儲存在 `record/` 資料夾。
+```bash
+uv run uvicorn memory_observatory.main:app --reload
+```
 
-## Memory Commands
+Open:
+
+```text
+http://localhost:8000/
+```
+
+The Observatory is the recommended surface for showing:
+
+- immutable L1 evidence objects;
+- L2 / child-L2 / L3 topic context;
+- retrieval traces;
+- sidecar-only feedback and importance correction;
+- Full Context / RAG / Layered Memory comparison artifacts.
+
+## Build Canonical Grace Memory
 
 Build canonical L1:
 
@@ -70,7 +94,7 @@ Build canonical L1:
 uv run share_mem/build_tree.py --transcript-dir meeting_recording/transcript/grace --output-root share_mem --mode multi-agent --dataset-profile grace --model gemini-2.5-pro --taxonomy v2-memory-roles --include-legacy-type --clean
 ```
 
-Build and validate L2:
+Build and validate canonical L2/L3:
 
 ```bash
 uv run long_term/cli.py build-l2-view --share-mem-root share_mem --output-root long_term/l2 --mode deterministic --clean
@@ -79,54 +103,43 @@ uv run long_term/cli.py validate-l3-view --share-mem-root share_mem --l2-root lo
 uv run python long_term/evaluate_retrieval.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out long_term/eval --no-llm --retrieval-mode lexical
 ```
 
-Run the Memory Observatory demo:
+Do not rebuild canonical artifacts during demo or paper-preparation work unless
+the task explicitly asks for canonical regeneration.
+
+## Run Optimization v2
+
+Optimization v2 writes isolated sidecar outputs under `optimization/runs/`.
 
 ```bash
-uv run uvicorn memory_observatory.main:app --reload
+uv run python optimization/long_term_v2/build_view.py --share-mem-root share_mem --profile optimization/long_term_v2/profiles/mentor_mentee.yaml --out optimization/runs/grace_v2_latest_local --mode deterministic --clean
+uv run python optimization/long_term_v2/validate_view.py --run-root optimization/runs/grace_v2_latest_local
 ```
 
-Run a no-LLM comparison lab experiment:
+For ICSI, use a filtered/effective L1 root:
 
 ```bash
-uv run python memory_observatory/run_experiment.py --queries long_term/eval/long_term_retrieval_queries.jsonl --out memory_observatory/runs --strategies full_context,rag_baseline,layered_memory --retrieval-mode lexical --no-llm
+uv run python optimization/long_term_v2/build_view.py --share-mem-root memory_outputs/icsi/runs/<run>/share_mem_effective --profile optimization/long_term_v2/profiles/isci_meeting.yaml --out optimization/runs/icsi_v2_latest_local --mode deterministic --clean
+uv run python optimization/long_term_v2/validate_view.py --run-root optimization/runs/icsi_v2_latest_local
 ```
 
-Experiment runs default to the heuristic no-LLM recall planner. For live answer
-experiments, keep `--model gemini-2.5-pro` for answers. Add
-`--use-llm-planner --planner-model gemini-2.5-flash` only when you intentionally
-want Gemini to plan retrieval.
+## Runtime Backend Switch
 
-Run A-mem evaluation:
+Default runtime uses canonical artifacts. To inspect an exported optimization v2
+runtime sidecar:
 
-```bash
-# 1. 讀入 grace 的 L1 結構化記憶物件並跑 gold queries 評估 (預設，會輸出 Recall 結果)
-uv run evaluation/A-mem/load_eval.py --mode l1-tree --k 5
-
-# 2. 讀入原始 grace 逐字稿進行 Chunking 切片與檢索測試
-uv run evaluation/A-mem/load_eval.py --mode raw-grace --chunk-size 15 --k 5
-
-# 3. 讀入原始 ICSI 逐字稿進行 Chunking 切片與檢索測試
-uv run evaluation/A-mem/load_eval.py --mode raw-icsi --chunk-size 15 --k 5
+```powershell
+$env:LONG_TERM_BACKEND = "optimization_v2"
+$env:OPTIMIZATION_V2_RUN_ROOT = "optimization/runs/<approved-run>"
 ```
 
-Update short-term memory from a share_mem snapshot:
+Unset those variables to return to canonical runtime behavior.
 
-```bash
-uv run short_term/update_memory.py --snapshot <share_mem snapshot path>
-```
+## Repository Safety Rules
 
-## 子模組說明
-
-- L1 store: `share_mem/`
-- Long-term L2/L3 recall: `long_term/`
-- Short-term current context: `short_term/`
-- 會議錄音與轉錄流程：[`meeting_recording/README.md`](meeting_recording/README.md)
-
-## Meeting Recording（摘要）
-
-`meeting_recording/` 現在提供本地化逐字稿流程：
-
-- `WhisperX` 先做 speaker diarization
-- `Ollama` 再把 `SPEAKER_xx` 轉成 `老師 / 學生一 / 學生二`
-
-使用方式見 [`meeting_recording/README.md`](meeting_recording/README.md)。
+- Do not manually edit `share_mem/tree.json` or `share_mem/meetings/*`.
+- Do not overwrite `long_term/l2` or `long_term/l3` from optimization outputs.
+- Keep new dataset outputs under `memory_outputs/` or `optimization/runs/`.
+- Treat `optimization v2` as the new-dataset L2/L3 default, not as automatic
+  canonical replacement.
+- Keep demo artifacts small and documented; do not commit large raw run folders
+  unless a release/LFS decision has been made.

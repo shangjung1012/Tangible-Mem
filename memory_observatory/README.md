@@ -14,6 +14,10 @@ It shows three things:
 - how L1 objects connect to L2 / child-L2 / L3 topic context;
 - how layered memory retrieval compares with traditional RAG and full context.
 
+For TAICHI paper/demo work, the Observatory is the primary system surface. The
+`Demo Story` tab and optional `presentation.html` capture page are intended for
+paper figures and short live walkthroughs.
+
 ## Start The UI
 
 ```bash
@@ -225,9 +229,29 @@ Experiment Lab, and capture screenshots or check element overflow.
 ## Pages
 
 - Overview: memory pipeline and artifact statistics.
+- Demo Story: a presentation-focused Grace walkthrough showing topic memory,
+  L1 evidence seeds, L2 evolution context, L3 navigation, and strategy contrast.
 - Retrieval Trace: query -> L1 evidence -> L2 / child-L2 -> L3 -> prompt context.
 - Memory Explorer: meeting, L1 object, evidence, topic link, and feedback browsing.
 - Topic Observatory: drawn L3 -> child L2 tree, L2 state/timeline detail,
   on-demand linked L1 evidence, and sidecar importance feedback.
 - Importance Review: sidecar-only importance feedback.
 - Experiment Lab: compare full context, traditional RAG, and layered memory.
+
+## TAICHI Presentation Capture
+
+The static capture page is available at:
+
+```text
+http://localhost:8000/static/presentation.html
+```
+
+It is a compact paper/demo view, not a separate product surface. Use it to
+capture controlled figures when the full Observatory is too dense for a paper
+screenshot. The source files are:
+
+- `memory_observatory/static/presentation.html`
+- `memory_observatory/static/presentation.css`
+- `memory_observatory/static/presentation.js`
+
+Paper-facing artifact notes live under `doc/taichi/`.

@@ -1,0 +1,569 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grace Memory Architecture Diagrams</title>
+  <style>
+    :root {
+      --ink: #17191f;
+      --muted: #565d6b;
+      --line: #111318;
+      --blue: #0758b8;
+      --blue-bg: #eaf3ff;
+      --agent: #0f766e;
+      --agent-bg: #e9fbf6;
+      --store: #087444;
+      --store-bg: #ebf8ef;
+      --purple: #6814b0;
+      --purple-bg: #f3e9ff;
+      --amber: #b06d00;
+      --amber-bg: #fff3d6;
+      --teal: #159e96;
+      --orange: #ef5b0c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #f4f5f8;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .slide {
+      position: relative;
+      width: 1600px;
+      height: 900px;
+      margin: 0 auto 36px;
+      padding: 64px 72px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .stage {
+      position: relative;
+      height: 100%;
+    }
+
+    .construction {
+      display: grid;
+      grid-template-rows: 132px 252px 1fr;
+      row-gap: 32px;
+      align-items: center;
+    }
+
+    .agent-band {
+      align-self: end;
+      justify-self: center;
+      width: 600px;
+      min-height: 104px;
+      border: 5px solid var(--agent);
+      border-radius: 32px;
+      background: var(--agent-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 18px 24px;
+      box-shadow: 0 8px 0 rgba(15, 118, 110, 0.08);
+    }
+
+    .agent-band strong {
+      display: block;
+      color: #075e58;
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    .agent-band span {
+      display: block;
+      margin-top: 6px;
+      color: #2f5f5b;
+      font-size: 17px;
+      line-height: 1.25;
+      font-weight: 600;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: 150px 32px 158px 32px 180px 32px 170px 32px 164px 32px 166px 32px 226px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .node {
+      min-height: 202px;
+      border: 4px solid var(--blue);
+      border-radius: 20px;
+      background: var(--blue-bg);
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .node.agent {
+      border-color: var(--agent);
+      background: var(--agent-bg);
+    }
+
+    .node.store {
+      border-color: var(--store);
+      background: var(--store-bg);
+    }
+
+    .node.topic {
+      border-color: var(--purple);
+      background: var(--purple-bg);
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .node h2 {
+      margin: 0 0 12px;
+      color: #064489;
+      font-size: 25px;
+      line-height: 1.08;
+      font-weight: 700;
+    }
+
+    .node.agent h2 { color: #075e58; }
+    .node.store h2 { color: var(--store); }
+    .node.topic h2 { color: var(--purple); }
+
+    .node p {
+      margin: 0;
+      color: #111;
+      font-size: 16px;
+      line-height: 1.25;
+      font-weight: 600;
+    }
+
+    .topic-layers {
+      display: grid;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .topic-layer {
+      border: 3px solid var(--purple);
+      border-radius: 14px;
+      background: #fff;
+      padding: 8px 8px 9px;
+      text-align: center;
+    }
+
+    .topic-layer.l3 {
+      border-color: var(--amber);
+      background: var(--amber-bg);
+    }
+
+    .topic-layer strong {
+      display: block;
+      color: var(--purple);
+      font-size: 20px;
+      line-height: 1.05;
+      font-weight: 700;
+    }
+
+    .topic-layer.l3 strong { color: var(--amber); }
+
+    .topic-layer span {
+      display: block;
+      margin-top: 3px;
+      color: #343b47;
+      font-size: 12px;
+      line-height: 1.15;
+      font-weight: 600;
+    }
+
+    .badge {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 74px;
+      padding: 4px 10px 5px;
+      border-radius: 999px;
+      background: #fff;
+      border: 3px solid currentColor;
+      color: var(--blue);
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .agent .badge { color: var(--agent); }
+    .store .badge { color: var(--store); }
+    .topic .badge { color: var(--purple); }
+
+    .arrow {
+      height: 4px;
+      background: var(--line);
+      position: relative;
+    }
+
+    .arrow::after {
+      content: "";
+      position: absolute;
+      right: -3px;
+      top: -9px;
+      border-top: 11px solid transparent;
+      border-bottom: 11px solid transparent;
+      border-left: 16px solid var(--line);
+    }
+
+    .memory-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      align-self: start;
+    }
+
+    .summary-card {
+      min-height: 162px;
+      border: 4px solid var(--blue);
+      border-radius: 24px;
+      background: #fff;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .summary-card.l1 {
+      border-color: var(--store);
+      background: var(--store-bg);
+    }
+
+    .summary-card.l2 {
+      border-color: var(--purple);
+      background: var(--purple-bg);
+    }
+
+    .summary-card.l3 {
+      border-color: var(--amber);
+      background: var(--amber-bg);
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #064489;
+      font-size: 31px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .summary-card.l1 strong { color: var(--store); }
+    .summary-card.l2 strong { color: var(--purple); }
+    .summary-card.l3 strong { color: var(--amber); }
+
+    .summary-card span {
+      display: block;
+      color: #424955;
+      font-size: 17px;
+      line-height: 1.28;
+      font-weight: 600;
+    }
+
+    .retrieval {
+      display: grid;
+      grid-template-rows: 1fr 160px;
+      row-gap: 40px;
+      align-items: end;
+    }
+
+    .retrieval-flow {
+      display: grid;
+      grid-template-columns: 190px 58px 210px 58px 470px 58px 190px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .simple-node {
+      min-height: 148px;
+      border: 5px solid var(--blue);
+      border-radius: 24px;
+      background: var(--blue-bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 18px;
+      color: #05070a;
+      font-size: 28px;
+      line-height: 1.12;
+      font-weight: 700;
+    }
+
+    .retrieval-agent {
+      min-height: 506px;
+      border: 5px solid var(--agent);
+      border-radius: 32px;
+      background: var(--agent-bg);
+      padding: 28px 34px;
+      display: grid;
+      grid-template-rows: repeat(4, auto);
+      gap: 16px;
+      align-content: center;
+      text-align: center;
+      box-shadow: 0 8px 0 rgba(15, 118, 110, 0.08);
+      position: relative;
+    }
+
+    .retrieval-agent::before {
+      content: "Memory Retrieval Agent";
+      position: absolute;
+      top: -19px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 18px 7px;
+      border: 4px solid var(--agent);
+      border-radius: 999px;
+      background: #fff;
+      color: #075e58;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .retrieval-step h2 {
+      margin: 0 0 4px;
+      color: #071016;
+      font-size: 26px;
+      line-height: 1.08;
+      font-weight: 700;
+    }
+
+    .retrieval-step p {
+      margin: 0;
+      color: #123f39;
+      font-size: 17px;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+
+    .down {
+      width: 4px;
+      height: 26px;
+      justify-self: center;
+      background: var(--line);
+      position: relative;
+    }
+
+    .down::after {
+      content: "";
+      position: absolute;
+      left: -8px;
+      bottom: -2px;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 15px solid var(--line);
+    }
+
+    .retrieval-context {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 26px;
+      align-self: start;
+    }
+
+    .context-card {
+      min-height: 130px;
+      border: 4px solid var(--blue);
+      border-radius: 24px;
+      background: #fff;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .context-card.l2 {
+      border-color: var(--purple);
+      background: var(--purple-bg);
+    }
+
+    .context-card.l3 {
+      border-color: var(--amber);
+      background: var(--amber-bg);
+    }
+
+    .context-card h2 {
+      margin: 0 0 8px;
+      color: #064489;
+      font-size: 27px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .context-card.l2 h2 { color: var(--purple); }
+    .context-card.l3 h2 { color: var(--amber); }
+
+    .context-card p {
+      margin: 0;
+      color: #404753;
+      font-size: 17px;
+      line-height: 1.25;
+      font-weight: 600;
+    }
+
+    @media print {
+      @page {
+        size: 16in 9in;
+        margin: 0;
+      }
+
+      body { background: #fff; }
+
+      .slide {
+        width: 16in;
+        height: 9in;
+        margin: 0;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="slide" id="construction">
+    <div class="stage construction">
+      <div class="agent-band">
+        <strong>Memory Agent Orchestration</strong>
+        <span>agent-guided segmentation, idea-unit formation, L1 extraction, and verification</span>
+      </div>
+
+      <div class="pipeline">
+        <div class="node">
+          <span class="badge">input</span>
+          <h2>Meeting<br>Transcript</h2>
+          <p>7 Grace research meetings</p>
+        </div>
+        <div class="arrow"></div>
+        <div class="node">
+          <span class="badge">code</span>
+          <h2>Window<br>Planner</h2>
+          <p>split long transcripts into manageable windows</p>
+        </div>
+        <div class="arrow"></div>
+        <div class="node agent">
+          <span class="badge">agent</span>
+          <h2>Segment +<br>Idea Units</h2>
+          <p>group discussion and form atomic events</p>
+        </div>
+        <div class="arrow"></div>
+        <div class="node agent">
+          <span class="badge">agent</span>
+          <h2>L1 Evidence<br>Extraction</h2>
+          <p>decisions, actions, proposals, findings, issues</p>
+        </div>
+        <div class="arrow"></div>
+        <div class="node agent">
+          <span class="badge">agent</span>
+          <h2>Verification<br>&amp; Repair</h2>
+          <p>schema check, dedup, evidence repair</p>
+        </div>
+        <div class="arrow"></div>
+        <div class="node store">
+          <span class="badge">store</span>
+          <h2>Immutable<br>L1 Store</h2>
+          <p>validated source-grounded evidence objects</p>
+        </div>
+        <div class="arrow"></div>
+        <div class="node topic">
+          <span class="badge">view</span>
+          <div class="topic-layers">
+            <div class="topic-layer">
+              <strong>32 L2-Level Topics</strong>
+              <span>13 base + 19 child L2</span>
+            </div>
+            <div class="topic-layer l3">
+              <strong>L3 Families</strong>
+              <span>from 3 promoted L2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="memory-summary">
+        <div class="summary-card">
+          <strong>~145k chars</strong>
+          <span>Grace transcript text<br>~98k estimated tokens</span>
+        </div>
+        <div class="summary-card l1">
+          <strong>448 L1</strong>
+          <span>immutable source-grounded evidence objects</span>
+        </div>
+        <div class="summary-card l2">
+          <strong>32 L2-level topics</strong>
+          <span>13 remaining base L2 + 19 child L2</span>
+        </div>
+        <div class="summary-card l3">
+          <strong>3 L3</strong>
+          <span>topic families from promoted large L2 topics</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="retrieval">
+    <div class="stage retrieval">
+      <div class="retrieval-flow">
+        <div class="simple-node">User<br>Query</div>
+        <div class="arrow"></div>
+        <div class="simple-node">QA<br>Agent</div>
+        <div class="arrow"></div>
+        <div class="retrieval-agent">
+          <div class="retrieval-step">
+            <h2>Query Analyzer</h2>
+            <p>no LLM planner by default</p>
+          </div>
+          <div class="down"></div>
+          <div class="retrieval-step">
+            <h2>Evidence-First L1 Search</h2>
+            <p>find source-grounded L1 seeds before topic summaries</p>
+          </div>
+          <div class="down"></div>
+          <div class="retrieval-step">
+            <h2>L2 + L3 Expansion</h2>
+            <p>bring matched topic state, sibling context, and family navigation</p>
+          </div>
+          <div class="down"></div>
+          <div class="retrieval-step">
+            <h2>Formatted Layered Context</h2>
+            <p>L1 evidence + L2 evolution + L3 navigation</p>
+          </div>
+        </div>
+        <div class="arrow"></div>
+        <div class="simple-node">Final<br>Answer</div>
+      </div>
+
+      <div class="retrieval-context">
+        <div class="context-card">
+          <h2>L1 Evidence Seeds</h2>
+          <p>Specific source-grounded memory objects, including content, evidence, meeting id, and score.</p>
+        </div>
+        <div class="context-card l2">
+          <h2>L2 Topic Evolution</h2>
+          <p>Current state, rationale, and timeline slices from matched durable topics.</p>
+        </div>
+        <div class="context-card l3">
+          <h2>L3 Topic Navigation</h2>
+          <p>Topic-family context for sibling expansion and corpus-level orientation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
+

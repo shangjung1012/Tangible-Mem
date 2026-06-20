@@ -35,6 +35,7 @@ const fmtNumber = (value, digits = 2) => {
 };
 
 const tag = (text, cls = "") => el("span", { class: `tag ${cls}`, text });
+const DEMO_TRACE_QUERY = "為什麼不要把完整 transcription 一次丟進模型，而要切成 segment 和 idea units？";
 
 function card(title, body, tags = []) {
   return el("div", { class: "card" }, [
@@ -237,6 +238,289 @@ function renderTopicLinkBlock(topicLink) {
   ]);
 }
 
+function demoTopicDescription(label) {
+  const value = String(label || "").toLowerCase();
+  if (value.includes("fixed") || value.includes("dynamic")) return "How much transcript text should be grouped before extraction.";
+  if (value.includes("generation")) return "How transcript windows become concrete idea-unit candidates.";
+  if (value.includes("classification")) return "How candidate units are typed before entering memory.";
+  if (value.includes("granularity")) return "How fine-grained an idea unit should be.";
+  if (value.includes("definition")) return "What separates a segment from an idea unit.";
+  if (value.includes("window") || value.includes("boundary")) return "How coherent discussion boundaries are selected.";
+  if (value.includes("evidence")) return "How topic memory remains grounded in transcript evidence.";
+  return "Durable child topic state built from linked L1 evidence.";
+}
+
+function findDemoTranscriptFamily(topics) {
+  const families = (topics || {}).l3_nodes || [];
+  return families.find((item) => {
+    const haystack = `${item.l3_id || ""} ${item.label || ""}`.toLowerCase();
+    return haystack.includes("transcript") || haystack.includes("idea");
+  }) || families[0] || {};
+}
+
+function renderDemoChildTopic(child) {
+  return el("div", { class: "demo-child-topic" }, [
+    el("strong", { text: child.label || child.l2_id || "child L2 topic" }),
+    el("span", { text: `${child.event_count || 0} L1 events` }),
+    el("p", { text: demoTopicDescription(child.label || child.l2_id) }),
+  ]);
+}
+
+function renderDemoEvidence(seed) {
+  return el("div", { class: "demo-evidence-card" }, [
+    el("div", { class: "demo-card-top" }, [
+      tag(seed.meeting_id || "meeting", "l1"),
+      el("strong", { text: seed.obj_id || "" }),
+    ]),
+    el("div", { class: "label", text: `${seed.type || "memory"} | score ${fmtNumber(seed.score, 3)} | importance ${fmtNumber(seed.importance)}` }),
+    el("p", { text: preview(seed.content || seed.evidence, 210) }),
+  ]);
+}
+
+function renderDemoTopicContext(topic) {
+  const text = topic.evolution_summary || topic.current_state || timelineText(topic.timeline_digest || []);
+  return el("div", { class: "demo-topic-context-card" }, [
+    el("div", { class: "demo-card-top" }, [
+      tag("L2 topic state", "l2"),
+      topic.parent_l3_label ? tag(`L3: ${topic.parent_l3_label}`, "l3") : null,
+    ]),
+    el("strong", { text: topic.label || topic.l2_id || "" }),
+    el("div", { class: "label", text: `${topic.selected_event_count || 0} selected event(s), ${topic.omitted_event_count || 0} omitted` }),
+    el("p", { text: preview(text, 300) }),
+  ]);
+}
+
+function renderDemoPromptContext(text) {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .slice(0, 18);
+  return el("pre", { class: "demo-prompt-box", text: lines.join("\n") });
+}
+
+function renderDemoComparison() {
+  const items = [
+    {
+      cls: "full",
+      title: "Full Context",
+      mode: "inject all transcript",
+      body: "High token cost; the model must rediscover the relevant history from a large context.",
+      tags: ["expensive", "less inspectable"],
+    },
+    {
+      cls: "rag",
+      title: "Traditional RAG",
+      mode: "top-k chunks",
+      body: "Retrieves local snippets, but the topic lifecycle can remain fragmented across meetings.",
+      tags: ["cheap", "fragmented"],
+    },
+    {
+      cls: "layered",
+      title: "Layered Memory",
+      mode: "L1 evidence + L2 evolution + L3 navigation",
+      body: "Starts from source-grounded evidence, then adds topic state and family navigation.",
+      tags: ["evidence-first", "evolution-aware"],
+    },
+  ];
+  return el("div", { class: "demo-comparison-grid" }, items.map((item) =>
+    el("div", { class: `demo-comparison-card ${item.cls}` }, [
+      el("h3", { text: item.title }),
+      el("strong", { text: item.mode }),
+      el("p", { text: item.body }),
+      el("div", { class: "tag-row" }, item.tags.map((value) => tag(value, item.cls === "layered" ? "feedback" : item.cls === "rag" ? "rag" : "warn"))),
+    ])
+  ));
+}
+
+function renderDemoQueryFlow(family, seeds, contexts, siblingLabels) {
+  const dates = [...new Set(seeds.map((seed) => seed.meeting_id).filter(Boolean))];
+  const primaryContext = contexts[0] || {};
+  return el("section", { class: "demo-section demo-query-map-section" }, [
+    el("div", { class: "demo-section-copy" }, [
+      el("div", { class: "demo-eyebrow", text: "Teaser query retrieves layered memory" }),
+      el("h2", { text: "One question becomes a traceable retrieval path" }),
+      el("p", { text: "The query does not directly summarize all transcripts. It starts from source-grounded L1 evidence, then brings in the relevant L2 evolution and parent L3 navigation." }),
+    ]),
+    el("div", { class: "demo-query-map" }, [
+      el("div", { class: "demo-flow-card query" }, [
+        el("span", { text: "User query" }),
+        el("strong", { text: "Why split transcripts into segments / idea units?" }),
+      ]),
+      el("div", { class: "demo-flow-arrow", text: "->" }),
+      el("div", { class: "demo-flow-card l1" }, [
+        el("span", { text: "Retrieved L1 evidence seeds" }),
+        el("strong", { text: dates.join(" / ") || "0422 / 0429 / 0506" }),
+        el("p", { text: "Source evidence from meetings, not a generated summary." }),
+      ]),
+      el("div", { class: "demo-flow-arrow", text: "->" }),
+      el("div", { class: "demo-flow-card l2" }, [
+        el("span", { text: "Matched L2 topic evolution" }),
+        el("strong", { text: primaryContext.label || "idea-unit generation methods" }),
+        el("p", { text: "Shows how the design rationale evolved across meetings." }),
+      ]),
+      el("div", { class: "demo-flow-arrow", text: "->" }),
+      el("div", { class: "demo-flow-card l3" }, [
+        el("span", { text: "Parent L3 family" }),
+        el("strong", { text: family.label || "transcript segmentation and idea-unit coverage" }),
+        el("p", { text: `${Math.max(siblingLabels.length, 0)} related topic node(s) visible as navigation.` }),
+      ]),
+    ]),
+  ]);
+}
+
+function selectDemoEvidenceSeeds(seeds) {
+  const preferredMeetings = ["0422", "0429", "0506"];
+  const selected = [];
+  for (const meetingId of preferredMeetings) {
+    const found = seeds.find((seed) => seed.meeting_id === meetingId && !selected.includes(seed));
+    if (found) selected.push(found);
+  }
+  for (const seed of seeds) {
+    if (selected.length >= 3) break;
+    if (!selected.includes(seed)) selected.push(seed);
+  }
+  return selected;
+}
+
+function renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels) {
+  const selectedSeeds = selectDemoEvidenceSeeds(seeds);
+  const context = contexts[0] || {};
+  const contextText = context.evolution_summary || context.current_state || timelineText(context.timeline_digest || []);
+  const relatedTopics = siblingLabels.slice(0, 3).map((child) => child.label || child.l2_id).filter(Boolean);
+  return el("section", { class: "demo-section demo-single-trace-section" }, [
+    el("div", { class: "demo-single-head" }, [
+      el("div", { class: "demo-eyebrow", text: "Retrieval trace result" }),
+      el("h2", { text: "What this one query retrieves" }),
+      el("p", { text: "The query first finds source-grounded L1 evidence, then uses those seeds to pull the relevant L2 evolution and L3 topic family." }),
+    ]),
+    el("div", { class: "demo-single-grid" }, [
+      el("div", { class: "demo-single-card query" }, [
+        el("span", { text: "Teaser query" }),
+        el("strong", { text: "Why did we split transcripts into segments and idea units?" }),
+        el("p", { text: "A rationale question about design evolution." }),
+      ]),
+      el("div", { class: "demo-single-card l1" }, [
+        el("span", { text: "L1 evidence seeds" }),
+        el("strong", { text: selectedSeeds.map((seed) => seed.meeting_id).join(" / ") || "0422 / 0429 / 0506" }),
+        el("div", { class: "demo-seed-stack" }, selectedSeeds.map((seed) =>
+          el("div", { class: "demo-seed-row" }, [
+            tag(seed.meeting_id || "meeting", "l1"),
+            el("b", { text: seed.obj_id || "" }),
+            el("p", { text: preview(seed.content || seed.evidence, 112) }),
+          ])
+        )),
+      ]),
+      el("div", { class: "demo-single-card l2" }, [
+        el("span", { text: "L2 topic evolution" }),
+        el("strong", { text: context.label || "idea-unit generation methods" }),
+        el("p", { text: preview(contextText, 260) }),
+        el("div", { class: "tag-row" }, [
+          tag(`${context.selected_event_count || 0} selected event`, "l2"),
+          tag(`${context.omitted_event_count || 0} omitted`, "muted"),
+        ]),
+      ]),
+      el("div", { class: "demo-single-card l3" }, [
+        el("span", { text: "Parent L3 topic family" }),
+        el("strong", { text: family.label || "transcript segmentation and idea-unit coverage" }),
+        el("p", { text: "Navigation context: shows this rationale belongs to a broader transcript segmentation / idea-unit coverage family." }),
+        el("div", { class: "tag-row" }, relatedTopics.map((topic) => tag(topic, "l2"))),
+      ]),
+    ]),
+  ]);
+}
+
+function renderDemoStory(topics, trace) {
+  const family = findDemoTranscriptFamily(topics);
+  const children = (family.child_l2_nodes || []).slice()
+    .sort((a, b) => Number(b.event_count || 0) - Number(a.event_count || 0))
+    .slice(0, 6);
+  const seeds = (trace.l1_evidence_seeds || []).slice(0, 5);
+  const dates = [...new Set(seeds.map((seed) => seed.meeting_id).filter(Boolean))];
+  const contexts = (trace.l2_evolution_context || []).slice(0, 2);
+  const siblingLabels = (((trace.global_topic_map || {}).l3_families || [])[0] || {}).child_l2 || [];
+  const target = $("#demoStory");
+  if (!target) return;
+  target.className = "demo-story";
+  target.replaceChildren(
+    renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels),
+    renderDemoQueryFlow(family, seeds, contexts, siblingLabels),
+    el("section", { class: "demo-section demo-topic-section" }, [
+      el("div", { class: "demo-section-copy" }, [
+        el("div", { class: "demo-eyebrow", text: "1. Topic Observatory" }),
+        el("h2", { text: "The topic family exists before the query" }),
+        el("p", { text: "This is persistent topic memory: L2 topic states and L3 family links exist before the user asks anything." }),
+        el("div", { class: "demo-family-card" }, [
+          el("div", { class: "tag-row" }, [
+            tag("L3 topic family", "l3"),
+            tag(`${children.length} shown topic nodes`, "l2"),
+            tag(`${family.event_count || 0} linked L1`, "l1"),
+          ]),
+          el("strong", { text: family.label || family.l3_id || "transcript segmentation and idea-unit coverage" }),
+          el("span", { class: "label", text: family.l3_id || "" }),
+          el("p", { text: "L3 is navigation context; factual claims still come from linked L1 evidence." }),
+        ]),
+      ]),
+      el("div", { class: "demo-child-grid" }, children.map(renderDemoChildTopic)),
+    ]),
+    el("section", { class: "demo-section demo-trace-section" }, [
+      el("div", { class: "demo-section-copy" }, [
+        el("div", { class: "demo-eyebrow", text: "2. Retrieval Trace" }),
+        el("h2", { text: "The query becomes an evidence-first memory trace" }),
+        el("p", { text: DEMO_TRACE_QUERY }),
+        el("div", { class: "demo-date-strip" }, [
+          el("strong", { text: "L1 evidence path" }),
+          el("div", { class: "tag-row" }, dates.map((date) => tag(date, "l1"))),
+        ]),
+      ]),
+      el("div", { class: "demo-trace-grid" }, [
+        el("div", { class: "demo-trace-column l1" }, [
+          el("h3", { text: "L1 Evidence Seeds" }),
+          ...seeds.slice(0, 3).map(renderDemoEvidence),
+        ]),
+        el("div", { class: "demo-trace-column l2" }, [
+          el("h3", { text: "L2 / Child-L2 Evolution Context" }),
+          ...contexts.map(renderDemoTopicContext),
+          el("div", { class: "demo-sibling-card" }, [
+            el("strong", { text: "L3 sibling navigation" }),
+            el("p", { text: "Related topic states remain visible without becoming unsupported evidence." }),
+            el("div", { class: "tag-row" }, siblingLabels.slice(0, 4).map((child) => tag(child.label || child.l2_id, "l2"))),
+          ]),
+        ]),
+        el("div", { class: "demo-trace-column prompt" }, [
+          el("h3", { text: "Formatted Prompt Context" }),
+          el("p", { text: "This is the compact context injected to the answer model." }),
+          renderDemoPromptContext(trace.formatted_prompt_context),
+        ]),
+      ]),
+    ]),
+    el("section", { class: "demo-section demo-compare-section" }, [
+      el("div", { class: "demo-section-copy" }, [
+        el("div", { class: "demo-eyebrow", text: "3. Baseline contrast" }),
+        el("h2", { text: "The difference is what each system injects" }),
+        el("p", { text: "Full Context is broad, RAG is local, and Layered Memory is evidence-grounded plus evolution-aware." }),
+      ]),
+      renderDemoComparison(),
+    ]),
+  );
+}
+
+async function loadDemoStory() {
+  const target = $("#demoStory");
+  if (!target) return;
+  target.className = "demo-story loading";
+  target.textContent = "Loading demo trace...";
+  try {
+    const [topics, trace] = await Promise.all([
+      api("/api/topics/l3?dataset=grace"),
+      api(`/api/retrieval/trace?query=${encodeURIComponent(DEMO_TRACE_QUERY)}&retrieval_mode=hybrid&no_llm=true&include_debug=false&budget_profile=observatory_trace`),
+    ]);
+    renderDemoStory(topics, trace);
+  } catch (error) {
+    target.className = "demo-story error";
+    target.textContent = `Could not load demo story: ${error.message}`;
+  }
+}
+
 function renderFeedbackHistoryBlock(history) {
   const rows = history || [];
   if (!rows.length) {
@@ -275,12 +559,18 @@ function listSection(title, items, render) {
   ]);
 }
 
+function activateTab(tabId, updateHash = true) {
+  const target = document.getElementById(tabId);
+  const button = document.querySelector(`.nav[data-tab="${tabId}"]`);
+  if (!target || !button) return;
+  document.querySelectorAll(".nav,.tab").forEach((item) => item.classList.remove("active"));
+  button.classList.add("active");
+  target.classList.add("active");
+  if (updateHash) history.replaceState(null, "", `#${tabId}`);
+}
+
 document.querySelectorAll(".nav").forEach((button) => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".nav,.tab").forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-    $(`#${button.dataset.tab}`).classList.add("active");
-  });
+  button.addEventListener("click", () => activateTab(button.dataset.tab));
 });
 
 function syncDatasetSwitch() {
@@ -292,6 +582,10 @@ function syncDatasetSwitch() {
 
 async function loadDatasets() {
   availableDatasets = await api("/api/datasets").catch(() => []);
+  const hashTab = (window.location.hash || "").replace("#", "");
+  if (["demo", "trace", "topics"].includes(hashTab)) {
+    selectedDataset = "grace";
+  }
   if (!availableDatasets.some((item) => item.dataset_id === selectedDataset)) {
     selectedDataset = availableDatasets.some((item) => item.dataset_id === "icsi") ? "icsi" : "grace";
   }
@@ -1126,12 +1420,25 @@ $("#traceNoLlm").addEventListener("change", syncTracePlannerControl);
 syncTracePlannerControl();
 
 async function boot() {
+  const hashTab = (window.location.hash || "").replace("#", "");
   await loadDatasets();
   await loadOverview();
+  await loadDemoStory();
   await loadExplorer();
   await loadTopics();
   await loadFeedback();
   await loadRuns();
+  if (hashTab) activateTab(hashTab, false);
+  if (hashTab === "trace") {
+    $("#traceQuery").value = DEMO_TRACE_QUERY;
+    $("#traceDebug").checked = false;
+    await runTrace();
+  }
+  if (hashTab === "topics") {
+    $("#topicSearch").value = "transcript";
+    renderTopicTree();
+    await loadTopicDetail("L2-idea-unit-generation-methods").catch(() => {});
+  }
 }
 
 boot();

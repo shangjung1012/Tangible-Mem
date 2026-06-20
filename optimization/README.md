@@ -1,128 +1,120 @@
-# Optimization Experiments
+# Optimization v2
 
-This directory is an isolated workspace for candidate memory-pipeline changes.
+`optimization/` is the isolated workspace for the evidence-driven L2/L3 pipeline
+used to evaluate new datasets and shadow-mode runtime behavior.
 
-The code and generated artifacts under `optimization/` are intentionally kept
-separate from the canonical memory artifacts:
+It must stay separate from canonical memory artifacts:
 
-- Do not write to `share_mem/`.
-- Do not write to `long_term/l2/` or `long_term/l3/`.
-- Do not connect these outputs to runtime retrieval unless a later promotion
-  decision explicitly does so.
+- do not write to `share_mem/`;
+- do not overwrite `long_term/l2/` or `long_term/l3/`;
+- do not treat an optimization run as canonical replacement unless a separate
+  promotion decision explicitly says so.
 
-The first candidate pipeline is `optimization/long_term_v2/`. It reads immutable
-L1 evidence from an existing `share_mem` root and writes side-by-side L2/L3
-outputs under `optimization/runs/<run_id>/`.
+## Current Status
 
-## Current Maturity Repair Status
+Current working status for paper/demo preparation:
 
-Latest reviewed deterministic Grace run:
+- `optimization v2` is the preferred L2/L3 builder for new datasets such as
+  ICSI.
+- Canonical `long_term/l2` and `long_term/l3` remain the legacy/Grace runtime
+  baseline.
+- Runtime can inspect exported v2 sidecars through `LONG_TERM_BACKEND`, but
+  canonical replacement is not claimed.
+- ICSI L2/L3 should use effective/filtered L1 roots, not raw archived
+  `share_mem` roots.
 
-```text
-optimization/runs/grace_v2_det_rescue_20260529_065827
+Recent compact evidence:
+
+- Grace v2 run: `optimization/runs/grace_v2_latest_20260614`
+- Grace shadow QA: `optimization/reports/grace_shadow_qa_grace_v2_latest_20260614`
+- Grace answer-quality smoke:
+  `optimization/reports/grace_shadow_answer_quality_grace_v2_latest_20260614`
+- ICSI v2 run: `optimization/runs/icsi_bmr_full_completed29_v2_20260614`
+- ICSI revised retrieval comparison:
+  `optimization/reports/icsi_bmr_full_completed29_system_comparison_revised_20260614`
+- TAICHI implementation/decision catalog:
+  `optimization/reports/optimization_v2_decision_catalog_20260615.pdf`
+
+Discarded or wrong-project reports must not be used as evidence. In particular,
+`optimization/reports/grace_l2_l3_ablation_20260614_speech494618_discarded/`
+contains `DO_NOT_USE_wrong_project.txt`.
+
+## What v2 Claims
+
+Safe claims:
+
+- L2 induction is profile-driven and evidence-driven.
+- L3 promotion is adaptive by topic size and split quality, not a hand-written
+  source-L2 child taxonomy.
+- `related_topics` are optional source signals, not the only assignment source.
+- Sidecar topic polish and feedback do not mutate raw L1 evidence.
+- For ICSI, v2 avoids the Grace-specific ontology risk in the canonical
+  long-term builder.
+
+Do not claim:
+
+- v2 is a final canonical replacement.
+- v2 outperforms every RAG/full-context setup on final generated answers.
+- L2/L3 topic induction is perfect or fully domain-general.
+- ICSI held-out retrieval comparison is a paid answer-quality benchmark.
+
+## Standard Commands
+
+Build and validate Grace v2:
+
+```powershell
+uv run python optimization/long_term_v2/build_view.py `
+  --share-mem-root share_mem `
+  --profile optimization/long_term_v2/profiles/mentor_mentee.yaml `
+  --out optimization/runs/grace_v2_latest_local `
+  --mode deterministic `
+  --clean
+
+uv run python optimization/long_term_v2/validate_view.py `
+  --run-root optimization/runs/grace_v2_latest_local
 ```
 
-Latest maturity certification:
+Build and validate ICSI v2 from an effective L1 root:
 
-```text
-optimization/reports/maturity_certification_delivery_20260603_0001
+```powershell
+uv run python optimization/long_term_v2/build_view.py `
+  --share-mem-root memory_outputs/icsi/runs/<run>/share_mem_effective `
+  --profile optimization/long_term_v2/profiles/isci_meeting.yaml `
+  --out optimization/runs/icsi_v2_latest_local `
+  --mode deterministic `
+  --clean
+
+uv run python optimization/long_term_v2/validate_view.py `
+  --run-root optimization/runs/icsi_v2_latest_local
 ```
 
-Current status: mature enough for isolated/shadow-mode evaluation, not promoted
-to canonical runtime artifacts. The structural gates pass, including isolation,
-Grace-specific-hardcode scan, L1 audit, semantic keys, L2/L3 validation,
-retrieval quality, answer-quality scoring, ICSI robustness, related-topics
-ablation, LLM proposal validation, focused split review, split-candidate
-application, and the cross-dataset maturity suite. Promotion remains blocked by
-policy until repeated isolated runs stay stable and the user explicitly approves
-promotion discussion.
-
-Key properties:
-
-- L2 induction is profile-driven and evidence-driven; it does not use the
-  canonical Grace L2 label map.
-- L3 promotion is adaptive by topic size and does not use a hand-written source
-  L2 child taxonomy.
-- `related_topics` are optional source signals, not the sole assignment source.
-- Retrieval-eval token equivalents are only a compatibility layer for comparing
-  v2 labels against older canonical eval labels; they are not used to build L2
-  or L3.
-- v2-native query diagnostics are now available under
-  `optimization/long_term_v2/curate_v2_native_queries.py`; split work should be
-  prioritized by retrieval pressure, not raw L2 size alone.
-
-Professor-facing delivery report:
-
-```text
-optimization/reports/professor_delivery_20260603_0001/professor_delivery_report.md
-```
-
-This report is the preferred handoff artifact for a progress update. It
-summarizes the current maturity status, answer-quality comparison, cross-dataset
-checks, split-review evidence, remaining risks, and a short demo flow. It says
-the system is deliverable for isolated/shadow-mode evaluation, but must not be
-promoted to canonical artifacts yet.
-
-## Shadow Runtime Export
-
-Optimization v2 can now be exported into a runtime-compatible sidecar under the
-same isolated run root. This is a shadow-mode bridge only: it lets the app read
-v2 L2/L3 sidecars for comparison without copying them into canonical
-`long_term/l2` or `long_term/l3`.
+Export a v2 run for shadow runtime inspection:
 
 ```powershell
 uv run python optimization/long_term_v2/export_runtime_view.py `
-  --run-root optimization/runs/grace_v2_det_rescue_20260529_065827 `
+  --run-root optimization/runs/<approved-run> `
   --clean
 ```
 
-To exercise that exported view in local retrieval:
+Use a v2 runtime export:
 
 ```powershell
 $env:LONG_TERM_BACKEND = "optimization_v2"
-$env:OPTIMIZATION_V2_RUN_ROOT = "optimization/runs/grace_v2_det_rescue_20260529_065827"
+$env:OPTIMIZATION_V2_RUN_ROOT = "optimization/runs/<approved-run>"
 ```
 
-Unset those environment variables to return to canonical runtime artifacts.
-The app falls back to canonical if the v2 runtime export is missing or
-incomplete.
+Unset those variables to return to canonical runtime artifacts.
 
-Rebuild command:
+## TAICHI Relevance
 
-```powershell
-uv run python optimization/long_term_v2/build_view.py --share-mem-root share_mem --profile optimization/long_term_v2/profiles/mentor_mentee.yaml --out optimization/runs/grace_v2_20260528_001 --mode deterministic --clean
-uv run python optimization/long_term_v2/validate_view.py --run-root optimization/runs/grace_v2_20260528_001
-uv run python optimization/long_term_v2/compare_with_baseline.py --run-root optimization/runs/grace_v2_20260528_001 --baseline-l2-root long_term/l2 --baseline-l3-root long_term/l3 --share-mem-root share_mem
-uv run python optimization/long_term_v2/evaluate_retrieval.py --run-root optimization/runs/grace_v2_20260528_001 --queries long_term/eval/long_term_retrieval_queries.jsonl --share-mem-root share_mem
-```
+For the TAICHI paper, optimization v2 should be framed as implementation support
+for inspectable memory:
 
-Maturity repair commands:
+- it provides evidence-backed topic context for the Observatory;
+- it produces sidecar artifacts that can be inspected and corrected;
+- it lets the system show why an L1 seed expands into L2/L3 context;
+- it supports new-dataset demonstrations without contaminating canonical Grace
+  artifacts.
 
-```powershell
-uv run python optimization/long_term_v2/validate_llm_proposals.py `
-  --run-root optimization/runs/grace_v2_llm_20260529_033006 `
-  --profile optimization/long_term_v2/profiles/mentor_mentee.yaml
-
-uv run python optimization/long_term_v2/run_maturity_suite.py `
-  --suite-root optimization/runs/maturity_suite_<timestamp> `
-  --datasets-json <dataset-configs.json> `
-  --clean
-
-uv run python optimization/long_term_v2/maturity_certification.py `
-  --grace-run-root optimization/runs/grace_v2_det_20260529_033006 `
-  --grace-llm-run-root optimization/runs/grace_v2_llm_20260529_033006 `
-  --icsi-run-root optimization/runs/icsi_v2_det_20260529_033006 `
-  --ablation-run-root optimization/runs/grace_v2_no_related_det_20260529_033006 `
-  --suite-root optimization/runs/maturity_suite_20260529_044200 `
-  --core-root optimization/long_term_v2 `
-  --out optimization/reports/maturity_certification_<timestamp>
-```
-
-Professor delivery report command:
-
-```powershell
-uv run python optimization/long_term_v2/make_professor_delivery_report.py `
-  --certification-report optimization/reports/maturity_certification_delivery_20260603_0001/maturity_certification_report.json `
-  --v2-native-diagnostics optimization/reports/v2_native_query_diagnostics_20260603_0001.json `
-  --out optimization/reports/professor_delivery_20260603_0001
-```
+The paper should emphasize inspectability, traceability, and non-destructive
+correction rather than algorithmic superiority.
