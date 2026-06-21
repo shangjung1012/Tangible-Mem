@@ -157,30 +157,168 @@ def explorer_page() -> str:
 
 
 def walkthrough_page() -> str:
-    body = f"""
-      <section class="grid three">
-        <article class="panel">
-          <h2 class="panel-label">A. Topic surface</h2>
-          {crop(WALK, 52, 310, 1315, 540, 0.39)}
+    body = """
+      <section class="storyboard">
+        <article class="story-card query">
+          <div class="step">1</div>
+          <h2>Ask a meeting-memory question</h2>
+          <p>What should carry over about close microphones and beamforming?</p>
+          <div class="query-box">ICSI BMR audio-processing rationale</div>
         </article>
-        <article class="panel">
-          <h2 class="panel-label">B. Evidence-first trace</h2>
-          {crop(WALK, 52, 1116, 1315, 1320, 0.39)}
+        <article class="story-card evidence">
+          <div class="step">2</div>
+          <h2>Ground in L1 evidence</h2>
+          <div class="mini-card blue">L1-Bmr011-011<br><span>head-mounted microphones</span></div>
+          <div class="mini-card blue">L1-Bmr001-046<br><span>delay-and-sum limitation</span></div>
+          <div class="mini-card blue">L1-Bmr005-211<br><span>close-talking requirement</span></div>
         </article>
-        <article class="panel">
-          <h2 class="panel-label">C. Context contrast</h2>
-          {crop(WALK, 52, 2736, 1315, 500, 0.39)}
+        <article class="story-card topics">
+          <div class="step">3</div>
+          <h2>Add topic evolution</h2>
+          <div class="topic-row amber">L3: audio acquisition and signal processing</div>
+          <div class="topic-row purple">L2: audio processing</div>
+          <div class="topic-row purple">L2: close talking microphone</div>
+          <div class="topic-row purple">L2: hardware limitation</div>
+        </article>
+        <article class="story-card context">
+          <div class="step">4</div>
+          <h2>Inspect and correct context</h2>
+          <div class="prompt">
+            <strong>Formatted prompt context</strong>
+            <span>L1 evidence + selected L2 events + L3 map</span>
+          </div>
+          <div class="sidecar">Sidecar feedback can adjust importance or topic links without overwriting L1.</div>
         </article>
       </section>
     """
-    return page("ICSI walkthrough paper figure", body, height=700)
+    extra_css = """
+      .storyboard {
+        display:grid;
+        grid-template-columns:repeat(4, 1fr);
+        gap:18px;
+        align-items:stretch;
+      }
+      .story-card {
+        position:relative;
+        min-height:515px;
+        border:2px solid var(--line);
+        border-radius:16px;
+        background:#f8fafc;
+        padding:24px 22px;
+        overflow:hidden;
+      }
+      .step {
+        width:40px;
+        height:40px;
+        border-radius:999px;
+        display:grid;
+        place-items:center;
+        background:var(--navy);
+        color:white;
+        font-size:20px;
+        font-weight:900;
+        margin-bottom:18px;
+      }
+      .story-card h2 {
+        margin:0 0 12px;
+        font-size:25px;
+        line-height:1.1;
+        font-weight:900;
+        letter-spacing:0;
+      }
+      .story-card p {
+        margin:0 0 22px;
+        color:var(--muted);
+        font-size:18px;
+        line-height:1.35;
+        font-weight:650;
+      }
+      .query-box {
+        margin-top:50px;
+        border:2px solid var(--l1);
+        border-radius:16px;
+        background:#eaf2ff;
+        padding:22px;
+        color:#17345c;
+        font-size:22px;
+        font-weight:850;
+        line-height:1.25;
+      }
+      .mini-card {
+        border:2px solid #94b8f2;
+        border-radius:14px;
+        background:#eef5ff;
+        padding:17px 18px;
+        margin-top:15px;
+        font-size:19px;
+        font-weight:900;
+        color:#17345c;
+      }
+      .mini-card span {
+        display:block;
+        margin-top:6px;
+        color:#56657a;
+        font-size:16px;
+        font-weight:700;
+      }
+      .topic-row {
+        border:2px solid;
+        border-radius:14px;
+        padding:17px 18px;
+        margin-top:15px;
+        font-size:18px;
+        font-weight:850;
+      }
+      .topic-row.amber {
+        border-color:#e4b15c;
+        background:#fff3d8;
+        color:#724600;
+        margin-top:42px;
+      }
+      .topic-row.purple {
+        border-color:#b899ee;
+        background:#f2ebff;
+        color:#4b278d;
+      }
+      .prompt {
+        margin-top:42px;
+        border:2px solid #8bd1c9;
+        border-radius:16px;
+        background:#e7f8f5;
+        padding:22px;
+      }
+      .prompt strong {
+        display:block;
+        font-size:20px;
+        margin-bottom:12px;
+      }
+      .prompt span {
+        display:block;
+        color:#445367;
+        font-size:17px;
+        font-weight:700;
+        line-height:1.4;
+      }
+      .sidecar {
+        margin-top:22px;
+        border:2px solid #86cfa8;
+        border-radius:16px;
+        background:#e8f7ee;
+        color:#1c6542;
+        padding:20px;
+        font-size:17px;
+        font-weight:800;
+        line-height:1.35;
+      }
+    """
+    return page("ICSI walkthrough paper figure", body, extra_css=extra_css, height=600)
 
 
 PAGES = {
     "observatory_trace_icsi_focused.png": (trace_page, 1800, 1040),
     "observatory_topic_observatory_icsi.png": (topic_page, 1800, 990),
     "observatory_memory_explorer_icsi.png": (explorer_page, 1800, 990),
-    "observatory_presentation_icsi.png": (walkthrough_page, 1800, 700),
+    "observatory_presentation_icsi.png": (walkthrough_page, 1800, 600),
 }
 
 

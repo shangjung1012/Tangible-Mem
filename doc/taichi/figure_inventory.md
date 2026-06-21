@@ -10,7 +10,7 @@ show in the Memory Observatory UI.
 |---|---|---|---|
 | `doc/taichi/figures/tangible_mem_teaser.png` | Figure 1 / teaser | Conceptual teaser figure | Tangible Mem turns long-term meeting memory into layered, inspectable objects: L1 evidence cards, L2 topic states, L3 topic families, Memory Observatory inspection, sidecar feedback, and answer context. |
 | `doc/taichi/figures/memory_observatory_system_overview.png` | Section 3 | System overview figure | The system treats memory as an inspectable pipeline from transcript evidence to topic context, retrieval trace, and sidecar correction. |
-| `doc/taichi/screenshots/observatory_presentation_icsi.png` | Section 5 | Walkthrough composite | The ICSI demo can show topic memory before the query, L1-first retrieval, L2/L3 context, and strategy comparison in one sequence. |
+| `doc/taichi/screenshots/observatory_presentation_icsi.png` | Section 5 | Walkthrough storyboard | The ICSI demo can show how a meeting-memory question becomes L1 evidence, L2/L3 topic context, inspectable prompt context, and sidecar correction. |
 | `doc/taichi/screenshots/observatory_trace_icsi_focused.png` | Section 4.2 | Paper-focused Retrieval Trace figure | The UI exposes the inspectable retrieval flow as four readable panels: query/plan, L1 evidence, L2/L3 topic context, and formatted prompt context. |
 | `doc/taichi/screenshots/observatory_trace_icsi_audio_processing.png` | Backup / appendix | Full Retrieval Trace screenshot | The complete UI trace shows all retrieved evidence, selected L2/child-L2 context, L3 navigation, and formatted prompt context. |
 | `doc/taichi/screenshots/observatory_topic_observatory_icsi.png` | Section 4.3 | Topic Observatory screenshot | Reviewers can inspect L3 topic families, child L2 states, timeline events, linked L1 evidence, and oversized topic flags. |
@@ -35,7 +35,7 @@ Use these five figures for the current TAICHI draft:
    `figures/observatory_memory_explorer_icsi.png`
    - Section 4.
    - Main role: show topic-level and object-level inspection.
-5. **ICSI walkthrough composite**: `figures/observatory_presentation_icsi.png`
+5. **ICSI walkthrough storyboard**: `figures/observatory_presentation_icsi.png`
    - Section 5.
    - Main role: show the 70-second end-to-end demo story.
 

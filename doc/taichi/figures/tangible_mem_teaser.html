@@ -3,14 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tangible Mem teaser figure</title>
+    <title>Tangible Mem concept figure</title>
     <style>
       :root {
         --ink: #172033;
-        --muted: #647187;
-        --line: #cfd8e6;
-        --paper: #ffffff;
-        --panel: #f7f9fc;
+        --muted: #627086;
+        --line: #d4deec;
+        --panel: #f8fafc;
+        --dark: #192235;
+        --dark-soft: #edf1f6;
         --l1: #2568c8;
         --l1-soft: #eaf2ff;
         --l2: #7547c8;
@@ -18,17 +19,16 @@
         --l3: #b06b00;
         --l3-soft: #fff3d8;
         --ui: #087f78;
-        --ui-soft: #e8f8f5;
-        --sidecar: #1c8f61;
-        --sidecar-soft: #e8f8ee;
-        --answer: #253047;
+        --ui-soft: #e7f8f5;
+        --sidecar: #198957;
+        --sidecar-soft: #e8f7ee;
       }
 
       * { box-sizing: border-box; }
 
       body {
         margin: 0;
-        background: #ffffff;
+        background: white;
         color: var(--ink);
         font-family: Inter, "Segoe UI", Arial, sans-serif;
       }
@@ -36,465 +36,372 @@
       .figure {
         width: 1800px;
         height: 760px;
-        padding: 54px 66px 48px;
-        background: #ffffff;
+        padding: 58px 68px 52px;
+        background: #fff;
       }
 
       .frame {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        border: 2px solid #dbe3ef;
-        border-radius: 22px;
-        background:
-          linear-gradient(180deg, #fbfcff 0%, #ffffff 58%),
-          var(--paper);
-        overflow: visible;
-      }
-
-      .stage-grid {
-        position: absolute;
-        inset: 42px 42px 62px 42px;
-        display: grid;
-        grid-template-columns: 205px 250px 300px 250px 340px 185px;
-        gap: 10px;
-        align-items: center;
-      }
-
-      .stage {
-        position: relative;
-        min-height: 500px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        width: 100%;
+        height: 100%;
+        border: 2px solid var(--line);
+        border-radius: 24px;
+        background: linear-gradient(180deg, #fbfcff 0%, #fff 64%);
+        padding: 48px 48px 38px;
       }
 
-      .stage-label {
-        position: absolute;
-        top: -6px;
-        left: 2px;
-        font-size: 22px;
-        font-weight: 800;
+      .zones {
+        display: grid;
+        grid-template-columns: 1fr 1.18fr 1fr;
+        column-gap: 56px;
+        flex: 1;
+        min-height: 0;
+        align-items: stretch;
+      }
+
+      .zone {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .zone-title {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        height: 54px;
+        margin: 0;
+        font-size: 25px;
+        font-weight: 900;
         letter-spacing: 0;
       }
 
-      .stage-sub {
-        position: absolute;
-        top: 26px;
-        left: 2px;
-        font-size: 15px;
-        font-weight: 600;
+      .zone-title span {
         color: var(--muted);
+        font-size: 16px;
+        font-weight: 750;
       }
 
-      .object {
-        border: 2px solid var(--line);
-        border-radius: 16px;
-        background: #ffffff;
-      }
-
-      .doc-stack {
+      .zone-card {
         position: relative;
-        width: 190px;
-        height: 230px;
-        margin-left: 14px;
+        flex: 1;
+        border: 2px solid var(--line);
+        border-radius: 22px;
+        background: white;
+        overflow: hidden;
       }
 
-      .doc {
+      .arrow {
         position: absolute;
-        width: 174px;
-        height: 206px;
-        border-color: #c8d2e1;
-        background: #fff;
-        box-shadow: 0 10px 22px rgba(23, 32, 51, 0.08);
+        top: 318px;
+        right: -44px;
+        width: 32px;
+        height: 3px;
+        background: #a5b1c3;
       }
 
-      .doc:nth-child(1) { left: 0; top: 22px; }
-      .doc:nth-child(2) { left: 12px; top: 11px; }
-      .doc:nth-child(3) { left: 24px; top: 0; }
+      .arrow::after {
+        content: "";
+        position: absolute;
+        right: -1px;
+        top: -7px;
+        border-left: 12px solid #a5b1c3;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+      }
+
+      .opaque-card {
+        background:
+          radial-gradient(circle at 76% 26%, rgba(23, 32, 51, .12), transparent 28%),
+          linear-gradient(180deg, #f5f7fb 0%, #fff 100%);
+        padding: 34px;
+      }
+
+      .transcript {
+        width: 215px;
+        height: 260px;
+        margin: 38px auto 0;
+        border: 2px solid #c9d3e2;
+        border-radius: 18px;
+        background: white;
+        box-shadow:
+          -18px 16px 0 rgba(212, 222, 236, .72),
+          -36px 32px 0 rgba(226, 233, 243, .72);
+        padding: 32px 24px;
+      }
+
+      .black-box {
+        position: absolute;
+        left: 158px;
+        bottom: 88px;
+        width: 220px;
+        height: 120px;
+        border-radius: 18px;
+        background: var(--dark);
+        color: white;
+        padding: 22px 24px;
+        box-shadow: 0 18px 36px rgba(23, 32, 51, .18);
+      }
+
+      .black-box .q {
+        position: absolute;
+        right: 18px;
+        top: 15px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .12);
+        display: grid;
+        place-items: center;
+        font-size: 25px;
+        font-weight: 900;
+      }
 
       .line {
         height: 12px;
         border-radius: 99px;
-        background: #d8deea;
-        margin: 16px 20px 0;
+        background: #d8dfeb;
+        margin-top: 15px;
       }
 
-      .line.short { width: 48%; }
-      .line.mid { width: 64%; }
-      .line.long { width: 76%; }
+      .line.short { width: 45%; }
+      .line.mid { width: 65%; }
+      .line.long { width: 82%; }
+      .line.dark { background: rgba(255, 255, 255, .35); }
 
-      .l1-stack {
+      .layers-card {
+        padding: 34px 36px;
+        background:
+          linear-gradient(180deg, rgba(255, 243, 216, .28), transparent 34%),
+          white;
+      }
+
+      .layer-stack {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        margin-top: 40px;
+        grid-template-rows: repeat(3, 1fr);
+        gap: 20px;
+        height: 390px;
+        margin-top: 22px;
       }
 
-      .l1-card {
-        height: 105px;
-        border-color: rgba(37, 104, 200, 0.45);
-        background: var(--l1-soft);
-        padding: 16px 14px;
-      }
-
-      .badge {
-        display: inline-flex;
+      .layer {
+        position: relative;
+        display: grid;
+        grid-template-columns: 98px 1fr 78px;
         align-items: center;
-        justify-content: center;
-        min-width: 46px;
-        height: 24px;
-        border-radius: 99px;
-        color: #fff;
-        font-size: 13px;
+        border: 2px solid;
+        border-radius: 20px;
+        padding: 20px 24px;
+      }
+
+      .layer.l3 { border-color: rgba(176, 107, 0, .42); background: var(--l3-soft); }
+      .layer.l2 { border-color: rgba(117, 71, 200, .42); background: var(--l2-soft); }
+      .layer.l1 { border-color: rgba(37, 104, 200, .42); background: var(--l1-soft); }
+
+      .layer-badge {
+        width: 62px;
+        height: 34px;
+        border-radius: 999px;
+        color: white;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
         font-weight: 900;
       }
 
-      .badge.l1 { background: var(--l1); }
-      .badge.l2 { background: var(--l2); }
-      .badge.l3 { background: var(--l3); }
-      .badge.ctx { background: var(--ui); }
+      .l3 .layer-badge { background: var(--l3); }
+      .l2 .layer-badge { background: var(--l2); }
+      .l1 .layer-badge { background: var(--l1); }
 
-      .topic-layer {
-        margin-top: 26px;
+      .layer h3 {
+        margin: 0 0 8px;
+        font-size: 23px;
+        font-weight: 900;
+      }
+
+      .layer p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 720;
+      }
+
+      .tokens {
         display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-
-      .topic-card {
-        min-height: 105px;
-        border-color: rgba(117, 71, 200, 0.45);
-        background: var(--l2-soft);
-        padding: 16px 18px;
-      }
-
-      .topic-title {
-        margin: 0 0 11px;
-        font-size: 18px;
-        font-weight: 850;
-      }
-
-      .timeline {
-        display: flex;
-        align-items: center;
         gap: 7px;
-        margin-top: 12px;
+        justify-content: flex-end;
       }
 
-      .dot {
-        width: 12px;
-        height: 12px;
+      .token {
+        width: 13px;
+        height: 13px;
         border-radius: 50%;
         background: currentColor;
       }
 
-      .timeline.l2 { color: var(--l2); }
-      .timeline.l3 { color: var(--l3); }
+      .steering-card {
+        padding: 30px;
+        background: linear-gradient(180deg, var(--ui-soft), #fff 70%);
+      }
 
-      .family-layer {
-        margin-top: 58px;
-        border: 2px solid rgba(176, 107, 0, 0.46);
+      .workbench {
+        border: 2px solid rgba(8, 127, 120, .40);
         border-radius: 20px;
-        background: var(--l3-soft);
-        padding: 18px;
-      }
-
-      .family-tab {
-        border: 2px solid rgba(176, 107, 0, 0.28);
-        border-radius: 15px;
-        background: #ffffff;
-        padding: 14px 16px;
-      }
-
-      .family-tab + .family-tab { margin-top: 14px; }
-
-      .observatory {
-        margin-top: 35px;
-        border-color: rgba(8, 127, 120, 0.44);
-        background: var(--ui-soft);
-        padding: 18px;
-        min-height: 320px;
-      }
-
-      .screen {
-        margin-top: 18px;
+        background: white;
         overflow: hidden;
-        border: 1px solid rgba(8, 127, 120, 0.28);
-        border-radius: 14px;
-        background: #ffffff;
       }
 
-      .screen-head {
-        padding: 13px 16px;
-        background: #152238;
-        color: #ffffff;
-        font-size: 16px;
-        font-weight: 850;
-      }
-
-      .trace-row {
-        display: grid;
-        grid-template-columns: 58px 1fr;
-        gap: 12px;
+      .workbench-head {
+        height: 56px;
+        background: var(--ui);
+        color: white;
+        display: flex;
         align-items: center;
-        padding: 11px 16px;
-        border-top: 1px solid #e2eaf5;
-        font-size: 15px;
-        font-weight: 650;
+        padding: 0 22px;
+        font-size: 20px;
+        font-weight: 900;
       }
 
-      .sidecar-note {
-        width: 220px;
-        margin: 12px 0 0 58px;
-        border: 2px solid rgba(28, 143, 97, 0.45);
-        border-radius: 16px;
-        background: var(--sidecar-soft);
-        padding: 13px 15px;
-        box-shadow: 0 12px 24px rgba(23, 32, 51, 0.10);
-      }
-
-      .answer {
-        width: 204px;
-        margin-top: 70px;
-        border-color: rgba(37, 48, 71, 0.30);
-        background: #ffffff;
-        padding: 18px;
-      }
-
-      .answer .topic-title { color: var(--answer); }
-
-      .flow {
-        position: absolute;
-        top: 319px;
-        height: 2px;
-        background: #97a6ba;
-      }
-
-      .flow::after {
-        content: "";
-        position: absolute;
-        right: -1px;
-        top: -6px;
-        width: 0;
-        height: 0;
-        border-left: 10px solid #97a6ba;
-        border-top: 7px solid transparent;
-        border-bottom: 7px solid transparent;
-      }
-
-      .f1 { left: 249px; width: 18px; }
-      .f2 { left: 509px; width: 18px; }
-      .f3 { left: 819px; width: 18px; }
-      .f4 { left: 1079px; width: 18px; }
-      .f5 { left: 1429px; width: 18px; }
-
-      .bracket {
-        position: absolute;
-        left: 260px;
-        right: 580px;
-        top: 34px;
-        height: 42px;
-        border-top: 2px solid #a9b6c8;
-        border-left: 2px solid #a9b6c8;
-        border-right: 2px solid #a9b6c8;
-        border-radius: 16px 16px 0 0;
-      }
-
-      .bracket-label {
-        position: absolute;
-        left: 50%;
-        top: -15px;
-        transform: translateX(-50%);
-        padding: 0 14px;
-        background: #fbfcff;
-        color: #48556a;
-        font-size: 18px;
-        font-weight: 850;
-        white-space: nowrap;
-      }
-
-      .sidecar-arrow {
-        display: none;
-      }
-
-      .sidecar-arrow::after {
-        content: none;
-      }
-
-      .footer {
-        position: absolute;
-        left: 42px;
-        right: 42px;
-        bottom: 24px;
+      .tools {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr 1fr;
         gap: 14px;
+        padding: 20px;
       }
 
-      .principle {
-        border-top: 2px solid #d8e0eb;
-        padding-top: 12px;
-        color: #4b586d;
+      .tool {
+        min-height: 92px;
+        border: 1.5px solid #d7e1ee;
+        border-radius: 16px;
+        background: #fbfdff;
+        padding: 16px;
+      }
+
+      .tool strong {
+        display: block;
         font-size: 17px;
-        font-weight: 760;
-        text-align: center;
+        margin-bottom: 12px;
       }
 
-      .principle strong { color: var(--ink); }
-
-      .small {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--muted);
+      .sidecar {
+        margin: 18px auto 0;
+        width: 300px;
+        border: 2px solid rgba(25, 137, 87, .42);
+        border-radius: 18px;
+        background: var(--sidecar-soft);
+        padding: 18px 22px;
       }
+
+      .sidecar strong {
+        display: block;
+        color: var(--sidecar);
+        font-size: 19px;
+        margin-bottom: 10px;
+      }
+
     </style>
   </head>
   <body>
-    <main class="figure" aria-label="Tangible Mem layered memory schematic">
+    <main class="figure" aria-label="Tangible Mem concept figure">
       <section class="frame">
-        <div class="bracket">
-          <div class="bracket-label">Inspectable memory substrate</div>
-        </div>
-
-        <div class="flow f1"></div>
-        <div class="flow f2"></div>
-        <div class="flow f3"></div>
-        <div class="flow f4"></div>
-        <div class="flow f5"></div>
-        <div class="sidecar-arrow"></div>
-
-        <div class="stage-grid">
-          <article class="stage">
-            <div class="stage-label">Transcript</div>
-            <div class="stage-sub">meeting record</div>
-            <div class="doc-stack">
-              <div class="object doc">
+        <div class="zones">
+          <article class="zone">
+            <h2 class="zone-title">Opaque memory <span>hard to inspect</span></h2>
+            <div class="zone-card opaque-card">
+              <div class="transcript" aria-hidden="true">
                 <div class="line long"></div>
                 <div class="line mid"></div>
                 <div class="line short"></div>
+                <div class="line long"></div>
               </div>
-              <div class="object doc">
-                <div class="line long"></div>
-                <div class="line mid"></div>
-                <div class="line short"></div>
-              </div>
-              <div class="object doc">
-                <div class="line long"></div>
-                <div class="line mid"></div>
-                <div class="line short"></div>
+              <div class="black-box">
+                Hidden state
+                <div class="line dark long"></div>
+                <div class="line dark mid"></div>
+                <div class="q">?</div>
               </div>
             </div>
+            <div class="arrow"></div>
           </article>
 
-          <article class="stage">
-            <div class="stage-label" style="color: var(--l1)">L1 Evidence</div>
-            <div class="stage-sub">grounded objects</div>
-            <div class="l1-stack">
-              <div class="object l1-card">
-                <span class="badge l1">L1</span>
-                <div class="line long"></div>
-                <div class="line mid"></div>
-              </div>
-              <div class="object l1-card">
-                <span class="badge l1">L1</span>
-                <div class="line mid"></div>
-                <div class="line short"></div>
-              </div>
-              <div class="object l1-card">
-                <span class="badge l1">L1</span>
-                <div class="line long"></div>
-                <div class="line short"></div>
-              </div>
-              <div class="object l1-card">
-                <span class="badge l1">L1</span>
-                <div class="line mid"></div>
-                <div class="line long"></div>
-              </div>
-            </div>
-          </article>
-
-          <article class="stage">
-            <div class="stage-label" style="color: var(--l2)">L2 Topic State</div>
-            <div class="stage-sub">evidence timelines</div>
-            <div class="topic-layer">
-              <div class="object topic-card">
-                <p class="topic-title">rationale</p>
-                <div class="line long"></div>
-                <div class="timeline l2">
-                  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                  <span class="small">events</span>
+          <article class="zone">
+            <h2 class="zone-title">Tangible memory layers <span>evidence, topics, families</span></h2>
+            <div class="zone-card layers-card">
+              <div class="layer-stack">
+                <div class="layer l3">
+                  <div class="layer-badge">L3</div>
+                  <div>
+                    <h3>Topic family</h3>
+                    <p>navigation across related meeting themes</p>
+                  </div>
+                  <div class="tokens" style="color: var(--l3)">
+                    <span class="token"></span><span class="token"></span><span class="token"></span>
+                  </div>
                 </div>
-              </div>
-              <div class="object topic-card">
-                <p class="topic-title">method change</p>
-                <div class="line mid"></div>
-                <div class="timeline l2">
-                  <span class="dot"></span><span class="dot"></span>
-                  <span class="small">events</span>
+                <div class="layer l2">
+                  <div class="layer-badge">L2</div>
+                  <div>
+                    <h3>Topic state</h3>
+                    <p>timeline, current state, omitted events</p>
+                  </div>
+                  <div class="tokens" style="color: var(--l2)">
+                    <span class="token"></span><span class="token"></span><span class="token"></span>
+                  </div>
+                </div>
+                <div class="layer l1">
+                  <div class="layer-badge">L1</div>
+                  <div>
+                    <h3>Evidence object</h3>
+                    <p>source-grounded content and transcript excerpt</p>
+                  </div>
+                  <div class="tokens" style="color: var(--l1)">
+                    <span class="token"></span><span class="token"></span><span class="token"></span>
+                  </div>
                 </div>
               </div>
             </div>
+            <div class="arrow"></div>
           </article>
 
-          <article class="stage">
-            <div class="stage-label" style="color: var(--l3)">L3 Family</div>
-            <div class="stage-sub">navigation</div>
-            <div class="family-layer">
-              <div class="family-tab">
-                <p class="topic-title">research direction</p>
-                <div class="timeline l3">
-                  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <article class="zone">
+            <h2 class="zone-title">Human steering <span>inspect, trace, correct</span></h2>
+            <div class="zone-card steering-card">
+              <div class="workbench">
+                <div class="workbench-head">Memory Observatory</div>
+                <div class="tools">
+                  <div class="tool">
+                    <strong>Trace</strong>
+                    <div class="line long"></div>
+                    <div class="line mid"></div>
+                  </div>
+                  <div class="tool">
+                    <strong>Explore</strong>
+                    <div class="line long"></div>
+                    <div class="line short"></div>
+                  </div>
+                  <div class="tool">
+                    <strong>Review</strong>
+                    <div class="line mid"></div>
+                    <div class="line short"></div>
+                  </div>
+                  <div class="tool">
+                    <strong>Answer context</strong>
+                    <div class="line long"></div>
+                    <div class="line mid"></div>
+                  </div>
                 </div>
               </div>
-              <div class="family-tab">
-                <p class="topic-title">workflow</p>
-                <div class="timeline l3">
-                  <span class="dot"></span><span class="dot"></span>
-                </div>
+              <div class="sidecar">
+                <strong>Sidecar correction</strong>
+                <div class="line long"></div>
+                <div class="line mid"></div>
               </div>
-            </div>
-          </article>
-
-          <article class="stage">
-            <div class="stage-label" style="color: var(--ui)">Observatory</div>
-            <div class="stage-sub">inspectable trace</div>
-            <div class="object observatory">
-              <div class="screen">
-                <div class="screen-head">Retrieval route</div>
-                <div class="trace-row"><span class="badge l1">L1</span><span>evidence first</span></div>
-                <div class="trace-row"><span class="badge l2">L2</span><span>topic context</span></div>
-                <div class="trace-row"><span class="badge l3">L3</span><span>family map</span></div>
-                <div class="trace-row"><span class="badge ctx">CTX</span><span>prompt context</span></div>
-              </div>
-            </div>
-            <div class="sidecar-note">
-              <p class="topic-title" style="color: var(--sidecar)">Sidecar</p>
-              <div class="line long"></div>
-              <div class="line mid"></div>
-            </div>
-          </article>
-
-          <article class="stage">
-            <div class="stage-label">Answer</div>
-            <div class="stage-sub">grounded context</div>
-            <div class="object answer">
-              <p class="topic-title">Evidence + topics</p>
-              <span class="badge l1">L1</span>
-              <span class="badge l2">L2</span>
-              <span class="badge l3">L3</span>
-              <div class="line long"></div>
-              <div class="line mid"></div>
-              <div class="line short"></div>
             </div>
           </article>
         </div>
 
-        <div class="footer">
-          <div class="principle">not a <strong>full transcript dump</strong></div>
-          <div class="principle">not a <strong>flat top-k chunk list</strong></div>
-          <div class="principle"><strong>inspect, correct, and trace</strong></div>
-        </div>
       </section>
     </main>
   </body>
