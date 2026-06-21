@@ -36,6 +36,7 @@ busy for a paper figure.
 
 ## Paper Figures And Screenshots
 
+- `doc/taichi/figures/tangible_mem_teaser.png`
 - `doc/taichi/figures/memory_observatory_system_overview.png`
 - `doc/taichi/screenshots/observatory_trace_icsi_focused.png`
 - `doc/taichi/screenshots/observatory_demo_story_health_icsi.png`
@@ -48,6 +49,10 @@ cropped composite of the real ICSI Retrieval Trace and is more readable in a
 two-column paper than the full-height trace screenshot. Keep
 `observatory_trace_icsi_audio_processing.png` as backup evidence or appendix
 material.
+
+Use `tangible_mem_teaser.png` as the Figure 1 / teaser image. It is a
+conceptual figure rather than a UI screenshot, designed to make the layered
+memory contribution legible before readers enter the body text.
 
 Use `observatory_demo_story_health_icsi.png` as demo-readiness evidence or a
 presentation backup. It shows the live ICSI artifact-backed health panel plus

@@ -8,6 +8,7 @@ show in the Memory Observatory UI.
 
 | File | Suggested section | Role | Main claim supported |
 |---|---|---|---|
+| `doc/taichi/figures/tangible_mem_teaser.png` | Figure 1 / teaser | Conceptual teaser figure | Tangible Mem turns long-term meeting memory into layered, inspectable objects: L1 evidence cards, L2 topic states, L3 topic families, Memory Observatory inspection, sidecar feedback, and answer context. |
 | `doc/taichi/figures/memory_observatory_system_overview.png` | Section 3 | System overview figure | The system treats memory as an inspectable pipeline from transcript evidence to topic context, retrieval trace, and sidecar correction. |
 | `doc/taichi/screenshots/observatory_presentation_icsi.png` | Section 5 | Walkthrough composite | The ICSI demo can show topic memory before the query, L1-first retrieval, L2/L3 context, and strategy comparison in one sequence. |
 | `doc/taichi/screenshots/observatory_trace_icsi_focused.png` | Section 4.2 | Paper-focused Retrieval Trace figure | The UI exposes the inspectable retrieval flow as four readable panels: query/plan, L1 evidence, L2/L3 topic context, and formatted prompt context. |
@@ -17,20 +18,24 @@ show in the Memory Observatory UI.
 
 ## Final Paper Selection
 
-Use these four figures for the current TAICHI draft:
+Use these five figures for the current TAICHI draft:
 
-1. **System overview**: `figures/memory_observatory_system_overview.png`
+1. **Conceptual teaser**: `figures/tangible_mem_teaser.png`
+   - Figure 1 / teaser.
+   - Main role: make the paper contribution legible before readers enter the
+     body text.
+2. **System overview**: `figures/memory_observatory_system_overview.png`
    - Section 3.
    - Main role: explain the pipeline and interface surfaces.
-2. **Focused Retrieval Trace**: `figures/observatory_trace_icsi_focused.png`
+3. **Focused Retrieval Trace**: `figures/observatory_trace_icsi_focused.png`
    - Section 4.
    - Main role: show inspectable query-time context assembly.
-3. **Topic Observatory + Memory Explorer pair**:
+4. **Topic Observatory + Memory Explorer pair**:
    `figures/observatory_topic_observatory_icsi.png` and
    `figures/observatory_memory_explorer_icsi.png`
    - Section 4.
    - Main role: show topic-level and object-level inspection.
-4. **ICSI walkthrough composite**: `figures/observatory_presentation_icsi.png`
+5. **ICSI walkthrough composite**: `figures/observatory_presentation_icsi.png`
    - Section 5.
    - Main role: show the 70-second end-to-end demo story.
 
