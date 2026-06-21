@@ -34,6 +34,7 @@ busy for a paper figure.
 
 - `doc/taichi/figures/memory_observatory_system_overview.png`
 - `doc/taichi/screenshots/observatory_trace_icsi_focused.png`
+- `doc/taichi/screenshots/observatory_demo_story_health_icsi.png`
 - `doc/taichi/screenshots/observatory_topic_observatory_icsi.png`
 - `doc/taichi/screenshots/observatory_memory_explorer_icsi.png`
 - `doc/taichi/screenshots/observatory_presentation_icsi.png`
@@ -43,6 +44,10 @@ cropped composite of the real ICSI Retrieval Trace and is more readable in a
 two-column paper than the full-height trace screenshot. Keep
 `observatory_trace_icsi_audio_processing.png` as backup evidence or appendix
 material.
+
+Use `observatory_demo_story_health_icsi.png` as demo-readiness evidence or a
+presentation backup. It shows the live ICSI artifact-backed health panel plus
+the retrieval walkthrough.
 
 ## Static Diagrams
 
@@ -72,6 +77,7 @@ Implementation/decision details:
 
 - `optimization/reports/optimization_v2_decision_catalog_20260615.pdf`
 - `optimization/reports/optimization_v2_decision_catalog_20260615.tex`
+- `doc/taichi/demo_visual_qa.md`
 
 ## Retrieval Comparison Numbers
 
@@ -87,8 +93,8 @@ Interpretation:
 
 - Full context is an upper-bound evidence condition, not an efficient interface.
 - RAG is compact but loses expected evidence.
-- Optimization v2 is the best current tradeoff for evidence recall plus topic
-  traceability.
+- Optimization v2 is the current inspected tradeoff for evidence recall plus
+  topic traceability in this diagnostic.
 - This is not final generated-answer scoring.
 
 ## Do Not Use As Paper Evidence

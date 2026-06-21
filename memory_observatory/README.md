@@ -33,6 +33,26 @@ http://localhost:8000/
 The app serves static HTML/CSS/JS and FastAPI JSON endpoints. It does not use
 React, D3, or React Flow.
 
+## Demo Readiness Check
+
+Before a TAICHI walkthrough, verify that the ICSI artifact-backed demo can load
+and retrieve the fixed trace query:
+
+```bash
+uv run python memory_observatory/demo_health_check.py --dataset icsi
+```
+
+The same check is available through:
+
+```text
+GET /api/demo/health?dataset=icsi
+```
+
+Expected status for the current paper/demo artifact is `pass`. The check is
+read-only: it verifies dataset registration, L1 source availability, L2/L3
+runtime views, a no-LLM retrieval trace, selected L1/L2/L3 counts, and formatted
+prompt context generation.
+
 ## Data Contract
 
 Read-only sources:

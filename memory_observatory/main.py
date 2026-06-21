@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .services.data_loader import ObservatoryDataLoader, REPO_ROOT
 from .services.datasets import list_datasets, resolve_dataset
+from .services.demo_health import build_demo_health
 from .services.experiment_runner import run_experiment
 from .services.feedback_store import FeedbackStore
 from .services.memory_store import MemoryStore
@@ -186,6 +187,11 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
     def api_overview(dataset: str = "grace") -> dict[str, Any]:
         dataset_id = dataset_or_404(dataset)
         return _overview(root, dataset_id=dataset_id)
+
+    @app.get("/api/demo/health")
+    def api_demo_health(dataset: str = "icsi") -> dict[str, Any]:
+        dataset_id = dataset_or_404(dataset)
+        return build_demo_health(root, dataset_id=dataset_id)
 
     @app.get("/api/meetings")
     def api_meetings(dataset: str = "grace") -> list[dict[str, Any]]:

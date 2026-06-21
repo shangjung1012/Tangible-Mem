@@ -16,7 +16,7 @@ submitting the TAICHI paper.
   whether a newer completed run should replace it.
 - [x] Capture paper-ready ICSI screenshots from Memory Observatory.
 - [x] Create a focused Retrieval Trace figure for the main paper body.
-- [ ] Verify Demo Story page visually in browser.
+- [x] Verify Demo Story page visually in browser.
 - [ ] Decide whether presentation capture assets should be committed as official
   paper/demo assets.
 - [ ] Resolve Overleaf citation warnings in Introduction / Related Work before
@@ -32,6 +32,8 @@ submitting the TAICHI paper.
 - [ ] Add L2 assignment audit for assign/unlink/review-only explanation.
 - [ ] Add L3 split audit for parent promotion and child-label generation.
 - [ ] Refresh TAICHI artifact index after any new Grace/ICSI run.
+- [x] Add demo health check and visual QA note for current ICSI Observatory
+  walkthrough.
 
 ## P2: Required Before Canonical Replacement
 

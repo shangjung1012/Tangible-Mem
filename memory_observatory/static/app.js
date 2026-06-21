@@ -68,7 +68,7 @@ function loadIcsiScaleResult(data) {
     el("div", { class: "icsi-claim-panel" }, [
       el("div", {}, [
         el("div", { class: "label", text: "Evidence-grounded held-out evaluation" }),
-        el("h2", { text: "Layered Memory recovers much more evidence than RAG" }),
+        el("h2", { text: "Layered Memory retrieves more expected evidence in this diagnostic" }),
         el("p", {
           text: `On the ${corpusLabel}, Layered Memory retrieves ${compactMetric(layered.recall)} expected L1 evidence recall versus ${compactMetric(rag.recall)} for RAG top-20, while using about ${compactMetric(tokenPct, 1)}% of Full Context tokens.`,
         }),
@@ -343,6 +343,46 @@ function renderDemoComparison() {
   ));
 }
 
+function renderDemoHealth(health) {
+  const target = $("#demoHealth");
+  if (!target) return;
+  const status = health.status || "warn";
+  const checks = health.checks || [];
+  target.className = `demo-health-card ${status}`;
+  target.replaceChildren(
+    el("div", { class: "demo-health-head" }, [
+      el("div", {}, [
+        el("div", { class: "demo-eyebrow", text: "Demo readiness" }),
+        el("h2", { text: status === "pass" ? "ICSI demo artifacts are ready" : "ICSI demo needs attention" }),
+        el("p", { text: `Backend: ${health.resolved_backend || "unknown"} | Dataset: ${health.dataset_label || health.dataset || "unknown"}` }),
+      ]),
+      tag(status.toUpperCase(), status === "pass" ? "feedback" : status === "warn" ? "warn" : "error"),
+    ]),
+    el("div", { class: "health-check-grid" }, checks.map((check) =>
+      el("div", { class: `health-check ${check.status || "warn"}` }, [
+        el("strong", { text: healthCheckLabel(check.name) }),
+        el("span", { text: String(check.value ?? "") }),
+        el("p", { title: check.detail || "", text: preview(check.detail || "", 96) }),
+      ])
+    )),
+  );
+}
+
+function healthCheckLabel(name) {
+  const labels = {
+    dataset_registered: "dataset",
+    share_mem_root_exists: "L1 source",
+    l2_view_exists: "L2 runtime view",
+    l3_view_exists: "L3 runtime view",
+    demo_trace_runs: "trace execution",
+    demo_trace_has_l1: "L1 seeds",
+    demo_trace_has_l2: "L2 context",
+    demo_trace_has_l3: "L3 navigation",
+    demo_trace_has_prompt: "prompt context",
+  };
+  return labels[name] || name || "check";
+}
+
 function renderDemoQueryFlow(family, seeds, contexts, siblingLabels) {
   const dates = [...new Set(seeds.map((seed) => seed.meeting_id).filter(Boolean))];
   const primaryContext = contexts[0] || {};
@@ -520,15 +560,26 @@ async function loadDemoStory() {
   if (!target) return;
   target.className = "demo-story loading";
   target.textContent = "Loading demo trace...";
+  const healthTarget = $("#demoHealth");
+  if (healthTarget) {
+    healthTarget.className = "demo-health-card loading";
+    healthTarget.textContent = "Checking demo readiness...";
+  }
   try {
-    const [topics, trace] = await Promise.all([
+    const [topics, trace, health] = await Promise.all([
       api(apiWithDataset("/api/topics/l3")),
       api(`/api/retrieval/trace?dataset=${selectedDataset}&query=${encodeURIComponent(DEMO_TRACE_QUERY)}&retrieval_mode=lexical&no_llm=true&include_debug=false&budget_profile=observatory_paper_trace&max_context_chars=0`),
+      api(`/api/demo/health?dataset=${selectedDataset}`),
     ]);
+    renderDemoHealth(health);
     renderDemoStory(topics, trace);
   } catch (error) {
     target.className = "demo-story error";
     target.textContent = `Could not load demo story: ${error.message}`;
+    if (healthTarget) {
+      healthTarget.className = "demo-health-card fail";
+      healthTarget.textContent = `Could not check demo readiness: ${error.message}`;
+    }
   }
 }
 

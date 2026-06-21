@@ -14,7 +14,7 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("Grace", html)
         self.assertIn("ICSI", html)
         self.assertIn("ICSI Large-Corpus Memory Observatory", js)
-        self.assertIn("Layered Memory recovers much more evidence than RAG", js)
+        self.assertIn("Layered Memory retrieves more expected evidence in this diagnostic", js)
         self.assertIn("loadIcsiScaleResult", js)
 
     def test_retrieval_trace_describes_l1_seed_search_modes(self) -> None:
@@ -23,7 +23,7 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("Hybrid L1 seed search (lexical + semantic when available)", html)
         self.assertIn("Lexical L1 seed search (offline)", html)
         self.assertIn("Semantic L1 seed search (embedding API)", html)
-        self.assertIn("L2 / child-L2 / L3 expansion is always layered", html)
+        self.assertIn("L2 / child-L2 / L3 expansion then follows layered retrieval rules", html)
         self.assertIn("Hybrid fuses lexical hits with semantic hits when an embedding client is available", html)
 
     def test_no_llm_planner_ui_hides_flash_as_active_model(self) -> None:
@@ -118,6 +118,19 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertNotIn("dataset=grace", html)
         self.assertNotIn("dataset=grace", js)
 
+    def test_demo_story_renders_health_panel(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "memory_observatory" / "static" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn("demoHealth", html)
+        self.assertIn("renderDemoHealth", js)
+        self.assertIn("healthCheckLabel", js)
+        self.assertIn("/api/demo/health", js)
+        self.assertIn("resolved_backend", js)
+        self.assertIn("demo-health-card", css)
+        self.assertIn("health-check-grid", css)
+
     def test_readme_documents_current_trace_and_experiment_defaults(self) -> None:
         readme = (REPO_ROOT / "memory_observatory" / "README.md").read_text(encoding="utf-8")
 
@@ -127,6 +140,9 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("service default", readme)
         self.assertIn("generous_layered", readme)
         self.assertIn("legacy run artifacts", readme.lower())
+        self.assertIn("Demo Readiness Check", readme)
+        self.assertIn("demo_health_check.py --dataset icsi", readme)
+        self.assertIn("/api/demo/health?dataset=icsi", readme)
 
 
 if __name__ == "__main__":
