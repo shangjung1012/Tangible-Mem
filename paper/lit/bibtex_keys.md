@@ -1,0 +1,21 @@
+# BibTeX Keys
+
+- `xu2025amemagenticmemoryllm`
+- `packer2024memgptllmsoperatingsystems`
+- `maharana2024evaluatinglongtermconversationalmemory`
+- `wu2025longmemevalbenchmarkingchatassistants`
+- `10.1145/3613904.3642670`
+- `10.1145/3729176.3729204`
+- `10.1145/3711074`
+- `zhong-etal-2021-qmsum`
+- `kirstein-etal-2025-whats`
+- `arxiv260406647`
+- `Amershi_2019`
+- `Epperson_2025`
+- `Jiang_2026`
+- `Romero_Lauro_2026`
+- `Zhong_2024`
+- `Kulesza_2015`
+- `Cheng_2025`
+- `Jones_2025`
+- `Zhang_2025`
