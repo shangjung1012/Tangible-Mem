@@ -2,318 +2,360 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Memory Observatory System Overview</title>
+    <title>Tangible Mem system overview</title>
     <style>
       :root {
-        color-scheme: light;
-        --ink: #162033;
-        --muted: #5d6678;
-        --line: #c9d3e5;
-        --l1: #2f6fed;
-        --l2: #7c3aed;
-        --l3: #b87909;
-        --ui: #0f766e;
-        --sidecar: #15803d;
-        --paper: #f8fafc;
+        --ink: #172033;
+        --muted: #657287;
+        --line: #d4deeb;
+        --soft: #f7f9fc;
+        --l1: #2568c8;
+        --l1-soft: #eaf2ff;
+        --l2: #7547c8;
+        --l2-soft: #f2ebff;
+        --l3: #b06b00;
+        --l3-soft: #fff3d8;
+        --ui: #087f78;
+        --ui-soft: #e8f8f5;
+        --sidecar: #1c8f61;
+        --sidecar-soft: #e8f8ee;
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         margin: 0;
-        background: var(--paper);
+        background: #fff;
         color: var(--ink);
         font-family: Inter, "Segoe UI", Arial, sans-serif;
       }
 
       .figure {
         width: 1800px;
-        height: 940px;
-        padding: 64px 76px;
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.98)),
-          radial-gradient(circle at 20% 0%, rgba(47, 111, 237, 0.10), transparent 35%),
-          radial-gradient(circle at 80% 100%, rgba(15, 118, 110, 0.10), transparent 34%);
+        height: 960px;
+        padding: 62px 70px;
+        background: #ffffff;
       }
 
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 48px;
-        margin-bottom: 46px;
+      .canvas {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border: 2px solid var(--line);
+        border-radius: 22px;
+        background: linear-gradient(180deg, #fbfcff, #fff);
       }
 
-      .eyebrow {
-        color: var(--ui);
-        font-size: 22px;
-        font-weight: 750;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+      .row {
+        position: absolute;
+        left: 56px;
+        right: 56px;
+        display: grid;
+        gap: 22px;
+        align-items: stretch;
       }
 
-      h1 {
-        margin: 10px 0 10px;
-        font-size: 58px;
-        line-height: 1.05;
+      .row.top {
+        top: 72px;
+        grid-template-columns: repeat(5, 280px);
+      }
+
+      .row.bottom {
+        bottom: 84px;
+        grid-template-columns: 360px 360px 360px;
+        justify-content: center;
+      }
+
+      .module {
+        min-height: 205px;
+        border: 2px solid var(--line);
+        border-radius: 18px;
+        background: #ffffff;
+        padding: 22px;
+      }
+
+      .module.small { min-height: 175px; }
+
+      .label {
+        margin: 0 0 8px;
+        font-size: 26px;
+        line-height: 1.08;
+        font-weight: 850;
         letter-spacing: 0;
       }
 
-      .lede {
-        margin: 0;
-        max-width: 980px;
+      .sub {
+        margin: 0 0 20px;
         color: var(--muted);
-        font-size: 25px;
-        line-height: 1.35;
+        font-size: 17px;
+        font-weight: 650;
       }
 
-      .legend {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        min-width: 420px;
-        padding: 20px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.78);
-      }
-
-      .legend-item {
+      .chip-row {
         display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--muted);
-        font-size: 18px;
-        white-space: nowrap;
+        flex-wrap: wrap;
+        gap: 9px;
       }
 
-      .dot {
-        width: 14px;
-        height: 14px;
+      .chip {
+        border: 1px solid #d8e1ee;
         border-radius: 999px;
-        background: var(--ink);
+        background: var(--soft);
+        padding: 8px 12px;
+        color: #39475c;
+        font-size: 15px;
+        font-weight: 750;
       }
 
-      .pipeline {
+      .store {
         display: grid;
-        grid-template-columns: 1fr 42px 1fr 42px 1fr 42px 1fr;
-        align-items: stretch;
-        gap: 0;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 11px;
       }
 
-      .stage {
-        min-height: 305px;
-        padding: 28px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 18px 52px rgba(15, 23, 42, 0.08);
+      .mini-card {
+        height: 52px;
+        border: 2px solid rgba(37, 104, 200, 0.38);
+        border-radius: 12px;
+        background: var(--l1-soft);
       }
 
-      .stage .num {
+      .mini-card:nth-child(3),
+      .mini-card:nth-child(4) {
+        opacity: 0.74;
+      }
+
+      .topic-stack {
+        display: grid;
+        gap: 11px;
+      }
+
+      .topic {
+        height: 48px;
+        border: 2px solid rgba(117, 71, 200, 0.40);
+        border-radius: 13px;
+        background: var(--l2-soft);
+      }
+
+      .family {
+        height: 92px;
+        border: 2px solid rgba(176, 107, 0, 0.44);
+        border-radius: 16px;
+        background: var(--l3-soft);
+        padding: 16px;
+      }
+
+      .family-line {
+        height: 12px;
+        width: 72%;
+        border-radius: 999px;
+        background: rgba(176, 107, 0, 0.25);
+      }
+
+      .screen {
+        border: 2px solid rgba(8, 127, 120, 0.42);
+        border-radius: 16px;
+        background: var(--ui-soft);
+        padding: 17px;
+      }
+
+      .screen-row {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #fff;
+        margin-top: 9px;
+        font-size: 16px;
+        font-weight: 760;
+      }
+
+      .badge {
         display: inline-flex;
-        width: 36px;
-        height: 36px;
         align-items: center;
         justify-content: center;
+        height: 24px;
+        min-width: 48px;
         border-radius: 999px;
-        color: white;
-        font-weight: 800;
-        margin-bottom: 22px;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 900;
       }
 
-      .stage h2 {
-        margin: 0 0 12px;
-        font-size: 30px;
-        line-height: 1.1;
-        letter-spacing: 0;
-      }
-
-      .stage p {
-        margin: 0 0 22px;
-        color: var(--muted);
-        font-size: 20px;
-        line-height: 1.34;
-      }
-
-      .mini-list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .mini {
-        padding: 11px 13px;
-        border: 1px solid #d9e1ef;
-        border-radius: 6px;
-        color: var(--ink);
-        background: #f8fafc;
-        font-size: 17px;
-        line-height: 1.22;
-      }
+      .b-l1 { background: var(--l1); }
+      .b-l2 { background: var(--l2); }
+      .b-l3 { background: var(--l3); }
+      .b-ui { background: var(--ui); }
+      .b-sidecar { background: var(--sidecar); }
 
       .arrow {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #718096;
-        font-size: 34px;
-        font-weight: 800;
+        position: absolute;
+        height: 2px;
+        background: #9cacbf;
       }
 
-      .transcript .num { background: #475569; }
-      .l1 .num { background: var(--l1); }
-      .l2 .num { background: var(--l2); }
-      .l3 .num { background: var(--l3); }
-
-      .lower {
-        display: grid;
-        grid-template-columns: 1fr 42px 1fr 42px 1fr;
-        align-items: stretch;
-        margin-top: 42px;
+      .arrow::after {
+        content: "";
+        position: absolute;
+        right: -1px;
+        top: -6px;
+        border-left: 10px solid #9cacbf;
+        border-top: 7px solid transparent;
+        border-bottom: 7px solid transparent;
       }
 
-      .observatory .num { background: var(--ui); }
-      .feedback .num { background: var(--sidecar); }
-      .answer .num { background: #db5b1d; }
+      .a1 { left: 336px; top: 254px; width: 22px; }
+      .a2 { left: 638px; top: 254px; width: 22px; }
+      .a3 { left: 940px; top: 254px; width: 22px; }
+      .a4 { left: 1242px; top: 254px; width: 22px; }
 
-      .lower .stage {
-        min-height: 225px;
+      .a5 { left: 604px; bottom: 189px; width: 32px; }
+      .a6 { left: 986px; bottom: 189px; width: 32px; }
+
+      .feedback-loop {
+        position: absolute;
+        right: 345px;
+        top: 350px;
+        width: 220px;
+        height: 238px;
+        border-right: 3px solid rgba(28, 143, 97, 0.62);
+        border-bottom: 3px solid rgba(28, 143, 97, 0.62);
+        border-radius: 0 0 24px 0;
       }
 
-      .principle {
-        margin-top: 40px;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 18px;
+      .feedback-loop::after {
+        content: "";
+        position: absolute;
+        left: -2px;
+        bottom: -8px;
+        border-right: 11px solid rgba(28, 143, 97, 0.72);
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
       }
 
-      .principle-card {
-        padding: 18px 20px;
-        border-left: 5px solid var(--ui);
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.82);
-        color: var(--muted);
-        font-size: 19px;
-        line-height: 1.3;
+      .section-tag {
+        position: absolute;
+        left: 56px;
+        color: #435168;
+        font-size: 18px;
+        font-weight: 850;
       }
 
-      .principle-card strong {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--ink);
+      .tag-top { top: 35px; }
+      .tag-bottom { bottom: 326px; }
+
+      .line {
+        height: 11px;
+        margin-top: 13px;
+        border-radius: 999px;
+        background: #d8dfeb;
       }
+
+      .line.short { width: 54%; }
+      .line.mid { width: 70%; }
+      .line.long { width: 84%; }
     </style>
   </head>
   <body>
-    <main class="figure">
-      <header class="header">
-        <div>
-          <div class="eyebrow">Tangible Mem</div>
-          <h1>Inspectable Layered Memory Pipeline</h1>
-          <p class="lede">
-            The system does not treat transcripts as opaque retrieval chunks. It
-            turns meeting evidence into inspectable L1 objects, organizes them
-            into topic context, and exposes both retrieval traces and
-            non-destructive correction sidecars.
-          </p>
+    <main class="figure" aria-label="Tangible Mem system overview">
+      <section class="canvas">
+        <div class="section-tag tag-top">Memory construction</div>
+        <div class="section-tag tag-bottom">Human-facing governance</div>
+
+        <div class="arrow a1"></div>
+        <div class="arrow a2"></div>
+        <div class="arrow a3"></div>
+        <div class="arrow a4"></div>
+        <div class="arrow a5"></div>
+        <div class="arrow a6"></div>
+        <div class="feedback-loop"></div>
+
+        <div class="row top">
+          <article class="module">
+            <h2 class="label">Transcript</h2>
+            <p class="sub">bounded source record</p>
+            <div class="chip-row">
+              <span class="chip">speaker turns</span>
+              <span class="chip">line ranges</span>
+              <span class="chip">dataset profile</span>
+            </div>
+          </article>
+
+          <article class="module">
+            <h2 class="label" style="color: var(--l1)">L1 Store</h2>
+            <p class="sub">immutable evidence objects</p>
+            <div class="store">
+              <div class="mini-card"></div>
+              <div class="mini-card"></div>
+              <div class="mini-card"></div>
+              <div class="mini-card"></div>
+            </div>
+          </article>
+
+          <article class="module">
+            <h2 class="label" style="color: var(--l2)">Topic Surface</h2>
+            <p class="sub">derived L2/L3 view</p>
+            <div class="topic-stack">
+              <div class="topic"></div>
+              <div class="topic"></div>
+              <div class="family">
+                <div class="family-line"></div>
+                <div class="family-line" style="width:56%; margin-top:14px"></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module">
+            <h2 class="label" style="color: var(--ui)">Retrieval Trace</h2>
+            <p class="sub">query-time assembly</p>
+            <div class="screen">
+              <div class="screen-row"><span class="badge b-l1">L1</span><span>seeds</span></div>
+              <div class="screen-row"><span class="badge b-l2">L2</span><span>events</span></div>
+              <div class="screen-row"><span class="badge b-l3">L3</span><span>map</span></div>
+            </div>
+          </article>
+
+          <article class="module">
+            <h2 class="label">Answer Context</h2>
+            <p class="sub">grounded prompt input</p>
+            <span class="badge b-l1">L1</span>
+            <span class="badge b-l2">L2</span>
+            <span class="badge b-l3">L3</span>
+            <div class="line long"></div>
+            <div class="line mid"></div>
+            <div class="line short"></div>
+          </article>
         </div>
-        <div class="legend" aria-label="Legend">
-          <div class="legend-item"><span class="dot" style="background:#475569"></span>Transcript input</div>
-          <div class="legend-item"><span class="dot" style="background:var(--l1)"></span>L1 evidence</div>
-          <div class="legend-item"><span class="dot" style="background:var(--l2)"></span>L2 topic context</div>
-          <div class="legend-item"><span class="dot" style="background:var(--l3)"></span>L3 navigation</div>
-          <div class="legend-item"><span class="dot" style="background:var(--ui)"></span>Memory Observatory interface</div>
-          <div class="legend-item"><span class="dot" style="background:var(--sidecar)"></span>Sidecar feedback</div>
+
+        <div class="row bottom">
+          <article class="module small">
+            <h2 class="label" style="color: var(--ui)">Observatory Views</h2>
+            <p class="sub">inspect objects and topics</p>
+            <div class="chip-row">
+              <span class="chip">Topic Observatory</span>
+              <span class="chip">Memory Explorer</span>
+            </div>
+          </article>
+
+          <article class="module small">
+            <h2 class="label" style="color: var(--sidecar)">Sidecar Feedback</h2>
+            <p class="sub">non-destructive corrections</p>
+            <span class="badge b-sidecar">review</span>
+            <div class="line mid"></div>
+            <div class="line short"></div>
+          </article>
+
+          <article class="module small">
+            <h2 class="label">Effective Memory</h2>
+            <p class="sub">raw evidence plus sidecars</p>
+            <span class="badge b-l1">L1</span>
+            <span class="badge b-l2">L2</span>
+            <span class="badge b-l3">L3</span>
+            <div class="line long"></div>
+          </article>
         </div>
-      </header>
-
-      <section class="pipeline" aria-label="Memory construction pipeline">
-        <article class="stage transcript">
-          <span class="num">1</span>
-          <h2>Transcript</h2>
-          <p>Raw meeting text is segmented into bounded discussion windows while preserving source traceability.</p>
-          <div class="mini-list">
-            <div class="mini">speaker turns and line ranges</div>
-            <div class="mini">dataset profile and noise policy</div>
-            <div class="mini">immutable source evidence</div>
-          </div>
-        </article>
-        <div class="arrow">-&gt;</div>
-        <article class="stage l1">
-          <span class="num">2</span>
-          <h2>L1 Evidence Objects</h2>
-          <p>Concrete memory objects capture decisions, proposals, findings, rationale, and open issues.</p>
-          <div class="mini-list">
-            <div class="mini">obj_id, type, content, evidence</div>
-            <div class="mini">importance and related signals</div>
-            <div class="mini">raw L1 remains immutable</div>
-          </div>
-        </article>
-        <div class="arrow">-&gt;</div>
-        <article class="stage l2">
-          <span class="num">3</span>
-          <h2>L2 Topic Context</h2>
-          <p>Semantic keys and linked L1 evidence form durable topic states with timelines and rationale.</p>
-          <div class="mini-list">
-            <div class="mini">label, definition, inclusion rules</div>
-            <div class="mini">linked L1 and timeline digest</div>
-            <div class="mini">review flags for weak topics</div>
-          </div>
-        </article>
-        <div class="arrow">-&gt;</div>
-        <article class="stage l3">
-          <span class="num">4</span>
-          <h2>L3 Topic Families</h2>
-          <p>Large or recurring topic regions are surfaced as navigational families, not standalone evidence.</p>
-          <div class="mini-list">
-            <div class="mini">corpus-derived theme surface</div>
-            <div class="mini">child L2 groupings</div>
-            <div class="mini">global topic map for orientation</div>
-          </div>
-        </article>
-      </section>
-
-      <section class="lower" aria-label="Inspection and correction pipeline">
-        <article class="stage observatory">
-          <span class="num">5</span>
-          <h2>Memory Observatory Interface</h2>
-          <p>Reviewers inspect the topic hierarchy, object details, and query-time retrieval trace.</p>
-          <div class="mini-list">
-            <div class="mini">Topic Observatory</div>
-            <div class="mini">Retrieval Trace</div>
-            <div class="mini">Memory Explorer</div>
-          </div>
-        </article>
-        <div class="arrow">-&gt;</div>
-        <article class="stage feedback">
-          <span class="num">6</span>
-          <h2>Sidecar Feedback</h2>
-          <p>User corrections are stored as review signals rather than overwriting original evidence.</p>
-          <div class="mini-list">
-            <div class="mini">importance adjustments</div>
-            <div class="mini">review-only topic decisions</div>
-            <div class="mini">auditable correction history</div>
-          </div>
-        </article>
-        <div class="arrow">-&gt;</div>
-        <article class="stage answer">
-          <span class="num">7</span>
-          <h2>Evidence-Grounded Answer</h2>
-          <p>Retrieval starts from L1 evidence, then adds L2 evolution and L3 navigation as inspectable context.</p>
-          <div class="mini-list">
-            <div class="mini">L1 seeds first</div>
-            <div class="mini">selected topic events</div>
-            <div class="mini">formatted prompt context</div>
-          </div>
-        </article>
-      </section>
-
-      <section class="principle">
-        <div class="principle-card"><strong>Evidence before topic context</strong>L2/L3 organize and orient; factual claims remain grounded in L1 evidence.</div>
-        <div class="principle-card"><strong>Inspectable before automated trust</strong>The UI shows why a topic or trace was selected instead of hiding memory behind an answer.</div>
-        <div class="principle-card"><strong>Correction without mutation</strong>Feedback produces sidecar signals, preserving the original transcript-derived memory objects.</div>
       </section>
     </main>
   </body>
