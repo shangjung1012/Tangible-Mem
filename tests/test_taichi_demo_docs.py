@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+import json
+import unittest
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+TAICHI_ROOT = REPO_ROOT / "doc" / "taichi"
+
+
+class TaichiDemoDocsTests(unittest.TestCase):
+    def test_handoff_guide_documents_demo_boundary(self) -> None:
+        guide = TAICHI_ROOT / "demo_handoff_guide.md"
+        text = guide.read_text(encoding="utf-8")
+
+        self.assertIn("uv run python memory_observatory/demo_health_check.py --dataset icsi", text)
+        self.assertIn("optimization_v2_artifact", text)
+        self.assertIn("canonical `share_mem/`", text)
+        self.assertIn("不能宣稱 generated answer quality", text)
+        self.assertIn("LONG_TERM_BACKEND", text)
+
+    def test_readiness_manifest_is_parseable_and_points_to_artifacts(self) -> None:
+        manifest_path = TAICHI_ROOT / "demo_readiness_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest["status"], "demo_ready_not_canonical_replacement")
+        self.assertEqual(manifest["primary_dataset"], "icsi")
+        self.assertEqual(manifest["resolved_backend_expected"], "optimization_v2_artifact")
+        self.assertEqual(
+            manifest["health_command"],
+            "uv run python memory_observatory/demo_health_check.py --dataset icsi",
+        )
+        self.assertIn("l1_effective_share_mem", manifest["artifacts"])
+        self.assertIn("l2_l3_runtime", manifest["artifacts"])
+        self.assertIn("canonical runtime replacement", manifest["claim_boundary"]["not_allowed"])
+
+    def test_artifact_index_links_handoff_assets(self) -> None:
+        index = (TAICHI_ROOT / "artifact_index.md").read_text(encoding="utf-8")
+
+        self.assertIn("doc/taichi/demo_handoff_guide.md", index)
+        self.assertIn("doc/taichi/demo_readiness_manifest.json", index)
+
+    def test_readiness_checklist_tracks_handoff_completion(self) -> None:
+        checklist = (TAICHI_ROOT / "readiness_checklist.md").read_text(encoding="utf-8")
+
+        self.assertIn("[x] Add partner handoff guide and machine-readable demo readiness manifest", checklist)
+
+
+if __name__ == "__main__":
+    unittest.main()

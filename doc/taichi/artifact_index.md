@@ -6,6 +6,10 @@ This file lists the current paper/demo artifacts and how they should be used.
 
 - Memory Observatory:
   `memory_observatory/`
+- Partner handoff guide:
+  `doc/taichi/demo_handoff_guide.md`
+- Machine-readable readiness manifest:
+  `doc/taichi/demo_readiness_manifest.json`
 - Start command:
 
 ```powershell
@@ -77,6 +81,8 @@ Implementation/decision details:
 
 - `optimization/reports/optimization_v2_decision_catalog_20260615.pdf`
 - `optimization/reports/optimization_v2_decision_catalog_20260615.tex`
+- `doc/taichi/demo_handoff_guide.md`
+- `doc/taichi/demo_readiness_manifest.json`
 - `doc/taichi/demo_visual_qa.md`
 
 ## Retrieval Comparison Numbers

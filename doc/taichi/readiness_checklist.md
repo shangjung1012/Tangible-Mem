@@ -34,6 +34,7 @@ submitting the TAICHI paper.
 - [ ] Refresh TAICHI artifact index after any new Grace/ICSI run.
 - [x] Add demo health check and visual QA note for current ICSI Observatory
   walkthrough.
+- [x] Add partner handoff guide and machine-readable demo readiness manifest.
 
 ## P2: Required Before Canonical Replacement
 

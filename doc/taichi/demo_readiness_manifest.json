@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "updated_at_local": "2026-06-21",
+  "status": "demo_ready_not_canonical_replacement",
+  "primary_dataset": "icsi",
+  "primary_surface": "memory_observatory",
+  "start_command": "uv run uvicorn memory_observatory.main:app --reload",
+  "health_command": "uv run python memory_observatory/demo_health_check.py --dataset icsi",
+  "health_expected_status": "pass",
+  "demo_query": "What evidence explains recurring audio and transcription problems in the ICSI meetings?",
+  "resolved_backend_expected": "optimization_v2_artifact",
+  "ui_pages": {
+    "demo_story": "http://localhost:8000/#demo",
+    "retrieval_trace": "http://localhost:8000/#trace",
+    "topic_observatory": "http://localhost:8000/#topics",
+    "memory_explorer": "http://localhost:8000/#explorer",
+    "presentation_capture": "http://localhost:8000/static/presentation.html"
+  },
+  "artifacts": {
+    "l1_effective_share_mem": "optimization/reports/icsi_bmr_full_completed29_eval_pack_20260614/source_share_mem",
+    "l2_l3_runtime": "optimization/runs/icsi_bmr_full_completed29_v2_20260614/runtime",
+    "system_comparison": "optimization/reports/icsi_bmr_full_completed29_system_comparison_revised_20260614",
+    "focused_trace_screenshot": "doc/taichi/screenshots/observatory_trace_icsi_focused.png",
+    "demo_story_health_screenshot": "doc/taichi/screenshots/observatory_demo_story_health_icsi.png",
+    "topic_screenshot": "doc/taichi/screenshots/observatory_topic_observatory_icsi.png",
+    "memory_explorer_screenshot": "doc/taichi/screenshots/observatory_memory_explorer_icsi.png",
+    "decision_catalog_pdf": "optimization/reports/optimization_v2_decision_catalog_20260615.pdf"
+  },
+  "claim_boundary": {
+    "allowed": [
+      "evidence-first retrieval trace",
+      "inspectable L1/L2/L3 memory surfaces",
+      "non-destructive sidecar feedback workflow",
+      "ICSI diagnostic evidence recall comparison"
+    ],
+    "not_allowed": [
+      "canonical runtime replacement",
+      "completed user study result",
+      "always-correct topic hierarchy",
+      "conclusive generated-answer superiority"
+    ]
+  },
+  "canonical_safety": {
+    "must_not_modify": [
+      "share_mem/tree.json",
+      "share_mem/meetings/*",
+      "long_term/l2/*",
+      "long_term/l3/*"
+    ],
+    "observatory_icsi_mode": "read_only_sidecar_artifact"
+  }
+}
