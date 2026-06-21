@@ -15,6 +15,28 @@ show in the Memory Observatory UI.
 | `doc/taichi/screenshots/observatory_topic_observatory_icsi.png` | Section 4.3 | Topic Observatory screenshot | Reviewers can inspect L3 topic families, child L2 states, timeline events, linked L1 evidence, and oversized topic flags. |
 | `doc/taichi/screenshots/observatory_memory_explorer_icsi.png` | Section 4.1 or 4.4 | Memory Explorer screenshot | Reviewers can inspect object-level content, evidence, topic links, and feedback history without editing raw evidence. |
 
+## Final Paper Selection
+
+Use these four figures for the current TAICHI draft:
+
+1. **System overview**: `figures/memory_observatory_system_overview.png`
+   - Section 3.
+   - Main role: explain the pipeline and interface surfaces.
+2. **Focused Retrieval Trace**: `figures/observatory_trace_icsi_focused.png`
+   - Section 4.
+   - Main role: show inspectable query-time context assembly.
+3. **Topic Observatory + Memory Explorer pair**:
+   `figures/observatory_topic_observatory_icsi.png` and
+   `figures/observatory_memory_explorer_icsi.png`
+   - Section 4.
+   - Main role: show topic-level and object-level inspection.
+4. **ICSI walkthrough composite**: `figures/observatory_presentation_icsi.png`
+   - Section 5.
+   - Main role: show the 70-second end-to-end demo story.
+
+Keep `observatory_trace_icsi_audio_processing.png` as appendix or backup
+evidence. It is too tall for the main two-column body.
+
 ## Recommended Primary Story
 
 Use the ICSI BMR audio-processing walkthrough as the paper example:

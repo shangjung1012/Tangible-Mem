@@ -7,6 +7,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TAICHI_ROOT = REPO_ROOT / "doc" / "taichi"
+DEMO_QUERY = (
+    "What context about delay-and-sum beamforming and close microphones "
+    "should carry over to later audio processing discussions?"
+)
 
 
 class TaichiDemoDocsTests(unittest.TestCase):
@@ -16,6 +20,7 @@ class TaichiDemoDocsTests(unittest.TestCase):
 
         self.assertIn("uv run python memory_observatory/demo_health_check.py --dataset icsi", text)
         self.assertIn("optimization_v2_artifact", text)
+        self.assertIn(DEMO_QUERY, text)
         self.assertIn("canonical `share_mem/`", text)
         self.assertIn("不能宣稱 generated answer quality", text)
         self.assertIn("LONG_TERM_BACKEND", text)
@@ -27,6 +32,7 @@ class TaichiDemoDocsTests(unittest.TestCase):
         self.assertEqual(manifest["status"], "demo_ready_not_canonical_replacement")
         self.assertEqual(manifest["primary_dataset"], "icsi")
         self.assertEqual(manifest["resolved_backend_expected"], "optimization_v2_artifact")
+        self.assertEqual(manifest["demo_query"], DEMO_QUERY)
         self.assertEqual(
             manifest["health_command"],
             "uv run python memory_observatory/demo_health_check.py --dataset icsi",
@@ -40,6 +46,16 @@ class TaichiDemoDocsTests(unittest.TestCase):
 
         self.assertIn("doc/taichi/demo_handoff_guide.md", index)
         self.assertIn("doc/taichi/demo_readiness_manifest.json", index)
+
+    def test_figure_inventory_identifies_final_paper_figures(self) -> None:
+        inventory = (TAICHI_ROOT / "figure_inventory.md").read_text(encoding="utf-8")
+
+        self.assertIn("Final Paper Selection", inventory)
+        self.assertIn("memory_observatory_system_overview.png", inventory)
+        self.assertIn("observatory_trace_icsi_focused.png", inventory)
+        self.assertIn("observatory_topic_observatory_icsi.png", inventory)
+        self.assertIn("observatory_memory_explorer_icsi.png", inventory)
+        self.assertIn("observatory_presentation_icsi.png", inventory)
 
     def test_readiness_checklist_tracks_handoff_completion(self) -> None:
         checklist = (TAICHI_ROOT / "readiness_checklist.md").read_text(encoding="utf-8")

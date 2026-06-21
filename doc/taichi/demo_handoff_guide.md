@@ -94,7 +94,7 @@ effective L1；ICSI 要優先使用 filtered/effective sidecar view。
 ICSI demo story 使用固定查詢，避免 live demo 變動：
 
 ```text
-What evidence explains recurring audio and transcription problems in the ICSI meetings?
+What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?
 ```
 
 講法：
@@ -131,4 +131,3 @@ uv run python -m unittest tests.test_memory_observatory_demo_health tests.test_m
 如果 partner 要跑 chat app runtime，而不是 Observatory demo，必須另外確認
 `LONG_TERM_BACKEND` 和 `OPTIMIZATION_V2_RUN_ROOT`。Observatory 的 ICSI dataset
 switch 不等於整個 app runtime 已經切到 optimization v2。
-
