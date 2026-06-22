@@ -62,6 +62,27 @@ class TaichiDemoDocsTests(unittest.TestCase):
 
         self.assertIn("[x] Add partner handoff guide and machine-readable demo readiness manifest", checklist)
 
+    def test_user_study_protocol_keeps_claim_boundary_clear(self) -> None:
+        protocol = (TAICHI_ROOT / "user_study_pilot_protocol.md").read_text(encoding="utf-8")
+        task_packet = (TAICHI_ROOT / "user_study_task_packet.md").read_text(encoding="utf-8")
+        scoring_sheet = (TAICHI_ROOT / "user_study_scoring_sheet.csv").read_text(encoding="utf-8")
+
+        self.assertIn("planned pilot", protocol.lower())
+        self.assertIn("not completed user-study evidence", protocol.lower())
+        self.assertIn("sidecar correction", protocol)
+        self.assertIn("Retrieval Trace", task_packet)
+        self.assertIn("Topic Observatory", task_packet)
+        self.assertIn("Correction Review", task_packet)
+        self.assertIn("participant_id,task_id", scoring_sheet)
+        self.assertIn("correction_appropriateness", scoring_sheet)
+
+    def test_transcript_span_benchmark_doc_distinguishes_gold_from_l1_alignment(self) -> None:
+        spec = (TAICHI_ROOT / "icsi_transcript_span_benchmark_spec.md").read_text(encoding="utf-8")
+
+        self.assertIn("L1 ids are allowed only as optional diagnostic alignment", spec)
+        self.assertIn("primary gold evidence is a transcript span", spec)
+        self.assertIn("held-out future-meeting carryover", spec)
+
 
 if __name__ == "__main__":
     unittest.main()

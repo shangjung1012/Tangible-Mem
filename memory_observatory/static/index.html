@@ -21,7 +21,7 @@
       <button class="nav" data-tab="trace">Retrieval Trace</button>
       <button class="nav" data-tab="explorer">Memory Explorer</button>
       <button class="nav" data-tab="topics">Topic Observatory</button>
-      <button class="nav" data-tab="feedback">Importance Review</button>
+      <button class="nav" data-tab="feedback">Correction Review</button>
       <button class="nav" data-tab="lab">Experiment Lab</button>
     </aside>
     <main class="main">
@@ -145,32 +145,77 @@
       </section>
 
       <section id="feedback" class="tab">
-        <h1>Importance Review</h1>
+        <h1>Correction Review</h1>
+        <p class="lede">
+          Corrections are written as sidecar records for the effective memory view;
+          raw transcript evidence and raw L1 objects remain unchanged.
+        </p>
         <div class="two-col">
           <div class="panel">
             <h2>L1 Objects</h2>
             <div id="feedbackObjects" class="stack"></div>
           </div>
           <div class="panel">
-            <h2>Save Feedback</h2>
+            <h2>Save Sidecar Feedback</h2>
             <div id="feedbackTarget">Select an object.</div>
-            <input id="feedbackImportance" type="range" min="0" max="1" step="0.01" value="0.5" />
-            <select id="feedbackReason">
-              <option>important_design_decision</option>
-              <option>important_method_change</option>
-              <option>important_open_issue</option>
-              <option>important_evaluation_plan</option>
-              <option>important_evidence_anchor</option>
-              <option>minor_repetition</option>
-              <option>administrative_detail</option>
-              <option>outdated_or_abandoned</option>
-              <option>duplicate_or_redundant</option>
-              <option>wrongly_high</option>
-              <option>wrongly_low</option>
-              <option>other</option>
-            </select>
-            <textarea id="feedbackNote" placeholder="note"></textarea>
-            <button id="saveFeedback">Save feedback</button>
+            <div class="correction-grid">
+              <div class="correction-box">
+                <h3>Importance override</h3>
+                <input id="feedbackImportance" type="range" min="0" max="1" step="0.01" value="0.5" />
+                <select id="feedbackReason">
+                  <option>important_design_decision</option>
+                  <option>important_method_change</option>
+                  <option>important_open_issue</option>
+                  <option>important_evaluation_plan</option>
+                  <option>important_evidence_anchor</option>
+                  <option>minor_repetition</option>
+                  <option>administrative_detail</option>
+                  <option>outdated_or_abandoned</option>
+                  <option>duplicate_or_redundant</option>
+                  <option>wrongly_high</option>
+                  <option>wrongly_low</option>
+                  <option>other</option>
+                </select>
+                <textarea id="feedbackNote" placeholder="importance note"></textarea>
+                <button id="saveFeedback">Save importance sidecar</button>
+              </div>
+              <div class="correction-box">
+                <h3>Summary correction</h3>
+                <textarea id="summaryCorrectionText" placeholder="reviewed effective summary"></textarea>
+                <select id="summaryCorrectionReason">
+                  <option>summary_too_broad</option>
+                  <option>summary_too_narrow</option>
+                  <option>missing_key_rationale</option>
+                  <option>ambiguous_or_unclear</option>
+                  <option>other</option>
+                </select>
+                <button id="saveSummaryCorrection">Save summary correction</button>
+              </div>
+              <div class="correction-box">
+                <h3>Validity flag</h3>
+                <select id="validityFlagType">
+                  <option>needs_review</option>
+                  <option>outdated_or_abandoned</option>
+                  <option>duplicate_or_redundant</option>
+                  <option>invalid_or_unsupported</option>
+                  <option>low_value_noise</option>
+                </select>
+                <textarea id="validityFlagNote" placeholder="why this object should be reviewed"></textarea>
+                <button id="saveValidityFlag">Save validity flag</button>
+              </div>
+              <div class="correction-box">
+                <h3>Topic-link review</h3>
+                <select id="topicLinkAction">
+                  <option>confirm</option>
+                  <option>remove</option>
+                  <option>add</option>
+                  <option>needs_relabel</option>
+                </select>
+                <input id="topicLinkTarget" placeholder="target L2 id or label" />
+                <textarea id="topicLinkNote" placeholder="topic-link review note"></textarea>
+                <button id="saveTopicLinkReview">Save topic-link review</button>
+              </div>
+            </div>
             <pre id="feedbackSummary"></pre>
           </div>
         </div>

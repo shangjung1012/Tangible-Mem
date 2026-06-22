@@ -138,3 +138,25 @@ For TAICHI paper claims, the safer wording is:
 - Supported now: Tangible Mem has an internal Grace benchmark and ICSI retrieval diagnostics.
 - Planned benchmark path: ICSI transcript-span grounded evaluation.
 - Not yet supported: user-facing correction improves memory quality in a controlled study.
+
+## Current V1 Seed Artifact
+
+The current annotation-ready seed artifact was generated with:
+
+```powershell
+uv run python optimization/long_term_v2/icsi_transcript_span_benchmark.py `
+  --transcript-root meeting_recording/transcript/ISCI `
+  --out optimization/reports/icsi_transcript_span_benchmark_v1_20260622 `
+  --source-through-meeting-id Bmr023 `
+  --max-questions 12 `
+  --clean
+```
+
+Outputs:
+
+- `optimization/reports/icsi_transcript_span_benchmark_v1_20260622/transcript_span_queries.jsonl`
+- `optimization/reports/icsi_transcript_span_benchmark_v1_20260622/transcript_span_benchmark_report.json`
+- `optimization/reports/icsi_transcript_span_benchmark_v1_20260622/transcript_span_benchmark.md`
+
+The artifact is intentionally marked `annotation_ready_needs_human_review`.
+It should be treated as a starting point for annotation, not as final gold.

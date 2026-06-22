@@ -169,8 +169,17 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
     def topic_store(dataset_id: str = "grace") -> TopicStore:
         return TopicStore(root, dataset_id=dataset_or_404(dataset_id))
 
-    def feedback_store() -> FeedbackStore:
-        return FeedbackStore(loader().share_mem_root)
+    def feedback_store(dataset_id: str = "grace") -> FeedbackStore:
+        return FeedbackStore(loader(dataset_id).share_mem_root)
+
+    def writable_feedback_store(dataset_id: str = "grace") -> FeedbackStore:
+        config = resolve_dataset(root, dataset_or_404(dataset_id))
+        if config.read_only:
+            raise HTTPException(
+                status_code=403,
+                detail="dataset is read-only; correction sidecars are disabled for this demo artifact",
+            )
+        return FeedbackStore(config.share_mem_root)
 
     def report_store() -> ReportStore:
         return ReportStore(RUNS_DIR if root == REPO_ROOT else root / "memory_observatory" / "runs")
@@ -257,16 +266,48 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
         )
 
     @app.get("/api/feedback/importance")
-    def api_feedback_importance() -> list[dict[str, Any]]:
-        return feedback_store().load_adjustments()
+    def api_feedback_importance(dataset: str = "grace") -> list[dict[str, Any]]:
+        return feedback_store(dataset).load_adjustments()
 
     @app.post("/api/feedback/importance")
-    def api_save_feedback(payload: dict[str, Any]) -> dict[str, Any]:
-        return feedback_store().save_importance_adjustment(payload)
+    def api_save_feedback(payload: dict[str, Any], dataset: str = "grace") -> dict[str, Any]:
+        return writable_feedback_store(dataset).save_importance_adjustment(payload)
 
     @app.get("/api/feedback/summary")
-    def api_feedback_summary() -> dict[str, Any]:
-        return feedback_store().load_summary()
+    def api_feedback_summary(dataset: str = "grace") -> dict[str, Any]:
+        return feedback_store(dataset).load_summary()
+
+    @app.get("/api/feedback/corrections/summary")
+    def api_feedback_correction_summary(dataset: str = "grace") -> dict[str, Any]:
+        return feedback_store(dataset).load_correction_summary()
+
+    @app.get("/api/feedback/corrections/{obj_id}")
+    def api_feedback_object_corrections(obj_id: str, dataset: str = "grace") -> dict[str, Any]:
+        return feedback_store(dataset).load_object_corrections(obj_id)
+
+    @app.get("/api/feedback/summary-corrections")
+    def api_feedback_summary_corrections(dataset: str = "grace") -> list[dict[str, Any]]:
+        return feedback_store(dataset).load_summary_corrections()
+
+    @app.post("/api/feedback/summary-corrections")
+    def api_save_summary_correction(payload: dict[str, Any], dataset: str = "grace") -> dict[str, Any]:
+        return writable_feedback_store(dataset).save_summary_correction(payload)
+
+    @app.get("/api/feedback/validity-flags")
+    def api_feedback_validity_flags(dataset: str = "grace") -> list[dict[str, Any]]:
+        return feedback_store(dataset).load_validity_flags()
+
+    @app.post("/api/feedback/validity-flags")
+    def api_save_validity_flag(payload: dict[str, Any], dataset: str = "grace") -> dict[str, Any]:
+        return writable_feedback_store(dataset).save_validity_flag(payload)
+
+    @app.get("/api/feedback/topic-link-reviews")
+    def api_feedback_topic_link_reviews(dataset: str = "grace") -> list[dict[str, Any]]:
+        return feedback_store(dataset).load_topic_link_reviews()
+
+    @app.post("/api/feedback/topic-link-reviews")
+    def api_save_topic_link_review(payload: dict[str, Any], dataset: str = "grace") -> dict[str, Any]:
+        return writable_feedback_store(dataset).save_topic_link_review(payload)
 
     @app.get("/api/runs")
     def api_runs(include_legacy: bool = False) -> list[dict[str, Any]]:

@@ -601,6 +601,43 @@ function renderFeedbackHistoryBlock(history) {
   ]);
 }
 
+function renderCorrectionHistoryBlock(corrections) {
+  const summaryRows = corrections?.summary_corrections || [];
+  const flags = corrections?.validity_flags || [];
+  const topicRows = corrections?.topic_link_reviews || [];
+  const rows = [
+    ...summaryRows.map((item) => ({
+      title: item.corrected_content || "summary correction",
+      meta: `${item.reason_code || "summary"} | ${item.created_at_utc || ""}`,
+      note: item.note || "Effective summary correction; raw L1 remains unchanged.",
+    })),
+    ...flags.map((item) => ({
+      title: item.flag_type || "validity flag",
+      meta: `${item.reason_code || "validity"} | ${item.created_at_utc || ""}`,
+      note: item.note || "Validity sidecar for the effective memory view.",
+    })),
+    ...topicRows.map((item) => ({
+      title: `${item.action || "review"} ${item.l2_id || item.l2_label || "topic link"}`,
+      meta: `${item.reason_code || "topic_link"} | ${item.created_at_utc || ""}`,
+      note: item.note || "Topic-link sidecar; raw L1 remains unchanged.",
+    })),
+  ];
+  if (!rows.length) {
+    return el("div", { class: "subpanel" }, [
+      el("h3", { text: "Correction Sidecars" }),
+      el("p", { class: "muted", text: "No correction sidecars have been saved for this object." }),
+    ]);
+  }
+  return el("div", { class: "subpanel" }, [
+    el("h3", { text: "Correction Sidecars" }),
+    ...rows.map((item) => el("div", { class: "feedback-item" }, [
+      el("strong", { text: item.title }),
+      el("div", { class: "label", text: item.meta }),
+      item.note ? el("p", { text: item.note }) : null,
+    ])),
+  ]);
+}
+
 function memoryCard(title, meta, body, tags = []) {
   return el("div", { class: "card memory-card" }, [
     el("strong", { text: title || "" }),
@@ -1010,6 +1047,7 @@ function renderObjectDetail(data) {
     el("p", { class: "evidence", text: d.evidence || "" }),
     renderTopicLinkBlock(data.topic_link || {}),
     renderFeedbackHistoryBlock(data.feedback_history || []),
+    renderCorrectionHistoryBlock(data.correction_history || {}),
   ]);
 }
 
@@ -1249,20 +1287,26 @@ async function loadFeedback() {
   if (selectedDataset !== "grace") {
     $("#feedbackObjects").replaceChildren(el("p", {
       class: "muted",
-      text: "ICSI mode is read-only for this screenshot workflow. Importance feedback remains available in Grace mode.",
+      text: "ICSI mode is read-only for this screenshot workflow. The sidecar workflow is implemented in Grace mode; raw L1 remains unchanged.",
     }));
     $("#feedbackSummary").textContent = JSON.stringify({ dataset: selectedDataset, read_only: true }, null, 2);
     return;
   }
   const objects = await api(apiWithDataset("/api/objects")).catch(() => []);
   $("#feedbackObjects").replaceChildren(...objects.map((obj) => {
-    const node = memoryCard(obj.obj_id, `${obj.type} | canonical ${fmtNumber(obj.canonical_importance)}`, obj.content_preview, obj.has_feedback ? ["feedback"] : []);
+    const tags = [];
+    if (obj.has_feedback) tags.push("feedback");
+    if (obj.has_corrections) tags.push({ text: "corrected", class: "feedback" });
+    const node = memoryCard(obj.obj_id, `${obj.type} | canonical ${fmtNumber(obj.canonical_importance)}`, obj.content_preview, tags);
     node.classList.add("clickable-card");
     node.addEventListener("click", () => loadObjectDetail(obj.obj_id));
     return node;
   }));
-  const summary = await api("/api/feedback/summary");
-  $("#feedbackSummary").textContent = JSON.stringify(summary, null, 2);
+  const [summary, corrections] = await Promise.all([
+    api("/api/feedback/summary"),
+    api("/api/feedback/corrections/summary"),
+  ]);
+  $("#feedbackSummary").textContent = JSON.stringify({ importance: summary, corrections }, null, 2);
 }
 
 $("#saveFeedback").addEventListener("click", async () => {
@@ -1276,6 +1320,70 @@ $("#saveFeedback").addEventListener("click", async () => {
   );
   await loadFeedback();
 });
+
+async function saveSummaryCorrection() {
+  if (!selectedFeedbackObject || selectedDataset !== "grace") return;
+  const d = selectedFeedbackObject.details || {};
+  await api("/api/feedback/summary-corrections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      obj_id: d.obj_id,
+      meeting_id: d.meeting_id,
+      canonical_content: d.content || "",
+      corrected_content: $("#summaryCorrectionText").value,
+      reason_code: $("#summaryCorrectionReason").value,
+      note: "Saved from Memory Observatory; raw L1 remains unchanged.",
+    }),
+  });
+  await loadObjectDetail(d.obj_id);
+  await loadFeedback();
+}
+
+async function saveValidityFlag() {
+  if (!selectedFeedbackObject || selectedDataset !== "grace") return;
+  const d = selectedFeedbackObject.details || {};
+  await api("/api/feedback/validity-flags", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      obj_id: d.obj_id,
+      meeting_id: d.meeting_id,
+      flag_type: $("#validityFlagType").value,
+      reason_code: $("#validityFlagType").value,
+      note: $("#validityFlagNote").value,
+    }),
+  });
+  await loadObjectDetail(d.obj_id);
+  await loadFeedback();
+}
+
+async function saveTopicLinkReview() {
+  if (!selectedFeedbackObject || selectedDataset !== "grace") return;
+  const d = selectedFeedbackObject.details || {};
+  const link = selectedFeedbackObject.topic_link || {};
+  await api("/api/feedback/topic-link-reviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      obj_id: d.obj_id,
+      meeting_id: d.meeting_id,
+      action: $("#topicLinkAction").value,
+      l2_id: link.l2_id || $("#topicLinkTarget").value,
+      l2_label: link.l2_label || $("#topicLinkTarget").value,
+      child_l2_id: link.child_l2_id || "",
+      parent_l3_id: link.parent_l3_id || "",
+      reason_code: "human_topic_review",
+      note: $("#topicLinkNote").value,
+    }),
+  });
+  await loadObjectDetail(d.obj_id);
+  await loadFeedback();
+}
+
+$("#saveSummaryCorrection").addEventListener("click", saveSummaryCorrection);
+$("#saveValidityFlag").addEventListener("click", saveValidityFlag);
+$("#saveTopicLinkReview").addEventListener("click", saveTopicLinkReview);
 
 async function loadRuns() {
   const runs = await api("/api/runs");

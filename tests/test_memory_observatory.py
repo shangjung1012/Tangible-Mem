@@ -572,6 +572,93 @@ class MemoryObservatoryTests(unittest.TestCase):
             self.assertEqual(index["L1-0307-001"]["latest_feedback_id"], record["feedback_id"])
             self.assertEqual(index["L1-0307-001"]["effective_importance"], 0.95)
 
+    def test_feedback_store_writes_corrective_sidecars_without_modifying_raw_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            tree_path = root / "share_mem" / "tree.json"
+            tree_before = tree_path.read_text(encoding="utf-8")
+            store = FeedbackStore(root / "share_mem")
+
+            summary = store.save_summary_correction(
+                {
+                    "obj_id": "L1-0307-001",
+                    "meeting_id": "0307",
+                    "canonical_content": "The old summary.",
+                    "corrected_content": "The reviewed summary.",
+                    "reason_code": "summary_too_broad",
+                    "note": "Keeps raw evidence unchanged.",
+                }
+            )
+            validity = store.save_validity_flag(
+                {
+                    "obj_id": "L1-0307-001",
+                    "meeting_id": "0307",
+                    "flag_type": "duplicate_or_redundant",
+                    "reason_code": "duplicate",
+                    "note": "Prefer the later evidence object in effective views.",
+                }
+            )
+            topic = store.save_topic_link_review(
+                {
+                    "obj_id": "L1-0307-001",
+                    "meeting_id": "0307",
+                    "action": "remove",
+                    "l2_id": "L2-old-topic",
+                    "l2_label": "old topic",
+                    "reason_code": "wrong_assignment",
+                    "note": "Reviewer judged the topic link off-target.",
+                }
+            )
+
+            self.assertEqual(tree_before, tree_path.read_text(encoding="utf-8"))
+            self.assertTrue(summary["correction_id"].startswith("SC-"))
+            self.assertTrue(validity["flag_id"].startswith("VF-"))
+            self.assertTrue(topic["review_id"].startswith("TL-"))
+            overlays = store.load_object_corrections("L1-0307-001")
+            self.assertEqual(overlays["summary_corrections"][0]["corrected_content"], "The reviewed summary.")
+            self.assertEqual(overlays["validity_flags"][0]["flag_type"], "duplicate_or_redundant")
+            self.assertEqual(overlays["topic_link_reviews"][0]["action"], "remove")
+            correction_summary = store.load_correction_summary()
+            self.assertEqual(correction_summary["summary_correction_count"], 1)
+            self.assertEqual(correction_summary["validity_flag_count"], 1)
+            self.assertEqual(correction_summary["topic_link_review_count"], 1)
+
+    def test_feedback_api_exposes_corrective_sidecars_for_grace_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+            client = TestClient(create_app(repo_root=root))
+
+            response = client.post(
+                "/api/feedback/summary-corrections",
+                json={
+                    "obj_id": "L1-0307-001",
+                    "meeting_id": "0307",
+                    "corrected_content": "Corrected effective summary.",
+                    "reason_code": "summary_too_narrow",
+                },
+            )
+            readonly = client.post(
+                "/api/feedback/summary-corrections",
+                params={"dataset": "icsi"},
+                json={
+                    "obj_id": "L1-Bmr001-001",
+                    "meeting_id": "Bmr001",
+                    "corrected_content": "Should be blocked in read-only demo mode.",
+                },
+            )
+            corrections = client.get("/api/feedback/corrections/L1-0307-001")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(readonly.status_code, 403)
+        self.assertEqual(corrections.status_code, 200)
+        self.assertEqual(
+            corrections.json()["summary_corrections"][0]["corrected_content"],
+            "Corrected effective summary.",
+        )
+
     def test_report_store_creates_run_and_loads_latest(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             store = ReportStore(Path(tmp) / "runs")

@@ -84,10 +84,20 @@ Writable sidecars:
 - `share_mem/user_feedback/importance_adjustments.jsonl`
 - `share_mem/user_feedback/importance_override_index.json`
 - `share_mem/user_feedback/importance_feedback_summary.json`
+- `share_mem/user_feedback/summary_corrections.jsonl`
+- `share_mem/user_feedback/summary_correction_index.json`
+- `share_mem/user_feedback/validity_flags.jsonl`
+- `share_mem/user_feedback/validity_flag_index.json`
+- `share_mem/user_feedback/topic_link_reviews.jsonl`
+- `share_mem/user_feedback/topic_link_review_index.json`
+- `share_mem/user_feedback/correction_feedback_summary.json`
 - `memory_observatory/runs/<run_id>/...`
 
 Do not edit `share_mem/tree.json` to apply review feedback. The feedback editor
-writes sidecar files only.
+writes sidecar files only. `Correction Review` records importance overrides,
+effective-summary corrections, validity flags, and topic-link review decisions
+for the effective memory view; raw transcript evidence and raw L1 provenance
+remain unchanged.
 
 ## Run A No-LLM Comparison Experiment
 
@@ -260,10 +270,12 @@ Experiment Lab, and capture screenshots or check element overflow.
 - Demo Story: a presentation-focused ICSI walkthrough showing topic memory,
   L1 evidence seeds, L2 evolution context, L3 navigation, and strategy contrast.
 - Retrieval Trace: query -> L1 evidence -> L2 / child-L2 -> L3 -> prompt context.
-- Memory Explorer: meeting, L1 object, evidence, topic link, and feedback browsing.
+- Memory Explorer: meeting, L1 object, evidence, topic link, feedback, and
+  correction sidecar browsing.
 - Topic Observatory: drawn L3 -> child L2 tree, L2 state/timeline detail,
   on-demand linked L1 evidence, and sidecar importance feedback.
-- Importance Review: sidecar-only importance feedback.
+- Correction Review: sidecar-only importance feedback, effective-summary
+  corrections, validity flags, and topic-link review decisions.
 - Experiment Lab: compare full context, traditional RAG, and layered memory.
 
 ## TAICHI Presentation Capture

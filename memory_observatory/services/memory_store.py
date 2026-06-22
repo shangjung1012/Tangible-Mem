@@ -37,6 +37,15 @@ class MemoryStore:
 
     def objects(self, meeting_id: str | None = None) -> list[dict[str, Any]]:
         feedback_index = self.feedback_store.load_override_index()
+        correction_summary_index = {
+            row.get("obj_id")
+            for row in (
+                self.feedback_store.load_summary_corrections()
+                + self.feedback_store.load_validity_flags()
+                + self.feedback_store.load_topic_link_reviews()
+            )
+            if row.get("obj_id")
+        }
         rows: list[dict[str, Any]] = []
         for obj in self.loader.iter_l1_objects():
             if meeting_id and str(obj.get("meeting_id", "")) != meeting_id:
@@ -60,6 +69,7 @@ class MemoryStore:
                     "related_topics": obj.get("related_topics", []),
                     "topic_link": link,
                     "has_feedback": bool(feedback),
+                    "has_corrections": obj_id in correction_summary_index,
                 }
             )
         return rows
@@ -71,10 +81,12 @@ class MemoryStore:
         feedback_rows = [
             row for row in self.feedback_store.load_adjustments() if row.get("obj_id") == obj_id
         ]
+        correction_history = self.feedback_store.load_object_corrections(obj_id)
         return {
             "details": obj,
             "topic_link": self.topic_store.topic_link_for_obj(obj_id),
             "feedback_history": feedback_rows,
+            "correction_history": correction_history,
             "lineage_lite": {
                 "evidence": obj.get("evidence", ""),
                 "l1_object": obj_id,

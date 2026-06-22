@@ -23,7 +23,7 @@ Recommended pages for screenshots:
 - Retrieval Trace.
 - Topic Observatory.
 - Memory Explorer / object detail.
-- Importance Review / sidecar feedback.
+- Correction Review / sidecar feedback.
 
 ## Presentation Capture Assets
 
@@ -81,6 +81,16 @@ Official current ICSI artifacts:
 - `optimization/runs/icsi_bmr_full_completed29_v2_20260614`
 - `optimization/reports/icsi_bmr_full_completed29_eval_pack_revised_20260614`
 - `optimization/reports/icsi_bmr_full_completed29_system_comparison_revised_20260614`
+- `optimization/reports/icsi_transcript_span_benchmark_v1_20260622`
+
+Transcript-span benchmark and study-prep artifacts:
+
+- `doc/taichi/icsi_transcript_span_benchmark_spec.md`
+- `optimization/reports/icsi_transcript_span_benchmark_v1_20260622/transcript_span_queries.jsonl`
+- `optimization/reports/icsi_transcript_span_benchmark_v1_20260622/transcript_span_benchmark.md`
+- `doc/taichi/user_study_pilot_protocol.md`
+- `doc/taichi/user_study_task_packet.md`
+- `doc/taichi/user_study_scoring_sheet.csv`
 
 Implementation/decision details:
 

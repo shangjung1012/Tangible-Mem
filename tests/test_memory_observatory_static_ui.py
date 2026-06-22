@@ -144,6 +144,20 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("demo_health_check.py --dataset icsi", readme)
         self.assertIn("/api/demo/health?dataset=icsi", readme)
 
+    def test_feedback_tab_exposes_non_destructive_correction_workflow(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn("Correction Review", html)
+        self.assertIn("Summary correction", html)
+        self.assertIn("Validity flag", html)
+        self.assertIn("Topic-link review", html)
+        self.assertIn("saveSummaryCorrection", js)
+        self.assertIn("/api/feedback/summary-corrections", js)
+        self.assertIn("/api/feedback/validity-flags", js)
+        self.assertIn("/api/feedback/topic-link-reviews", js)
+        self.assertIn("raw L1 remains unchanged", js)
+
 
 if __name__ == "__main__":
     unittest.main()
