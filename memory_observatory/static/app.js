@@ -383,42 +383,6 @@ function healthCheckLabel(name) {
   return labels[name] || name || "check";
 }
 
-function renderDemoQueryFlow(family, seeds, contexts, siblingLabels) {
-  const dates = [...new Set(seeds.map((seed) => seed.meeting_id).filter(Boolean))];
-  const primaryContext = contexts[0] || {};
-  return el("section", { class: "demo-section demo-query-map-section" }, [
-    el("div", { class: "demo-section-copy" }, [
-      el("div", { class: "demo-eyebrow", text: "Teaser query retrieves layered memory" }),
-      el("h2", { text: "One question becomes a traceable retrieval path" }),
-      el("p", { text: "The query does not directly summarize all transcripts. It starts from source-grounded L1 evidence, then brings in the relevant L2 evolution and parent L3 navigation." }),
-    ]),
-    el("div", { class: "demo-query-map" }, [
-      el("div", { class: "demo-flow-card query" }, [
-        el("span", { text: "User query" }),
-        el("strong", { text: DEMO_TRACE_QUERY }),
-      ]),
-      el("div", { class: "demo-flow-arrow", text: "->" }),
-      el("div", { class: "demo-flow-card l1" }, [
-        el("span", { text: "Retrieved L1 evidence seeds" }),
-        el("strong", { text: dates.join(" / ") || "Bmr001 / Bmr002" }),
-        el("p", { text: "Source evidence from meetings, not a generated summary." }),
-      ]),
-      el("div", { class: "demo-flow-arrow", text: "->" }),
-      el("div", { class: "demo-flow-card l2" }, [
-        el("span", { text: "Matched L2 topic evolution" }),
-        el("strong", { text: primaryContext.label || "audio processing" }),
-        el("p", { text: "Shows how technical rationale and decisions remain tied to source evidence." }),
-      ]),
-      el("div", { class: "demo-flow-arrow", text: "->" }),
-      el("div", { class: "demo-flow-card l3" }, [
-        el("span", { text: "Parent L3 family" }),
-        el("strong", { text: family.label || "audio acquisition and signal processing" }),
-        el("p", { text: `${Math.max(siblingLabels.length, 0)} related topic node(s) visible as navigation.` }),
-      ]),
-    ]),
-  ]);
-}
-
 function selectDemoEvidenceSeeds(seeds) {
   const preferredMeetings = selectedDataset === "icsi" ? ["Bmr001", "Bmr002", "Bmr005"] : ["0422", "0429", "0506"];
   const selected = [];
@@ -433,48 +397,80 @@ function selectDemoEvidenceSeeds(seeds) {
   return selected;
 }
 
-function renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels) {
+function renderLayeredEvidenceGraph(family, seeds, contexts, siblingLabels) {
   const selectedSeeds = selectDemoEvidenceSeeds(seeds);
   const context = contexts[0] || {};
   const contextText = context.evolution_summary || context.current_state || timelineText(context.timeline_digest || []);
   const relatedTopics = siblingLabels.slice(0, 3).map((child) => child.label || child.l2_id).filter(Boolean);
-  return el("section", { class: "demo-section demo-single-trace-section" }, [
-    el("div", { class: "demo-single-head" }, [
-      el("div", { class: "demo-eyebrow", text: "Retrieval trace result" }),
-      el("h2", { text: "What this one query retrieves" }),
-      el("p", { text: "The query first finds source-grounded L1 evidence, then uses those seeds to pull the relevant L2 evolution and L3 topic family." }),
-    ]),
-    el("div", { class: "demo-single-grid" }, [
-      el("div", { class: "demo-single-card query" }, [
-        el("span", { text: "Teaser query" }),
-        el("strong", { text: DEMO_TRACE_QUERY }),
-        el("p", { text: "A rationale question about source-grounded corpus memory." }),
+  const evidenceMeetingCount = new Set(selectedSeeds.map((seed) => seed.meeting_id).filter(Boolean)).size;
+  const queryNodeTitle = selectedDataset === "icsi"
+    ? "Beamforming and close microphones"
+    : "Transcript segments and idea units";
+  return el("section", { class: "demo-section layered-memory-visual" }, [
+    el("div", { class: "layered-graph-header" }, [
+      el("div", {}, [
+        el("div", { class: "demo-eyebrow", text: "Layered evidence graph" }),
+        el("h2", { text: "Layered retrieval path" }),
+        el("p", { text: "Source evidence, evolving topic state, and wider navigation remain visibly distinct." }),
       ]),
-      el("div", { class: "demo-single-card l1" }, [
-        el("span", { text: "L1 evidence seeds" }),
-        el("strong", { text: selectedSeeds.map((seed) => seed.meeting_id).join(" / ") || "Bmr001 / Bmr002" }),
-        el("div", { class: "demo-seed-stack" }, selectedSeeds.map((seed) =>
-          el("div", { class: "demo-seed-row" }, [
-            tag(seed.meeting_id || "meeting", "l1"),
-            el("b", { text: seed.obj_id || "" }),
-            el("p", { text: preview(seed.content || seed.evidence, 112) }),
+      el("div", { class: "memory-layer-legend", "aria-label": "Memory layer legend" }, [
+        el("span", { class: "legend-item l1", text: "L1  Evidence" }),
+        el("span", { class: "legend-item l2", text: "L2  Evolution" }),
+        el("span", { class: "legend-item l3", text: "L3  Navigation" }),
+      ]),
+    ]),
+    el("div", { class: "layered-evidence-graph" }, [
+      el("article", { class: "memory-graph-node query-node" }, [
+        el("span", { class: "graph-stage", text: "Question" }),
+        el("h3", { text: queryNodeTitle }),
+        el("p", { text: "What should carry forward from earlier meetings?" }),
+      ]),
+      el("div", { class: "graph-connector", "aria-hidden": "true" }),
+      el("article", { class: "memory-graph-node l1-node" }, [
+        el("div", { class: "graph-node-head" }, [
+          el("span", { class: "graph-stage", text: "1  Evidence seeds" }),
+          el("strong", { text: `${selectedSeeds.length} objects / ${evidenceMeetingCount} meeting${evidenceMeetingCount === 1 ? "" : "s"}` }),
+        ]),
+        el("div", { class: "graph-evidence-stack" }, selectedSeeds.map((seed) =>
+          el("div", { class: "graph-evidence-row" }, [
+            el("div", { class: "graph-evidence-meta" }, [
+              tag(seed.meeting_id || "meeting", "l1"),
+              el("b", { text: seed.obj_id || "" }),
+            ]),
+            el("p", { text: preview(seed.content || seed.evidence, 118) }),
           ])
         )),
+        el("div", { class: "graph-contribution", text: "Facts from L1" }),
       ]),
-      el("div", { class: "demo-single-card l2" }, [
-        el("span", { text: "L2 topic evolution" }),
-        el("strong", { text: context.label || "audio processing" }),
+      el("div", { class: "graph-connector", "aria-hidden": "true" }),
+      el("article", { class: "memory-graph-node l2-node" }, [
+        el("span", { class: "graph-stage", text: "2  Topic state" }),
+        el("h3", { text: context.label || "audio processing" }),
         el("p", { text: preview(contextText, 260) }),
-        el("div", { class: "tag-row" }, [
-          tag(`${context.selected_event_count || 0} selected event`, "l2"),
+        el("div", { class: "graph-metrics" }, [
+          tag(`${context.selected_event_count || 0} selected`, "l2"),
           tag(`${context.omitted_event_count || 0} omitted`, "muted"),
         ]),
+        el("div", { class: "graph-contribution", text: "Evolution from L2" }),
       ]),
-      el("div", { class: "demo-single-card l3" }, [
-        el("span", { text: "Parent L3 topic family" }),
-        el("strong", { text: family.label || "audio acquisition and signal processing" }),
-        el("p", { text: "Navigation context: shows this rationale belongs to a broader corpus-derived topic family." }),
-        el("div", { class: "tag-row" }, relatedTopics.map((topic) => tag(topic, "l2"))),
+      el("div", { class: "graph-connector", "aria-hidden": "true" }),
+      el("article", { class: "memory-graph-node l3-node" }, [
+        el("span", { class: "graph-stage", text: "3  Topic family" }),
+        el("h3", { text: family.label || "audio acquisition and signal processing" }),
+        el("p", { text: "Related topic states define scope; they are not treated as factual evidence." }),
+        el("div", { class: "graph-topic-list" }, relatedTopics.map((topic) => tag(topic, "l2"))),
+        el("div", { class: "graph-contribution", text: "Navigation from L3" }),
+      ]),
+      el("div", { class: "graph-connector", "aria-hidden": "true" }),
+      el("article", { class: "memory-graph-node context-node" }, [
+        el("span", { class: "graph-stage", text: "Answer input" }),
+        el("h3", { text: "Grounded prompt context" }),
+        el("div", { class: "context-recipe" }, [
+          el("div", {}, [el("b", { text: "Facts" }), el("span", { text: "verbatim L1 evidence" })]),
+          el("div", {}, [el("b", { text: "History" }), el("span", { text: "selected L2 evolution" })]),
+          el("div", {}, [el("b", { text: "Scope" }), el("span", { text: "L3 family navigation" })]),
+        ]),
+        el("div", { class: "graph-contribution", text: "Ready for the answer model" }),
       ]),
     ]),
   ]);
@@ -493,13 +489,12 @@ function renderDemoStory(topics, trace) {
   if (!target) return;
   target.className = "demo-story";
   target.replaceChildren(
-    renderDemoSingleTraceResult(family, seeds, contexts, siblingLabels),
-    renderDemoQueryFlow(family, seeds, contexts, siblingLabels),
+    renderLayeredEvidenceGraph(family, seeds, contexts, siblingLabels),
     el("section", { class: "demo-section demo-topic-section" }, [
       el("div", { class: "demo-section-copy" }, [
-        el("div", { class: "demo-eyebrow", text: "1. Topic Observatory" }),
-        el("h2", { text: "The topic family exists before the query" }),
-        el("p", { text: "This is persistent topic memory: L2 topic states and L3 family links exist before the user asks anything." }),
+        el("div", { class: "demo-eyebrow", text: "1. Memory topic map" }),
+        el("h2", { text: "What the system remembers" }),
+        el("p", { text: "Persistent L2 topic states are grouped under an L3 navigation family before retrieval begins." }),
         el("div", { class: "demo-family-card" }, [
           el("div", { class: "tag-row" }, [
             tag("L3 topic family", "l3"),
@@ -515,8 +510,8 @@ function renderDemoStory(topics, trace) {
     ]),
     el("section", { class: "demo-section demo-trace-section" }, [
       el("div", { class: "demo-section-copy" }, [
-        el("div", { class: "demo-eyebrow", text: "2. Retrieval Trace" }),
-        el("h2", { text: "The query becomes an evidence-first memory trace" }),
+        el("div", { class: "demo-eyebrow", text: "2. Evidence trace" }),
+        el("h2", { text: "What this question retrieves" }),
         el("p", { text: DEMO_TRACE_QUERY }),
         el("div", { class: "demo-date-strip" }, [
           el("strong", { text: "L1 evidence path" }),
@@ -546,8 +541,8 @@ function renderDemoStory(topics, trace) {
     ]),
     el("section", { class: "demo-section demo-compare-section" }, [
       el("div", { class: "demo-section-copy" }, [
-        el("div", { class: "demo-eyebrow", text: "3. Baseline contrast" }),
-        el("h2", { text: "The difference is what each system injects" }),
+        el("div", { class: "demo-eyebrow", text: "3. Strategy comparison" }),
+        el("h2", { text: "Why the memory layers matter" }),
         el("p", { text: "Full Context is broad, RAG is local, and Layered Memory is evidence-grounded plus evolution-aware." }),
       ]),
       renderDemoComparison(),
@@ -984,7 +979,11 @@ async function loadObjects(meetingId) {
   );
   renderMeetings();
   renderObjects();
-  $("#objectDetail").replaceChildren(el("p", { class: "muted", text: "Select an L1 object to inspect details." }));
+  if (currentObjects[0]) {
+    await loadObjectDetail(currentObjects[0].obj_id);
+  } else {
+    $("#objectDetail").replaceChildren(el("p", { class: "muted", text: "No L1 objects match this meeting." }));
+  }
 }
 
 function renderObjects() {
@@ -1057,6 +1056,13 @@ let currentTopicId = null;
 async function loadTopics() {
   allTopicData = await api(apiWithDataset("/api/topics/l3"));
   renderTopicTree();
+  const firstChild = (allTopicData.l3_nodes || [])
+    .flatMap((family) => family.child_l2_nodes || [])[0];
+  const firstUnpromoted = (allTopicData.unpromoted_l2_nodes || [])[0];
+  const defaultTopic = firstChild || firstUnpromoted;
+  if (!currentTopicId && defaultTopic?.l2_id) {
+    await loadTopicDetail(defaultTopic.l2_id);
+  }
 }
 
 function topicMatchesFilter(node, filterText) {
@@ -1109,7 +1115,8 @@ function renderL3Family(l3, children) {
 function renderL2TopicNode(node) {
   const sizeClass = node.size_bucket ? `size-${node.size_bucket}` : "";
   const topic = el("button", {
-    class: `topic-node ${sizeClass}`,
+    class: `topic-node ${sizeClass}${node.l2_id === currentTopicId ? " active" : ""}`,
+    "data-l2-id": node.l2_id || "",
     title: "Open L2 topic detail",
     onclick: () => loadTopicDetail(node.l2_id),
   }, [
@@ -1126,6 +1133,9 @@ function renderL2TopicNode(node) {
 
 async function loadTopicDetail(l2Id) {
   currentTopicId = l2Id;
+  document.querySelectorAll(".topic-node").forEach((node) => {
+    node.classList.toggle("active", node.getAttribute("data-l2-id") === l2Id);
+  });
   const data = await api(apiWithDataset(`/api/topics/l2/${encodeURIComponent(l2Id)}`));
   const stats = [
     card("event_count", String(data.event_count || 0)),
@@ -1589,6 +1599,7 @@ syncTracePlannerControl();
 
 async function boot() {
   const hashTab = (window.location.hash || "").replace("#", "");
+  activateTab(hashTab || "demo", false);
   await loadDatasets();
   await loadOverview();
   await loadDemoStory();
@@ -1596,7 +1607,6 @@ async function boot() {
   await loadTopics();
   await loadFeedback();
   await loadRuns();
-  if (hashTab) activateTab(hashTab, false);
   if (hashTab === "trace") {
     $("#traceQuery").value = DEMO_TRACE_QUERY;
     $("#traceDebug").checked = false;

@@ -131,6 +131,58 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("demo-health-card", css)
         self.assertIn("health-check-grid", css)
 
+    def test_demo_story_uses_one_layered_evidence_graph(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "memory_observatory" / "static" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn("Memory Topic Map", html)
+        self.assertIn("function renderLayeredEvidenceGraph", js)
+        self.assertIn("Layered retrieval path", js)
+        self.assertIn("Facts from L1", js)
+        self.assertIn("Evolution from L2", js)
+        self.assertIn("Navigation from L3", js)
+        self.assertIn("Grounded prompt context", js)
+        self.assertNotIn("function renderDemoSingleTraceResult", js)
+        self.assertNotIn("function renderDemoQueryFlow", js)
+        self.assertIn("layered-evidence-graph", css)
+        self.assertIn("memory-layer-legend", css)
+        self.assertLess(html.index('id="demoStory"'), html.index('id="demoHealth"'))
+
+    def test_app_shell_is_demo_first_and_uses_compact_top_navigation(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "memory_observatory" / "static" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn('class="app-header"', html)
+        self.assertIn('class="primary-nav"', html)
+        self.assertNotIn('class="sidebar"', html)
+        self.assertIn('<section id="demo" class="tab active">', html)
+        self.assertIn('<section id="overview" class="tab">', html)
+        self.assertIn("Follow one question through meeting memory", html)
+        self.assertIn(".app-header", css)
+        self.assertIn(".primary-nav", css)
+
+    def test_topic_observatory_opens_a_default_topic_and_marks_selection(self) -> None:
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn("const defaultTopic = firstChild || firstUnpromoted", js)
+        self.assertIn("await loadTopicDetail(defaultTopic.l2_id)", js)
+        self.assertIn('"data-l2-id": node.l2_id', js)
+        self.assertIn('node.classList.toggle("active"', js)
+
+    def test_memory_explorer_opens_the_first_l1_object(self) -> None:
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn("await loadObjectDetail(currentObjects[0].obj_id)", js)
+        self.assertIn("No L1 objects match this meeting", js)
+
+    def test_boot_activates_route_before_loading_heavy_views(self) -> None:
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+        boot = js[js.index("async function boot()") : js.index("boot();")]
+
+        self.assertLess(boot.index('activateTab(hashTab || "demo", false)'), boot.index("await loadDatasets()"))
+        self.assertEqual(boot.count("activateTab("), 1)
+
     def test_readme_documents_current_trace_and_experiment_defaults(self) -> None:
         readme = (REPO_ROOT / "memory_observatory" / "README.md").read_text(encoding="utf-8")
 

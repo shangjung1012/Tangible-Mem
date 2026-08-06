@@ -7,32 +7,43 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="brand-system">Tangible Mem</span>
-        <span class="brand-interface">Memory Observatory</span>
+    <header class="app-header">
+      <div class="app-header-row">
+        <div class="brand" aria-label="Tangible Mem Memory Observatory">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="brand-copy">
+            <strong>Tangible Mem</strong>
+            <small>Memory Observatory</small>
+          </span>
+        </div>
+        <div class="corpus-control">
+          <span class="control-label">Dataset</span>
+          <div id="datasetSwitch" class="dataset-switch" aria-label="Dataset switch">
+            <button class="dataset-pill active" data-dataset="icsi">ICSI</button>
+            <button class="dataset-pill" data-dataset="grace">Grace</button>
+          </div>
+        </div>
       </div>
-      <div id="datasetSwitch" class="dataset-switch" aria-label="Dataset switch">
-        <button class="dataset-pill active" data-dataset="icsi">ICSI</button>
-        <button class="dataset-pill" data-dataset="grace">Grace</button>
-      </div>
-      <button class="nav active" data-tab="overview">Overview</button>
-      <button class="nav" data-tab="demo">Demo Story</button>
-      <button class="nav" data-tab="trace">Retrieval Trace</button>
-      <button class="nav" data-tab="explorer">Memory Explorer</button>
-      <button class="nav" data-tab="topics">Topic Observatory</button>
-      <button class="nav" data-tab="feedback">Correction Review</button>
-      <button class="nav" data-tab="lab">Experiment Lab</button>
-    </aside>
+      <nav class="primary-nav" aria-label="Observatory views">
+        <button class="nav active" data-tab="demo">Demo</button>
+        <button class="nav" data-tab="overview">Overview</button>
+        <button class="nav" data-tab="trace">Retrieval Trace</button>
+        <button class="nav" data-tab="explorer">Memories</button>
+        <button class="nav" data-tab="topics">Topics</button>
+        <button class="nav" data-tab="feedback" aria-label="Correction Review">Corrections</button>
+        <button class="nav" data-tab="lab">Experiments</button>
+      </nav>
+    </header>
     <main class="main">
-      <section id="overview" class="tab active">
-        <h1 id="overviewTitle">Evidence-first layered memory</h1>
-        <p id="overviewLede" class="lede">
-          This system does not directly RAG over transcripts. It first extracts
-          traceable L1 evidence objects, organizes them into L2 / child-L2 topic
-          context, and uses L3 topic families as navigation. Answers should be
-          grounded by L1 evidence, with L2/L3 providing cross-meeting evolution.
-        </p>
+      <section id="overview" class="tab">
+        <div class="page-heading">
+          <span class="page-kicker">System overview</span>
+          <h1 id="overviewTitle">Evidence-first layered memory</h1>
+          <p id="overviewLede" class="lede">
+            Traceable L1 evidence is organized into persistent L2 topic states
+            and L3 topic families before retrieval.
+          </p>
+        </div>
         <div id="overviewFlow" class="flow">
           <span>Transcript</span><b>-&gt;</b><span>Segment / Window</span><b>-&gt;</b>
           <span>Idea Unit</span><b>-&gt;</b><span>L1 Evidence</span><b>-&gt;</b>
@@ -43,29 +54,29 @@
         <div id="overviewCards" class="cards"></div>
       </section>
 
-      <section id="demo" class="tab">
+      <section id="demo" class="tab active">
         <div class="demo-story-header">
-          <div>
-            <div class="demo-eyebrow">Presentation mode / ICSI BMR corpus</div>
-            <h1>Evidence-first layered retrieval, shown end-to-end</h1>
-            <p>
-              This page is designed for paper figures and live walkthroughs:
-              topic memory before the query, the retrieval trace for one
-              question, and the contrast with Full Context and traditional RAG.
-            </p>
+          <div class="demo-title-block">
+            <div class="demo-eyebrow">ICSI demo workspace</div>
+            <h1>Follow one question through meeting memory</h1>
+            <p>Evidence first, topic history second, broader navigation last.</p>
           </div>
           <div class="demo-query-box">
-            <span>Live demo question</span>
+            <span>Question</span>
             <strong>What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?</strong>
-            <p>In the demo below, this single query retrieves L1 evidence first, then expands into L2 topic context and L3 corpus-theme navigation.</p>
+            <small>Rationale and carry-over query</small>
           </div>
         </div>
-        <div id="demoHealth" class="demo-health-card loading">Checking demo readiness...</div>
         <div id="demoStory" class="demo-story loading">Loading demo trace...</div>
+        <div id="demoHealth" class="demo-health-card loading">Checking demo readiness...</div>
       </section>
 
       <section id="trace" class="tab">
-        <h1>Retrieval Trace</h1>
+        <div class="page-heading">
+          <span class="page-kicker">Inspect retrieval</span>
+          <h1>Retrieval Trace</h1>
+          <p class="lede">Run a question and inspect exactly which memory layers enter the prompt.</p>
+        </div>
         <div class="demo-query-row">
           <span class="label">Demo queries</span>
           <button class="demo-query" data-demo-query="What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?">Audio processing rationale</button>
@@ -100,7 +111,11 @@
       </section>
 
       <section id="explorer" class="tab">
-        <h1>Share Memory Explorer</h1>
+        <div class="page-heading">
+          <span class="page-kicker">Browse evidence</span>
+          <h1>Memory Explorer</h1>
+          <p class="lede">Move from meetings to L1 memory objects and their source evidence.</p>
+        </div>
         <div class="three-col">
           <div><h2>Meetings</h2><div id="meetingList" class="stack"></div></div>
           <div>
@@ -122,16 +137,15 @@
       </section>
 
       <section id="topics" class="tab">
-        <h1>Topic Observatory</h1>
-        <p class="lede">
-          The tree shows L3 topic families and their child L2 topics. Click an
-          L2 node to inspect its state, timeline, linked L1 evidence, and
-          importance feedback controls.
-        </p>
+        <div class="page-heading">
+          <span class="page-kicker">Inspect organization</span>
+          <h1>Topic Observatory</h1>
+          <p class="lede">L3 topic families on the left; selected L2 state and evidence timeline on the right.</p>
+        </div>
         <div class="topic-layout">
           <div class="panel topic-tree-panel">
             <div class="panel-header">
-              <h2>L2/L3 Topic Tree</h2>
+              <h2>Memory Topic Map</h2>
               <input id="topicSearch" placeholder="filter topics" />
             </div>
             <div id="topicTree" class="topic-map"></div>
@@ -145,11 +159,11 @@
       </section>
 
       <section id="feedback" class="tab">
-        <h1>Correction Review</h1>
-        <p class="lede">
-          Corrections are written as sidecar records for the effective memory view;
-          raw transcript evidence and raw L1 objects remain unchanged.
-        </p>
+        <div class="page-heading">
+          <span class="page-kicker">Review without overwriting</span>
+          <h1>Memory Corrections</h1>
+          <p class="lede">Save effective-view corrections as sidecars while preserving raw evidence.</p>
+        </div>
         <div class="two-col">
           <div class="panel">
             <h2>L1 Objects</h2>
@@ -222,7 +236,11 @@
       </section>
 
       <section id="lab" class="tab">
-        <h1>Experiment Lab</h1>
+        <div class="page-heading">
+          <span class="page-kicker">Compare retrieval strategies</span>
+          <h1>Experiment Lab</h1>
+          <p class="lede">Inspect Full Context, RAG, and Layered Memory with the same queries.</p>
+        </div>
         <div class="toolbar">
           <select id="runSelect"></select>
           <button id="refreshRuns">Refresh</button>
