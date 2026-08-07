@@ -158,9 +158,25 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertNotIn('class="sidebar"', html)
         self.assertIn('<section id="demo" class="tab active">', html)
         self.assertIn('<section id="overview" class="tab">', html)
-        self.assertIn("Follow one question through meeting memory", html)
+        self.assertIn("Can a user correct what AI remembers?", html)
         self.assertIn(".app-header", css)
         self.assertIn(".primary-nav", css)
+
+    def test_demo_exposes_closed_loop_memory_control_audit(self) -> None:
+        html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")
+        js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "memory_observatory" / "static" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn('id="demoAudit"', html)
+        self.assertIn("Inspect the retrieved memory, challenge it, then verify what changed", html)
+        self.assertIn("Inspect, challenge, and verify", js)
+        self.assertIn("Apply in audit sandbox", js)
+        self.assertIn("/api/demo/audit-preview", js)
+        self.assertIn("context_diff", js)
+        self.assertIn("raw_evidence_unchanged", js)
+        self.assertIn("Answer-level effect not generated yet", js)
+        self.assertIn(".audit-grid", css)
+        self.assertIn(".audit-context-diff", css)
 
     def test_topic_observatory_opens_a_default_topic_and_marks_selection(self) -> None:
         js = (REPO_ROOT / "memory_observatory" / "static" / "app.js").read_text(encoding="utf-8")
@@ -195,6 +211,8 @@ class MemoryObservatoryStaticUiTests(unittest.TestCase):
         self.assertIn("Demo Readiness Check", readme)
         self.assertIn("demo_health_check.py --dataset icsi", readme)
         self.assertIn("/api/demo/health?dataset=icsi", readme)
+        self.assertIn("Memory Control Audit", readme)
+        self.assertIn("/api/demo/audit-preview?dataset=icsi", readme)
 
     def test_feedback_tab_exposes_non_destructive_correction_workflow(self) -> None:
         html = (REPO_ROOT / "memory_observatory" / "static" / "index.html").read_text(encoding="utf-8")

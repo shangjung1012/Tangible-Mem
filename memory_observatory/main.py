@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
+from .services.audit_sandbox import AuditSandboxService
 from .services.data_loader import ObservatoryDataLoader, REPO_ROOT
 from .services.datasets import list_datasets, resolve_dataset
 from .services.demo_health import build_demo_health
@@ -201,6 +202,28 @@ def create_app(repo_root: Path | str = REPO_ROOT) -> FastAPI:
     def api_demo_health(dataset: str = "icsi") -> dict[str, Any]:
         dataset_id = dataset_or_404(dataset)
         return build_demo_health(root, dataset_id=dataset_id)
+
+    @app.post("/api/demo/audit-preview")
+    def api_demo_audit_preview(
+        payload: dict[str, Any],
+        dataset: str = "icsi",
+    ) -> dict[str, Any]:
+        dataset_id = dataset_or_404(dataset)
+        try:
+            return AuditSandboxService(root, dataset_id=dataset_id).preview(
+                query=str(payload.get("query") or ""),
+                correction=(
+                    payload.get("correction")
+                    if isinstance(payload.get("correction"), dict)
+                    else {}
+                ),
+                retrieval_mode=str(payload.get("retrieval_mode") or "lexical"),
+                budget_profile=str(
+                    payload.get("budget_profile") or "observatory_paper_trace"
+                ),
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.get("/api/meetings")
     def api_meetings(dataset: str = "grace") -> list[dict[str, Any]]:

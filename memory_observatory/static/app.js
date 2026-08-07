@@ -36,6 +36,11 @@ const fmtNumber = (value, digits = 2) => {
 
 const tag = (text, cls = "") => el("span", { class: `tag ${cls}`, text });
 const DEMO_TRACE_QUERY = "What context about delay-and-sum beamforming and close microphones should carry over to later audio processing discussions?";
+const GRACE_DEMO_TRACE_QUERY = "Why did we split transcripts into segments and idea units, and how did that approach evolve?";
+
+function currentDemoQuery() {
+  return selectedDataset === "icsi" ? DEMO_TRACE_QUERY : GRACE_DEMO_TRACE_QUERY;
+}
 
 function card(title, body, tags = []) {
   return el("div", { class: "card" }, [
@@ -147,6 +152,7 @@ let currentRunQueries = [];
 let selectedQueryId = "";
 let selectedDataset = localStorage.getItem("observatoryDataset") || "icsi";
 let availableDatasets = [];
+let demoAuditBaselineTrace = null;
 
 function apiWithDataset(path) {
   const separator = path.includes("?") ? "&" : "?";
@@ -476,6 +482,262 @@ function renderLayeredEvidenceGraph(family, seeds, contexts, siblingLabels) {
   ]);
 }
 
+function auditTopicState(topic) {
+  return String(topic?.current_state || topic?.evolution_summary || timelineText(topic?.timeline_digest || []) || "No topic state is available.");
+}
+
+function suggestedAuditState(topic, seeds) {
+  if (selectedDataset === "icsi" && String(topic?.label || "").toLowerCase().includes("audio")) {
+    return "Near-field microphone arrays remain an open signal-processing problem: non-planar wavefronts make simple delay-and-sum beamforming unsuitable, while closer microphone placement was proposed as an alternative direction that still needs validation.";
+  }
+  const evidence = (seeds || []).slice(0, 2).map((seed) => String(seed.content || seed.evidence || "").trim()).filter(Boolean);
+  if (evidence.length) return `The current topic state should foreground this query-relevant evidence: ${evidence.join(" ")}`;
+  return auditTopicState(topic);
+}
+
+function renderAuditEvidenceSummary(seed) {
+  return el("div", { class: "audit-evidence-summary" }, [
+    el("div", { class: "audit-evidence-meta" }, [
+      tag(seed.meeting_id || "meeting", "l1"),
+      el("strong", { text: seed.obj_id || "L1 evidence" }),
+    ]),
+    el("p", { text: preview(seed.content || seed.evidence, 155) }),
+  ]);
+}
+
+function renderAuditEvidenceControl(seed, index) {
+  const inputId = `auditExclude${index}`;
+  return el("label", { class: "audit-evidence-control", for: inputId }, [
+    el("input", { id: inputId, type: "checkbox", value: seed.obj_id || "", "data-audit-exclude": "true" }),
+    el("span", {}, [
+      el("strong", { text: seed.obj_id || "L1 evidence" }),
+      el("small", { text: `Exclude from candidate context: ${preview(seed.content || seed.evidence, 96)}` }),
+    ]),
+  ]);
+}
+
+function renderAuditVerifyInitial(topic, seeds) {
+  return el("div", { class: "audit-verify-body audit-waiting" }, [
+    el("div", { class: "audit-baseline-state" }, [
+      el("span", { class: "audit-field-label", text: "Baseline topic state" }),
+      el("strong", { text: topic?.label || topic?.l2_id || "L2 topic" }),
+      el("p", { text: preview(auditTopicState(topic), 360) }),
+    ]),
+    el("div", { class: "audit-pending-checks" }, [
+      el("div", {}, [el("b", { text: String(seeds.length) }), el("span", { text: "L1 evidence objects currently enter the trace" })]),
+      el("div", {}, [el("b", { text: "Pending" }), el("span", { text: "Run the sandbox to rebuild the candidate prompt" })]),
+      el("div", {}, [el("b", { text: "Not run" }), el("span", { text: "Answer generation waits for verified Vertex access" })]),
+    ]),
+  ]);
+}
+
+function impactRow(label, before, after, tone = "") {
+  return el("div", { class: `audit-impact-row ${tone}` }, [
+    el("span", { text: label }),
+    el("b", { text: String(before) }),
+    el("span", { class: "audit-impact-arrow", text: "to" }),
+    el("b", { text: String(after) }),
+  ]);
+}
+
+function renderAuditDiff(result) {
+  const target = $("#auditDiff");
+  if (!target) return;
+  const rows = result.context_diff || [];
+  const truncationNotice = result.context_diff_truncated
+    ? el("p", { class: "muted", text: "The visual diff is truncated; the complete candidate context remains available in Retrieval Trace." })
+    : null;
+  target.replaceChildren(
+    el("div", { class: "audit-diff-header" }, [
+      el("div", {}, [
+        el("span", { class: "audit-field-label", text: "Prompt context diff" }),
+        el("h3", { text: "What the answer model would receive differently" }),
+      ]),
+      el("div", { class: "audit-diff-legend" }, [
+        el("span", { class: "remove", text: "Removed" }),
+        el("span", { class: "add", text: "Added" }),
+      ]),
+    ]),
+    rows.length
+      ? el("div", { class: "audit-context-diff", role: "log", "aria-label": "Baseline and candidate prompt differences" }, rows.map((row) =>
+          el("code", { class: `diff-${row.kind || "context"}`, text: row.text || "" })
+        ))
+      : el("p", { class: "muted", text: "The selected adjustment did not change the formatted prompt context." }),
+  );
+  if (truncationNotice) target.append(truncationNotice);
+  target.hidden = false;
+}
+
+function renderAuditVerifyResult(result) {
+  const target = $("#auditVerify");
+  if (!target) return;
+  const impact = result.impact || {};
+  const correction = result.correction || {};
+  target.replaceChildren(
+    el("div", { class: "audit-verify-status" }, [
+      el("span", { class: "audit-status-mark", text: "3" }),
+      el("div", {}, [
+        el("strong", { text: "Candidate context rebuilt" }),
+        el("p", { text: "The same query was formatted again with the session correction." }),
+      ]),
+    ]),
+    el("div", { class: "audit-impact-list" }, [
+      impactRow("L1 evidence", impact.l1_count_before ?? 0, impact.l1_count_after ?? 0),
+      impactRow("Prompt tokens", impact.prompt_tokens_before ?? 0, impact.prompt_tokens_after ?? 0),
+      impactRow("Prompt characters", impact.prompt_chars_before ?? 0, impact.prompt_chars_after ?? 0),
+    ]),
+    correction.corrected_state
+      ? el("div", { class: "audit-candidate-state" }, [
+          el("span", { class: "audit-field-label", text: "Candidate topic state" }),
+          el("p", { text: correction.corrected_state }),
+        ])
+      : null,
+    el("div", { class: "audit-guardrail-list" }, [
+      el("div", {}, [tag(impact.raw_evidence_unchanged ? "PASS" : "CHECK", impact.raw_evidence_unchanged ? "feedback" : "warn"), el("span", { text: "Raw L1 evidence unchanged" })]),
+      el("div", {}, [tag("SESSION", "l2"), el("span", { text: "Candidate is not persisted" })]),
+      el("div", {}, [tag("PENDING", "warn"), el("span", { text: "Answer-level effect not generated yet" })]),
+    ]),
+  );
+  renderAuditDiff(result);
+}
+
+async function runDemoAuditPreview(event) {
+  event.preventDefault();
+  if (!demoAuditBaselineTrace) return;
+  const form = event.currentTarget;
+  const submit = form.querySelector('button[type="submit"]');
+  const status = $("#auditActionStatus");
+  const excludeObjIds = [...form.querySelectorAll("[data-audit-exclude]:checked")].map((input) => input.value).filter(Boolean);
+  const payload = {
+    query: demoAuditBaselineTrace.query || currentDemoQuery(),
+    retrieval_mode: "lexical",
+    budget_profile: "observatory_paper_trace",
+    correction: {
+      target_l2_id: form.elements.target_l2_id.value,
+      corrected_state: form.elements.corrected_state.value.trim(),
+      reason_code: form.elements.reason_code.value,
+      exclude_obj_ids: excludeObjIds,
+    },
+  };
+  submit.disabled = true;
+  submit.textContent = "Rebuilding candidate...";
+  status.className = "audit-action-status working";
+  status.textContent = "Applying the correction to an in-memory copy of the retrieval result.";
+  try {
+    const result = await api(apiWithDataset("/api/demo/audit-preview"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    renderAuditVerifyResult(result);
+    status.className = "audit-action-status success";
+    status.textContent = "Candidate prompt rebuilt. Nothing was written to the source memory.";
+  } catch (error) {
+    status.className = "audit-action-status error";
+    status.textContent = `Could not build the candidate: ${error.message}`;
+  } finally {
+    submit.disabled = false;
+    submit.textContent = "Apply in audit sandbox";
+  }
+}
+
+function renderDemoAudit(trace) {
+  demoAuditBaselineTrace = trace;
+  const target = $("#demoAudit");
+  if (!target) return;
+  const seeds = (trace.l1_evidence_seeds || []).slice(0, 3);
+  const topics = (trace.l2_evolution_context || []).filter((topic) => topic?.l2_id).slice(0, 4);
+  const primaryTopic = topics[0] || {};
+  const suggested = suggestedAuditState(primaryTopic, seeds);
+  const targetSelect = el("select", { name: "target_l2_id", "aria-label": "Topic state to challenge" }, topics.map((topic) =>
+    el("option", { value: topic.l2_id || "", text: topic.label || topic.l2_id || "L2 topic" })
+  ));
+  const correctedState = el("textarea", {
+    name: "corrected_state",
+    rows: "6",
+    placeholder: "Describe the topic state that should enter this query's candidate context.",
+    "aria-label": "Candidate topic state",
+  });
+  correctedState.value = suggested;
+  const verifyPanel = el("article", { id: "auditVerify", class: "audit-step audit-verify" }, [
+    el("div", { class: "audit-step-heading" }, [
+      el("span", { class: "audit-step-number", text: "3" }),
+      el("div", {}, [el("h2", { text: "Verify the effect" }), el("p", { text: "Compare the rebuilt context before claiming control." })]),
+    ]),
+    renderAuditVerifyInitial(primaryTopic, trace.l1_evidence_seeds || []),
+  ]);
+  const form = el("form", { id: "auditChallengeForm", class: "audit-step audit-challenge" }, [
+    el("div", { class: "audit-step-heading" }, [
+      el("span", { class: "audit-step-number", text: "2" }),
+      el("div", {}, [el("h2", { text: "Challenge the memory" }), el("p", { text: "Create a reversible candidate, not a silent overwrite." })]),
+    ]),
+    el("label", { class: "audit-control-group" }, [
+      el("span", { class: "audit-field-label", text: "Topic state to challenge" }),
+      targetSelect,
+    ]),
+    el("label", { class: "audit-control-group" }, [
+      el("span", { class: "audit-field-label", text: "Candidate state" }),
+      correctedState,
+    ]),
+    el("fieldset", { class: "audit-exclusion-fieldset" }, [
+      el("legend", { text: "Optional evidence exclusions" }),
+      ...seeds.map(renderAuditEvidenceControl),
+    ]),
+    el("label", { class: "audit-control-group" }, [
+      el("span", { class: "audit-field-label", text: "Reason" }),
+      el("select", { name: "reason_code" }, [
+        el("option", { value: "topic_state_not_query_relevant", text: "Topic state is not query-relevant" }),
+        el("option", { value: "summary_too_broad", text: "Summary is too broad" }),
+        el("option", { value: "stale_topic_state", text: "Topic state is stale" }),
+        el("option", { value: "unsupported_evidence", text: "Evidence is unsupported" }),
+        el("option", { value: "other", text: "Other" }),
+      ]),
+    ]),
+    el("div", { class: "audit-button-row" }, [
+      el("button", { type: "submit", text: "Apply in audit sandbox" }),
+      el("button", {
+        type: "button",
+        class: "secondary",
+        text: "Reset candidate",
+        onclick: () => renderDemoAudit(demoAuditBaselineTrace),
+      }),
+    ]),
+    el("p", { id: "auditActionStatus", class: "audit-action-status", text: "Session-only preview. Raw memory and runtime artifacts remain locked." }),
+  ]);
+  form.addEventListener("submit", runDemoAuditPreview);
+  target.className = "audit-workspace";
+  target.replaceChildren(
+    el("div", { class: "audit-workspace-header" }, [
+      el("div", {}, [
+        el("div", { class: "demo-eyebrow", text: "Closed-loop memory audit" }),
+        el("h2", { text: "Inspect, challenge, and verify" }),
+        el("p", { text: "A visible trace is not enough. A correction should produce an observable change without altering the source evidence." }),
+      ]),
+      el("div", { class: "audit-scope" }, [tag("Raw L1 locked", "l1"), tag("Session sandbox", "feedback"), tag("No model call", "l2")]),
+    ]),
+    el("div", { class: "audit-grid" }, [
+      el("article", { class: "audit-step audit-inspect" }, [
+        el("div", { class: "audit-step-heading" }, [
+          el("span", { class: "audit-step-number", text: "1" }),
+          el("div", {}, [el("h2", { text: "Inspect the behavior" }), el("p", { text: "See which facts and topic state entered the baseline." })]),
+        ]),
+        el("div", { class: "audit-observed-topic" }, [
+          el("span", { class: "audit-field-label", text: "Observed topic state" }),
+          el("strong", { text: primaryTopic.label || primaryTopic.l2_id || "No L2 topic selected" }),
+          el("p", { text: preview(auditTopicState(primaryTopic), 420) }),
+        ]),
+        el("div", { class: "audit-evidence-list" }, [
+          el("span", { class: "audit-field-label", text: "Baseline evidence" }),
+          ...seeds.map(renderAuditEvidenceSummary),
+        ]),
+      ]),
+      form,
+      verifyPanel,
+    ]),
+    el("section", { id: "auditDiff", class: "audit-diff-section", hidden: "hidden" }),
+  );
+}
+
 function renderDemoStory(topics, trace) {
   const family = findDemoFamily(topics);
   const children = (family.child_l2_nodes || []).slice()
@@ -512,7 +774,7 @@ function renderDemoStory(topics, trace) {
       el("div", { class: "demo-section-copy" }, [
         el("div", { class: "demo-eyebrow", text: "2. Evidence trace" }),
         el("h2", { text: "What this question retrieves" }),
-        el("p", { text: DEMO_TRACE_QUERY }),
+        el("p", { text: trace.query || currentDemoQuery() }),
         el("div", { class: "demo-date-strip" }, [
           el("strong", { text: "L1 evidence path" }),
           el("div", { class: "tag-row" }, dates.map((date) => tag(date, "l1"))),
@@ -553,6 +815,15 @@ function renderDemoStory(topics, trace) {
 async function loadDemoStory() {
   const target = $("#demoStory");
   if (!target) return;
+  const auditTarget = $("#demoAudit");
+  const query = currentDemoQuery();
+  if ($("#demoQueryText")) $("#demoQueryText").textContent = query;
+  if ($("#demoWorkspaceLabel")) $("#demoWorkspaceLabel").textContent = `${selectedDataset.toUpperCase()} memory control audit`;
+  if ($("#demoQueryType")) $("#demoQueryType").textContent = selectedDataset === "icsi" ? "Rationale and carry-over query" : "Rationale and method-evolution query";
+  if (auditTarget) {
+    auditTarget.className = "audit-workspace loading";
+    auditTarget.textContent = "Preparing the audit sandbox...";
+  }
   target.className = "demo-story loading";
   target.textContent = "Loading demo trace...";
   const healthTarget = $("#demoHealth");
@@ -563,10 +834,11 @@ async function loadDemoStory() {
   try {
     const [topics, trace, health] = await Promise.all([
       api(apiWithDataset("/api/topics/l3")),
-      api(`/api/retrieval/trace?dataset=${selectedDataset}&query=${encodeURIComponent(DEMO_TRACE_QUERY)}&retrieval_mode=lexical&no_llm=true&include_debug=false&budget_profile=observatory_paper_trace&max_context_chars=0`),
+      api(`/api/retrieval/trace?dataset=${selectedDataset}&query=${encodeURIComponent(query)}&retrieval_mode=lexical&no_llm=true&include_debug=false&budget_profile=observatory_paper_trace&max_context_chars=0`),
       api(`/api/demo/health?dataset=${selectedDataset}`),
     ]);
     renderDemoHealth(health);
+    renderDemoAudit(trace);
     renderDemoStory(topics, trace);
   } catch (error) {
     target.className = "demo-story error";
@@ -574,6 +846,10 @@ async function loadDemoStory() {
     if (healthTarget) {
       healthTarget.className = "demo-health-card fail";
       healthTarget.textContent = `Could not check demo readiness: ${error.message}`;
+    }
+    if (auditTarget) {
+      auditTarget.className = "audit-workspace error";
+      auditTarget.textContent = `Could not prepare the audit sandbox: ${error.message}`;
     }
   }
 }

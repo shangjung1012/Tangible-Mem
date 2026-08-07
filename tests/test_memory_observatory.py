@@ -16,6 +16,7 @@ if str(LONG_TERM_DIR) not in sys.path:
 
 from memory_observatory.main import create_app
 from memory_observatory.services import experiment_cli
+from memory_observatory.services.audit_sandbox import AuditSandboxService
 from memory_observatory.services.baselines import build_full_context, retrieve_lexical_rag
 from memory_observatory.services.data_loader import ObservatoryDataLoader
 from memory_observatory.services.experiment_runner import run_experiment
@@ -198,8 +199,8 @@ def _fixture_icsi_dataset(root: Path) -> None:
                             "obj_id": "L1-Bmr001-001",
                             "meeting_id": "Bmr001",
                             "type": "decision",
-                            "content": "The team selected a shared meeting recording protocol.",
-                            "evidence": "A shared recording protocol was adopted.",
+                            "content": "The team selected a shared recording protocol using close microphones and delay-and-sum beamforming for later audio processing.",
+                            "evidence": "Close microphones and delay-and-sum beamforming were adopted as part of the recording protocol.",
                             "importance": 0.78,
                             "related_topics": ["recording protocol"],
                         }
@@ -848,6 +849,124 @@ class MemoryObservatoryTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(service_cls.return_value.run_trace.call_args.kwargs["max_context_chars"], 0)
+
+    def test_audit_sandbox_changes_candidate_context_without_mutating_baseline(self) -> None:
+        raw_result = {
+            "global_topic_map": {},
+            "long_term_l1": [
+                {
+                    "obj_id": "L1-Bmr001-045",
+                    "meeting_id": "Bmr001",
+                    "meeting_date": "2026-01-01",
+                    "type": "open_issue",
+                    "importance": 0.6,
+                    "score": 0.8,
+                    "content": "Delay-and-sum is weak for near-field microphones.",
+                    "evidence": "The wavefront is not planar.",
+                },
+                {
+                    "obj_id": "L1-Bmr001-099",
+                    "meeting_id": "Bmr001",
+                    "meeting_date": "2026-01-01",
+                    "type": "finding",
+                    "importance": 0.4,
+                    "score": 0.3,
+                    "content": "A short file can mean a microphone was off.",
+                    "evidence": "This file is very short.",
+                },
+            ],
+            "long_term_l2": [
+                {
+                    "l2_id": "L2-audio-processing",
+                    "label": "audio processing",
+                    "current_state": "A short file means a microphone was off.",
+                    "matched_l1_ids": ["L1-Bmr001-045", "L1-Bmr001-099"],
+                    "timeline_digest": [
+                        {"obj_id": "L1-Bmr001-045", "meeting_id": "Bmr001", "summary": "Beamforming issue."},
+                        {"obj_id": "L1-Bmr001-099", "meeting_id": "Bmr001", "summary": "Short file."},
+                    ],
+                    "selected_event_count": 2,
+                    "omitted_event_count": 0,
+                }
+            ],
+            "long_term_l3": [],
+            "retrieval_debug": {"selected_l1_count": 2},
+        }
+        baseline_context = format_recall_for_prompt(
+            raw_result,
+            include_debug=False,
+            l1_content_chars=320,
+            l1_evidence_chars=420,
+        )
+        baseline = {
+            "dataset_id": "icsi",
+            "query": "What should carry over about beamforming?",
+            "router_result": {
+                "targets": ["long_term"],
+                "strategy": "long_term_only",
+                "reason": "test",
+                "confidence": 1.0,
+            },
+            "l1_evidence_seeds": raw_result["long_term_l1"],
+            "l2_evolution_context": raw_result["long_term_l2"],
+            "formatted_prompt_context": baseline_context,
+            "raw_recall_result": raw_result,
+        }
+
+        service = object.__new__(AuditSandboxService)
+        service.dataset_id = "icsi"
+        result = service.preview_from_trace(
+            baseline,
+            {
+                "target_l2_id": "L2-audio-processing",
+                "corrected_state": "Near-field wavefronts make simple delay-and-sum unsuitable.",
+                "reason_code": "topic_state_not_query_relevant",
+                "exclude_obj_ids": ["L1-Bmr001-099"],
+            },
+        )
+
+        self.assertEqual(len(result["baseline"]["l1_evidence_seeds"]), 2)
+        self.assertEqual(len(result["candidate"]["l1_evidence_seeds"]), 1)
+        self.assertIn("Near-field wavefronts", result["candidate"]["formatted_prompt_context"])
+        self.assertNotIn("L1-Bmr001-099", result["candidate"]["formatted_prompt_context"])
+        self.assertEqual(raw_result["long_term_l2"][0]["current_state"], "A short file means a microphone was off.")
+        self.assertFalse(result["persisted"])
+        self.assertFalse(result["impact"]["answer_generated"])
+        self.assertTrue(any(row["kind"] == "add" for row in result["context_diff"]))
+
+    def test_audit_preview_api_is_session_only_for_read_only_dataset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _fixture_repo(root)
+            _fixture_icsi_dataset(root)
+            client = TestClient(create_app(repo_root=root))
+            preview_payload = {
+                "scope": "session_only",
+                "persisted": False,
+                "impact": {"raw_evidence_unchanged": True},
+            }
+            with patch("memory_observatory.main.AuditSandboxService") as service_cls:
+                service_cls.return_value.preview.return_value = preview_payload
+                response = client.post(
+                    "/api/demo/audit-preview",
+                    params={"dataset": "icsi"},
+                    json={
+                        "query": "What should carry over?",
+                        "retrieval_mode": "lexical",
+                        "correction": {
+                            "target_l2_id": "L2-audio-processing",
+                            "corrected_state": "A corrected topic state.",
+                        },
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["persisted"])
+        service_cls.assert_called_once_with(root, dataset_id="icsi")
+        self.assertEqual(
+            service_cls.return_value.preview.call_args.kwargs["retrieval_mode"],
+            "lexical",
+        )
 
     def test_retrieval_trace_service_uses_dataset_artifact_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

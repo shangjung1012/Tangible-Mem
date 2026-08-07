@@ -264,6 +264,20 @@ uv run uvicorn memory_observatory.main:app --host 127.0.0.1 --port 8765
 Then a small Playwright script can open `http://127.0.0.1:8765/`, switch to
 Experiment Lab, and capture screenshots or check element overflow.
 
+## Memory Control Audit
+
+The default demo screen includes a closed-loop, session-only audit workflow:
+
+1. Inspect the L1 evidence and L2 topic state used by the baseline retrieval trace.
+2. Challenge one topic state or exclude selected L1 evidence from a candidate context.
+3. Rebuild and compare the formatted prompt context before claiming that the control had an effect.
+
+The preview endpoint is `POST /api/demo/audit-preview?dataset=icsi`. It operates
+on an in-memory copy of the structured recall result, never writes to raw L1 or
+generated L2/L3 artifacts, and reports whether the source tree hash remained
+unchanged. The UI labels answer generation as pending: this sandbox verifies
+retrieval-context impact, not answer-quality impact, and makes no Vertex AI call.
+
 ## Pages
 
 - Overview: memory pipeline and artifact statistics.
