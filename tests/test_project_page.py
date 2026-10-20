@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 INDEX = SITE / "index.html"
 README = ROOT / "README.md"
-PUBLIC_SITE_URL = "https://shangjung1012.github.io/Tangible-Mem/"
+PUBLIC_SITE_URL = "https://profile.sjts.ai/research/tangible-mem/"
 REPOSITORY_URL = "https://github.com/shangjung1012/Tangible-Mem"
 INTERNAL_RESULTS = (
     ROOT

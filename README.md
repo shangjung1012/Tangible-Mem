@@ -6,7 +6,7 @@ Shang-Jung Tsai · Yu-Jen Chen · Yi-Hsin Lee<br>
 Advisor: Yu-Chun Yen<br>
 National Yang Ming Chiao Tung University
 
-[Project Page](https://shangjung1012.github.io/Tangible-Mem/) ·
+[Project Page](https://profile.sjts.ai/research/tangible-mem/) ·
 [Code](https://github.com/shangjung1012/Tangible-Mem) ·
 [Poster](site/static/pdfs/tangible-mem-poster.pdf) ·
 [Slides](site/static/pdfs/tangible-mem-slides.pdf)
@@ -25,7 +25,7 @@ and lets people record corrections without overwriting raw evidence.
 The current research prototype consists of the layered memory pipeline and
 **Memory Observatory**, a FastAPI-based interface for inspecting memory objects,
 topic evolution, retrieval traces, comparison artifacts, and sidecar feedback.
-The public [project page](https://shangjung1012.github.io/Tangible-Mem/) is a
+The public [project page](https://profile.sjts.ai/research/tangible-mem/) is a
 static overview; it does not simulate the application backend.
 
 ## Memory Architecture
@@ -55,7 +55,7 @@ Memory Observatory provides four inspection surfaces:
 - **Topic Observatory** — inspect topic states, topic families, timelines, and
   linked evidence.
 
-[![ICSI Memory Observatory closed-loop audit showing Inspect, Challenge, and Verify columns.](site/static/images/observatory-audit.png)](https://shangjung1012.github.io/Tangible-Mem/#observatory)
+[![ICSI Memory Observatory closed-loop audit showing Inspect, Challenge, and Verify columns.](site/static/images/observatory-audit.png)](https://profile.sjts.ai/research/tangible-mem/#observatory)
 
 The screenshot uses the public ICSI meeting corpus and committed read-only
 artifacts. The GitHub Page does not publish raw private meeting content or
